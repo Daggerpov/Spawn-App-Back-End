@@ -1,0 +1,1 @@
+Controllers contain endpoints for the API to GET, POST, PUT, and DELETE data from the database, using HTTP requests.
