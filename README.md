@@ -1,6 +1,6 @@
 # Spawn-App-Back-End
 
-Back-End for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI)
+Back-End for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI). The tech stack is Java Springboot for a REST API, that connects to a MySQL database.
 
 # File Structure Explanation
 
