@@ -26,6 +26,18 @@ public class TestController {
 
     }
 
+    @GetMapping("/user")
+    public User getUser(){
+
+        User u = new User();
+        u.setUsername("Michael");
+        u.setFirstname("Michael");
+        u.setLastname("Michael");
+        u.setBio("Michael");
+        return u;
+
+    }
+
 }
 
 class Person{
@@ -45,5 +57,44 @@ class Person{
     }
     public void setAge(Integer age) {
         this.age = age;
+    }
+}
+
+class User {
+    private String username;
+    private String firstName;
+    private String lastName;
+    private String bio;
+    
+    public String getUsername() {
+        return this.username;
+    }
+
+    public String getfirstName() {
+        return this.firstName;
+    }
+
+    public String getlastName() {
+        return this.lastName;
+    }
+
+    public String getBio() {
+        return this.bio;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 }
