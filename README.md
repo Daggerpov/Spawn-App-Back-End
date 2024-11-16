@@ -6,7 +6,11 @@ Back-End for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-S
 
 ![entity-relationship-diagram](entity-relationship-diagram.png)
 
-# File Structure Explanation
+# Architecture Diagram
+
+![alt text](architecture-diagram.png)
+
+# Folder Structure Explanation
 
 ## Controllers
 
