@@ -70,11 +70,11 @@ class User {
         return this.username;
     }
 
-    public String getfirstName() {
+    public String getFirstName() {
         return this.firstName;
     }
 
-    public String getlastName() {
+    public String getLastName() {
         return this.lastName;
     }
 
