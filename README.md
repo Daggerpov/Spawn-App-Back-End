@@ -2,6 +2,10 @@
 
 Back-End for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI). The tech stack is Java Springboot for a REST API, that connects to a MySQL database.
 
+# Entity Relationship Diagram
+
+![entity-relationship-diagram](entity-relationship-diagram.png)
+
 # File Structure Explanation
 
 ## Controllers
@@ -10,7 +14,7 @@ Controllers contain endpoints for the API to GET, POST, PUT, and DELETE data fro
 
 ## Models
 
-Models, otherwise called "entities," are the classes that represent the database tables. They're what are retrieved and put into the database. 
+Models, otherwise called "entities," are the classes that represent the database tables. They're what are retrieved and put into the database.
 
 ## Repositories
 
@@ -32,10 +36,8 @@ That way, you can separate the actual models (or entities) from what you send ar
 
 An example:
 
-`
-public record UserDTO (Long id, String name){}
-`
+`public record UserDTO (Long id, String name){}`
 
 Using a record, because class functionality isn't needed. Therefore, it's more concise and readable.
 
-## 
+##
