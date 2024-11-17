@@ -4,10 +4,8 @@ import com.danielagapov.spawn.Models.Event.Event;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController()
-@RequestMapping("/api/v1/events")
+@RequestMapping("api/v1/events")
 public class EventController {
     private final IEventService eventService;
 
@@ -15,30 +13,26 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    @GetMapping("/")
+    // full path: /api/v1/events
+    @GetMapping
     public String getEvents() {
         return "These are the events: " + eventService.getAllEvents();
     }
 
-    @GetMapping("/mock-endpoint")
-    public String getMockEndpoint() {
-        return "This is the mock endpoint for events. Everything is working with it.";
-    }
-
-    @GetMapping("/{id}")
+    // full path: /api/v1/events/{id}
+    @GetMapping("{id}")
     public Event getEvent(@PathVariable Long id) {
         return eventService.getEventById(id);
     }
 
-    // TODO: get users invited to event
-
-    // get event by tag
-    @GetMapping("/tag/{id}")
-    public List<Event> getEventsByTagId(@PathVariable Long id) {
-        return eventService.getEventsByTagId(id);
+    // full path: /api/v1/events/mock-endpoint
+    @GetMapping("mock-endpoint")
+    public String getMockEndpoint() {
+        return "This is the mock endpoint for events. Everything is working with it.";
     }
 
-    @PostMapping("/")
+    // full path: /api/v1/events
+    @PostMapping
     public Event createEvent(@RequestBody Event newEvent) {
         return eventService.saveEvent(newEvent);
     }
