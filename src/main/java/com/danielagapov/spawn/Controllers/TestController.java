@@ -19,9 +19,9 @@ public class TestController {
     }
 
     @GetMapping("/person")
-    public Person getPerson(){
+    public MockPerson getPerson(){
 
-        Person p = new Person();
+        MockPerson p = new MockPerson();
         p.setName("Michael");
         p.setAge(40);
         return p;
@@ -47,7 +47,7 @@ public class TestController {
 
 }
 
-class Person{
+class MockPerson{
     private String name;
     private Integer age;
 
