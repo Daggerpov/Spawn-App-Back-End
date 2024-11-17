@@ -18,6 +18,11 @@ public class UserController {
         return "These are the users: " + userService.getAllUsers();
     }
 
+    @GetMapping("/mock-endpoint")
+    public String getMockEndpoint() {
+        return "This is the mock endpoint. Everything is working with it.";
+    }
+
     @GetMapping("/{id}")
     public User getUser(@PathVariable Long id) {
         return userService.getUserById(id);
