@@ -1,7 +1,6 @@
-package com.danielagapov.spawn.Services;
+package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.Models.User;
-
 import java.util.List;
 
 public interface IUserService {
