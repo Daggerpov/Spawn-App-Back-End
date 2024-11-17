@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Services.IEventService;
+import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public class EventController {
 
     @GetMapping("/mock-endpoint")
     public String getMockEndpoint() {
-        return "This is the mock endpoint. Everything is working with it.";
+        return "This is the mock endpoint for events. Everything is working with it.";
     }
 
     @GetMapping("/{id}")
