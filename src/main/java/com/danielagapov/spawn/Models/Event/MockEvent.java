@@ -1,10 +1,10 @@
-package com.danielagapov.spawn.Models;
+package com.danielagapov.spawn.Models.Event;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
 @Entity
-public class Event{
+public class MockEvent{
     @Id
     Long id;
     String title;
@@ -13,10 +13,10 @@ public class Event{
     String location; // TODO: investigate data type later
     String note;
 
-    public Event() {
+    public MockEvent() {
     }
 
-    public Event(Long id, String title, String startTime, String endTime, String location, String note) {
+    public MockEvent(Long id, String title, String startTime, String endTime, String location, String note) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;

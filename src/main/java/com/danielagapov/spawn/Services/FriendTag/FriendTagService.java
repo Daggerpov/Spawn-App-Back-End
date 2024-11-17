@@ -1,10 +1,10 @@
-package com.danielagapov.spawn.Services.User;
+package com.danielagapov.spawn.Services.FriendTag;
 
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Models.FriendTag.FriendTag;
+import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -12,15 +12,15 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class UserService implements IUserService {
-    private final IUserRepository repository;
+public class FriendTagService implements IFriendTagService {
+    private final IFriendTagRepository repository;
 
     @Autowired
-    public UserService(IUserRepository repository) {
+    public FriendTagService(IFriendTagRepository repository) {
         this.repository = repository;
     }
 
-    public List<User> getAllUsers() {
+    public List<FriendTag> getAllFriendTags() {
         try {
             return repository.findAll();
         } catch (DataAccessException e) {
@@ -28,25 +28,25 @@ public class UserService implements IUserService {
         }
     }
 
-    public User getUserById(Long id) {
+    public FriendTag getFriendTagById(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(id));
     }
 
-    public List<User> getUsersByTagId(Long tagId) {
+    public List<FriendTag> getFriendTagsByTagId(Long tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
             return repository.findAll();
         } catch (DataAccessException e) {
-            throw new RuntimeException("Error retrieving users", e);
+            throw new RuntimeException("Error retrieving friendTags", e);
         }
     }
 
-    public User saveUser(User user) {
+    public FriendTag saveFriendTag(FriendTag friendTag) {
         try {
-            return repository.save(user);
+            return repository.save(friendTag);
         } catch (DataAccessException e) {
-            throw new BaseSaveException("Failed to save user: " + e.getMessage());
+            throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
         }
     }
 }

@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.Repositories;
 
-import com.danielagapov.spawn.Models.Event.Event;
+import com.danielagapov.spawn.Models.ChatMessage.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface IEventRepository extends JpaRepository<Event, Long> {
+public interface IChatMessageRepository extends JpaRepository<ChatMessage, Long> {
     // The JpaRepository interface already includes methods like save() and findById()
 }

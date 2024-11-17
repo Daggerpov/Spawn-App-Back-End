@@ -3,7 +3,7 @@ package com.danielagapov.spawn.Services.Event;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.Event.Event;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;

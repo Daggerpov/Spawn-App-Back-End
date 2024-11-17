@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.Event.Event;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +29,8 @@ public class EventController {
     public Event getEvent(@PathVariable Long id) {
         return eventService.getEventById(id);
     }
+
+    // TODO: get users invited to event
 
     // get event by tag
     @GetMapping("/tag/{id}")

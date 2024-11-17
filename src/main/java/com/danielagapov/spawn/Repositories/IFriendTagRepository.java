@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.Repositories;
 
-import com.danielagapov.spawn.Models.Event.Event;
+import com.danielagapov.spawn.Models.FriendTag.FriendTag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface IEventRepository extends JpaRepository<Event, Long> {
+public interface IFriendTagRepository extends JpaRepository<FriendTag, Long> {
     // The JpaRepository interface already includes methods like save() and findById()
 }
