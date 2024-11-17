@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services;
 
 import com.danielagapov.spawn.Exceptions.User.UserNotFoundException;
 import com.danielagapov.spawn.Exceptions.User.UserSaveException;
+import com.danielagapov.spawn.Exceptions.User.UsersNotFoundException;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,13 +24,22 @@ public class UserService implements IUserService{
         try {
             return repository.findAll();
         } catch (DataAccessException e) {
-            throw new RuntimeException("Error retrieving users", e);
+            throw new UsersNotFoundException();
         }
     }
 
     public User getUserById(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
+    }
+
+    public List<User> getUsersByTagId(Long tagId) {
+        // TODO: change this logic later, once tags are setup.
+        try {
+            return repository.findAll();
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Error retrieving users", e);
+        }
     }
 
     public User saveUser(User user) {
