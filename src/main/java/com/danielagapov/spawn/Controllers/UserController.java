@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController()
 @RequestMapping("/api/v1/users")
 public class UserController {
-    private final IUserRepository repository;
+    private final IUserService service;
 
-    UserController (IUserRepository repository) {
-        this.repository = repository;
+    UserController (IUserService service) {
+        this.repository = service;
     }
 
     @GetMapping("/")
