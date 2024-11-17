@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.MockUser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,13 +28,15 @@ public class TestController {
 
     }
 
-    @GetMapping("/user")
-    public User getUser(){
-        User u = new User();
-        u.setUsername("Michael");
+    @GetMapping("/mock_user")
+    public MockUser getUser(){
+        MockUser u = new MockUser();
+
+        u.setUsername("mtham");
         u.setFirstName("Michael");
-        u.setLastName("Michael");
-        u.setBio("Michael");
+        u.setLastName("Tham");
+        u.setBio("This is my bio - " + u.getUsername());
+
         return u;
     }
 
