@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Services.IUserService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +22,7 @@ public class UserController {
 
     @GetMapping("/mock-endpoint")
     public String getMockEndpoint() {
-        return "This is the mock endpoint. Everything is working with it.";
+        return "This is the mock endpoint for users. Everything is working with it.";
     }
 
     @GetMapping("/{id}")

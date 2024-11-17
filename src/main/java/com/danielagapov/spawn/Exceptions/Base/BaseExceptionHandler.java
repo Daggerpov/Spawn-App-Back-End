@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Exceptions.User;
+package com.danielagapov.spawn.Exceptions.Base;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -6,20 +6,20 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class UserExceptionHandler {
+public class BaseExceptionHandler {
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException ex) {
+    @ExceptionHandler(BaseNotFoundException.class)
+    public ResponseEntity<String> handleBaseNotFoundException(BaseNotFoundException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(UsersNotFoundException.class)
-    public ResponseEntity<String> handleUsersNotFoundException(UsersNotFoundException ex) {
+    @ExceptionHandler(BasesNotFoundException.class)
+    public ResponseEntity<String> handleBasesNotFoundException(BasesNotFoundException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(UserSaveException.class)
-    public ResponseEntity<String> handleUserSaveException(UserSaveException ex) {
+    @ExceptionHandler(BaseSaveException.class)
+    public ResponseEntity<String> handleBaseSaveException(BaseSaveException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -1,8 +1,8 @@
-package com.danielagapov.spawn.Services;
+package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.Exceptions.User.UserNotFoundException;
-import com.danielagapov.spawn.Exceptions.User.UserSaveException;
-import com.danielagapov.spawn.Exceptions.User.UsersNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class UserService implements IUserService{
+public class UserService implements IUserService {
     private final IUserRepository repository;
 
     @Autowired
@@ -24,13 +24,13 @@ public class UserService implements IUserService{
         try {
             return repository.findAll();
         } catch (DataAccessException e) {
-            throw new UsersNotFoundException();
+            throw new BasesNotFoundException();
         }
     }
 
     public User getUserById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+                .orElseThrow(() -> new BaseNotFoundException(id));
     }
 
     public List<User> getUsersByTagId(Long tagId) {
@@ -46,7 +46,7 @@ public class UserService implements IUserService{
         try {
             return repository.save(user);
         } catch (DataAccessException e) {
-            throw new UserSaveException("Failed to save user: " + e.getMessage());
+            throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
     }
 }
