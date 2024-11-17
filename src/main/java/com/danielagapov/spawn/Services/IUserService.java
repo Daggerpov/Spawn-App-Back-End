@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface IUserService {
     public List<User> getAllUsers();
-    public Optional<User> getUserById(Long id);
+    public User getUserById(Long id);
     public User saveUser(User user);
 }
