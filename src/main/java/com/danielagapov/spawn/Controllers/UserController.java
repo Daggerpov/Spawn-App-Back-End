@@ -7,27 +7,24 @@ import org.springframework.web.bind.annotation.*;
 @RestController()
 @RequestMapping("/api/v1/users")
 public class UserController {
-    private final IUserService service;
+    private final IUserService userService;
 
-    UserController (IUserService service) {
-        this.service = service;
+    public UserController(IUserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping("/")
     public String getUsers() {
-        // TODO: fill in some mock users
-        return "These are the users: ";
+        return "These are the users: " + userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public User getUser() {
-        User u = new User();
-        u.setFirstName("Example First Name");
-        return u;
+    public User getUser(@PathVariable Long id) {
+        return userService.getUserById(id);
     }
 
     @PostMapping("/")
     public User createUser(@RequestBody User newUser) {
-        return service.saveUser(newUser);
+        return userService.saveUser(newUser);
     }
 }
