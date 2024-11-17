@@ -36,6 +36,8 @@ public class UserController {
         return userService.getUsersByTagId(id);
     }
 
+    // TODO: need to be able to get user's followers
+
     @PostMapping("/")
     public User createUser(@RequestBody User newUser) {
         return userService.saveUser(newUser);

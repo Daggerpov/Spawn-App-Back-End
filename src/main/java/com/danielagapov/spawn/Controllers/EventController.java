@@ -30,6 +30,8 @@ public class EventController {
         return eventService.getEventById(id);
     }
 
+    // TODO: get users invited to event
+
     // get event by tag
     @GetMapping("/tag/{id}")
     public List<Event> getEventsByTagId(@PathVariable Long id) {
