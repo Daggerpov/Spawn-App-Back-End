@@ -32,6 +32,15 @@ public class UserService implements IUserService{
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
+    public List<User> getUsersByTagId(Long tagId) {
+        // TODO: change this logic later, once tags are setup.
+        try {
+            return repository.findAll();
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Error retrieving users", e);
+        }
+    }
+
     public User saveUser(User user) {
         try {
             return repository.save(user);
