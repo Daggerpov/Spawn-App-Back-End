@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.Event.Event;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.web.bind.annotation.*;
 

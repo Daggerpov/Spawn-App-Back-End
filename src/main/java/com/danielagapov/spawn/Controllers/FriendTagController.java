@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.Models.FriendTag.FriendTag;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.web.bind.annotation.*;
 

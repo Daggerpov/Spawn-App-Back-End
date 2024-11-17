@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.MockUser;
+import com.danielagapov.spawn.Models.Event.Event;
+import com.danielagapov.spawn.Models.User.MockUser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
