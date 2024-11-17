@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.ChatMessage;
+import com.danielagapov.spawn.Models.ChatMessage.ChatMessage;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import org.springframework.web.bind.annotation.*;
 
