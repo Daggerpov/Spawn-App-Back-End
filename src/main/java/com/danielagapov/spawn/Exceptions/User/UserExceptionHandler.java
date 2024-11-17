@@ -13,6 +13,11 @@ public class UserExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(UsersNotFoundException.class)
+    public ResponseEntity<String> handleUsersNotFoundException(UsersNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(UserSaveException.class)
     public ResponseEntity<String> handleUserSaveException(UserSaveException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
