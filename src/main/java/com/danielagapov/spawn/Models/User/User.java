@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Models;
+package com.danielagapov.spawn.Models.User;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
