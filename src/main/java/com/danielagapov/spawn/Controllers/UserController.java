@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.IUserService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController()
@@ -10,7 +10,7 @@ public class UserController {
     private final IUserService service;
 
     UserController (IUserService service) {
-        this.repository = service;
+        this.service = service;
     }
 
     @GetMapping("/")
@@ -28,6 +28,6 @@ public class UserController {
 
     @PostMapping("/")
     public User createUser(@RequestBody User newUser) {
-        return repository.save(newUser);
+        return service.saveUser(newUser);
     }
 }
