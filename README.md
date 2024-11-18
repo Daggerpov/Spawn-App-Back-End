@@ -14,7 +14,7 @@ Back-End for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-S
 
 # Diagrams
 
-![alt text](diagrams-architecture-dependency-injection-dtos.png)
+![diagrams-architecture-dependency-injection-dtos](diagrams-architecture-dependency-injection-dtos.png)
 
 # Entity Relationship Diagram
 
