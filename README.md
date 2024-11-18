@@ -2,13 +2,23 @@
 
 Back-End for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI). The tech stack is Java Springboot for a REST API, that connects to a MySQL database.
 
+- [Spawn-App-Back-End](#spawn-app-back-end)
+- [Diagrams](#diagrams)
+- [Entity Relationship Diagram](#entity-relationship-diagram)
+- [Folder Structure Explanation](#folder-structure-explanation)
+  - [Controllers](#controllers)
+  - [Models](#models)
+  - [Repositories](#repositories)
+  - [Services](#services)
+  - [DTOs](#dtos)
+
+# Diagrams
+
+![alt text](diagrams-architecture-dependency-injection-dtos.png)
+
 # Entity Relationship Diagram
 
 ![entity-relationship-diagram](entity-relationship-diagram.png)
-
-# Architecture Diagram
-
-![alt text](architecture-diagram.png)
 
 # Folder Structure Explanation
 
@@ -43,5 +53,3 @@ An example:
 `public record UserDTO (Long id, String name){}`
 
 Using a record, because class functionality isn't needed. Therefore, it's more concise and readable.
-
-##

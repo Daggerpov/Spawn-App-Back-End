@@ -15,7 +15,6 @@ import java.util.List;
 public class UserService implements IUserService {
     private final IUserRepository repository;
 
-    @Autowired
     public UserService(IUserRepository repository) {
         this.repository = repository;
     }
