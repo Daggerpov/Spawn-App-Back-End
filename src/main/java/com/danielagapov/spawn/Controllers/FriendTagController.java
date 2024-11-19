@@ -25,7 +25,7 @@ public class FriendTagController {
         return friendTagService.getFriendTagById(id);
     }
 
-    // full path: /api/v1/friendTags
+    // full path: /api/v1/friendTags/mock-endpoint
     @GetMapping("mock-endpoint")
     public String getMockEndpoint() {
         return "This is the mock endpoint for friendTags. Everything is working with it.";
