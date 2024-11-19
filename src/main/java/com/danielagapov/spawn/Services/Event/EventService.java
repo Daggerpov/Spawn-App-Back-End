@@ -49,4 +49,8 @@ public class EventService implements IEventService {
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
         }
     }
+
+    public List<Event> getEventsByUserId(Long userId) {
+        return repository.findAll();
+    }
 }

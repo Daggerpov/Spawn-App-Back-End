@@ -4,6 +4,8 @@ import com.danielagapov.spawn.Models.Event.Event;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController()
 @RequestMapping("api/v1/events")
 public class EventController {
@@ -23,6 +25,12 @@ public class EventController {
     @GetMapping("{id}")
     public Event getEvent(@PathVariable Long id) {
         return eventService.getEventById(id);
+    }
+
+    // full path: /api/v1/events/user/{id}
+    @GetMapping("events/{userID}")
+    public List<Event> getEventsByUserID(@PathVariable Long userID) {
+        return eventService.getEventsByUserId(userID);
     }
 
     // full path: /api/v1/events/mock-endpoint

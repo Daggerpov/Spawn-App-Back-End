@@ -8,4 +8,5 @@ public interface IEventService {
     public Event getEventById(Long id);
     public List<Event> getEventsByTagId(Long tagId);
     public Event saveEvent(Event event);
+    public List<Event> getEventsByUserId(Long userId);
 }
