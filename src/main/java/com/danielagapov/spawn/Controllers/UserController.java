@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}
     @GetMapping("{id}")
-    public User getUser(@PathVariable Long id) {
+    public UserDTO getUser(@PathVariable Long id) {
         return userService.getUserById(id);
     }
 
@@ -33,13 +33,13 @@ public class UserController {
 
     // full path: /api/v1/users
     @PostMapping
-    public User createUser(@RequestBody User newUser) {
+    public UserDTO createUser(@RequestBody UserDTO newUser) {
         return userService.saveUser(newUser);
     }
 
     // full path: /api/v1/user/{id}
     @PutMapping("{id}")
-    public User replaceUser(@RequestBody User newUser, @PathVariable Long id) {
+    public UserDTO replaceUser(@RequestBody UserDTO newUser, @PathVariable Long id) {
         return userService.replaceUser(newUser, id);
     }
 }

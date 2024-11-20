@@ -58,19 +58,23 @@ public class EventService implements IEventService {
         return EventMapper.toDTOList(repository.findAll());
     }
 
+    // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
     public EventDTO replaceEvent(EventDTO newEvent, Long id) {
-        Event eventEntity = EventMapper.toEntity(newEvent);
-
+        // TODO: we may want to make this function easier to read in the future,
+        // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(event -> {
-            event.setTitle(eventEntity.getTitle());
-            event.setNote(eventEntity.getNote());
-            event.setEndTime(eventEntity.getEndTime());
-            event.setLocation(eventEntity.getLocation());
-            event.setStartTime(eventEntity.getStartTime());
+            // Update the existing event's details with the new data from the DTO
+            event.setTitle(newEvent.title());
+            event.setNote(newEvent.note());
+            event.setEndTime(newEvent.endTime());
+            event.setLocation(newEvent.location());
+            event.setStartTime(newEvent.startTime());
 
             repository.save(event);
-            return EventMapper.toDTO(eventEntity);
+            return EventMapper.toDTO(event);
         }).orElseGet(() -> {
+            // If the event doesn't exist, create a new event and save it
+            Event eventEntity = EventMapper.toEntity(newEvent); // Create a new event from DTO
             repository.save(eventEntity);
             return EventMapper.toDTO(eventEntity);
         });

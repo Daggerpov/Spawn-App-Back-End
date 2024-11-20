@@ -1,8 +1,10 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,45 +21,53 @@ public class UserService implements IUserService {
         this.repository = repository;
     }
 
-    public List<User> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         try {
-            return repository.findAll();
+            return UserMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
             throw new BasesNotFoundException();
         }
     }
 
-    public User getUserById(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id));
+    public UserDTO getUserById(Long id) {
+        return UserMapper.toDTO(repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(id)));
     }
 
-    public List<User> getUsersByTagId(Long tagId) {
+    public List<UserDTO> getUsersByTagId(Long tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
-            return repository.findAll();
+            return UserMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving users", e);
         }
     }
 
-    public User saveUser(User user) {
+    public UserDTO saveUser(UserDTO user) {
         try {
-            return repository.save(user);
+            User userEntity = UserMapper.toEntity(user);
+            repository.save(userEntity);
+            return UserMapper.toDTO(userEntity);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
     }
 
-    public User replaceUser(User newUser, Long id) {
+    // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
+    public UserDTO replaceUser(UserDTO newUser, Long id) {
+        // TODO: we may want to make this function easier to read in the future,
+        // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(user -> {
-            user.setBio(newUser.getBio());
-            user.setFirstName(newUser.getFirstName());
-            user.setLastName(newUser.getLastName());
-            user.setUsername(newUser.getUsername());
-            return repository.save(user);
+            user.setBio(newUser.bio());
+            user.setFirstName(newUser.firstName());
+            user.setLastName(newUser.lastName());
+            user.setUsername(newUser.username());
+            repository.save(user);
+            return UserMapper.toDTO(user);
         }).orElseGet(() -> {
-            return repository.save(newUser);
+            User userEntity = UserMapper.toEntity(newUser);
+            repository.save(userEntity);
+            return UserMapper.toDTO(userEntity);
         });
     }
 }
