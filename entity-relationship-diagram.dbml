@@ -27,7 +27,7 @@ Table Event {
     title String
     startTime Timestamp
     endTime Timestamp
-    location JSON
+    locationId UUID [ref: > Location.id]
     note String
     creatorId UUID [unique, ref: > User.id]
 }
@@ -103,4 +103,11 @@ Table FriendRequests {
     indexes {
         (senderId, receiverId) [pk]
     }
+}
+
+Table Location {
+    id UUID [pk]
+    name String
+    latitude Double
+    longitude Double
 }
