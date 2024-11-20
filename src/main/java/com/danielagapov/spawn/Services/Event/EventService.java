@@ -53,8 +53,4 @@ public class EventService implements IEventService {
     public List<Event> getEventsByUserId(Long userId) {
         return repository.findAll();
     }
-
-    public Event updateEventById(Long id) {
-        return repository.findById(id).orElseThrow(() -> new BaseNotFoundException(id));
-    }
 }
