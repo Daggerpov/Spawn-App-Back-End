@@ -5,7 +5,6 @@ Table User {
     firstName String
     lastName String
     bio String
-    lastLocation UUID [ref: > Location.id]
 }
 
 Table FriendTag {
@@ -108,5 +107,7 @@ Table FriendRequests {
 
 Table Location {
     id UUID [pk]
-    locationName String
+    name String
+    latitude Double
+    longitude Double
 }

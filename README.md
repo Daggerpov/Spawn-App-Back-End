@@ -18,7 +18,7 @@ Back-End for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-S
 
 # Entity Relationship Diagram
 
-![entity-relationship-diagram-Nov-20](entity-relationship-diagram.png)
+![entity-relationship-diagram-Nov-20-v4-location-db-table](entity-relationship-diagram.png)
 
 # Folder Structure Explanation
 
