@@ -14,15 +14,6 @@ Table FriendTag {
     color String
 }
 
-// Junction table for User-FriendTag relationship (One-to-Many)
-Table UserFriendTag {
-    userId UUID [ref: > User.id]
-    friendTagId UUID [ref: > FriendTag.id]
-    indexes {
-        (userId, friendTagId) [pk]
-    }
-}
-
 Table Event {
     id UUID [pk]
     title String
