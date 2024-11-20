@@ -36,6 +36,12 @@ public class FriendTagController {
     public FriendTag createFriendTag(@RequestBody FriendTag newFriendTag) {
         return friendTagService.saveFriendTag(newFriendTag);
     }
+
+    // full path: /api/v1/friendTags/{id}
+    @PutMapping("{id}")
+    public FriendTag replaceFriendTag(@RequestBody FriendTag newFriendTag, @PathVariable Long id) {
+        return friendTagService.replaceFriendTag(newFriendTag, id);
+    }
 }
 
 

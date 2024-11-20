@@ -27,13 +27,14 @@ public class EventController {
         return eventService.getEventById(id);
     }
     
+    
     // full path: /api/v1/events/user/{id}
     @GetMapping("user/{userId}")
     public List<Event> getEventsByUserId(@PathVariable Long userId) {
         return eventService.getEventsByUserId(userId);
     }
 
-    // full path: /api/v1/events/friendTag/{friendTagId}
+    // full path: /api/v1/events/friendTag/{tagId}
     @GetMapping("friendTag/{tagId}")
     public List<Event> getEventsByFriendTagId(@PathVariable Long tagId) {
         return eventService.getEventsByTagId(tagId);
@@ -49,5 +50,11 @@ public class EventController {
     @PostMapping
     public Event createEvent(@RequestBody Event newEvent) {
         return eventService.saveEvent(newEvent);
+    }
+
+    // full path: /api/v1/events/{id}
+    @PutMapping("{id}")
+    public Event replaceEvent(@RequestBody Event newEvent, @PathVariable Long id) {
+        return eventService.replaceEvent(newEvent, id);
     }
 }

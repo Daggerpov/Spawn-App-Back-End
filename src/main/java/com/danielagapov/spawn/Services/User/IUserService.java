@@ -8,4 +8,5 @@ public interface IUserService {
     public User getUserById(Long id);
     public List<User> getUsersByTagId(Long tagId);
     public User saveUser(User user);
+    public User replaceUser(User user, Long id);
 }

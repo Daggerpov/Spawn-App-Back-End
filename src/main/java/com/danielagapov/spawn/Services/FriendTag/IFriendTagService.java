@@ -7,5 +7,6 @@ public interface IFriendTagService {
     public List<FriendTag> getAllFriendTags();
     public FriendTag getFriendTagById(Long id);
     public List<FriendTag> getFriendTagsByTagId(Long tagId);
-    public FriendTag saveFriendTag(FriendTag event);
+    public FriendTag saveFriendTag(FriendTag friendTag);
+    public FriendTag replaceFriendTag(FriendTag friendTag, Long tagId);
 }
