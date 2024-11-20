@@ -8,10 +8,28 @@ Table User {
     lastLocation UUID [ref: > Location.id]
 }
 
+// Table for Friend relationships (Many-to-Many)
+Table UserFriends {
+    userId1 UUID [ref: > User.id]
+    userId2 UUID [ref: > User.id]
+    indexes {
+        (userId1, userId2) [pk]
+    }
+}
+
 Table FriendTag {
     id UUID [pk]
     displayName String
     color String
+}
+
+// Table for Friend Requests (Many-to-Many)
+Table FriendRequests {
+    senderId UUID [ref: > User.id]
+    receiverId UUID [ref: > User.id]
+    indexes {
+        (senderId, receiverId) [pk]
+    }
 }
 
 // Junction table for User-FriendTag relationship (One-to-Many)
@@ -31,6 +49,15 @@ Table Event {
     locationId UUID [ref: > Location.id]
     note String
     creatorId UUID [unique, ref: > User.id]
+}
+
+// Junction table for Event-Tag relationship (One-to-Many)
+Table EventTag {
+    eventId UUID [ref: > Event.id]
+    tagId UUID [ref: > FriendTag.id]
+    indexes {
+        (eventId, tagId) [pk]
+    }
 }
 
 // Junction table for Event Participants (One-to-Many)
@@ -65,24 +92,6 @@ Table ChatMessageLikes {
     userId UUID [ref: > User.id]
     indexes {
         (chatMessageId, userId) [pk]
-    }
-}
-
-// Table for Friend relationships (Many-to-Many)
-Table UserFriends {
-    userId1 UUID [ref: > User.id]
-    userId2 UUID [ref: > User.id]
-    indexes {
-        (userId1, userId2) [pk]
-    }
-}
-
-// Table for Friend Requests (Many-to-Many)
-Table FriendRequests {
-    senderId UUID [ref: > User.id]
-    receiverId UUID [ref: > User.id]
-    indexes {
-        (senderId, receiverId) [pk]
     }
 }
 
