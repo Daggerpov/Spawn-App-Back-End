@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @Entity
 // these two annotations are in place of writing out constructors manually (for readability)
@@ -19,7 +20,7 @@ import java.io.Serializable;
 @Setter
 public class User  implements Serializable {
         private @Id
-        @GeneratedValue Long id;
+        @GeneratedValue UUID id;
         private String username;
         private String firstName;
         private String lastName;
