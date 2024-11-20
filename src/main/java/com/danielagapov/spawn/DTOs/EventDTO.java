@@ -2,13 +2,15 @@ package com.danielagapov.spawn.DTOs;
 
 
 import java.io.Serializable;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public record EventDTO(
-        Long id,
+        UUID id,
         String title,
-        String startTime, // TODO: investigate data type later
-        String endTime, // TODO: investigate data type later
+        OffsetDateTime startTime,
+        OffsetDateTime endTime,
         String location, // TODO: investigate data type later
         String note,
         UserDTO creator,

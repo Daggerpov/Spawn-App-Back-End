@@ -12,6 +12,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class EventService implements IEventService {
@@ -30,12 +31,12 @@ public class EventService implements IEventService {
         }
     }
 
-    public EventDTO getEventById(Long id) {
+    public EventDTO getEventById(UUID id) {
         return EventMapper.toDTO(repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(id)));
     }
 
-    public List<EventDTO> getEventsByTagId(Long tagId) {
+    public List<EventDTO> getEventsByTagId(UUID tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
             return EventMapper.toDTOList(repository.findAll());
@@ -54,12 +55,12 @@ public class EventService implements IEventService {
         }
     }
 
-    public List<EventDTO> getEventsByUserId(Long userId) {
+    public List<EventDTO> getEventsByUserId(UUID userId) {
         return EventMapper.toDTOList(repository.findAll());
     }
 
     // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
-    public EventDTO replaceEvent(EventDTO newEvent, Long id) {
+    public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
         // TODO: we may want to make this function easier to read in the future,
         // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(event -> {

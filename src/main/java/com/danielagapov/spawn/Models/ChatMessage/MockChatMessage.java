@@ -3,19 +3,21 @@ package com.danielagapov.spawn.Models.ChatMessage;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
+import java.util.UUID;
+
 @Entity
 public class MockChatMessage {
     @Id
-    Long id;
+    UUID id;
     String timestamp;
-    Long userSenderId;
+    UUID userSenderId;
     String content;
-    Long eventId;
+    UUID eventId;
 
     public MockChatMessage() {
     }
 
-    public MockChatMessage(Long id, String timestamp, Long userSenderId, String content, Long eventId) {
+    public MockChatMessage(UUID id, String timestamp, UUID userSenderId, String content, UUID eventId) {
         this.id = id;
         this.timestamp = timestamp;
         this.userSenderId = userSenderId;
@@ -23,11 +25,11 @@ public class MockChatMessage {
         this.eventId = eventId;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -39,11 +41,11 @@ public class MockChatMessage {
         this.timestamp = timestamp;
     }
 
-    public Long getUserSenderId() {
+    public UUID getUserSenderId() {
         return userSenderId;
     }
 
-    public void setUserSenderId(Long userSenderId) {
+    public void setUserSenderId(UUID userSenderId) {
         this.userSenderId = userSenderId;
     }
 
@@ -55,11 +57,11 @@ public class MockChatMessage {
         this.content = content;
     }
 
-    public Long getEventId() {
+    public UUID getEventId() {
         return eventId;
     }
 
-    public void setEventId(Long eventId) {
+    public void setEventId(UUID eventId) {
         this.eventId = eventId;
     }
 }

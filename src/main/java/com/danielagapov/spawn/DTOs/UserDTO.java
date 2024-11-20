@@ -2,9 +2,10 @@ package com.danielagapov.spawn.DTOs;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 
 public record UserDTO(
-        Long id,
+        UUID id,
         String username,
         String firstName,
         String lastName,

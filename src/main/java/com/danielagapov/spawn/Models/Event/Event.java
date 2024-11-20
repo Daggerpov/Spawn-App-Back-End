@@ -21,7 +21,7 @@ import java.util.UUID;
 @Setter
 public class Event implements Serializable {
         private @Id
-        @GeneratedValue Long id;
+        @GeneratedValue UUID id;
         private String title;
         private OffsetDateTime startTime;
         private OffsetDateTime  endTime;

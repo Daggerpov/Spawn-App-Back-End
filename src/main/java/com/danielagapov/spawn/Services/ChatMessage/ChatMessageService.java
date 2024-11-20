@@ -12,6 +12,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ChatMessageService implements IChatMessageService {
@@ -30,12 +31,12 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
-    public ChatMessageDTO getChatMessageById(Long id) {
+    public ChatMessageDTO getChatMessageById(UUID id) {
         return ChatMessageMapper.toDTO(repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(id)));
     }
 
-    public List<ChatMessageDTO> getChatMessagesByTagId(Long tagId) {
+    public List<ChatMessageDTO> getChatMessagesByTagId(UUID tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
             return ChatMessageMapper.toDTOList(repository.findAll());

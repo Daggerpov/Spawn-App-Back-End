@@ -3,26 +3,28 @@ package com.danielagapov.spawn.Models.FriendTag;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
+import java.util.UUID;
+
 @Entity
 public class MockFriendTag {
     @Id
-    Long id;
+    UUID id;
     String displayName;
     String color;
 
     public MockFriendTag() {}
 
-    public MockFriendTag(Long id, String displayName, String color) {
+    public MockFriendTag(UUID id, String displayName, String color) {
         this.id = id;
         this.displayName = displayName;
         this.color = color;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
