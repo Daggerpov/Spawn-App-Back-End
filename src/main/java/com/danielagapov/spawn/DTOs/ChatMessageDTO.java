@@ -1,11 +1,13 @@
 package com.danielagapov.spawn.DTOs;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.util.UUID;
 
 public record ChatMessageDTO(
-        Long id,
-        String timestamp,
-        Long userSenderId,
+        UUID id,
+        Instant timestamp,
+        UUID userSenderId,
         String content,
-        Long eventId
+        UUID eventId
 ) implements Serializable {}

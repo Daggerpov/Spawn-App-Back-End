@@ -4,6 +4,8 @@ import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController()
 @RequestMapping("api/v1/users")
 public class UserController {
@@ -21,7 +23,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}
     @GetMapping("{id}")
-    public UserDTO getUser(@PathVariable Long id) {
+    public UserDTO getUser(@PathVariable UUID id) {
         return userService.getUserById(id);
     }
 
@@ -39,7 +41,7 @@ public class UserController {
 
     // full path: /api/v1/user/{id}
     @PutMapping("{id}")
-    public UserDTO replaceUser(@RequestBody UserDTO newUser, @PathVariable Long id) {
+    public UserDTO replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
         return userService.replaceUser(newUser, id);
     }
 }

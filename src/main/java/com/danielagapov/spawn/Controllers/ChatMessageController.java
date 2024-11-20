@@ -4,6 +4,8 @@ import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController()
 @RequestMapping("api/v1/chatMessages")
 public class ChatMessageController {
@@ -21,7 +23,7 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages/{id}
     @GetMapping("/{id}")
-    public ChatMessageDTO getChatMessage(@PathVariable Long id) {
+    public ChatMessageDTO getChatMessage(@PathVariable UUID id) {
         return chatMessageService.getChatMessageById(id);
     }
 

@@ -5,6 +5,7 @@ import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController()
 @RequestMapping("api/v1/events")
@@ -23,20 +24,20 @@ public class EventController {
 
     // full path: /api/v1/events/{id}
     @GetMapping("{id}")
-    public EventDTO getEvent(@PathVariable Long id) {
+    public EventDTO getEvent(@PathVariable UUID id) {
         return eventService.getEventById(id);
     }
     
     
     // full path: /api/v1/events/user/{id}
     @GetMapping("user/{userId}")
-    public List<EventDTO> getEventsByUserId(@PathVariable Long userId) {
+    public List<EventDTO> getEventsByUserId(@PathVariable UUID userId) {
         return eventService.getEventsByUserId(userId);
     }
 
     // full path: /api/v1/events/friendTag/{tagId}
     @GetMapping("friendTag/{tagId}")
-    public List<EventDTO> getEventsByFriendTagId(@PathVariable Long tagId) {
+    public List<EventDTO> getEventsByFriendTagId(@PathVariable UUID tagId) {
         return eventService.getEventsByTagId(tagId);
     }
 
@@ -54,7 +55,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}
     @PutMapping("{id}")
-    public EventDTO replaceEvent(@RequestBody EventDTO newEvent, @PathVariable Long id) {
+    public EventDTO replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
         return eventService.replaceEvent(newEvent, id);
     }
 }

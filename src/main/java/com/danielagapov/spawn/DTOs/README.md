@@ -7,7 +7,7 @@ That way, you can separate the actual models (or entities) from what you send ar
 An example:
 
 `
-public record UserDTO (Long id, String name){}
+public record UserDTO (UUID id, String name){}
 `
 
 Using a record, because class functionality isn't needed. Therefore, it's more concise and readable.

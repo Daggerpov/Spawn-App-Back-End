@@ -4,5 +4,7 @@ import com.danielagapov.spawn.Models.ChatMessage.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.UUID;
+
 @Repository
-public interface IChatMessageRepository extends JpaRepository<ChatMessage, Long> { }
+public interface IChatMessageRepository extends JpaRepository<ChatMessage, UUID> { }

@@ -12,6 +12,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class UserService implements IUserService {
@@ -29,12 +30,12 @@ public class UserService implements IUserService {
         }
     }
 
-    public UserDTO getUserById(Long id) {
+    public UserDTO getUserById(UUID id) {
         return UserMapper.toDTO(repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(id)));
     }
 
-    public List<UserDTO> getUsersByTagId(Long tagId) {
+    public List<UserDTO> getUsersByTagId(UUID tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
             return UserMapper.toDTOList(repository.findAll());
@@ -54,7 +55,7 @@ public class UserService implements IUserService {
     }
 
     // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
-    public UserDTO replaceUser(UserDTO newUser, Long id) {
+    public UserDTO replaceUser(UserDTO newUser, UUID id) {
         // TODO: we may want to make this function easier to read in the future,
         // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(user -> {

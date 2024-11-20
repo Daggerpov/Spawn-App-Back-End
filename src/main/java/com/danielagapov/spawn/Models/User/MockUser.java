@@ -1,36 +1,26 @@
 package com.danielagapov.spawn.Models.User;
 
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
+@NoArgsConstructor
+@AllArgsConstructor
 public class MockUser {
     @Id
-    Long id;
+    UUID id;
     String username;
     String firstName;
     String lastName;
     String bio;
 
-    public MockUser() {
-        this.id = 0L;
-        this.username = "";
-        this.firstName = "";
-        this.lastName = "";
-        this.bio = "";
-    }
-
-    public MockUser(Long id, String username, String firstName, String lastName, String bio) {
-        this.id = id;
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.bio = bio;
-    }
-
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

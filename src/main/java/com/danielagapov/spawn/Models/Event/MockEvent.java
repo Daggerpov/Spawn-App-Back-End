@@ -3,10 +3,12 @@ package com.danielagapov.spawn.Models.Event;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
+import java.util.UUID;
+
 @Entity
 public class MockEvent{
     @Id
-    Long id;
+    UUID id;
     String title;
     String startTime; // TODO: investigate data type later
     String endTime; // TODO: investigate data type later
@@ -16,7 +18,7 @@ public class MockEvent{
     public MockEvent() {
     }
 
-    public MockEvent(Long id, String title, String startTime, String endTime, String location, String note) {
+    public MockEvent(UUID id, String title, String startTime, String endTime, String location, String note) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -25,11 +27,11 @@ public class MockEvent{
         this.note = note;
     }
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
