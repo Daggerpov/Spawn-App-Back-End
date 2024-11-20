@@ -1,8 +1,10 @@
 package com.danielagapov.spawn.Services.Event;
 
+import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Models.Event.Event;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,50 +22,57 @@ public class EventService implements IEventService {
         this.repository = repository;
     }
 
-    public List<Event> getAllEvents() {
+    public List<EventDTO> getAllEvents() {
         try {
-            return repository.findAll();
+            return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
             throw new BasesNotFoundException();
         }
     }
 
-    public Event getEventById(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id));
+    public EventDTO getEventById(Long id) {
+        return EventMapper.toDTO(repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(id)));
     }
 
-    public List<Event> getEventsByTagId(Long tagId) {
+    public List<EventDTO> getEventsByTagId(Long tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
-            return repository.findAll();
+            return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving events", e);
         }
     }
 
-    public Event saveEvent(Event event) {
+    public EventDTO saveEvent(EventDTO event) {
         try {
-            return repository.save(event);
+            Event eventEntity = EventMapper.toEntity(event);
+            repository.save(eventEntity);
+            return EventMapper.toDTO(eventEntity);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
         }
     }
 
-    public List<Event> getEventsByUserId(Long userId) {
-        return repository.findAll();
+    public List<EventDTO> getEventsByUserId(Long userId) {
+        return EventMapper.toDTOList(repository.findAll());
     }
 
-    public Event replaceEvent(Event newEvent, Long id) {
+    public EventDTO replaceEvent(EventDTO newEvent, Long id) {
+        Event eventEntity = EventMapper.toEntity(newEvent);
+
         return repository.findById(id).map(event -> {
-            event.setTitle(newEvent.getTitle());
-            event.setNote(newEvent.getNote());
-            event.setEndTime(newEvent.getEndTime());
-            event.setLocation(newEvent.getLocation());
-            event.setStartTime(newEvent.getStartTime());
-            return repository.save(event);
+            event.setTitle(eventEntity.getTitle());
+            event.setNote(eventEntity.getNote());
+            event.setEndTime(eventEntity.getEndTime());
+            event.setLocation(eventEntity.getLocation());
+            event.setStartTime(eventEntity.getStartTime());
+
+            repository.save(event);
+            return EventMapper.toDTO(eventEntity);
         }).orElseGet(() -> {
-            return repository.save(newEvent);
+            repository.save(eventEntity);
+            return EventMapper.toDTO(eventEntity);
         });
     }
 }
