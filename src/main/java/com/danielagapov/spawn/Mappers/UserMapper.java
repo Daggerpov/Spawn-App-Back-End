@@ -56,4 +56,16 @@ public class UserMapper {
 //        user.setFriendTags(friendTags); // Set the friend tags
         return user;
     }
+
+    public static List<UserDTO> toDTOList(List<User> users) {
+        return users.stream()
+                .map(UserMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public static List<User> toEntityList(List<UserDTO> userDTOs) {
+        return userDTOs.stream()
+                .map(UserMapper::toEntity)
+                .collect(Collectors.toList());
+    }
 }

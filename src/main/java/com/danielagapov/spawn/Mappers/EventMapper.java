@@ -59,4 +59,16 @@ public class EventMapper {
 
         return event;
     }
+
+    public static List<EventDTO> toDTOList(List<Event> entities) {
+        return entities.stream()
+                .map(EventMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public static List<Event> toEntityList(List<EventDTO> dtos) {
+        return dtos.stream()
+                .map(EventMapper::toEntity)
+                .collect(Collectors.toList());
+    }
 }
