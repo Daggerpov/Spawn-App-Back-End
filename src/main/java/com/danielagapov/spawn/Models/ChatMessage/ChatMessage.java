@@ -21,7 +21,7 @@ import java.util.UUID;
 @Setter
 public class ChatMessage implements Serializable {
         private @Id
-        @GeneratedValue UUID id;
+        @GeneratedValue Long id;
         private Instant timestamp;
         private Long userSenderId;
         private String content;

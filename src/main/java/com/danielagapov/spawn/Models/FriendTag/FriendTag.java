@@ -20,7 +20,7 @@ import java.util.UUID;
 @Setter
 public class FriendTag implements Serializable {
         private @Id
-        @GeneratedValue UUID id;
+        @GeneratedValue Long id;
         private String displayName;
         private String color; // TODO: investigate data type later | represents hex code?
 }

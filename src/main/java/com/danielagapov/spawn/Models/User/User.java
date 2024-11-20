@@ -20,7 +20,7 @@ import java.util.UUID;
 @Setter
 public class User  implements Serializable {
         private @Id
-        @GeneratedValue UUID id;
+        @GeneratedValue Long id;
         private String username;
         private String firstName;
         private String lastName;
