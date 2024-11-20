@@ -27,10 +27,22 @@ public class EventController {
         return eventService.getEventById(id);
     }
 
+    // full path: /api/v1/events/{id}
+    @PutMapping("{id}")
+    public Event putEvent(@PathVariable Long id) {
+        return eventService.updateEventById(id);
+    }
+
     // full path: /api/v1/events/user/{id}
-    @GetMapping("user/{userID}")
-    public List<Event> getEventsByUserID(@PathVariable Long userID) {
-        return eventService.getEventsByUserId(userID);
+    @GetMapping("user/{userId}")
+    public List<Event> getEventsByUserId(@PathVariable Long userId) {
+        return eventService.getEventsByUserId(userId);
+    }
+
+    // full path: /api/v1/events/friendTag/{friendTagId}
+    @GetMapping("friendTag/{tagId}")
+    public List<Event> getEventsByFriendTagId(@PathVariable Long tagId) {
+        return eventService.getEventsByTagId(tagId);
     }
 
     // full path: /api/v1/events/mock-endpoint
