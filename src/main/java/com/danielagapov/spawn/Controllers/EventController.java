@@ -27,6 +27,7 @@ public class EventController {
         return eventService.getEventById(id);
     }
     
+    
     // full path: /api/v1/events/user/{id}
     @GetMapping("user/{userId}")
     public List<Event> getEventsByUserId(@PathVariable Long userId) {

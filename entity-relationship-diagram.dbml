@@ -77,6 +77,17 @@ Table UserFriends {
     }
 }
 
+Table UserFriendTagMapping {
+    id UUID [pk]
+    userId1 UUID [ref: > User.id]
+    userId2 UUID [ref: > User.id]
+    friendTagId UUID [ref: > FriendTag.id]
+    indexes {
+        (userId1, userId2, friendTagId) [pk]
+    }
+}
+
+
 // Table for Friend Requests (Many-to-Many)
 Table FriendRequests {
     senderId UUID [ref: > User.id]
