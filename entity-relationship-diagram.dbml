@@ -27,7 +27,7 @@ Table Event {
     title String
     startTime Timestamp
     endTime Timestamp
-    location String
+    location JSON
     note String
     creatorId UUID [unique, ref: > User.id]
 }
