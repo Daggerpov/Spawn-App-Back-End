@@ -1,0 +1,28 @@
+package com.danielagapov.spawn.Mappers;
+
+import com.danielagapov.spawn.Models.ChatMessage.ChatMessage;
+import com.danielagapov.spawn.DTOs.ChatMessageDTO;
+
+public class ChatMessageMapper {
+    // by far the simplest mapping, since it's essentially 1-to-1
+
+    public static ChatMessageDTO toDTO(ChatMessage entity) {
+        return new ChatMessageDTO(
+                entity.getId(),
+                entity.getTimestamp(),
+                entity.getUserSenderId(),
+                entity.getContent(),
+                entity.getEventId()
+        );
+    }
+
+    public static ChatMessage toEntity(ChatMessageDTO dto) {
+        return new ChatMessage(
+                dto.id(),
+                dto.timestamp(),
+                dto.userSenderId(),
+                dto.content(),
+                dto.eventId()
+        );
+    }
+}
