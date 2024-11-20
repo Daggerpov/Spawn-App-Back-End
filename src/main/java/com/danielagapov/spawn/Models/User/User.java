@@ -13,6 +13,9 @@ public class User  implements Serializable {
         private String firstName;
         private String lastName;
         private String bio;
+        private String profilePicture; // TODO: reconsider data type later
+
+        public User() {}
 
         public User(Long id, String username, String firstName, String lastName, String bio) {
                 this.id = id;
@@ -60,5 +63,13 @@ public class User  implements Serializable {
 
         public void setBio(String bio) {
                 this.bio = bio;
+        }
+
+        public String getProfilePicture() {
+                return profilePicture;
+        }
+
+        public void setProfilePicture(String profilePicture) {
+                this.profilePicture = profilePicture;
         }
 }

@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.Event.Event;
+import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,20 +23,20 @@ public class EventController {
 
     // full path: /api/v1/events/{id}
     @GetMapping("{id}")
-    public Event getEvent(@PathVariable Long id) {
+    public EventDTO getEvent(@PathVariable Long id) {
         return eventService.getEventById(id);
     }
     
     
     // full path: /api/v1/events/user/{id}
     @GetMapping("user/{userId}")
-    public List<Event> getEventsByUserId(@PathVariable Long userId) {
+    public List<EventDTO> getEventsByUserId(@PathVariable Long userId) {
         return eventService.getEventsByUserId(userId);
     }
 
     // full path: /api/v1/events/friendTag/{tagId}
     @GetMapping("friendTag/{tagId}")
-    public List<Event> getEventsByFriendTagId(@PathVariable Long tagId) {
+    public List<EventDTO> getEventsByFriendTagId(@PathVariable Long tagId) {
         return eventService.getEventsByTagId(tagId);
     }
 
@@ -48,13 +48,13 @@ public class EventController {
 
     // full path: /api/v1/events
     @PostMapping
-    public Event createEvent(@RequestBody Event newEvent) {
+    public EventDTO createEvent(@RequestBody EventDTO newEvent) {
         return eventService.saveEvent(newEvent);
     }
 
     // full path: /api/v1/events/{id}
     @PutMapping("{id}")
-    public Event replaceEvent(@RequestBody Event newEvent, @PathVariable Long id) {
+    public EventDTO replaceEvent(@RequestBody EventDTO newEvent, @PathVariable Long id) {
         return eventService.replaceEvent(newEvent, id);
     }
 }

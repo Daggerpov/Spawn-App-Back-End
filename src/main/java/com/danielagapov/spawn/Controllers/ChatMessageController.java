@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.ChatMessage.ChatMessage;
+import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,7 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages/{id}
     @GetMapping("/{id}")
-    public ChatMessage getChatMessage(@PathVariable Long id) {
+    public ChatMessageDTO getChatMessage(@PathVariable Long id) {
         return chatMessageService.getChatMessageById(id);
     }
 
@@ -33,7 +33,7 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages
     @PostMapping
-    public ChatMessage createChatMessage(@RequestBody ChatMessage newChatMessage) {
+    public ChatMessageDTO createChatMessage(@RequestBody ChatMessageDTO newChatMessage) {
         return chatMessageService.saveChatMessage(newChatMessage);
     }
 }

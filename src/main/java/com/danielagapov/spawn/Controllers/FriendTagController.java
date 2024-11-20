@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.Models.FriendTag.FriendTag;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/{id}
     @GetMapping("{id}")
-    public FriendTag getFriendTag(@PathVariable Long id) {
+    public FriendTagDTO getFriendTag(@PathVariable Long id) {
         return friendTagService.getFriendTagById(id);
     }
 
@@ -33,13 +33,13 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags
     @PostMapping
-    public FriendTag createFriendTag(@RequestBody FriendTag newFriendTag) {
+    public FriendTagDTO createFriendTag(@RequestBody FriendTagDTO newFriendTag) {
         return friendTagService.saveFriendTag(newFriendTag);
     }
 
     // full path: /api/v1/friendTags/{id}
     @PutMapping("{id}")
-    public FriendTag replaceFriendTag(@RequestBody FriendTag newFriendTag, @PathVariable Long id) {
+    public FriendTagDTO replaceFriendTag(@RequestBody FriendTagDTO newFriendTag, @PathVariable Long id) {
         return friendTagService.replaceFriendTag(newFriendTag, id);
     }
 }

@@ -1,12 +1,13 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
 import java.util.List;
-import com.danielagapov.spawn.Models.FriendTag.FriendTag;
+
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 
 public interface IFriendTagService {
-    public List<FriendTag> getAllFriendTags();
-    public FriendTag getFriendTagById(Long id);
-    public List<FriendTag> getFriendTagsByTagId(Long tagId);
-    public FriendTag saveFriendTag(FriendTag friendTag);
-    public FriendTag replaceFriendTag(FriendTag friendTag, Long tagId);
+    public List<FriendTagDTO> getAllFriendTags();
+    public FriendTagDTO getFriendTagById(Long id);
+    public List<FriendTagDTO> getFriendTagsByTagId(Long tagId);
+    public FriendTagDTO saveFriendTag(FriendTagDTO friendTag);
+    public FriendTagDTO replaceFriendTag(FriendTagDTO friendTag, Long tagId);
 }

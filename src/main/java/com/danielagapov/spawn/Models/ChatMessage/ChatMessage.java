@@ -6,13 +6,23 @@ import jakarta.persistence.GeneratedValue;
 import java.io.Serializable;
 
 @Entity
-class ChatMessage implements Serializable {
+public class ChatMessage implements Serializable {
         private @Id
         @GeneratedValue Long id;
         private String timestamp; // TODO: investigate data type later
         private Long userSenderId;
         private String content;
         private Long eventId;
+
+        public ChatMessage() {}
+
+        public ChatMessage(Long id, String timestamp, Long userSenderId, String content, Long eventId) {
+                this.id = id;
+                this.timestamp = timestamp;
+                this.userSenderId = userSenderId;
+                this.content = content;
+                this.eventId = eventId;
+        }
 
         public String getTimestamp() {
                 return timestamp;

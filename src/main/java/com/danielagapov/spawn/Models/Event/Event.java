@@ -15,6 +15,8 @@ public class Event implements Serializable {
         private String location; // TODO: investigate data type later
         private String note;
 
+        public Event() {}
+
         public Event(Long id, String title, String startTime, String endTime, String location, String note) {
                 this.id = id;
                 this.title = title;
