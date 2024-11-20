@@ -11,6 +11,8 @@ public class FriendTag implements Serializable {
         @GeneratedValue Long id;
         private String displayName;
 
+        public FriendTag() {}
+
         public FriendTag(Long id, String displayName, String color) {
                 this.id = id;
                 this.displayName = displayName;
