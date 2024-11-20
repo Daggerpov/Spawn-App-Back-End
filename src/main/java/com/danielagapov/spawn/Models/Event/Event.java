@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 // these two annotations are in place of writing out constructors manually (for readability)
@@ -19,10 +21,10 @@ import java.io.Serializable;
 @Setter
 public class Event implements Serializable {
         private @Id
-        @GeneratedValue Long id;
+        @GeneratedValue UUID id;
         private String title;
-        private String startTime; // TODO: investigate data type later
-        private String endTime; // TODO: investigate data type later
+        private OffsetDateTime startTime;
+        private OffsetDateTime  endTime;
         private String location; // TODO: investigate data type later
         private String note;
 }
