@@ -5,7 +5,6 @@ Table User {
     firstName String
     lastName String
     bio String
-    lastLocation UUID [ref: > Location.id]
 }
 
 Table FriendTag {
@@ -28,7 +27,7 @@ Table Event {
     title String
     startTime Timestamp
     endTime Timestamp
-    locationId UUID [ref: > Location.id]
+    location String
     note String
     creatorId UUID [unique, ref: > User.id]
 }
@@ -104,9 +103,4 @@ Table FriendRequests {
     indexes {
         (senderId, receiverId) [pk]
     }
-}
-
-Table Location {
-    id UUID [pk]
-    locationName String
 }
