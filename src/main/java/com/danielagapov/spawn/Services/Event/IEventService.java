@@ -9,4 +9,5 @@ public interface IEventService {
     public List<Event> getEventsByTagId(Long tagId);
     public Event saveEvent(Event event);
     public List<Event> getEventsByUserId(Long userId);
+    public Event replaceEvent(Event event, Long eventId);
 }

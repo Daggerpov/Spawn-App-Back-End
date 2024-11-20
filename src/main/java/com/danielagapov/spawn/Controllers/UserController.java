@@ -36,4 +36,10 @@ public class UserController {
     public User createUser(@RequestBody User newUser) {
         return userService.saveUser(newUser);
     }
+
+    // full path: /api/v1/user/{id}
+    @PutMapping("{id}")
+    public User replaceUser(@RequestBody User newUser, @PathVariable Long id) {
+        return userService.replaceUser(newUser, id);
+    }
 }

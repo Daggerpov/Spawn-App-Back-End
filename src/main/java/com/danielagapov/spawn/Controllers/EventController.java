@@ -44,4 +44,10 @@ public class EventController {
     public Event createEvent(@RequestBody Event newEvent) {
         return eventService.saveEvent(newEvent);
     }
+
+    // full path: /api/v1/events/{id}
+    @PutMapping("{id}")
+    public Event replaceEvent(@RequestBody Event newEvent, @PathVariable Long id) {
+        return eventService.replaceEvent(newEvent, id);
+    }
 }

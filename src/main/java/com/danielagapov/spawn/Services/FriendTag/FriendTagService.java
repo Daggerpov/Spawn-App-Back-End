@@ -49,4 +49,14 @@ public class FriendTagService implements IFriendTagService {
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
         }
     }
+
+    public FriendTag replaceFriendTag(FriendTag newFriendTag, Long id) {
+        return repository.findById(id).map(friendTag -> {
+            friendTag.setColor(newFriendTag.getColor());
+            friendTag.setDisplayName(newFriendTag.getDisplayName());
+            return repository.save(friendTag);
+        }).orElseGet(() -> {
+            return repository.save(newFriendTag);
+        });
+    }
 }

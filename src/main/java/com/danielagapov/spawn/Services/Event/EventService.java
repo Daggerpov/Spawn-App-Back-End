@@ -53,4 +53,17 @@ public class EventService implements IEventService {
     public List<Event> getEventsByUserId(Long userId) {
         return repository.findAll();
     }
+
+    public Event replaceEvent(Event newEvent, Long id) {
+        return repository.findById(id).map(event -> {
+            event.setTitle(newEvent.getTitle());
+            event.setNote(newEvent.getNote());
+            event.setEndTime(newEvent.getEndTime());
+            event.setLocation(newEvent.getLocation());
+            event.setStartTime(newEvent.getStartTime());
+            return repository.save(event);
+        }).orElseGet(() -> {
+            return repository.save(newEvent);
+        });
+    }
 }
