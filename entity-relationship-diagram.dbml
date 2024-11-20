@@ -95,6 +95,35 @@ Table ChatMessageLikes {
     }
 }
 
+// Table for Friend relationships (Many-to-Many)
+Table UserFriends {
+    userId1 UUID [ref: > User.id]
+    userId2 UUID [ref: > User.id]
+    indexes {
+        (userId1, userId2) [pk]
+    }
+}
+
+Table UserFriendTagMapping {
+    id UUID [pk]
+    userId1 UUID [ref: > User.id]
+    userId2 UUID [ref: > User.id]
+    friendTagId UUID [ref: > FriendTag.id]
+    indexes {
+        (userId1, userId2, friendTagId) [pk]
+    }
+}
+
+
+// Table for Friend Requests (Many-to-Many)
+Table FriendRequests {
+    senderId UUID [ref: > User.id]
+    receiverId UUID [ref: > User.id]
+    indexes {
+        (senderId, receiverId) [pk]
+    }
+}
+
 Table Location {
     id UUID [pk]
     locationName String

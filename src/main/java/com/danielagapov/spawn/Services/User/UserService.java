@@ -48,4 +48,16 @@ public class UserService implements IUserService {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
     }
+
+    public User replaceUser(User newUser, Long id) {
+        return repository.findById(id).map(user -> {
+            user.setBio(newUser.getBio());
+            user.setFirstName(newUser.getFirstName());
+            user.setLastName(newUser.getLastName());
+            user.setUsername(newUser.getUsername());
+            return repository.save(user);
+        }).orElseGet(() -> {
+            return repository.save(newUser);
+        });
+    }
 }
