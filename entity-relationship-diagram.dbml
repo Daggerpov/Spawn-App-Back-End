@@ -33,6 +33,15 @@ Table Event {
     creatorId UUID [unique, ref: > User.id]
 }
 
+// Junction table for Event Tags (Many-to-Many)
+Table EventTag {
+    eventId UUID [ref: > Event.id]
+    tagId UUID [ref: > Tag.id]
+    indexes {
+        (eventId, tagId) [pk]
+    }
+}
+
 // Junction table for Event Participants (One-to-Many)
 Table EventParticipants {
     eventId UUID [ref: > Event.id]
