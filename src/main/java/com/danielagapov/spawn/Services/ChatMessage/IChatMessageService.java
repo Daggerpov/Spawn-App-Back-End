@@ -1,11 +1,12 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
 import java.util.List;
-import com.danielagapov.spawn.Models.ChatMessage.ChatMessage;
+
+import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 
 public interface IChatMessageService {
-    public List<ChatMessage> getAllChatMessages();
-    public ChatMessage getChatMessageById(Long id);
-    public List<ChatMessage> getChatMessagesByTagId(Long tagId);
-    public ChatMessage saveChatMessage(ChatMessage event);
+    public List<ChatMessageDTO> getAllChatMessages();
+    public ChatMessageDTO getChatMessageById(Long id);
+    public List<ChatMessageDTO> getChatMessagesByTagId(Long tagId);
+    public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessage);
 }
