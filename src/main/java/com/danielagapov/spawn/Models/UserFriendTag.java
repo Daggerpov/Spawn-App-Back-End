@@ -1,7 +1,5 @@
-package com.danielagapov.spawn.Models.UserFriendTag;
+package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Models.FriendTag.FriendTag;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -5,7 +5,7 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Mappers.FriendTagMapper;
-import com.danielagapov.spawn.Models.FriendTag.FriendTag;
+import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;

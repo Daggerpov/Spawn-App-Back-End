@@ -1,6 +1,5 @@
-package com.danielagapov.spawn.Models.UserFriends;
+package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

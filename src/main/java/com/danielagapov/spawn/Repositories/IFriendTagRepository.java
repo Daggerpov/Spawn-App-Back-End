@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Repositories;
 
-import com.danielagapov.spawn.Models.FriendTag.FriendTag;
+import com.danielagapov.spawn.Models.FriendTag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

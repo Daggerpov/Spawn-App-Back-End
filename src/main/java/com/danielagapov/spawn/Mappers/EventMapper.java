@@ -1,9 +1,8 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.LocationDTO;
-import com.danielagapov.spawn.Models.Event.Event;
-import com.danielagapov.spawn.Models.Location.Location;
+import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.Location;
 
 import java.util.List;
 import java.util.stream.Collectors;

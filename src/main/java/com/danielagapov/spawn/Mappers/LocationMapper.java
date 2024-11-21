@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.LocationDTO;
-import com.danielagapov.spawn.Models.Location.Location;
+import com.danielagapov.spawn.Models.Location;
 
 public class LocationMapper {
 

@@ -1,7 +1,5 @@
-package com.danielagapov.spawn.Models.EventInvited;
+package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Models.Event.Event;
-import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

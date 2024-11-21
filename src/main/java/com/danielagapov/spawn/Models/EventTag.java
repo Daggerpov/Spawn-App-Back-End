@@ -1,7 +1,5 @@
-package com.danielagapov.spawn.Models.EventTag;
+package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Models.Event.Event;
-import com.danielagapov.spawn.Models.FriendTag.FriendTag;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

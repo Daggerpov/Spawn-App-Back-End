@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Models.FriendTag;
+package com.danielagapov.spawn.Models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
