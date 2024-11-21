@@ -11,7 +11,7 @@ public record EventDTO(
         String title,
         OffsetDateTime startTime,
         OffsetDateTime endTime,
-        String location, // TODO: investigate data type later
+        LocationDTO location, // TODO: investigate data type later
         String note,
         UserDTO creator,
         List<UserDTO> participants,
