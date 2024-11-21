@@ -1,7 +1,8 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.Models.Event.Event;
+import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.Location;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,26 +16,23 @@ public class EventMapper {
                 entity.getTitle(),
                 entity.getStartTime(),
                 entity.getEndTime(),
-                entity.getLocation(),
+                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()) : null, // Map Location to LocationDTO
                 entity.getNote(),
-
-                // TODO: replace these with proper DTOs, once entities are configured
-                // to allow for joined tables and proper relationships
-                null,
-                null,
-                null,
-                null
+                null, // Placeholder for creator
+                null, // Placeholder for participants
+                null, // Placeholder for invited
+                null  // Placeholder for chatMessages
         );
     }
 
     // Convert DTO to entity
-    public static Event toEntity(EventDTO dto) {
+    public static Event toEntity(EventDTO dto, Location location) {
         Event event = new Event();
         event.setId(dto.id());
         event.setTitle(dto.title());
         event.setStartTime(dto.startTime());
         event.setEndTime(dto.endTime());
-        event.setLocation(dto.location());
+        event.setLocation(location); // Assign the full Location entity
         event.setNote(dto.note());
         return event;
     }
@@ -45,9 +43,15 @@ public class EventMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<Event> toEntityList(List<EventDTO> dtos) {
+    public static List<Event> toEntityList(List<EventDTO> dtos, List<Location> locations) {
         return dtos.stream()
-                .map(EventMapper::toEntity)
+                .map(dto -> {
+                    Location location = locations.stream()
+                            .filter(loc -> loc.getId().equals(dto.location().id())) // Match LocationDTO's UUID with Location entity
+                            .findFirst()
+                            .orElse(null);
+                    return toEntity(dto, location);
+                })
                 .collect(Collectors.toList());
     }
 }

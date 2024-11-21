@@ -5,7 +5,10 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Mappers.EventMapper;
-import com.danielagapov.spawn.Models.Event.Event;
+import com.danielagapov.spawn.Mappers.LocationMapper;
+import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.Location;
+import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -17,10 +20,12 @@ import java.util.UUID;
 @Service
 public class EventService implements IEventService {
     private final IEventRepository repository;
+    private final ILocationRepository locationRepository;
 
     @Autowired
-    public EventService(IEventRepository repository) {
+    public EventService(IEventRepository repository, ILocationRepository locationRepository) {
         this.repository = repository;
+        this.locationRepository = locationRepository;
     }
 
     public List<EventDTO> getAllEvents() {
@@ -37,18 +42,34 @@ public class EventService implements IEventService {
     }
 
     public List<EventDTO> getEventsByTagId(UUID tagId) {
-        // TODO: change this logic later, once tags are setup.
+        // TODO: Implement proper logic once tag relationships are configured
         try {
             return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new RuntimeException("Error retrieving events", e);
+            throw new RuntimeException("Error retrieving events by tag ID", e);
         }
     }
 
     public EventDTO saveEvent(EventDTO event) {
         try {
-            Event eventEntity = EventMapper.toEntity(event);
+            // Convert LocationDTO to Location entity
+            Location location = LocationMapper.toEntity(event.location());
+
+            // Save or resolve location from repository
+            if (location.getId() != null) {
+                location = locationRepository.findById(location.getId())
+                        .orElse(locationRepository.save(location));
+            } else {
+                location = locationRepository.save(location);
+            }
+
+            // Map EventDTO to Event entity
+            Event eventEntity = EventMapper.toEntity(event, location);
+
+            // Save Event entity
             repository.save(eventEntity);
+
+            // Return the saved Event as a DTO
             return EventMapper.toDTO(eventEntity);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
@@ -56,26 +77,44 @@ public class EventService implements IEventService {
     }
 
     public List<EventDTO> getEventsByUserId(UUID userId) {
+        // TODO: Add proper filtering logic for events by user
         return EventMapper.toDTOList(repository.findAll());
     }
 
-    // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
-        // TODO: we may want to make this function easier to read in the future,
-        // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(event -> {
-            // Update the existing event's details with the new data from the DTO
+            // Update existing event fields
             event.setTitle(newEvent.title());
             event.setNote(newEvent.note());
             event.setEndTime(newEvent.endTime());
-            event.setLocation(newEvent.location());
             event.setStartTime(newEvent.startTime());
+
+            // Convert LocationDTO to Location entity
+            Location location = LocationMapper.toEntity(newEvent.location());
+
+            // Save or resolve the new location
+            if (location.getId() != null) {
+                location = locationRepository.findById(location.getId())
+                        .orElse(locationRepository.save(location));
+            } else {
+                location = locationRepository.save(location);
+            }
+
+            event.setLocation(location);
 
             repository.save(event);
             return EventMapper.toDTO(event);
         }).orElseGet(() -> {
-            // If the event doesn't exist, create a new event and save it
-            Event eventEntity = EventMapper.toEntity(newEvent); // Create a new event from DTO
+            // Handle case where event does not exist (create new)
+            Location location = LocationMapper.toEntity(newEvent.location());
+            if (location.getId() != null) {
+                location = locationRepository.findById(location.getId())
+                        .orElse(locationRepository.save(location));
+            } else {
+                location = locationRepository.save(location);
+            }
+
+            Event eventEntity = EventMapper.toEntity(newEvent, location);
             repository.save(eventEntity);
             return EventMapper.toDTO(eventEntity);
         });

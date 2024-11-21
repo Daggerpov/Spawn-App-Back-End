@@ -1,7 +1,9 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.Models.ChatMessage.ChatMessage;
+import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
+import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,19 +15,19 @@ public class ChatMessageMapper {
         return new ChatMessageDTO(
                 entity.getId(),
                 entity.getTimestamp(),
-                entity.getUserSenderId(),
+                entity.getUserSender().getId(),
                 entity.getContent(),
-                entity.getEventId()
+                entity.getEvent().getId()
         );
     }
 
-    public static ChatMessage toEntity(ChatMessageDTO dto) {
+    public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Event event) {
         return new ChatMessage(
                 dto.id(),
                 dto.timestamp(),
-                dto.userSenderId(),
-                dto.content(),
-                dto.eventId()
+                userSender,
+                event,
+                dto.content()
         );
     }
 
@@ -35,9 +37,19 @@ public class ChatMessageMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs) {
+    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs, List<User> users, List<Event> events) {
         return chatMessageDTOs.stream()
-                .map(ChatMessageMapper::toEntity)
+                .map(dto -> {
+                    User userSender = users.stream()
+                            .filter(user -> user.getId().equals(dto.userSenderId()))
+                            .findFirst()
+                            .orElse(null);
+                    Event event = events.stream()
+                            .filter(ev -> ev.getId().equals(dto.eventId()))
+                            .findFirst()
+                            .orElse(null);
+                    return toEntity(dto, userSender, event);
+                })
                 .collect(Collectors.toList());
     }
 }

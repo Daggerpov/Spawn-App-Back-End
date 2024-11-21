@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.Repositories;
 
-import com.danielagapov.spawn.Models.ChatMessage;
+import com.danielagapov.spawn.Models.Location;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
-public interface IChatMessageRepository extends JpaRepository<ChatMessage, UUID> { }
+public interface ILocationRepository extends JpaRepository<Location, UUID> {}
