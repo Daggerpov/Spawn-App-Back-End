@@ -13,17 +13,25 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-// these two annotations are in place of writing out constructors (for readability)
 @NoArgsConstructor
 @AllArgsConstructor
-// these two annotations are in place of writing out getters and setters manually (for readability):
 @Getter
 @Setter
 public class ChatMessage implements Serializable {
-        private @Id
-        @GeneratedValue UUID id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.AUTO)
+        private UUID id;
+
         private Instant timestamp;
-        private UUID userSenderId;
-        private String content;
-        private UUID eventId;
+
+        @ManyToOne
+        @JoinColumn(name = "user_id", nullable = false)
+        private User userSender;
+
+        @ManyToOne
+        @JoinColumn(name = "event_id", nullable = false)
+        private Event event;
+
+        @Column(length = 1000)
+        private String content; // Can be null or empty
 }
