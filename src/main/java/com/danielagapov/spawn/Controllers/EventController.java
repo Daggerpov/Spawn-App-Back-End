@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @RestController()
 @RequestMapping("api/v1/events")
-public class EventController {
+public class    EventController {
     private final IEventService eventService;
 
     public EventController(IEventService eventService) {
