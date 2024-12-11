@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController()
@@ -31,6 +32,12 @@ public class UserController {
     @GetMapping("mock-endpoint")
     public String getMockEndpoint() {
         return "This is the mock endpoint for users. Everything is working with it.";
+    }
+
+    // full path: /api/v1/users/friendtag/{tag}
+    @GetMapping("/friendTag/{tag}")
+    public List<UserDTO> getUsersByFriendTag(@PathVariable UUID tagId) {
+        return userService.getUsersByTagId(tagId);
     }
 
     // full path: /api/v1/users
