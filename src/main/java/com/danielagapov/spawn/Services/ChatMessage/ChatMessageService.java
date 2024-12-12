@@ -123,8 +123,9 @@ public class ChatMessageService implements IChatMessageService {
             }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
 
-        } catch (Exception e) { // Catch all exceptions
-            throw new BaseDeleteException("An error occurred while deleting the like for chatMessageId: " + chatMessageId + " and userId: " + userId + ". Error: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new BaseDeleteException("An error occurred while deleting the like for chatMessageId: "
+                    + chatMessageId + " and userId: " + userId + ". Error: " + e.getMessage(), e);
         }
     }
 }
