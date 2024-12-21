@@ -83,7 +83,7 @@ public class ChatMessageService implements IChatMessageService {
             chatMessageRepository.deleteById(id);
             return true;
         } catch (DataAccessException e) {
-            throw new RuntimeException("Failed to delete chatMessage: " + e.getMessage(), e);
+            return false;
         }
     }
 }

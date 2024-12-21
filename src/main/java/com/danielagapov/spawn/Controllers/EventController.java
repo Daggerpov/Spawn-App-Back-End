@@ -1,7 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -61,7 +64,18 @@ public class    EventController {
 
     // full path: /api/v1/events/{id}
     @DeleteMapping("{id}")
-    public boolean deleteEvent(@PathVariable UUID id) {
-        return eventService.deleteEventById(id);
+    public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
+        try {
+            boolean isDeleted = eventService.deleteEventById(id);
+            if (isDeleted) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
+            } else {
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
+            }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Resource not found
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
+        }
     }
 }
