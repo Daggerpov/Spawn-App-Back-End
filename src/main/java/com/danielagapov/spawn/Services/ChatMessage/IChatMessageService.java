@@ -10,4 +10,5 @@ public interface IChatMessageService {
     public ChatMessageDTO getChatMessageById(UUID id);
     public List<ChatMessageDTO> getChatMessagesByTagId(UUID tagId);
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessage);
+    public boolean deleteChatMessageById(UUID id);
 }

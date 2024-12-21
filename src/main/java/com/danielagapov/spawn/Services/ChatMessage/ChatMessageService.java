@@ -73,4 +73,17 @@ public class ChatMessageService implements IChatMessageService {
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
         }
     }
+
+    public boolean deleteChatMessageById(UUID id) {
+        if (!chatMessageRepository.existsById(id)) {
+            throw new BaseNotFoundException(id);
+        }
+
+        try {
+            chatMessageRepository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Failed to delete chatMessage: " + e.getMessage(), e);
+        }
+    }
 }
