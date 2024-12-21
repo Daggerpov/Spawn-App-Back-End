@@ -58,4 +58,10 @@ public class    EventController {
     public EventDTO replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
         return eventService.replaceEvent(newEvent, id);
     }
+
+    // full path: /api/v1/events/{id}
+    @DeleteMapping("{id}")
+    public boolean deleteEvent(@PathVariable UUID id) {
+        return eventService.deleteEventById(id);
+    }
 }
