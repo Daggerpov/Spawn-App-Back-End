@@ -60,7 +60,7 @@ public class FriendTagService implements IFriendTagService {
         // TODO: we may want to make this function easier to read in the future,
         // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(friendTag -> {
-            friendTag.setColor(newFriendTag.color());
+            friendTag.setColor(newFriendTag.colorHexCode());
             friendTag.setDisplayName(newFriendTag.displayName());
             repository.save(friendTag);
             return FriendTagMapper.toDTO(friendTag);

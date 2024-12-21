@@ -22,7 +22,7 @@ public class FriendTagMapper {
         FriendTag friendTag = new FriendTag();
         friendTag.setId(dto.id());
         friendTag.setDisplayName(dto.displayName());
-        friendTag.setColor(dto.color());
+        friendTag.setColor(dto.colorHexCode());
         // TODO: setup later once proper relationships in entity classes are setup:
         return friendTag;
     }
