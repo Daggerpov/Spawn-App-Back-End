@@ -34,8 +34,8 @@ public class UserController {
         return "This is the mock endpoint for users. Everything is working with it.";
     }
 
-    // full path: /api/v1/users/friendtag/{tag}
-    @GetMapping("/friendTag/{tag}")
+    // full path: /api/v1/users/friendtag/{tagId}
+    @GetMapping("/friendTag/{tagId}")
     public List<UserDTO> getUsersByFriendTag(@PathVariable UUID tagId) {
         return userService.getUsersByTagId(tagId);
     }
