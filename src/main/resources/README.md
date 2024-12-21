@@ -39,20 +39,12 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
       ```sql
       USE spawn_db;
       ```
-4. **Configure application.properties**:
 
-```
-spring.application.name=spawn
-spring.datasource.url=jdbc:mysql://localhost:3306/spawn_db
-spring.datasource.username=root
-spring.datasource.password=<YOUR PASSWORD>
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
-spring.jpa.hibernate.ddl-auto=update
-```
-- Go to `src/main/resources/application.properties` on the Spawn-App-Back-End repository and paste the above
-- Make sure to input your correct username, password, and database name in the url
-- Save the file and run SpawnApplication. This should create the tables in the database
+4. **Ensure Environment Variables are Set**
+   - Set the following environment variables, or add to a `.env` file
+     - `MYSQL_URL`
+     - `MYSQL_USER`
+     - `MYSQL_PASSWORD`
 
 5. **Populate the Database with Sample Data**:
     - If you are using the terminal, create a file named `populate_spawn_db.sql` and add the following SQL commands to it:
