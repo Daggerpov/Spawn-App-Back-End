@@ -53,8 +53,8 @@ public class UserController {
         return userService.replaceUser(newUser, id);
     }
 
-    // full path: /api/v1/user/friendReq
-    @PostMapping("friendReq")
+    // full path: /api/v1/user/friend-request
+    @PostMapping("friend-request")
     public FriendRequests createFriendRequest(@RequestBody FriendRequests friendReq) {
         return userService.saveFriendRequest(friendReq);
     }
