@@ -5,7 +5,9 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Mappers.UserMapper;
+import com.danielagapov.spawn.Models.FriendRequests;
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,11 @@ import java.util.UUID;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
+    private final IFriendRequestsRepository friendRequestsRepository;
 
-    public UserService(IUserRepository repository) {
+    public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository) {
         this.repository = repository;
+        this.friendRequestsRepository = friendRequestsRepository;
     }
 
     public List<UserDTO> getAllUsers() {
@@ -69,5 +73,14 @@ public class UserService implements IUserService {
             repository.save(userEntity);
             return UserMapper.toDTO(userEntity);
         });
+    }
+
+    public FriendRequests saveFriendRequest(FriendRequests friendRequest) {
+        try {
+            friendRequestsRepository.save(friendRequest);
+            return friendRequest;
+        } catch (DataAccessException e) {
+            throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
+        }
     }
 }
