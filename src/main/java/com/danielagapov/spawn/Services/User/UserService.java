@@ -25,7 +25,7 @@ public class UserService implements IUserService {
         try {
             return UserMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException();
+            throw new BasesNotFoundException("users");
         }
     }
 

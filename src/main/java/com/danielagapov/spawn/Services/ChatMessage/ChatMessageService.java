@@ -1,10 +1,7 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Base.*;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.ChatMessage;
@@ -20,6 +17,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
+
+import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 
 import java.util.List;
 import java.util.UUID;
@@ -45,7 +45,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             return ChatMessageMapper.toDTOList(chatMessageRepository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException();
+            throw new BasesNotFoundException("chatMessages");
         }
     }
 
@@ -80,12 +80,11 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
-    public void createChatMessageLike(UUID chatMessageId, UUID userId) {
+    public ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId) {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
             if (exists) {
-                throw new BaseSaveException("Like already exists for chatMessageId: " + chatMessageId + " and userId: "
-                        + userId);
+                throw new EntityAlreadyExistsException("chatMessage", chatMessageId);
             }
             ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                     .orElseThrow(() -> new BaseSaveException("ChatMessageId: " + chatMessageId));
@@ -97,6 +96,7 @@ public class ChatMessageService implements IChatMessageService {
             chatMessageLikes.setUser(user);
 
             chatMessageLikesRepository.save(chatMessageLikes);
+            return ChatMessageLikesMapper.toDTO(chatMessageLikes);
 
         } catch (Exception e) {
             throw new BaseSaveException("Like: chatMessageId: " + chatMessageId + " userId: "
@@ -118,11 +118,9 @@ public class ChatMessageService implements IChatMessageService {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
             if (!exists) {
-                throw new BaseDeleteException("Like not found for chatMessageId: " + chatMessageId + " and userId: "
-                        + userId);
+                throw new BasesNotFoundException("chatMessage", chatMessageId);
             }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
-
         } catch (Exception e) {
             throw new BaseDeleteException("An error occurred while deleting the like for chatMessageId: "
                     + chatMessageId + " and userId: " + userId + ". Error: " + e.getMessage(), e);

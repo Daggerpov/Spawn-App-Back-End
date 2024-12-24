@@ -33,7 +33,7 @@ public class EventService implements IEventService {
         try {
             return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException();
+            throw new BasesNotFoundException("events");
         }
     }
 
