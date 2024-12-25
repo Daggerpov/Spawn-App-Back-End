@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
+import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -70,5 +71,11 @@ public class UserController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
         }
+    }
+
+    // full path: /api/v1/user/friend-request
+    @PostMapping("friend-request")
+    public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
+        return userService.saveFriendRequest(friendReq);
     }
 }

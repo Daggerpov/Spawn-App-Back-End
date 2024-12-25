@@ -27,7 +27,7 @@ public class FriendTagService implements IFriendTagService {
         try {
             return FriendTagMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException();
+            throw new BasesNotFoundException("friendTags");
         }
     }
 

@@ -1,12 +1,20 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.danielagapov.spawn.DTOs.UserDTO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
+import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
+
+import java.util.List;
 import java.util.UUID;
 
 @RestController()
@@ -42,6 +50,7 @@ public class ChatMessageController {
         return chatMessageService.saveChatMessage(newChatMessage);
     }
 
+
     // full path: /api/v1/chatMessages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteChatMessage(@PathVariable UUID id) {
@@ -59,6 +68,30 @@ public class ChatMessageController {
         }
     }
 
+    // full path: /api/v1/chatMessages/{chatMessageId}/likes
+    @PostMapping("/{chatMessageId}/likes/{userId}")
+    public ChatMessageLikesDTO createChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
+        return chatMessageService.createChatMessageLike(chatMessageId, userId);
+    }
+
+    // full path: /api/v1/chatMessages/{chatMessageId}/likes
+    @GetMapping("/{chatMessageId}/likes")
+    public List<UserDTO> getChatMessageLikes(@PathVariable UUID chatMessageId) {
+        return chatMessageService.getChatMessageLikes(chatMessageId);
+    }
+
+    // full path: /api/v1/chatMessages/{chatMessageId}/likes
+    @DeleteMapping("/{chatMessageId}/likes")
+    public ResponseEntity<Void> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
+        try {
+            chatMessageService.deleteChatMessageLike(chatMessageId, userId);
+            return ResponseEntity.noContent().build(); // 204 success (no content)
+        } catch (BasesNotFoundException e) {
+            return ResponseEntity.notFound().build(); // 404
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build(); // 500
+        }
+    }
 }
 
 

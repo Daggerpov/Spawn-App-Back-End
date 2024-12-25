@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 
 import java.util.List;
@@ -12,4 +13,5 @@ public interface IUserService {
     public UserDTO saveUser(UserDTO user);
     public UserDTO replaceUser(UserDTO user, UUID id);
     public boolean deleteUserById(UUID id);
+    public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO);
 }
