@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
+import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Models.FriendRequests;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,7 +55,7 @@ public class UserController {
 
     // full path: /api/v1/user/friend-request
     @PostMapping("friend-request")
-    public FriendRequests createFriendRequest(@RequestBody FriendRequests friendReq) {
+    public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
         return userService.saveFriendRequest(friendReq);
     }
 

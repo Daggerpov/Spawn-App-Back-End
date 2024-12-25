@@ -1,9 +1,11 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequests;
 import com.danielagapov.spawn.Models.User;
@@ -75,10 +77,11 @@ public class UserService implements IUserService {
         });
     }
 
-    public FriendRequests saveFriendRequest(FriendRequests friendRequest) {
+    public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
+            FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
             friendRequestsRepository.save(friendRequest);
-            return friendRequest;
+            return FriendRequestMapper.toDTO(friendRequest);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
         }
