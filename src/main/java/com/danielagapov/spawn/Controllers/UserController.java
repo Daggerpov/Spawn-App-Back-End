@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
+import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.web.bind.annotation.*;
@@ -51,4 +52,11 @@ public class UserController {
     public UserDTO replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
         return userService.replaceUser(newUser, id);
     }
+
+    // full path: /api/v1/user/friend-request
+    @PostMapping("friend-request")
+    public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
+        return userService.saveFriendRequest(friendReq);
+    }
+
 }
