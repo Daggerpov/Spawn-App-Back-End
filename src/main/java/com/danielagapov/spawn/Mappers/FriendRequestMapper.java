@@ -9,14 +9,18 @@ import java.util.stream.Collectors;
 public class FriendRequestMapper {
 
     public static FriendRequestDTO toDTO(FriendRequests friendRequest) {
-        return new FriendRequestDTO(friendRequest.getId(), friendRequest.getSender(), friendRequest.getReceiver());
+        return new FriendRequestDTO(
+                friendRequest.getId(),
+                UserMapper.toDTO(friendRequest.getSender()),
+                UserMapper.toDTO(friendRequest.getReceiver())
+        );
     }
 
     public static FriendRequests toEntity(FriendRequestDTO friendRequestDTO) {
         FriendRequests friendRequest = new FriendRequests();
         friendRequest.setId(friendRequestDTO.id());
-        friendRequest.setSender(friendRequestDTO.sender());
-        friendRequest.setReceiver(friendRequestDTO.receiver());
+        friendRequest.setSender(UserMapper.toEntity(friendRequestDTO.sender()));
+        friendRequest.setReceiver(UserMapper.toEntity(friendRequestDTO.receiver()));
         return friendRequest;
     }
 
