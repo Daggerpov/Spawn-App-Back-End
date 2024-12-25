@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.*;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -84,7 +85,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
             if (exists) {
-                throw new EntityAlreadyExistsException("chatMessage", chatMessageId);
+                throw new EntityAlreadyExistsException(EntityType.ChatMessage, chatMessageId);
             }
             ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                     .orElseThrow(() -> new BaseSaveException("ChatMessageId: " + chatMessageId));
@@ -118,7 +119,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
             if (!exists) {
-                throw new BasesNotFoundException("chatMessage", chatMessageId);
+                throw new BasesNotFoundException(EntityType.ChatMessage, chatMessageId);
             }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
         } catch (Exception e) {
