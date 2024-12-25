@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Models;
 
+import com.danielagapov.spawn.Models.CompositeKeys.EventParticipantsId;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,24 +10,22 @@ import lombok.Setter;
 import java.io.Serializable;
 
 @Entity
-@Table(
-        name = "event_participants",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"event_id", "user_id"})
-)
+@Table(name = "event_participants")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 public class EventParticipants implements Serializable {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @EmbeddedId
+    private EventParticipantsId id;
 
     @ManyToOne
+    @MapsId("eventId")
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
     @ManyToOne
+    @MapsId("userId")
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }
