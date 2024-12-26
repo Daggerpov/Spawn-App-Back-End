@@ -3,7 +3,10 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import org.springframework.http.HttpStatus;
@@ -45,6 +48,24 @@ public class ChatMessageController {
     @PostMapping
     public ChatMessageDTO createChatMessage(@RequestBody ChatMessageDTO newChatMessage) {
         return chatMessageService.saveChatMessage(newChatMessage);
+    }
+
+
+    // full path: /api/v1/chatMessages/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<HttpStatus> deleteChatMessage(@PathVariable UUID id) {
+        try {
+            boolean isDeleted = chatMessageService.deleteChatMessageById(id);
+            if (isDeleted) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
+            } else {
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
+            }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Resource not found
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
+        }
     }
 
     // full path: /api/v1/chatMessages/{chatMessageId}/likes

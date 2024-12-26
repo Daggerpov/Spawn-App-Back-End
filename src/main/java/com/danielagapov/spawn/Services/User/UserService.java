@@ -77,6 +77,18 @@ public class UserService implements IUserService {
         });
     }
 
+    public boolean deleteUserById(UUID id) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(id);
+        }
+
+        try {
+            repository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            return false;
+        }
+    }
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
             FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);

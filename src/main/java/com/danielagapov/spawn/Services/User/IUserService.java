@@ -12,5 +12,6 @@ public interface IUserService {
     public List<UserDTO> getUsersByTagId(UUID tagId);
     public UserDTO saveUser(UserDTO user);
     public UserDTO replaceUser(UserDTO user, UUID id);
+    public boolean deleteUserById(UUID id);
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO);
 }

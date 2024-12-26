@@ -81,6 +81,20 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+
+    public boolean deleteChatMessageById(UUID id) {
+        if (!chatMessageRepository.existsById(id)) {
+            throw new BaseNotFoundException(id);
+        }
+
+        try {
+            chatMessageRepository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            return false;
+        }
+    }
+
     public ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId) {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);

@@ -120,4 +120,18 @@ public class EventService implements IEventService {
             return EventMapper.toDTO(eventEntity);
         });
     }
+
+    public boolean deleteEventById(UUID id) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(id);
+        }
+
+        try {
+            repository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            return false;
+        }
+    }
+
 }
