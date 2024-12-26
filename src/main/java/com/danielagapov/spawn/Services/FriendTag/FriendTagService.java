@@ -27,7 +27,7 @@ public class FriendTagService implements IFriendTagService {
         try {
             return FriendTagMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException();
+            throw new BasesNotFoundException("friendTags");
         }
     }
 
@@ -69,6 +69,19 @@ public class FriendTagService implements IFriendTagService {
             repository.save(friendTagEntity);
             return FriendTagMapper.toDTO(friendTagEntity);
         });
+    }
+
+    public boolean deleteFriendTagById(UUID id) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(id);
+        }
+
+        try {
+            repository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            return false;
+        }
     }
 
 }

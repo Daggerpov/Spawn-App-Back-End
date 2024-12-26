@@ -1,7 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -43,6 +46,23 @@ public class FriendTagController {
     @PutMapping("{id}")
     public FriendTagDTO replaceFriendTag(@RequestBody FriendTagDTO newFriendTag, @PathVariable UUID id) {
         return friendTagService.replaceFriendTag(newFriendTag, id);
+    }
+
+    // full path: /api/v1/friendTags/{id}
+    @DeleteMapping("{id}")
+    public ResponseEntity<Void> deleteFriendTag(@PathVariable UUID id) {
+        try {
+            boolean isDeleted = friendTagService.deleteFriendTagById(id);
+            if (isDeleted) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
+            } else {
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
+            }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Resource not found
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
+        }
     }
 }
 

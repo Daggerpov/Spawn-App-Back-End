@@ -1,11 +1,15 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
+import com.danielagapov.spawn.Models.FriendRequests;
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -16,16 +20,18 @@ import java.util.UUID;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
+    private final IFriendRequestsRepository friendRequestsRepository;
 
-    public UserService(IUserRepository repository) {
+    public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository) {
         this.repository = repository;
+        this.friendRequestsRepository = friendRequestsRepository;
     }
 
     public List<UserDTO> getAllUsers() {
         try {
             return UserMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException();
+            throw new BasesNotFoundException("users");
         }
     }
 
@@ -69,5 +75,27 @@ public class UserService implements IUserService {
             repository.save(userEntity);
             return UserMapper.toDTO(userEntity);
         });
+    }
+
+    public boolean deleteUserById(UUID id) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(id);
+        }
+
+        try {
+            repository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            return false;
+        }
+    }
+    public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
+        try {
+            FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
+            friendRequestsRepository.save(friendRequest);
+            return FriendRequestMapper.toDTO(friendRequest);
+        } catch (DataAccessException e) {
+            throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
+        }
     }
 }

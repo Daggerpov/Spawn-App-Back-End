@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
@@ -32,7 +33,7 @@ public class EventService implements IEventService {
         try {
             return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException();
+            throw new BasesNotFoundException("events");
         }
     }
 
@@ -119,4 +120,18 @@ public class EventService implements IEventService {
             return EventMapper.toDTO(eventEntity);
         });
     }
+
+    public boolean deleteEventById(UUID id) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(id);
+        }
+
+        try {
+            repository.deleteById(id);
+            return true;
+        } catch (DataAccessException e) {
+            return false;
+        }
+    }
+
 }
