@@ -2,9 +2,7 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.*;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequests;
@@ -48,12 +46,18 @@ public class UserService implements IUserService {
     }
 
     public List<UserDTO> getUsersByTagId(UUID tagId) {
-        List<UserFriendTagMapping> mappings = userTagMappingRepository.findByFriendTagId(tagId);
-        List<User> users = new ArrayList<>();
-        for (UserFriendTagMapping mapping : mappings) {
-            users.add(mapping.getUser2());
+        try {
+            List<UserFriendTagMapping> mappings = userTagMappingRepository.findByFriendTagId(tagId);
+            List<User> users = new ArrayList<>();
+            for (UserFriendTagMapping mapping : mappings) {
+                users.add(mapping.getUser2());
+            }
+            return UserMapper.toDTOList(users);
+        } catch (DataAccessException e) {
+            throw new DatabaseException("Failed to get users by tag ID: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new ApplicationException("Unexpected error occurred while getting users by tag ID: " + e.getMessage(), e);
         }
-        return UserMapper.toDTOList(users);
     }
 
     public UserDTO saveUser(UserDTO user) {
