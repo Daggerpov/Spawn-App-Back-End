@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import org.springframework.http.HttpStatus;
@@ -86,7 +86,7 @@ public class ChatMessageController {
         try {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
             return ResponseEntity.noContent().build(); // 204 success (no content)
-        } catch (BasesNotFoundException e) {
+        } catch (BaseNotFoundException e) {
             return ResponseEntity.notFound().build(); // 404
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build(); // 500
