@@ -10,6 +10,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.UUID;
+import java.util.List;
 
 @Entity
 // these two annotations are in place of writing out constructors manually (for readability):
@@ -22,5 +23,7 @@ public class FriendTag implements Serializable {
         private @Id
         @GeneratedValue UUID id;
         private String displayName;
-        private String color; // TODO: investigate data type later | represents hex code?
+        private String colorHexCode; // TODO: investigate data type later | represents hex code?
+        private User owner;
+        private List<User> friends;
 }

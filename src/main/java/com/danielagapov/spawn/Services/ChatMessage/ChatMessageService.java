@@ -46,7 +46,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             return ChatMessageMapper.toDTOList(chatMessageRepository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException("chatMessages");
+            throw new BasesNotFoundException(EntityType.ChatMessage);
         }
     }
 
@@ -66,8 +66,8 @@ public class ChatMessageService implements IChatMessageService {
 
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
-            User userSender = userRepository.findById(chatMessageDTO.userSenderId())
-                    .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.userSenderId()));
+            User userSender = userRepository.findById(chatMessageDTO.userSender().id())
+                    .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.userSender().id()));
             Event event = eventRepository.findById(chatMessageDTO.eventId())
                     .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.eventId()));
 
@@ -133,7 +133,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
             if (!exists) {
-                throw new BasesNotFoundException(EntityType.ChatMessage, chatMessageId);
+                throw new BasesNotFoundException(EntityType.ChatMessage);
             }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
         } catch (Exception e) {

@@ -2,6 +2,8 @@ package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -12,9 +14,9 @@ public class FriendTagMapper {
         return new FriendTagDTO(
                 entity.getId(),
                 entity.getDisplayName(),
-                entity.getColor(),
-                // TODO: setup later once proper relationships in entity classes are setup:
-                null
+                entity.getColorHexCode(),
+                UserMapper.toDTO(entity.getOwner()),
+                UserMapper.toDTOList(entity.getFriends())
         );
     }
 
@@ -22,7 +24,9 @@ public class FriendTagMapper {
         FriendTag friendTag = new FriendTag();
         friendTag.setId(dto.id());
         friendTag.setDisplayName(dto.displayName());
-        friendTag.setColor(dto.colorHexCode());
+        friendTag.setColorHexCode(dto.colorHexCode());
+        friendTag.setOwner(UserMapper.toEntity(dto.owner()));
+        friendTag.setFriends(UserMapper.toEntityList(dto.friends()));
         // TODO: setup later once proper relationships in entity classes are setup:
         return friendTag;
     }

@@ -14,20 +14,22 @@ public class ChatMessageMapper {
     public static ChatMessageDTO toDTO(ChatMessage entity) {
         return new ChatMessageDTO(
                 entity.getId(),
-                entity.getTimestamp(),
-                entity.getUserSender().getId(),
                 entity.getContent(),
-                entity.getEvent().getId()
+                entity.getTimestamp(),
+                UserMapper.toDTO(entity.getUserSender()),
+                entity.getEvent().getId(),
+                UserMapper.toDTOList(entity.getLikedBy())
         );
     }
 
     public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Event event) {
         return new ChatMessage(
                 dto.id(),
+                dto.content(),
                 dto.timestamp(),
                 userSender,
                 event,
-                dto.content()
+                UserMapper.toEntityList(dto.likedBy())
         );
     }
 
@@ -41,7 +43,7 @@ public class ChatMessageMapper {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
-                            .filter(user -> user.getId().equals(dto.userSenderId()))
+                            .filter(user -> user.getId().equals(dto.userSender().id()))
                             .findFirst()
                             .orElse(null);
                     Event event = events.stream()

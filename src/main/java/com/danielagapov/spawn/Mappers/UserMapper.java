@@ -11,11 +11,13 @@ public class UserMapper {
     public static UserDTO toDTO(User user) {
         return new UserDTO(
                 user.getId(),
+                toDTOList(user.getFriends()),
+                user.getProfilePicture(),
                 user.getUsername(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getBio(),
-                user.getProfilePicture(),
+                FriendTagMapper.toDTOList(user.getFriendTags()),
                 // TODO: supply real value once relations are setup within entities:
                 null
         );

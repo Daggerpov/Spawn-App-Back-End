@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -27,7 +28,7 @@ public class FriendTagService implements IFriendTagService {
         try {
             return FriendTagMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException("friendTags");
+            throw new BasesNotFoundException(EntityType.FriendTag);
         }
     }
 
@@ -60,7 +61,7 @@ public class FriendTagService implements IFriendTagService {
         // TODO: we may want to make this function easier to read in the future,
         // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(friendTag -> {
-            friendTag.setColor(newFriendTag.colorHexCode());
+            friendTag.setColorHexCode(newFriendTag.colorHexCode());
             friendTag.setDisplayName(newFriendTag.displayName());
             repository.save(friendTag);
             return FriendTagMapper.toDTO(friendTag);

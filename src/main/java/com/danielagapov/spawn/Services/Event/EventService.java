@@ -14,6 +14,7 @@ import com.danielagapov.spawn.Repositories.IEventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import com.danielagapov.spawn.Enums.EntityType;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +34,7 @@ public class EventService implements IEventService {
         try {
             return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException("events");
+            throw new BasesNotFoundException(EntityType.Event);
         }
     }
 
