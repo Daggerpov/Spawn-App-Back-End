@@ -12,6 +12,9 @@ import java.util.UUID;
 import java.util.List;
 
 @Entity
+@Table(
+        name = "users"
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -20,13 +23,12 @@ public class User implements Serializable {
         @Id
         @GeneratedValue
         private UUID id;
-        private List<User> friends;
+        private UUID friends;
         @Column(nullable = false, unique = true) // Ensures the username is unique and not null
         private String username;
         private String profilePicture; // TODO: reconsider data type later
         private String firstName;
         private String lastName;
         private String bio;
-        private List<FriendTag> friendTags;
         private String email;
 }

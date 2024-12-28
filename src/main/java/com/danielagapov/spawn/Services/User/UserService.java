@@ -6,6 +6,8 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.ApplicationException;
+import com.danielagapov.spawn.Exceptions.Base.DatabaseException;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequests;
@@ -46,7 +48,9 @@ public class UserService implements IUserService {
         try {
             return UserMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new RuntimeException("Error retrieving users", e);
+            throw new DatabaseException("Failed to get users by tag ID: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new ApplicationException("Unexpected error occurred while getting users by tag ID: " + e.getMessage(), e);
         }
     }
 

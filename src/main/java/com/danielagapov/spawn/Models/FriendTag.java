@@ -3,6 +3,9 @@ package com.danielagapov.spawn.Models;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,9 +13,11 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.UUID;
-import java.util.List;
 
 @Entity
+@Table(
+        name = "friend_tags"
+)
 // these two annotations are in place of writing out constructors manually (for readability):
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +29,7 @@ public class FriendTag implements Serializable {
         @GeneratedValue UUID id;
         private String displayName;
         private String colorHexCode; // TODO: investigate data type later | represents hex code?
-        private User owner;
-        private List<User> friends;
+        //@ManyToOne
+        //@JoinColumn(name = "owner_id", referencedColumnName = "id") //relate friendTag.id() to user.id()
+        private UUID owner;
 }

@@ -21,13 +21,13 @@ import java.util.UUID;
 public class UserFriendTag implements Serializable {
     @Id
     @GeneratedValue
-    private UUID id;
+    private UUID id; //TODO do we need this?
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User Friend1;
 
     @ManyToOne
-    @JoinColumn(name = "friend_tag_id", nullable = false)
+    @JoinColumn(name = "friend_tag_id", referencedColumnName = "id", nullable = false)
     private FriendTag friendTag;
 }
