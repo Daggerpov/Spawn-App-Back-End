@@ -2,18 +2,21 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.*;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequests;
+
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.UserFriendTagMapping;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
+
+import com.danielagapov.spawn.Repositories.IUserFriendTagMappingRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,10 +24,12 @@ import java.util.UUID;
 public class UserService implements IUserService {
     private final IUserRepository repository;
     private final IFriendRequestsRepository friendRequestsRepository;
+    private final IUserFriendTagMappingRepository userTagMappingRepository;
 
-    public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository) {
+    public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository, IUserFriendTagMappingRepository tagRepository) {
         this.repository = repository;
         this.friendRequestsRepository = friendRequestsRepository;
+        this.userTagMappingRepository = tagRepository;
     }
 
     public List<UserDTO> getAllUsers() {
@@ -41,11 +46,17 @@ public class UserService implements IUserService {
     }
 
     public List<UserDTO> getUsersByTagId(UUID tagId) {
-        // TODO: change this logic later, once tags are setup.
         try {
-            return UserMapper.toDTOList(repository.findAll());
+            List<UserFriendTagMapping> mappings = userTagMappingRepository.findByFriendTagId(tagId);
+            List<User> users = new ArrayList<>();
+            for (UserFriendTagMapping mapping : mappings) {
+                users.add(mapping.getUser2());
+            }
+            return UserMapper.toDTOList(users);
         } catch (DataAccessException e) {
-            throw new RuntimeException("Error retrieving users", e);
+            throw new DatabaseException("Failed to get users by tag ID: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new ApplicationException("Unexpected error occurred while getting users by tag ID: " + e.getMessage(), e);
         }
     }
 
