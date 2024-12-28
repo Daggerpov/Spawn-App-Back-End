@@ -5,6 +5,8 @@ import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.aspectj.lang.annotation.Before;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,10 @@ public class UserControllerTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+    @Autowired
+    private IUserFriendTagRepository uftRepository;
+    @Autowired
+    IUserRepository userRepository;
 
     private User user1;
     private User user2;
@@ -39,14 +45,16 @@ public class UserControllerTest {
 
     @BeforeEach
     void setup() {
-        user1All = new FriendTag(UUID.randomUUID(), "all", "#ffffff", user1, Arrays.asList(user2));
-        user2All = new FriendTag(UUID.randomUUID(), "all", "#ffffff", user2, Arrays.asList(user1));
+        user1All = new FriendTag(UUID.randomUUID(), "all", "#ffffff", null, Arrays.asList(user2));
+        user2All = new FriendTag(UUID.randomUUID(), "all", "#ffffff", null, Arrays.asList(user1));
         user1 = new User(UUID.randomUUID(), "username1", "examplepfp",
                 "John", "Doe", "I like turtles.", Arrays.asList(user1All) ,"john@doe.com");
         user2 = new User(UUID.randomUUID(), "username2", "examplepfp2",
                 "Jane", "Does", "I like baboons.", Arrays.asList(user2All), "jane@does.com");
-        user1DTO = UserMapper.toDTO(user1);
-        user2DTO = UserMapper.toDTO(user2);
+        user1All.setOwner(user1);
+        user2All.setOwner(user2);
+        user1DTO = UserMapper.toDTO(user1, uftRepository, userRepository);
+        user2DTO = UserMapper.toDTO(user2, uftRepository, userRepository);
     }
 
     @Test

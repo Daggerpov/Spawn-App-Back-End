@@ -11,6 +11,6 @@ import java.util.List;
 @Repository
 public interface IFriendTagRepository extends JpaRepository<FriendTag, UUID> {
     // The JpaRepository interface already includes methods like save() and findById()
-    @Query(value = "SELECT * FROM id WHERE owner_id = ?1", nativeQuery = true)
+    @Query(value = "SELECT id FROM friend_tags WHERE owner_id = ?1", nativeQuery = true)
     List<UUID> findTagsByOwner(UUID ownerId);
 }

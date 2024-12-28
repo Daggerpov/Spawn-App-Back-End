@@ -13,15 +13,15 @@ import java.util.stream.Collectors;
 
 public class UserMapper {
 
-    public static UserDTO toDTO(User user, IUserFriendTagRepository uft_repository, IUserRepository user_repository) {
+    public static UserDTO toDTO(User user, IUserFriendTagRepository uftRepository, IUserRepository userRepository) {
 
         return new UserDTO(
                 user.getId(),
-                uft_repository.findFriendsByTagId(user.getFriendTags().get(0).getId())
+                uftRepository.findFriendsByTagId(user.getFriendTags().get(0).getId())
                         .stream()
-                        .map(uuid -> toDTO(user_repository.findById(uuid).orElseThrow(() ->
+                        .map(uuid -> toDTO(userRepository.findById(uuid).orElseThrow(() ->
                                 new DTOMappingException("failed to find friends associated to user.")),
-                                uft_repository, user_repository))
+                                uftRepository, userRepository))
                         .collect(Collectors.toList()),
                 user.getProfilePicture(),
                 user.getUsername(),
@@ -33,7 +33,7 @@ public class UserMapper {
                         .map(uuid -> FriendTagMapper.toDTO(ft_repository.findById(uuid).orElseThrow(() ->
                                 new DTOMappingException("failed to map friend tag id to object"))))
                         .collect(Collectors.toList()),*/
-                FriendTagMapper.toDTOList(user.getFriendTags()),
+                FriendTagMapper.toDTOList(user.getFriendTags(), uftRepository, userRepository),
                 user.getEmail()
         );
     }
@@ -50,9 +50,9 @@ public class UserMapper {
         return user;
     }
 
-    public static List<UserDTO> toDTOList(List<User> users) {
+    public static List<UserDTO> toDTOList(List<User> users, IUserFriendTagRepository uftRepository, IUserRepository userRepository) {
         return users.stream()
-                .map(UserMapper::toDTO)
+                .map(user -> toDTO(user, uftRepository, userRepository))
                 .collect(Collectors.toList());
     }
 

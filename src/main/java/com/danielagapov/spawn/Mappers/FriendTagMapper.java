@@ -12,10 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class FriendTagMapper {
-    private static IUserRepository user_repository;
-    private static IUserFriendTagRepository uft_repository;
-
-    public static FriendTagDTO toDTO(FriendTag entity) {
+    public static FriendTagDTO toDTO(FriendTag entity, IUserFriendTagRepository uft_repository, IUserRepository user_repository) {
         /*List<UserDTO> friends = uft_repository.findFriendsByTagId(entity.getId())
                 .stream()
                 .map(uuid -> UserMapper.toDTO(user_repository.findById(uuid).orElseThrow(() ->
@@ -27,8 +24,8 @@ public class FriendTagMapper {
                 entity.getId(),
                 entity.getDisplayName(),
                 entity.getColorHexCode(),
-                UserMapper.toDTO(entity.getOwner()),
-                UserMapper.toDTOList(entity.getFriends())
+                UserMapper.toDTO(entity.getOwner(), uft_repository, user_repository),
+                UserMapper.toDTOList(entity.getFriends(), uft_repository, user_repository)
         );
     }
 
@@ -42,9 +39,9 @@ public class FriendTagMapper {
         return friendTag;
     }
 
-    public static List<FriendTagDTO> toDTOList(List<FriendTag> entities) {
+    public static List<FriendTagDTO> toDTOList(List<FriendTag> entities, IUserFriendTagRepository uft_repository, IUserRepository user_repository) {
         return entities.stream()
-                .map(FriendTagMapper::toDTO)
+                .map(friendTag -> toDTO(friendTag, uft_repository, user_repository))
                 .collect(Collectors.toList());
     }
 

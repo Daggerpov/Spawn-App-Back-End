@@ -4,6 +4,8 @@ import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,14 +13,15 @@ import java.util.stream.Collectors;
 public class ChatMessageMapper {
     // by far the simplest mapping, since it's essentially 1-to-1
 
-    public static ChatMessageDTO toDTO(ChatMessage entity) {
+    public static ChatMessageDTO toDTO(ChatMessage entity, IUserFriendTagRepository uftRepository,
+                                       IUserRepository userRepository) {
         return new ChatMessageDTO(
                 entity.getId(),
                 entity.getContent(),
                 entity.getTimestamp(),
-                UserMapper.toDTO(entity.getUserSender()),
+                UserMapper.toDTO(entity.getUserSender(), uftRepository, userRepository),
                 entity.getEvent().getId(),
-                UserMapper.toDTOList(entity.getLikedBy())
+                UserMapper.toDTOList(entity.getLikedBy(), uftRepository, userRepository)
         );
     }
 
@@ -33,9 +36,10 @@ public class ChatMessageMapper {
         );
     }
 
-    public static List<ChatMessageDTO> toDTOList(List<ChatMessage> chatMessages) {
+    public static List<ChatMessageDTO> toDTOList(List<ChatMessage> chatMessages, IUserFriendTagRepository uftRepository,
+                                                 IUserRepository userRepository) {
         return chatMessages.stream()
-                .map(ChatMessageMapper::toDTO)
+                .map(chatMessage -> toDTO(chatMessage, uftRepository, userRepository))
                 .collect(Collectors.toList());
     }
 
