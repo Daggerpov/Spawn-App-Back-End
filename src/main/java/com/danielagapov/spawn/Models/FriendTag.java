@@ -1,17 +1,13 @@
 package com.danielagapov.spawn.Models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.JoinColumn;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -29,7 +25,10 @@ public class FriendTag implements Serializable {
         @GeneratedValue UUID id;
         private String displayName;
         private String colorHexCode; // TODO: investigate data type later | represents hex code?
-        //@ManyToOne
-        //@JoinColumn(name = "owner_id", referencedColumnName = "id") //relate friendTag.id() to user.id()
-        private UUID owner;
+        @ManyToOne
+        @JoinColumn(name = "owner_id", referencedColumnName = "id") //relate friendTag.id() to user.id()
+        private User owner;
+        //private UUID owner;
+        @OneToMany(mappedBy = "id")
+        private List<User> friends;
 }

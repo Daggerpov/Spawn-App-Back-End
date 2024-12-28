@@ -16,19 +16,19 @@ public class FriendTagMapper {
     private static IUserFriendTagRepository uft_repository;
 
     public static FriendTagDTO toDTO(FriendTag entity) {
-        List<UserDTO> friends = uft_repository.findFriendsByTagId(entity.getId())
+        /*List<UserDTO> friends = uft_repository.findFriendsByTagId(entity.getId())
                 .stream()
                 .map(uuid -> UserMapper.toDTO(user_repository.findById(uuid).orElseThrow(() ->
                     new DTOMappingException("Failed to map friend tag to friends"))))
                 .collect(Collectors.toList());
         UserDTO owner = UserMapper.toDTO(user_repository.findById(entity.getOwner()).orElseThrow(() ->
-                new DTOMappingException("Failed to map owner to from friend tag")));
+                new DTOMappingException("Failed to map owner to from friend tag")));*/
         return new FriendTagDTO(
                 entity.getId(),
                 entity.getDisplayName(),
                 entity.getColorHexCode(),
-                owner,
-                friends
+                UserMapper.toDTO(entity.getOwner()),
+                UserMapper.toDTOList(entity.getFriends())
         );
     }
 
@@ -37,7 +37,7 @@ public class FriendTagMapper {
         friendTag.setId(dto.id());
         friendTag.setDisplayName(dto.displayName());
         friendTag.setColorHexCode(dto.colorHexCode());
-        friendTag.setOwner(UserMapper.toEntity(dto.owner()).getId());
+        friendTag.setOwner(UserMapper.toEntity(dto.owner()));
         // TODO: setup later once proper relationships in entity classes are setup:
         return friendTag;
     }
