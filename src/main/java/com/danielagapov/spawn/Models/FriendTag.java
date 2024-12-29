@@ -25,7 +25,7 @@ public class FriendTag implements Serializable {
         @GeneratedValue UUID id;
         private String displayName;
         private String colorHexCode; // TODO: investigate data type later | represents hex code?
-        @ManyToOne
+        @ManyToOne(cascade = CascadeType.PERSIST)
         @JoinColumn(name = "owner_id", referencedColumnName = "id") //relate friendTag.id() to user.id()
         private User owner;
         //private UUID owner;

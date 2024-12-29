@@ -25,14 +25,15 @@ public class ChatMessageMapper {
         );
     }
 
-    public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Event event) {
+    public static ChatMessage toEntity(ChatMessageDTO dto, User userSender,
+                                       Event event, IUserRepository userRepository) {
         return new ChatMessage(
                 dto.id(),
                 dto.content(),
                 dto.timestamp(),
                 userSender,
                 event,
-                UserMapper.toEntityList(dto.likedBy())
+                UserMapper.toEntityList(dto.likedBy(), userRepository)
         );
     }
 
@@ -43,7 +44,8 @@ public class ChatMessageMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs, List<User> users, List<Event> events) {
+    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs, List<User> users,
+                                                 List<Event> events, IUserRepository userRepository) {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
@@ -54,7 +56,7 @@ public class ChatMessageMapper {
                             .filter(ev -> ev.getId().equals(dto.eventId()))
                             .findFirst()
                             .orElse(null);
-                    return toEntity(dto, userSender, event);
+                    return toEntity(dto, userSender, event, userRepository);
                 })
                 .collect(Collectors.toList());
     }

@@ -19,11 +19,11 @@ public class FriendRequestMapper {
         );
     }
 
-    public static FriendRequests toEntity(FriendRequestDTO friendRequestDTO) {
+    public static FriendRequests toEntity(FriendRequestDTO friendRequestDTO, IUserRepository userRepository) {
         FriendRequests friendRequest = new FriendRequests();
         friendRequest.setId(friendRequestDTO.id());
-        friendRequest.setSender(UserMapper.toEntity(friendRequestDTO.sender()));
-        friendRequest.setReceiver(UserMapper.toEntity(friendRequestDTO.receiver()));
+        friendRequest.setSender(UserMapper.toEntity(friendRequestDTO.sender(), userRepository));
+        friendRequest.setReceiver(UserMapper.toEntity(friendRequestDTO.receiver(), userRepository));
         return friendRequest;
     }
 
@@ -33,7 +33,10 @@ public class FriendRequestMapper {
         return friendRequests.stream().map(friendTag -> toDTO(friendTag, uftRepository, userRepository)).collect(Collectors.toList());
     }
 
-    public static List<FriendRequests> toEntityList(List<FriendRequestDTO> friendRequestDTOList) {
-        return friendRequestDTOList.stream().map(FriendRequestMapper::toEntity).collect(Collectors.toList());
+    public static List<FriendRequests> toEntityList(List<FriendRequestDTO> friendRequestDTOList,
+                                                    IUserRepository userRepository) {
+        return friendRequestDTOList.stream()
+                .map(friendRequest -> toEntity(friendRequest, userRepository))
+                .collect(Collectors.toList());
     }
 }

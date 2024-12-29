@@ -8,6 +8,6 @@ public record FriendTagDTO(
         UUID id,
         String displayName,
         String colorHexCode, // TODO: investigate data type later
-        UserDTO owner,
-        List<UserDTO> friends
+        UUID ownerId,
+        List<UUID> friends
 ) implements Serializable {}

@@ -38,15 +38,17 @@ public class UserMapper {
         );
     }
 
-    public static User toEntity(UserDTO dto) {
+    public static User toEntity(UserDTO dto, IUserRepository userRepository) {
         // TODO: convert DTO list back into tag list/SQL relations
         User user = new User();
         user.setId(dto.id());
         user.setUsername(dto.username());
+        user.setProfilePicture(dto.profilePicture());
         user.setFirstName(dto.firstName());
         user.setLastName(dto.lastName());
         user.setBio(dto.bio());
-        user.setProfilePicture(dto.profilePicture());
+        user.setFriendTags(FriendTagMapper.toEntityList(dto.friendTags(), userRepository));
+        user.setEmail(dto.email());
         return user;
     }
 
@@ -56,9 +58,9 @@ public class UserMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<User> toEntityList(List<UserDTO> userDTOs) {
+    public static List<User> toEntityList(List<UserDTO> userDTOs, IUserRepository userRepository) {
         return userDTOs.stream()
-                .map(UserMapper::toEntity)
+                .map(user -> toEntity(user, userRepository))
                 .collect(Collectors.toList());
     }
 }

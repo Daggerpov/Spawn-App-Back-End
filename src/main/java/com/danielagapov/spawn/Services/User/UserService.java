@@ -60,7 +60,7 @@ public class UserService implements IUserService {
 
     public UserDTO saveUser(UserDTO user) {
         try {
-            User userEntity = UserMapper.toEntity(user);
+            User userEntity = UserMapper.toEntity(user, repository);
             repository.save(userEntity);
             return UserMapper.toDTO(userEntity, uftRepository, repository);
         } catch (DataAccessException e) {
@@ -80,7 +80,7 @@ public class UserService implements IUserService {
             repository.save(user);
             return UserMapper.toDTO(user, uftRepository, repository);
         }).orElseGet(() -> {
-            User userEntity = UserMapper.toEntity(newUser);
+            User userEntity = UserMapper.toEntity(newUser, repository);
             repository.save(userEntity);
             return UserMapper.toDTO(userEntity, uftRepository, repository);
         });
@@ -100,7 +100,7 @@ public class UserService implements IUserService {
     }
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
-            FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
+            FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO, repository);
             friendRequestsRepository.save(friendRequest);
             return FriendRequestMapper.toDTO(friendRequest, uftRepository, repository);
         } catch (DataAccessException e) {

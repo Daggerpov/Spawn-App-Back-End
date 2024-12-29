@@ -30,7 +30,7 @@ public class User implements Serializable {
         private String firstName;
         private String lastName;
         private String bio;
-        @OneToMany(mappedBy = "id")
+        @OneToMany(mappedBy = "id", cascade = CascadeType.PERSIST)
         private List<FriendTag> friendTags; //first friend tag is the everyone tag
         private String email;
 }

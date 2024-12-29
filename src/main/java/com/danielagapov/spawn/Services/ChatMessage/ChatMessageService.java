@@ -71,7 +71,8 @@ public class ChatMessageService implements IChatMessageService {
             Event event = eventRepository.findById(chatMessageDTO.eventId())
                     .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.eventId()));
 
-            ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
+            ChatMessage chatMessageEntity = ChatMessageMapper
+                    .toEntity(chatMessageDTO, userSender, event, userRepository);
 
             chatMessageRepository.save(chatMessageEntity);
 
