@@ -20,6 +20,9 @@ public class ChatMessage implements Serializable {
         @GeneratedValue(strategy = GenerationType.AUTO)
         private UUID id;
 
+        @Column(length = 1000)
+        private String content; // Can be null or empty
+
         private Instant timestamp;
 
         @ManyToOne
@@ -29,7 +32,4 @@ public class ChatMessage implements Serializable {
         @ManyToOne
         @JoinColumn(name = "event_id", nullable = false)
         private Event event;
-
-        @Column(length = 1000)
-        private String content; // Can be null or empty
 }

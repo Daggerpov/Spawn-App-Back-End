@@ -1,17 +1,16 @@
 package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
-import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.danielagapov.spawn.Repositories.ILocationRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +22,6 @@ public class EventService implements IEventService {
     private final IEventRepository repository;
     private final ILocationRepository locationRepository;
 
-    @Autowired
     public EventService(IEventRepository repository, ILocationRepository locationRepository) {
         this.repository = repository;
         this.locationRepository = locationRepository;
@@ -33,7 +31,7 @@ public class EventService implements IEventService {
         try {
             return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException("events");
+            throw new BasesNotFoundException(EntityType.Event);
         }
     }
 

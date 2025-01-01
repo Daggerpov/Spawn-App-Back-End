@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,11 @@ import java.util.UUID;
 @RequestMapping("api/v1/users")
 public class UserController {
     private final IUserService userService;
+    private final IFriendRequestService friendRequestService;
 
-    public UserController(IUserService userService) {
+    public UserController(IUserService userService, IFriendRequestService friendRequestService) {
         this.userService = userService;
+        this.friendRequestService = friendRequestService;
     }
 
     // full path: /api/v1/users
@@ -76,6 +79,6 @@ public class UserController {
     // full path: /api/v1/user/friend-request
     @PostMapping("friend-request")
     public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
-        return userService.saveFriendRequest(friendReq);
+        return friendRequestService.saveFriendRequest(friendReq);
     }
 }

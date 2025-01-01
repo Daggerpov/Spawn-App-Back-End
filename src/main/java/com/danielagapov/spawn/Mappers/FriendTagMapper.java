@@ -1,40 +1,49 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class FriendTagMapper {
-
-    public static FriendTagDTO toDTO(FriendTag entity) {
+    public static FriendTagDTO toDTO(FriendTag entity, UserDTO owner, List<UserDTO> friends) {
         return new FriendTagDTO(
                 entity.getId(),
                 entity.getDisplayName(),
-                entity.getColor(),
-                // TODO: setup later once proper relationships in entity classes are setup:
-                null
+                entity.getColorHexCode(),
+                owner,
+                friends
         );
     }
 
     public static FriendTag toEntity(FriendTagDTO dto) {
-        FriendTag friendTag = new FriendTag();
-        friendTag.setId(dto.id());
-        friendTag.setDisplayName(dto.displayName());
-        friendTag.setColor(dto.color());
-        // TODO: setup later once proper relationships in entity classes are setup:
-        return friendTag;
+        return new FriendTag(
+                dto.id(),
+                dto.displayName(),
+                dto.colorHexCode(),
+                dto.owner().id()
+        );
     }
 
-    public static List<FriendTagDTO> toDTOList(List<FriendTag> entities) {
+    public static List<FriendTagDTO> toDTOList(
+            List<FriendTag> entities,
+            Map<FriendTag, UserDTO> ownerMap,
+            Map<FriendTag, List<UserDTO>> friendsMap
+    ) {
         return entities.stream()
-                .map(FriendTagMapper::toDTO)
+                .map(friendTag -> toDTO(
+                        friendTag,
+                        ownerMap.getOrDefault(friendTag, null), // Default to null if owner is missing
+                        friendsMap.getOrDefault(friendTag, List.of()) // Default to an empty list if friends are missing
+                ))
                 .collect(Collectors.toList());
     }
 
-    public static List<FriendTag> toEntityList(List<FriendTagDTO> dtos) {
-        return dtos.stream()
+    public static List<FriendTag> toEntityList(List<FriendTagDTO> friendTagDTOs) {
+        return friendTagDTOs.stream()
                 .map(FriendTagMapper::toEntity)
                 .collect(Collectors.toList());
     }

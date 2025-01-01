@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Services.Event;
 
+import com.danielagapov.spawn.DTOs.EventDTO;
+
 import java.util.List;
 import java.util.UUID;
-
-import com.danielagapov.spawn.DTOs.EventDTO;
 
 public interface IEventService {
     public List<EventDTO> getAllEvents();

@@ -1,31 +1,28 @@
 package com.danielagapov.spawn.ChatMessageTests;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Models.ChatMessage;
+import com.danielagapov.spawn.Models.ChatMessageLikes;
+import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
+import com.danielagapov.spawn.Repositories.IChatMessageRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Models.ChatMessage;
-import com.danielagapov.spawn.Models.ChatMessageLikes;
-import com.danielagapov.spawn.Models.User;
-
-import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
-import com.danielagapov.spawn.Repositories.IChatMessageRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 
 public class ChatMessageLikesTest {

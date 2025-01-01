@@ -1,43 +1,49 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class UserMapper {
 
-    public static UserDTO toDTO(User user) {
+    public static UserDTO toDTO(User user, List<UserDTO> friends, List<FriendTagDTO> friendTags) {
+
         return new UserDTO(
                 user.getId(),
+                friends,
                 user.getUsername(),
+                user.getProfilePicture(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getBio(),
-                user.getProfilePicture(),
-                // TODO: supply real value once relations are setup within entities:
-                null
+                friendTags,
+                user.getEmail()
         );
     }
 
     public static User toEntity(UserDTO dto) {
-        // TODO: enable this once relations are setup within entities:
-
-        User user = new User();
-        user.setId(dto.id());
-        user.setUsername(dto.username());
-        user.setFirstName(dto.firstName());
-        user.setLastName(dto.lastName());
-        user.setBio(dto.bio());
-        user.setProfilePicture(dto.profilePicture());
-        // TODO: setup later once relations are setup within entities
-        return user;
+        return new User(
+                dto.id(),
+                dto.username(),
+                dto.profilePicture(),
+                dto.firstName(),
+                dto.lastName(),
+                dto.bio(),
+                dto.email()
+        );
     }
 
-    public static List<UserDTO> toDTOList(List<User> users) {
+    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UserDTO>> friendsMap, Map<User, List<FriendTagDTO>> friendTagsMap) {
         return users.stream()
-                .map(UserMapper::toDTO)
+                .map(user -> toDTO(
+                        user,
+                        friendsMap.getOrDefault(user, List.of()),
+                        friendTagsMap.getOrDefault(user, List.of())
+                ))
                 .collect(Collectors.toList());
     }
 

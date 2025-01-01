@@ -1,7 +1,5 @@
 package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Models.ChatMessage;
-import com.danielagapov.spawn.Models.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
