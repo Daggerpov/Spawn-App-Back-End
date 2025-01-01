@@ -46,7 +46,7 @@ public class UserService implements IUserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(id));
         List<UserDTO> friends = getUserFriends(user.getId());
-        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByUserId(user.getId());
+        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
         return UserMapper.toDTO(user, friends, friendTags);
     }
 
@@ -89,13 +89,13 @@ public class UserService implements IUserService {
             user.setUsername(newUser.username());
             repository.save(user);
             List<UserDTO> friends = getUserFriends(user.getId());
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByUserId(user.getId());
+            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
             return UserMapper.toDTO(user, friends, friendTags);
         }).orElseGet(() -> {
             User userEntity = UserMapper.toEntity(newUser);
             repository.save(userEntity);
             List<UserDTO> friends = getUserFriends(userEntity.getId());
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByUserId(userEntity.getId());
+            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userEntity.getId());
             return UserMapper.toDTO(userEntity, friends, friendTags);
         });
     }
@@ -134,7 +134,7 @@ public class UserService implements IUserService {
         Map<User, List<FriendTagDTO>> friendTagsMap = users.stream()
                 .collect(Collectors.toMap(
                         user -> user,
-                        user -> friendTagService.getFriendTagsByUserId(user.getId())
+                        user -> friendTagService.getFriendTagsByOwnerId(user.getId())
                 ));
         return UserMapper.toDTOList(users, friendsMap, friendTagsMap);
     }

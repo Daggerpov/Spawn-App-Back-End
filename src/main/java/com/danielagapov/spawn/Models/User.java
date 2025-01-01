@@ -20,7 +20,6 @@ public class User implements Serializable {
         @Id
         @GeneratedValue
         private UUID id;
-        private UUID friends; // every user must have an all friends tag
         @Column(nullable = false, unique = true) // Ensures the username is unique and not null
         private String username;
         private String profilePicture; // TODO: reconsider data type later

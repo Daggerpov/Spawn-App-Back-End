@@ -42,10 +42,6 @@ public class FriendTagService implements IFriendTagService {
 
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
-            /*return repository.findByOwnerId(ownerId)
-                    .stream()
-                    .map(this::getFriendTagById)
-                    .collect(Collectors.toList());*/
             return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), userService);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving friendTags", e);
