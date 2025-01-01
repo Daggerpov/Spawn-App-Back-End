@@ -1,16 +1,11 @@
 package com.danielagapov.spawn.UserTests;
 
-import com.danielagapov.spawn.Controllers.FriendTagController;
-import com.danielagapov.spawn.Controllers.UserController;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 
+import com.danielagapov.spawn.Services.User.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +25,6 @@ public class UserControllerTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
-    @Autowired
-    private IUserFriendTagRepository uftRepository;
-    @Autowired
-    private IUserRepository userRepository;
-    @Autowired
-    private IFriendTagRepository ftRepository;
 
     private User user1;
     private User user2;
@@ -44,67 +33,45 @@ public class UserControllerTest {
     private UserDTO user2DTO;
 
     @Autowired
-    private UserController userController;
+    private UserService userService;
     @Autowired
-    private FriendTagController friendTagController;
+    private FriendTagService ftService;
 
-    @Autowired
-    private IUserService userService;
-
-    private FriendTag user1All;
-    private FriendTag user2All;
+    private FriendTagDTO user1All;
+    private FriendTagDTO user2All;
 
     @BeforeEach
     void setup() {
-        user1All = new FriendTag(UUID.randomUUID(), "all", "#ffffff", null, null);
-        user2All = new FriendTag(UUID.randomUUID(), "all", "#ffffff", null, null);
-        user1 = new User(UUID.randomUUID(), "username1", "examplepfp",
-                "John", "Doe", "I like turtles.", Arrays.asList(user1All) ,"john@doe.com");
-        user2 = new User(UUID.randomUUID(), "username2", "examplepfp2",
-                "Jane", "Does", "I like baboons.", Arrays.asList(user2All), "jane@does.com");
-
-        user1All.setOwner(user1);
-        user2All.setOwner(user2);
-        user1All.setFriends(Arrays.asList(user1));
-        user2All.setFriends(Arrays.asList(user2));
-
-        System.out.println("saving user1All: " + user1All.getId());
-        System.out.println("saving user2All: " + user2All.getId());
-        System.out.println("saving user1: " + user1.getId());
-        System.out.println("saving user2: " + user2.getId());
-
-        //userService.saveUser(user1DTO);
-        //userService.saveUser(user2DTO);
-
-        ftRepository.save(user1All);
-        System.out.println("saved user1All: " + user1All.getId());
-        //ftRepository.save(user2All);
-        System.out.println("saved user2All: " + user2All.getId());
-        //userRepository.save(user1);
-        System.out.println("saved user1: " + user1.getId());
-        //userRepository.save(user2);
-        System.out.println("saved user2: " + user2.getId());
-
-        user1DTO = UserMapper.toDTO(user1, uftRepository, userRepository);
-        user2DTO = UserMapper.toDTO(user2, uftRepository, userRepository);
+        user1All = new FriendTagDTO(UUID.randomUUID(), "all", "#ffffff", user1DTO, Arrays.asList(user2DTO));
+        user2All = new FriendTagDTO(UUID.randomUUID(), "all", "#ffffff", user2DTO, Arrays.asList(user1DTO));
+        user1DTO = new UserDTO(UUID.randomUUID(), Arrays.asList(user2DTO), "username1", "examplepfp",
+                "John", "Doe", "I like turtles.", Arrays.asList(user1All), "john@doe.com");
+        user2DTO = new UserDTO(UUID.randomUUID(), Arrays.asList(user1DTO), "username2", "examplepfp2",
+                "Jane", "Does", "I like baboons.", Arrays.asList(user2All),"jane@does.com");
     }
 
     @Test
     void createUserCreatesUserProperly() {
-        // also tests DTO
-        /*
-        User responseUser = UserMapper.toEntity(this.restTemplate.getForObject("http://localhost:" + port + "/" + user1DTO.id(),
-                UserDTO.class), userRepository);
+        System.out.println("saving user1: " + user1DTO.id());
+        UserDTO responseUser1 = userService.saveUser(user1DTO);
+        System.out.println("saving user2: " + user2DTO.id());
+        UserDTO responseUser2 = userService.saveUser(user2DTO);
 
-        assertEquals(responseUser.getId(), user1.getId());
-        assertEquals(responseUser.getUsername(), user1.getUsername());
-        assertEquals(responseUser.getProfilePicture(), user1.getProfilePicture());
-        assertEquals(responseUser.getFirstName(), user1.getFirstName());
-        assertEquals(responseUser.getLastName(), user1.getLastName());
-        assertEquals(responseUser.getBio(), user1.getBio());
-        responseUser.getFriendTags().stream()
-                        .forEach(friendTag ->
-                            assertEquals(friendTag.getId(), user1All.getId()));
-        assertEquals(responseUser.getEmail(), user1.getEmail());*/
+        System.out.println("saving user1All: " + user1All.id());
+        FriendTagDTO responseUser1All = ftService.saveFriendTag(user1All);
+        System.out.println("saving user2All: " + user2All.id());
+        FriendTagDTO responseUser2All = ftService.saveFriendTag(user2All);
+
+        /*User responseUser = UserMapper.toEntity(this.restTemplate.getForObject("http://localhost:" + port + "/" + user1DTO.id(),
+                UserDTO.class));*/
+
+        assertEquals(responseUser1.id(), user1DTO.id());
+        assertEquals(responseUser1.friends(), user1DTO.friends());
+        assertEquals(responseUser1.username(), user1DTO.username());
+        assertEquals(responseUser1.profilePicture(), user1DTO.profilePicture());
+        assertEquals(responseUser1.firstName(), user1DTO.firstName());
+        assertEquals(responseUser1.lastName(), user1DTO.lastName());
+        assertEquals(responseUser1.bio(), user1DTO.bio());
+        assertEquals(responseUser1.email(), user1DTO.email());
     }
 }

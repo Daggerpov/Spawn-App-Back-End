@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -15,28 +16,36 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
     private final IFriendRequestsRepository friendRequestsRepository;
     private final IUserFriendTagRepository uftRepository;
+    private final FriendTagService ftService;
 
+    @Autowired
+    @Lazy
     public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository,
-                       IUserFriendTagRepository uftRepository) {
+                       IUserFriendTagRepository uftRepository, FriendTagService ftService) {
         this.repository = repository;
         this.friendRequestsRepository = friendRequestsRepository;
         this.uftRepository = uftRepository;
+        this.ftService = ftService;
     }
 
     public List<UserDTO> getAllUsers() {
         try {
-            return UserMapper.toDTOList(repository.findAll(), uftRepository, repository);
+            return UserMapper.toDTOList(repository.findAll(), this, ftService);
         } catch (DataAccessException e) {
             throw new BasesNotFoundException(EntityType.User);
         }
@@ -44,13 +53,13 @@ public class UserService implements IUserService {
 
     public UserDTO getUserById(UUID id) {
         return UserMapper.toDTO(repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id)), uftRepository, repository);
+                .orElseThrow(() -> new BaseNotFoundException(id)), this, ftService);
     }
 
     public List<UserDTO> getUsersByTagId(UUID tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
-            return UserMapper.toDTOList(repository.findAll(), uftRepository, repository);
+            return UserMapper.toDTOList(repository.findAll(), this, ftService);
         } catch (DataAccessException e) {
             throw new DatabaseException("Failed to get users by tag ID: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -60,9 +69,9 @@ public class UserService implements IUserService {
 
     public UserDTO saveUser(UserDTO user) {
         try {
-            User userEntity = UserMapper.toEntity(user, repository);
+            User userEntity = UserMapper.toEntity(user);
             repository.save(userEntity);
-            return UserMapper.toDTO(userEntity, uftRepository, repository);
+            return UserMapper.toDTO(userEntity, this, ftService);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
@@ -78,11 +87,11 @@ public class UserService implements IUserService {
             user.setLastName(newUser.lastName());
             user.setUsername(newUser.username());
             repository.save(user);
-            return UserMapper.toDTO(user, uftRepository, repository);
+            return UserMapper.toDTO(user, this, ftService);
         }).orElseGet(() -> {
-            User userEntity = UserMapper.toEntity(newUser, repository);
+            User userEntity = UserMapper.toEntity(newUser);
             repository.save(userEntity);
-            return UserMapper.toDTO(userEntity, uftRepository, repository);
+            return UserMapper.toDTO(userEntity, this, ftService);
         });
     }
 
@@ -100,11 +109,19 @@ public class UserService implements IUserService {
     }
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
-            FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO, repository);
+            FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
             friendRequestsRepository.save(friendRequest);
-            return FriendRequestMapper.toDTO(friendRequest, uftRepository, repository);
+            return FriendRequestMapper.toDTO(friendRequest, this, ftService);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
         }
+    }
+
+    // TODO: Decide whether to make a new service for this
+    public List<UserDTO> getUserFriends(UUID friendTagId) {
+        return uftRepository.findFriendIdsByTagId(friendTagId)
+                .stream()
+                .map(this::getUserById)
+                .collect(Collectors.toList());
     }
 }

@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(
-        name = "friend_tags"
-)
 // these two annotations are in place of writing out constructors manually (for readability):
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,10 +22,5 @@ public class FriendTag implements Serializable {
         @GeneratedValue UUID id;
         private String displayName;
         private String colorHexCode; // TODO: investigate data type later | represents hex code?
-        @ManyToOne(cascade = CascadeType.PERSIST)
-        @JoinColumn(name = "owner_id", referencedColumnName = "id") //relate friendTag.id() to user.id()
-        private User owner;
-        //private UUID owner;
-        @OneToMany(mappedBy = "id")
-        private List<User> friends;
+        private UUID owner;
 }

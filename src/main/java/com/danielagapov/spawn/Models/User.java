@@ -12,9 +12,6 @@ import java.util.UUID;
 import java.util.List;
 
 @Entity
-@Table(
-        name = "users"
-)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -23,14 +20,12 @@ public class User implements Serializable {
         @Id
         @GeneratedValue
         private UUID id;
-        //private UUID friends;
+        private UUID friends; // every user must have an all friends tag
         @Column(nullable = false, unique = true) // Ensures the username is unique and not null
         private String username;
         private String profilePicture; // TODO: reconsider data type later
         private String firstName;
         private String lastName;
         private String bio;
-        @OneToMany(mappedBy = "id", cascade = CascadeType.PERSIST)
-        private List<FriendTag> friendTags; //first friend tag is the everyone tag
         private String email;
 }

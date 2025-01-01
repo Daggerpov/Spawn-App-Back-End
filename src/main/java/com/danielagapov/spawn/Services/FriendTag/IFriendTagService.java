@@ -8,7 +8,7 @@ import com.danielagapov.spawn.DTOs.FriendTagDTO;
 public interface IFriendTagService {
     public List<FriendTagDTO> getAllFriendTags();
     public FriendTagDTO getFriendTagById(UUID id);
-    public List<FriendTagDTO> getFriendTagsByTagId(UUID tagId);
+    public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId);
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag);
     public FriendTagDTO replaceFriendTag(FriendTagDTO friendTag, UUID tagId);
     public boolean deleteFriendTagById(UUID id);

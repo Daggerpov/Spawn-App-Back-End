@@ -19,9 +19,9 @@ import java.util.UUID;
 @Getter
 @Setter
 public class UserFriendTag implements Serializable {
-    @Id
     @GeneratedValue
-    private UUID id; //TODO do we need this?
+    @Id
+    private UUID id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)

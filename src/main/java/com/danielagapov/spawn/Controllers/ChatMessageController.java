@@ -6,6 +6,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import java.util.UUID;
 public class ChatMessageController {
     private final IChatMessageService chatMessageService;
 
+    @Autowired
     public ChatMessageController(IChatMessageService chatMessageService) {
         this.chatMessageService = chatMessageService;
     }

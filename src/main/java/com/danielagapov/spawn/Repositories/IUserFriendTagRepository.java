@@ -12,5 +12,5 @@ import java.util.List;
 @Repository
 public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, UUID> {
     @Query(value = "SELECT user_id FROM user_friend_tags WHERE friend_tag_id = ?1", nativeQuery = true)
-    List<UUID> findFriendsByTagId(UUID tagId);
+    List<UUID> findFriendIdsByTagId(UUID tagId);
 }

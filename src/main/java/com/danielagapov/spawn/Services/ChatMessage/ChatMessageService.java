@@ -10,6 +10,8 @@ import com.danielagapov.spawn.Models.ChatMessageLikes;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.*;
+import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
+import com.danielagapov.spawn.Services.User.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -26,25 +28,28 @@ import java.util.stream.Collectors;
 @Service
 public class ChatMessageService implements IChatMessageService {
     private final IChatMessageRepository chatMessageRepository;
-    private final IUserRepository userRepository;
+    private final UserService userService;
     private final IEventRepository eventRepository;
-    private final IUserFriendTagRepository uftRepository;
+    private final FriendTagService ftService;
+    private final IUserRepository userRepository; // TODO: should we consider keeping this separate (we'll
+                                                  // have an extra convert to not DTO step though.
 
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     @Autowired
-    public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserRepository userRepository,
+    public ChatMessageService(IChatMessageRepository chatMessageRepository, UserService userService,
                               IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
-                              IUserFriendTagRepository uftRepository) {
+                              FriendTagService ftService, IUserRepository userRepository) {
         this.chatMessageRepository = chatMessageRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.eventRepository = eventRepository;
         this.chatMessageLikesRepository = chatMessageLikesRepository;
-        this.uftRepository = uftRepository;
+        this.ftService = ftService;
+        this.userRepository = userRepository;
     }
 
     public List<ChatMessageDTO> getAllChatMessages() {
         try {
-            return ChatMessageMapper.toDTOList(chatMessageRepository.findAll(), uftRepository, userRepository);
+            return ChatMessageMapper.toDTOList(chatMessageRepository.findAll(), userService, ftService);
         } catch (DataAccessException e) {
             throw new BasesNotFoundException(EntityType.ChatMessage);
         }
@@ -52,13 +57,13 @@ public class ChatMessageService implements IChatMessageService {
 
     public ChatMessageDTO getChatMessageById(UUID id) {
         return ChatMessageMapper.toDTO(chatMessageRepository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id)), uftRepository, userRepository);
+                .orElseThrow(() -> new BaseNotFoundException(id)), userService, ftService);
     }
 
     public List<ChatMessageDTO> getChatMessagesByTagId(UUID tagId) {
         // TODO: change this logic later, once tags are setup.
         try {
-            return ChatMessageMapper.toDTOList(chatMessageRepository.findAll(), uftRepository, userRepository);
+            return ChatMessageMapper.toDTOList(chatMessageRepository.findAll(), userService, ftService);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving chatMessages", e);
         }
@@ -72,11 +77,11 @@ public class ChatMessageService implements IChatMessageService {
                     .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.eventId()));
 
             ChatMessage chatMessageEntity = ChatMessageMapper
-                    .toEntity(chatMessageDTO, userSender, event, userRepository);
+                    .toEntity(chatMessageDTO, userSender, event);
 
             chatMessageRepository.save(chatMessageEntity);
 
-            return ChatMessageMapper.toDTO(chatMessageEntity, uftRepository, userRepository);
+            return ChatMessageMapper.toDTO(chatMessageEntity, userService, ftService);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
         }
@@ -127,7 +132,7 @@ public class ChatMessageService implements IChatMessageService {
 
         List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
 
-        return likes.stream().map(like -> UserMapper.toDTO(like.getUser(), uftRepository, userRepository)).collect(Collectors.toList());
+        return likes.stream().map(like -> UserMapper.toDTO(like.getUser(), userService, ftService)).collect(Collectors.toList());
     }
 
     public void deleteChatMessageLike(UUID chatMessageId, UUID userId) {

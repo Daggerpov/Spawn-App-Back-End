@@ -3,19 +3,16 @@ package com.danielagapov.spawn.Mappers;
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.DTOMappingException;
 import com.danielagapov.spawn.Models.FriendTag;
-import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Services.User.UserService;
 
 public class FriendTagMapper {
-    public static FriendTagDTO toDTO(FriendTag entity, IUserFriendTagRepository uft_repository, IUserRepository user_repository) {
-        /*List<UserDTO> friends = uft_repository.findFriendsByTagId(entity.getId())
+    public static FriendTagDTO toDTO(FriendTag entity, UserService userService) {
+        /*List<UserDTO> friends = uft_repository.findFriendIdsByTagId(entity.getId())
                 .stream()
                 .map(uuid -> UserMapper.toDTO(user_repository.findById(uuid).orElseThrow(() ->
                     new DTOMappingException("Failed to map friend tag to friends"))))
@@ -26,34 +23,29 @@ public class FriendTagMapper {
                 entity.getId(),
                 entity.getDisplayName(),
                 entity.getColorHexCode(),
-                entity.getOwner().getId(),
-                entity.getFriends().stream().map(User::getId).collect(Collectors.toList())
+                userService.getUserById(entity.getOwner()),
+                userService.getUserFriends(entity.getOwner())
         );
     }
 
-    public static FriendTag toEntity(FriendTagDTO dto, IUserRepository userRepository) {
-        FriendTag friendTag = new FriendTag();
-        friendTag.setId(dto.id());
-        friendTag.setDisplayName(dto.displayName());
-        friendTag.setColorHexCode(dto.colorHexCode());
-        friendTag.setOwner(userRepository.findById(dto.ownerId()).orElseThrow(() ->
-                new DTOMappingException("failed to map owner ID to a user in the database: " + dto.ownerId())));
-        friendTag.setFriends(dto.friends().stream()
-                .map(friendId -> userRepository.findById(friendId).orElseThrow(() ->
-                        new DTOMappingException("failed to map friend ID to user in the database")))
-                .collect(Collectors.toList()));
-        return friendTag;
+    public static FriendTag toEntity(FriendTagDTO dto) {
+        return new FriendTag(
+                dto.id(),
+                dto.displayName(),
+                dto.colorHexCode(),
+                UserMapper.toEntity(dto.owner()).getId()
+        );
     }
 
-    public static List<FriendTagDTO> toDTOList(List<FriendTag> entities, IUserFriendTagRepository uftRepository, IUserRepository userRepository) {
+    public static List<FriendTagDTO> toDTOList(List<FriendTag> entities, UserService userService) {
         return entities.stream()
-                .map(friendTag -> toDTO(friendTag, uftRepository, userRepository))
+                .map(friendTag -> toDTO(friendTag, userService))
                 .collect(Collectors.toList());
     }
 
-    public static List<FriendTag> toEntityList(List<FriendTagDTO> dtos, IUserRepository userRepository) {
+    public static List<FriendTag> toEntityList(List<FriendTagDTO> dtos) {
         return dtos.stream()
-                .map(friendTag -> toEntity(friendTag, userRepository))
+                .map(FriendTagMapper::toEntity)
                 .collect(Collectors.toList());
     }
 }
