@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 
