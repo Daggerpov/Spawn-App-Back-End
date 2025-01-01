@@ -7,6 +7,7 @@ import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ChatMessageMapper {
@@ -32,14 +33,21 @@ public class ChatMessageMapper {
         );
     }
 
-    public static List<ChatMessageDTO> toDTOList(List<ChatMessage> chatMessages) {
+    public static List<ChatMessageDTO> toDTOList(
+            List<ChatMessage> chatMessages,
+            Map<ChatMessage, UserDTO> userSenderMap,
+            Map<ChatMessage, List<UserDTO>> likedByMap
+    ) {
         return chatMessages.stream()
-                .map(chatMessage -> toDTO(chatMessage, userService, ftService))
+                .map(chatMessage -> toDTO(
+                        chatMessage,
+                        userSenderMap.getOrDefault(chatMessage, null), // Default to null if userSender is missing
+                        likedByMap.getOrDefault(chatMessage, List.of()) // Default to an empty list if likedBy is missing
+                ))
                 .collect(Collectors.toList());
     }
 
-    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs, List<User> users,
-                                                 List<Event> events) {
+    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs, List<User> users, List<Event> events) {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
