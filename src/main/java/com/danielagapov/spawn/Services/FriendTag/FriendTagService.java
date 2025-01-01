@@ -95,36 +95,4 @@ public class FriendTagService implements IFriendTagService {
             return false;
         }
     }
-
-    public UUID generateNewUserFriendTag(FriendTagDTO ftDto, UUID ownerId) {
-        if (ftDto.id() != null) {
-            if (repository.existsById(ftDto.id())) {
-                return ftDto.id();
-            }
-        }
-        UUID id = repository.save(new FriendTag()).getId();
-        FriendTag ft = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(id));
-        ft.setDisplayName(ftDto.displayName());
-        ft.setColorHexCode(ftDto.colorHexCode());
-        setOwner(ft, ownerId);
-        repository.save(ft);
-        return ft.getId();
-    }
-
-    public UUID generateNewUserFriendTag(UUID ownerId) {
-        FriendTag ft = new FriendTag();
-        ft.setDisplayName("Everyone");
-        ft.setColorHexCode("#ffffff");
-        ft.setOwnerId(null);
-        repository.save(ft);
-        setOwner(ft, ownerId);
-        return ft.getId();
-    }
-
-    public void setOwner(FriendTag ft, UUID ownerId) {
-        if (ft.getOwnerId() == null) {
-            ft.setOwnerId(ownerId);
-            repository.save(ft);
-        }
-    }
 }
