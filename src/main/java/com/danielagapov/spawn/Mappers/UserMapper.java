@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Exceptions.Base.DTOMappingException;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
