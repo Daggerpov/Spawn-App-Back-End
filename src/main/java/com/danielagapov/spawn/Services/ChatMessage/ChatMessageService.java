@@ -1,25 +1,25 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.*;
+import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.ChatMessageLikes;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.*;
-import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
-import com.danielagapov.spawn.Services.User.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
+import com.danielagapov.spawn.Repositories.IChatMessageRepository;
+import com.danielagapov.spawn.Repositories.IEventRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-
-import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-
-import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,17 +28,15 @@ import java.util.stream.Collectors;
 @Service
 public class ChatMessageService implements IChatMessageService {
     private final IChatMessageRepository chatMessageRepository;
-    private final UserService userService;
+    private final IUserService userService;
     private final IEventRepository eventRepository;
-    private final FriendTagService ftService;
-    private final IUserRepository userRepository; // TODO: should we consider keeping this separate (we'll
-                                                  // have an extra convert to not DTO step though.
+    private final IFriendTagService ftService;
+    private final IUserRepository userRepository;
 
     private final IChatMessageLikesRepository chatMessageLikesRepository;
-    @Autowired
-    public ChatMessageService(IChatMessageRepository chatMessageRepository, UserService userService,
+    public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
-                              FriendTagService ftService, IUserRepository userRepository) {
+                              IFriendTagService ftService, IUserRepository userRepository) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.eventRepository = eventRepository;

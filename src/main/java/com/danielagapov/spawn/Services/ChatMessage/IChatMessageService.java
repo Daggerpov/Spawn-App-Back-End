@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
-import java.util.List;
-import java.util.UUID;
-
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+
+import java.util.List;
+import java.util.UUID;
 
 public interface IChatMessageService {
     public List<ChatMessageDTO> getAllChatMessages();

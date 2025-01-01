@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.ChatMessage;
-import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
 

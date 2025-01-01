@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
+
 import java.util.List;
 import java.util.UUID;
-
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
 
 public interface IFriendTagService {
     public List<FriendTagDTO> getAllFriendTags();
