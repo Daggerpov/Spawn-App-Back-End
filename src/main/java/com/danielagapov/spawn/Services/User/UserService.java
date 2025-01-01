@@ -60,13 +60,6 @@ public class UserService implements IUserService {
         }
     }
 
-    public List<UserDTO> getUserFriends(UUID friendTagId) {
-        return uftRepository.findFriendIdsByTagId(friendTagId)
-                .stream()
-                .map(this::getUserById)
-                .collect(Collectors.toList());
-    }
-
     public UserDTO saveUser(UserDTO user) {
         try {
             User userEntity = UserMapper.toEntity(user); // Handle nullable `friends` field
@@ -95,11 +88,15 @@ public class UserService implements IUserService {
             user.setLastName(newUser.lastName());
             user.setUsername(newUser.username());
             repository.save(user);
-            return UserMapper.toDTO(user, this, friendTagService);
+            List<UserDTO> friends = getUserFriends(user.getId());
+            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByUserId(user.getId());
+            return UserMapper.toDTO(user, friends, friendTags);
         }).orElseGet(() -> {
             User userEntity = UserMapper.toEntity(newUser);
             repository.save(userEntity);
-            return UserMapper.toDTO(userEntity, this, friendTagService);
+            List<UserDTO> friends = getUserFriends(userEntity.getId());
+            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByUserId(userEntity.getId());
+            return UserMapper.toDTO(userEntity, friends, friendTags);
         });
     }
 
