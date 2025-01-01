@@ -22,6 +22,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,7 @@ public class ChatMessageService implements IChatMessageService {
     private final IUserRepository userRepository;
 
     private final IChatMessageLikesRepository chatMessageLikesRepository;
+
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
                               IFriendTagService ftService, IUserRepository userRepository) {
@@ -47,26 +49,35 @@ public class ChatMessageService implements IChatMessageService {
 
     public List<ChatMessageDTO> getAllChatMessages() {
         try {
-            return ChatMessageMapper.toDTOList(chatMessageRepository.findAll(), userService, ftService);
+            List<ChatMessage> chatMessages = chatMessageRepository.findAll();
+
+            // Fetch the userSender and likedBy data for each chatMessage
+            Map<ChatMessage, UserDTO> userSenderMap = chatMessages.stream()
+                    .collect(Collectors.toMap(chatMessage -> chatMessage, chatMessage -> userService.getUserById(chatMessage.getUserSender().getId())));
+
+            Map<ChatMessage, List<UserDTO>> likedByMap = chatMessages.stream()
+                    .collect(Collectors.toMap(
+                            chatMessage -> chatMessage,
+                            chatMessage -> getChatMessageLikes(chatMessage.getId()) // Assuming this method returns a list of UserDTO
+                    ));
+
+            return ChatMessageMapper.toDTOList(chatMessages, userSenderMap, likedByMap);
         } catch (DataAccessException e) {
             throw new BasesNotFoundException(EntityType.ChatMessage);
         }
     }
 
     public ChatMessageDTO getChatMessageById(UUID id) {
-        return ChatMessageMapper.toDTO(chatMessageRepository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id)), userService, ftService);
+        return chatMessageRepository.findById(id)
+                .map(chatMessage -> {
+                    UserDTO userSender = userService.getUserById(chatMessage.getUserSender().getId());
+                    List<UserDTO> likedBy = getChatMessageLikes(chatMessage.getId());
+                    return ChatMessageMapper.toDTO(chatMessage, userSender, likedBy);
+                })
+                .orElseThrow(() -> new BaseNotFoundException(id));
     }
 
-    public List<ChatMessageDTO> getChatMessagesByTagId(UUID tagId) {
-        // TODO: change this logic later, once tags are setup.
-        try {
-            return ChatMessageMapper.toDTOList(chatMessageRepository.findAll(), userService, ftService);
-        } catch (DataAccessException e) {
-            throw new RuntimeException("Error retrieving chatMessages", e);
-        }
-    }
-
+    // Other methods remain mostly the same but updated to work with mappings
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
             User userSender = userRepository.findById(chatMessageDTO.userSender().id())
@@ -74,17 +85,15 @@ public class ChatMessageService implements IChatMessageService {
             Event event = eventRepository.findById(chatMessageDTO.eventId())
                     .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.eventId()));
 
-            ChatMessage chatMessageEntity = ChatMessageMapper
-                    .toEntity(chatMessageDTO, userSender, event);
+            ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
 
             chatMessageRepository.save(chatMessageEntity);
 
-            return ChatMessageMapper.toDTO(chatMessageEntity, userService, ftService);
+            return ChatMessageMapper.toDTO(chatMessageEntity, userSender, List.of()); // Empty likedBy list
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
         }
     }
-
 
     public boolean deleteChatMessageById(UUID id) {
         if (!chatMessageRepository.existsById(id)) {
@@ -124,13 +133,14 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     public List<UserDTO> getChatMessageLikes(UUID chatMessageId) {
-
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                 .orElseThrow(() -> new BaseNotFoundException(chatMessageId));
 
         List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
 
-        return likes.stream().map(like -> UserMapper.toDTO(like.getUser(), userService, ftService)).collect(Collectors.toList());
+        return likes.stream()
+                .map(like -> UserMapper.toDTO(like.getUser(), userService, ftService))
+                .collect(Collectors.toList());
     }
 
     public void deleteChatMessageLike(UUID chatMessageId, UUID userId) {

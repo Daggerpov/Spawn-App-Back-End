@@ -28,7 +28,6 @@ public class UserMapper {
     public static User toEntity(UserDTO dto) {
         return new User(
                 dto.id(),
-                dto.friendTags() != null ? dto.friendTags().get(0).id() : null, // First tag is always "everyone" tag (should improve later)
                 dto.username(),
                 dto.profilePicture(),
                 dto.firstName(),
