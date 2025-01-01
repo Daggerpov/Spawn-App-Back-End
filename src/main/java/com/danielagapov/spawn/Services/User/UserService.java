@@ -112,15 +112,6 @@ public class UserService implements IUserService {
             return false;
         }
     }
-    public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
-        try {
-            FriendRequest friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
-            friendRequestsRepository.save(friendRequest);
-            return FriendRequestMapper.toDTO(friendRequest, this, ftService);
-        } catch (DataAccessException e) {
-            throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
-        }
-    }
 
     public List<UUID> getUserFriendsId(UUID friendTagId) {
         return uftRepository.findFriendIdsByTagId(friendTagId);
