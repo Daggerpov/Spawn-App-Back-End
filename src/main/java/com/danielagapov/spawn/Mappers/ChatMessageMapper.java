@@ -4,10 +4,6 @@ import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
-import com.danielagapov.spawn.Services.User.UserService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +11,7 @@ import java.util.stream.Collectors;
 public class ChatMessageMapper {
     // by far the simplest mapping, since it's essentially 1-to-1
 
-    public static ChatMessageDTO toDTO(ChatMessage entity, UserService userService, FriendTagService ftService) {
+    public static ChatMessageDTO toDTO(ChatMessage entity,) {
         return new ChatMessageDTO(
                 entity.getId(),
                 entity.getContent(),
@@ -37,8 +33,7 @@ public class ChatMessageMapper {
         );
     }
 
-    public static List<ChatMessageDTO> toDTOList(List<ChatMessage> chatMessages, UserService userService,
-                                                 FriendTagService ftService) {
+    public static List<ChatMessageDTO> toDTOList(List<ChatMessage> chatMessages) {
         return chatMessages.stream()
                 .map(chatMessage -> toDTO(chatMessage, userService, ftService))
                 .collect(Collectors.toList());

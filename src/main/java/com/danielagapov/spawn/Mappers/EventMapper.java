@@ -43,8 +43,8 @@ public class EventMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<Event> toEntityList(List<EventDTO> dtos, List<Location> locations) {
-        return dtos.stream()
+    public static List<Event> toEntityList(List<EventDTO> eventDTOS, List<Location> locations) {
+        return eventDTOS.stream()
                 .map(dto -> {
                     Location location = locations.stream()
                             .filter(loc -> loc.getId().equals(dto.location().id())) // Match LocationDTO's UUID with Location entity

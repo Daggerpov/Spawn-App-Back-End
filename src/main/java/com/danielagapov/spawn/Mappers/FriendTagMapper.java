@@ -6,10 +6,8 @@ import com.danielagapov.spawn.Models.FriendTag;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.danielagapov.spawn.Services.User.UserService;
-
 public class FriendTagMapper {
-    public static FriendTagDTO toDTO(FriendTag entity, UserService userService) {
+    public static FriendTagDTO toDTO(FriendTag entity) {
         return new FriendTagDTO(
                 entity.getId(),
                 entity.getDisplayName(),
@@ -19,7 +17,7 @@ public class FriendTagMapper {
         );
     }
 
-    public static FriendTag toEntity(FriendTagDTO dto, UserService userService) {
+    public static FriendTag toEntity(FriendTagDTO dto) {
         return new FriendTag(
                 dto.id(),
                 dto.displayName(),
@@ -28,13 +26,13 @@ public class FriendTagMapper {
         );
     }
 
-    public static List<FriendTagDTO> toDTOList(List<FriendTag> entities, UserService userService) {
+    public static List<FriendTagDTO> toDTOList(List<FriendTag> entities,) {
         return entities.stream()
                 .map(friendTag -> toDTO(friendTag, userService))
                 .collect(Collectors.toList());
     }
 
-    public static List<FriendTag> toEntityList(List<FriendTagDTO> dtos, UserService userService) {
+    public static List<FriendTag> toEntityList(List<FriendTagDTO> dtos, ) {
         return dtos.stream()
                 .map(ft -> toEntity(ft, userService))
                 .collect(Collectors.toList());

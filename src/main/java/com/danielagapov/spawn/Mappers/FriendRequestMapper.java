@@ -2,10 +2,6 @@ package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.Models.FriendRequests;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
-import com.danielagapov.spawn.Services.User.UserService;
 
 import java.util.List;
 import java.util.stream.Collectors;
