@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.Models.Event;
@@ -9,16 +10,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ChatMessageMapper {
-    // by far the simplest mapping, since it's essentially 1-to-1
 
-    public static ChatMessageDTO toDTO(ChatMessage entity,) {
+    public static ChatMessageDTO toDTO(ChatMessage entity, UserDTO userSender, List<UserDTO> likedBy) {
         return new ChatMessageDTO(
                 entity.getId(),
                 entity.getContent(),
                 entity.getTimestamp(),
-                UserMapper.toDTO(entity.getUserSender(), userService, ftService),
+                userSender,
                 entity.getEvent().getId(),
-                UserMapper.toDTOList(entity.getLikedBy(), userService, ftService)
+                likedBy
         );
     }
 
@@ -28,8 +28,7 @@ public class ChatMessageMapper {
                 dto.content(),
                 dto.timestamp(),
                 userSender,
-                event,
-                UserMapper.toEntityList(dto.likedBy())
+                event
         );
     }
 
