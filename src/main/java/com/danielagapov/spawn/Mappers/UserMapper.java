@@ -1,24 +1,26 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class UserMapper {
 
-    public static UserDTO toDTO(User user) {
+    public static UserDTO toDTO(User user, List<UserDTO> friends, List<FriendTagDTO> friendTags) {
 
         return new UserDTO(
                 user.getId(),
-                userService.getUserFriends(user.getId()),
+                friends,
                 user.getUsername(),
                 user.getProfilePicture(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getBio(),
-                ftService.getFriendTagsByOwnerId(user.getId()),
+                friendTags,
                 user.getEmail()
         );
     }
@@ -36,9 +38,13 @@ public class UserMapper {
         );
     }
 
-    public static List<UserDTO> toDTOList(List<User> users) {
+    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UserDTO>> friendsMap, Map<User, List<FriendTagDTO>> friendTagsMap) {
         return users.stream()
-                .map(user -> toDTO(user, userService, ftService))
+                .map(user -> toDTO(
+                        user,
+                        friendsMap.getOrDefault(user, List.of()),
+                        friendTagsMap.getOrDefault(user, List.of())
+                ))
                 .collect(Collectors.toList());
     }
 
