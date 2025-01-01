@@ -46,6 +46,18 @@ public class UserService implements IUserService {
         }
     }
 
+    // CRUD operations:
+
+    public UserDTO getUserById(UUID id) {
+        User user = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(id));
+        List<UserDTO> friends = getFriendsByFriendTagId(user.getId());
+        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
+        return UserMapper.toDTO(user, friends, friendTags);
+    }
+
+    // For Friend Tags:
+
     public Map<FriendTag, UserDTO> getOwnerMap() {
         List<FriendTag> friendTags = friendTagRepository.findAll();
         return friendTags.stream()
@@ -60,27 +72,12 @@ public class UserService implements IUserService {
         return friendTags.stream()
                 .collect(Collectors.toMap(
                         friendTag -> friendTag,
-                        friendTag -> getUserFriends(friendTag.getId()) // Map each FriendTag to its friends list (List<UserDTO>)
+                        friendTag -> getFriendsByFriendTagId(friendTag.getId()) // Map each FriendTag to its friends list (List<UserDTO>)
                 ));
     }
 
-    public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
-        // Assuming you have a method to retrieve friends for a given FriendTag
-        return uftRepository.findFriendIdsByTagId(friendTagId)
-                .stream()
-                .map(this::getUserById)
-                .collect(Collectors.toList());
-    }
-
-    public UserDTO getUserById(UUID id) {
-        User user = repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id));
-        List<UserDTO> friends = getUserFriends(user.getId());
-        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
-        return UserMapper.toDTO(user, friends, friendTags);
-    }
-
     public List<UserDTO> getUsersByTagId(UUID tagId) {
+        // TODO: adjust this stub implementation
         try {
             return getUserDTOs();
         } catch (DataAccessException e) {
@@ -96,7 +93,7 @@ public class UserService implements IUserService {
             repository.save(userEntity);
 
             // Fetch friends and friend tags after saving the user
-            List<UserDTO> friends = getUserFriends(userEntity.getId());
+            List<UserDTO> friends = getFriendsByFriendTagId(userEntity.getId());
             List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userEntity.getId());
 
             userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
@@ -120,13 +117,13 @@ public class UserService implements IUserService {
             user.setLastName(newUser.lastName());
             user.setUsername(newUser.username());
             repository.save(user);
-            List<UserDTO> friends = getUserFriends(user.getId());
+            List<UserDTO> friends = getFriendsByFriendTagId(user.getId());
             List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
             return UserMapper.toDTO(user, friends, friendTags);
         }).orElseGet(() -> {
             User userEntity = UserMapper.toEntity(newUser);
             repository.save(userEntity);
-            List<UserDTO> friends = getUserFriends(userEntity.getId());
+            List<UserDTO> friends = getFriendsByFriendTagId(userEntity.getId());
             List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userEntity.getId());
             return UserMapper.toDTO(userEntity, friends, friendTags);
         });
@@ -145,11 +142,7 @@ public class UserService implements IUserService {
         }
     }
 
-    public List<UUID> getUserFriendsId(UUID friendTagId) {
-        return uftRepository.findFriendIdsByTagId(friendTagId);
-    }
-
-    public List<UserDTO> getUserFriends(UUID friendTagId) {
+    public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         return uftRepository.findFriendIdsByTagId(friendTagId)
                 .stream()
                 .map(this::getUserById)
@@ -161,7 +154,7 @@ public class UserService implements IUserService {
         Map<User, List<UserDTO>> friendsMap = users.stream()
                 .collect(Collectors.toMap(
                         user -> user,
-                        user -> getUserFriends(user.getId())
+                        user -> getFriendsByFriendTagId(user.getId())
                 ));
         Map<User, List<FriendTagDTO>> friendTagsMap = users.stream()
                 .collect(Collectors.toMap(
@@ -170,4 +163,15 @@ public class UserService implements IUserService {
                 ));
         return UserMapper.toDTOList(users, friendsMap, friendTagsMap);
     }
+
+    public List<UserDTO> getFriendsByUserId(UUID userId) {
+        // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
+        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userId);
+
+        // Retrieve the friends for each FriendTag and return as a flattened list
+        return friendTags.stream()
+                .flatMap(friendTag -> getFriendsByFriendTagId(friendTag.id()).stream())
+                .collect(Collectors.toList());
+    }
+
 }

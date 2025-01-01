@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.*;
@@ -58,7 +59,7 @@ public class ChatMessageService implements IChatMessageService {
             Map<ChatMessage, List<UserDTO>> likedByMap = chatMessages.stream()
                     .collect(Collectors.toMap(
                             chatMessage -> chatMessage,
-                            chatMessage -> getChatMessageLikes(chatMessage.getId()) // Assuming this method returns a list of UserDTO
+                            chatMessage -> getChatMessageLikes(chatMessage.getId())
                     ));
 
             return ChatMessageMapper.toDTOList(chatMessages, userSenderMap, likedByMap);
@@ -139,9 +140,14 @@ public class ChatMessageService implements IChatMessageService {
         List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
 
         return likes.stream()
-                .map(like -> UserMapper.toDTO(like.getUser(), userService, ftService))
+                .map(like -> {
+                    List<UserDTO> friends = userService.getFriendsByUserId(like.getUser().getId());
+                    List<FriendTagDTO> friendTags = ftService.getFriendTagsByOwnerId(like.getUser().getId());
+                    return UserMapper.toDTO(like.getUser(), friends, friendTags);
+                })
                 .collect(Collectors.toList());
     }
+
 
     public void deleteChatMessageLike(UUID chatMessageId, UUID userId) {
         try {
