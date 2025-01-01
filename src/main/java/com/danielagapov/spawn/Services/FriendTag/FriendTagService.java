@@ -43,9 +43,11 @@ public class FriendTagService implements IFriendTagService {
 
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
-            return repository.findByOwnerId(ownerId).stream()
+            /*return repository.findByOwnerId(ownerId)
+                    .stream()
                     .map(this::getFriendTagById)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList());*/
+            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), userService);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving friendTags", e);
         }
@@ -53,7 +55,7 @@ public class FriendTagService implements IFriendTagService {
 
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag) {
         try {
-            FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
+            FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag, userService);
             repository.save(friendTagEntity);
             return FriendTagMapper.toDTO(friendTagEntity, userService);
         } catch (DataAccessException e) {
@@ -71,7 +73,7 @@ public class FriendTagService implements IFriendTagService {
             repository.save(friendTag);
             return FriendTagMapper.toDTO(friendTag, userService);
         }).orElseGet(() -> {
-            FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag);
+            FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag, userService);
             repository.save(friendTagEntity);
             return FriendTagMapper.toDTO(friendTagEntity, userService);
         });
@@ -87,6 +89,43 @@ public class FriendTagService implements IFriendTagService {
             return true;
         } catch (DataAccessException e) {
             return false;
+        }
+    }
+
+    // Creates a temporary "default" tag with no owner, so the user can be created and the owner can be later assigned
+    // This function creates a new user with given "everyone tag" details (might not be a useful method)
+    public UUID generateNewUserFriendTag(FriendTagDTO ftDto, UUID ownerId) {
+        if (ftDto.id() != null) {
+            if (repository.existsById(ftDto.id())) {
+                return ftDto.id();
+            }
+        }
+        UUID id = repository.save(new FriendTag()).getId();
+        FriendTag ft = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(id));
+        ft.setDisplayName(ftDto.displayName());
+        ft.setColorHexCode(ftDto.colorHexCode());
+        setOwner(ft, ownerId);
+        repository.save(ft);
+        return ft.getId();
+    }
+
+    // Overloaded method in case creating a user without an empty "default" tag
+    public UUID generateNewUserFriendTag(UUID ownerId) {
+        // TODO: choose color and displayName when later decided
+        FriendTag ft = new FriendTag();
+        ft.setDisplayName("Everyone");
+        ft.setColorHexCode("#ffffff");
+        ft.setOwner(null);
+        repository.save(ft);
+        setOwner(ft, ownerId);
+        return ft.getId();
+    }
+
+    // Helper to assign the owner to a previously created tag with an empty owner
+    public void setOwner(FriendTag ft, UUID ownerId) {
+        if (ft.getOwner() == null) { // Very dangerous to change owners if owner already exists
+            ft.setOwner(ownerId);
+            repository.save(ft);
         }
     }
 

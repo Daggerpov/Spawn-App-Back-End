@@ -25,7 +25,7 @@ public class UserFriendTag implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
-    private User Friend1;
+    private User friend;
 
     @ManyToOne
     @JoinColumn(name = "friend_tag_id", referencedColumnName = "id", nullable = false)

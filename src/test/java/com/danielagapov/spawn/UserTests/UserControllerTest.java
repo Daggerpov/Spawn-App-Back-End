@@ -2,9 +2,10 @@ package com.danielagapov.spawn.UserTests;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
-
+import com.danielagapov.spawn.Repositories.IFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.User.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,52 +27,77 @@ public class UserControllerTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    private User user1;
-    private User user2;
-
-    private UserDTO user1DTO;
     private UserDTO user2DTO;
 
     @Autowired
     private UserService userService;
-    @Autowired
-    private FriendTagService ftService;
 
-    private FriendTagDTO user1All;
-    private FriendTagDTO user2All;
+    @Autowired
+    private IUserRepository userRepository;
+    @Autowired
+    private IFriendTagRepository ftRepository;
 
     @BeforeEach
     void setup() {
-        user1All = new FriendTagDTO(UUID.randomUUID(), "all", "#ffffff", user1DTO, Arrays.asList(user2DTO));
-        user2All = new FriendTagDTO(UUID.randomUUID(), "all", "#ffffff", user2DTO, Arrays.asList(user1DTO));
-        user1DTO = new UserDTO(UUID.randomUUID(), Arrays.asList(user2DTO), "username1", "examplepfp",
-                "John", "Doe", "I like turtles.", Arrays.asList(user1All), "john@doe.com");
-        user2DTO = new UserDTO(UUID.randomUUID(), Arrays.asList(user1DTO), "username2", "examplepfp2",
-                "Jane", "Does", "I like baboons.", Arrays.asList(user2All),"jane@does.com");
+        userRepository.deleteAll();
+        ftRepository.deleteAll();
     }
 
     @Test
-    void createUserCreatesUserProperly() {
-        System.out.println("saving user1: " + user1DTO.id());
+    void saveUserCreatesEmptyUserGivenTag() {
+        // Note the null tags because Java Spring will generate them from the @GeneratedValue annotation in entities
+        UserDTO user1DTO = new UserDTO(null, null, "username1", "examplepfp",
+                "John", "Doe", "I like turtles.",
+                Arrays.asList(new FriendTagDTO(null, "all", "#ffffff", null, null)),
+                "john@doe.com");
         UserDTO responseUser1 = userService.saveUser(user1DTO);
-        System.out.println("saving user2: " + user2DTO.id());
-        UserDTO responseUser2 = userService.saveUser(user2DTO);
 
-        System.out.println("saving user1All: " + user1All.id());
-        FriendTagDTO responseUser1All = ftService.saveFriendTag(user1All);
-        System.out.println("saving user2All: " + user2All.id());
-        FriendTagDTO responseUser2All = ftService.saveFriendTag(user2All);
-
-        /*User responseUser = UserMapper.toEntity(this.restTemplate.getForObject("http://localhost:" + port + "/" + user1DTO.id(),
-                UserDTO.class));*/
-
-        assertEquals(responseUser1.id(), user1DTO.id());
-        assertEquals(responseUser1.friends(), user1DTO.friends());
+        assertEquals(responseUser1.friends(), Arrays.asList());
         assertEquals(responseUser1.username(), user1DTO.username());
         assertEquals(responseUser1.profilePicture(), user1DTO.profilePicture());
         assertEquals(responseUser1.firstName(), user1DTO.firstName());
         assertEquals(responseUser1.lastName(), user1DTO.lastName());
         assertEquals(responseUser1.bio(), user1DTO.bio());
         assertEquals(responseUser1.email(), user1DTO.email());
+
+        User responseUser = UserMapper.toEntity(this.restTemplate.getForObject("http://localhost:" + port + "/api/v1/users/" + responseUser1.id(),
+                UserDTO.class));
+
+        assertEquals(responseUser1.friendTags().get(0).id(), responseUser.getFriends());
+        assertEquals(user1DTO.username(), responseUser.getUsername());
+        assertEquals(user1DTO.profilePicture(), responseUser.getProfilePicture());
+        assertEquals(user1DTO.firstName(), responseUser.getFirstName());
+        assertEquals(user1DTO.lastName(), responseUser.getLastName());
+        assertEquals(user1DTO.bio(), responseUser.getBio());
+        assertEquals(user1DTO.email(), responseUser.getEmail());
+    }
+
+    @Test
+    void saveUserCreatesEmptyUserNullTag() {
+        UserDTO user1DTO = new UserDTO(null, null, "username1", "examplepfp",
+                "John", "Doe", "I like turtles.",
+                null,
+                "john@doe.com");
+        UserDTO responseUser1 = userService.saveUser(user1DTO);
+
+        assertEquals(Arrays.asList(), responseUser1.friends());
+        assertEquals(1, responseUser1.friendTags().size());
+        assertEquals(user1DTO.username(), responseUser1.username());
+        assertEquals(user1DTO.profilePicture(), responseUser1.profilePicture());
+        assertEquals(user1DTO.firstName(), responseUser1.firstName());
+        assertEquals(user1DTO.lastName(), responseUser1.lastName());
+        assertEquals(user1DTO.bio(), responseUser1.bio());
+        assertEquals(user1DTO.email(), responseUser1.email());
+
+        User responseUser = UserMapper.toEntity(this.restTemplate.getForObject("http://localhost:" + port + "/api/v1/users/" + responseUser1.id(),
+                UserDTO.class));
+
+        assertEquals(responseUser1.friendTags().get(0).id(), responseUser.getFriends());
+        assertEquals(user1DTO.username(), responseUser.getUsername());
+        assertEquals(user1DTO.profilePicture(), responseUser.getProfilePicture());
+        assertEquals(user1DTO.firstName(), responseUser.getFirstName());
+        assertEquals(user1DTO.lastName(), responseUser.getLastName());
+        assertEquals(user1DTO.bio(), responseUser.getBio());
+        assertEquals(user1DTO.email(), responseUser.getEmail());
     }
 }

@@ -22,5 +22,6 @@ public class FriendTag implements Serializable {
         @GeneratedValue UUID id;
         private String displayName;
         private String colorHexCode; // TODO: investigate data type later | represents hex code?
+        @Column(name = "owner_id")
         private UUID owner;
 }

@@ -23,17 +23,17 @@ public class FriendTagMapper {
                 entity.getId(),
                 entity.getDisplayName(),
                 entity.getColorHexCode(),
-                userService.getUserById(entity.getOwner()),
-                userService.getUserFriends(entity.getOwner())
+                entity.getOwner(),
+                userService.getUserFriendsId(entity.getOwner())
         );
     }
 
-    public static FriendTag toEntity(FriendTagDTO dto) {
+    public static FriendTag toEntity(FriendTagDTO dto, UserService userService) {
         return new FriendTag(
                 dto.id(),
                 dto.displayName(),
                 dto.colorHexCode(),
-                UserMapper.toEntity(dto.owner()).getId()
+                UserMapper.toEntity(userService.getUserById(dto.owner())).getId()
         );
     }
 
@@ -43,9 +43,9 @@ public class FriendTagMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<FriendTag> toEntityList(List<FriendTagDTO> dtos) {
+    public static List<FriendTag> toEntityList(List<FriendTagDTO> dtos, UserService userService) {
         return dtos.stream()
-                .map(FriendTagMapper::toEntity)
+                .map(ft -> toEntity(ft, userService))
                 .collect(Collectors.toList());
     }
 }

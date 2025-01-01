@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -34,7 +33,7 @@ public class UserService implements IUserService {
     private final FriendTagService ftService;
 
     @Autowired
-    @Lazy
+    @Lazy // otherwise ftService will try to initialize this (which is already initializing)
     public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository,
                        IUserFriendTagRepository uftRepository, FriendTagService ftService) {
         this.repository = repository;
@@ -69,7 +68,15 @@ public class UserService implements IUserService {
 
     public UserDTO saveUser(UserDTO user) {
         try {
-            User userEntity = UserMapper.toEntity(user);
+            User userEntity = UserMapper.toEntity(user); // friends field might be null
+            repository.save(userEntity);
+            userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
+                    new BaseSaveException("if this error is thrown GG. it should never be thrown lol"));
+            if (user.friends() == null) {
+                userEntity.setFriends(ftService.generateNewUserFriendTag(userEntity.getId()));
+            } else {
+                userEntity.setFriends(ftService.generateNewUserFriendTag(user.friendTags().get(0), userEntity.getId())); //assumes first element is "everyone" tag
+            }
             repository.save(userEntity);
             return UserMapper.toDTO(userEntity, this, ftService);
         } catch (DataAccessException e) {
@@ -118,6 +125,10 @@ public class UserService implements IUserService {
     }
 
     // TODO: Decide whether to make a new service for this
+    public List<UUID> getUserFriendsId(UUID friendTagId) {
+        return uftRepository.findFriendIdsByTagId(friendTagId);
+    }
+
     public List<UserDTO> getUserFriends(UUID friendTagId) {
         return uftRepository.findFriendIdsByTagId(friendTagId)
                 .stream()
