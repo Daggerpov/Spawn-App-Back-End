@@ -2,7 +2,11 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,9 +16,11 @@ import java.util.UUID;
 @RequestMapping("api/v1/users")
 public class UserController {
     private final IUserService userService;
+    private final IFriendRequestService friendRequestService;
 
-    public UserController(IUserService userService) {
+    public UserController(IUserService userService, IFriendRequestService friendRequestService) {
         this.userService = userService;
+        this.friendRequestService = friendRequestService;
     }
 
     // full path: /api/v1/users
@@ -53,10 +59,26 @@ public class UserController {
         return userService.replaceUser(newUser, id);
     }
 
+    // full path: /api/v1/user/{id}
+    @DeleteMapping("{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+        try {
+            boolean isDeleted = userService.deleteUserById(id);
+            if (isDeleted) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
+            } else {
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
+            }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Resource not found
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
+        }
+    }
+
     // full path: /api/v1/user/friend-request
     @PostMapping("friend-request")
     public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
-        return userService.saveFriendRequest(friendReq);
+        return friendRequestService.saveFriendRequest(friendReq);
     }
-
 }

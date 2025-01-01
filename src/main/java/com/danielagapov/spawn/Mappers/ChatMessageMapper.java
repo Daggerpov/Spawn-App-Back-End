@@ -1,39 +1,49 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ChatMessageMapper {
-    // by far the simplest mapping, since it's essentially 1-to-1
 
-    public static ChatMessageDTO toDTO(ChatMessage entity) {
+    public static ChatMessageDTO toDTO(ChatMessage entity, UserDTO userSender, List<UserDTO> likedBy) {
         return new ChatMessageDTO(
                 entity.getId(),
-                entity.getTimestamp(),
-                entity.getUserSender().getId(),
                 entity.getContent(),
-                entity.getEvent().getId()
+                entity.getTimestamp(),
+                userSender,
+                entity.getEvent().getId(),
+                likedBy
         );
     }
 
     public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Event event) {
         return new ChatMessage(
                 dto.id(),
+                dto.content(),
                 dto.timestamp(),
                 userSender,
-                event,
-                dto.content()
+                event
         );
     }
 
-    public static List<ChatMessageDTO> toDTOList(List<ChatMessage> chatMessages) {
+    public static List<ChatMessageDTO> toDTOList(
+            List<ChatMessage> chatMessages,
+            Map<ChatMessage, UserDTO> userSenderMap,
+            Map<ChatMessage, List<UserDTO>> likedByMap
+    ) {
         return chatMessages.stream()
-                .map(ChatMessageMapper::toDTO)
+                .map(chatMessage -> toDTO(
+                        chatMessage,
+                        userSenderMap.getOrDefault(chatMessage, null), // Default to null if userSender is missing
+                        likedByMap.getOrDefault(chatMessage, List.of()) // Default to an empty list if likedBy is missing
+                ))
                 .collect(Collectors.toList());
     }
 
@@ -41,7 +51,7 @@ public class ChatMessageMapper {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
-                            .filter(user -> user.getId().equals(dto.userSenderId()))
+                            .filter(user -> user.getId().equals(dto.userSender().id()))
                             .findFirst()
                             .orElse(null);
                     Event event = events.stream()

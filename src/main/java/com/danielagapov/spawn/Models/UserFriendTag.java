@@ -19,15 +19,15 @@ import java.util.UUID;
 @Getter
 @Setter
 public class UserFriendTag implements Serializable {
-    @Id
     @GeneratedValue
+    @Id
     private UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User Friend1;
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    private User friend;
 
     @ManyToOne
-    @JoinColumn(name = "friend_tag_id", nullable = false)
+    @JoinColumn(name = "friend_tag_id", referencedColumnName = "id", nullable = false)
     private FriendTag friendTag;
 }
