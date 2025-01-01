@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -28,16 +29,14 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
-    private final IFriendRequestsRepository friendRequestsRepository;
     private final IUserFriendTagRepository uftRepository;
-    private final FriendTagService ftService;
+    private final IFriendTagService ftService;
 
     @Autowired
-    @Lazy // otherwise ftService will try to initialize this (which is already initializing)
-    public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository,
-                       IUserFriendTagRepository uftRepository, FriendTagService ftService) {
+    @Lazy // Avoid circular dependency issues with ftService
+    public UserService(IUserRepository repository,
+                       IUserFriendTagRepository uftRepository, IFriendTagService ftService) {
         this.repository = repository;
-        this.friendRequestsRepository = friendRequestsRepository;
         this.uftRepository = uftRepository;
         this.ftService = ftService;
     }
@@ -56,7 +55,6 @@ public class UserService implements IUserService {
     }
 
     public List<UserDTO> getUsersByTagId(UUID tagId) {
-        // TODO: change this logic later, once tags are setup.
         try {
             return UserMapper.toDTOList(repository.findAll(), this, ftService);
         } catch (DataAccessException e) {
@@ -68,10 +66,10 @@ public class UserService implements IUserService {
 
     public UserDTO saveUser(UserDTO user) {
         try {
-            User userEntity = UserMapper.toEntity(user); // friends field might be null
+            User userEntity = UserMapper.toEntity(user); // Handle nullable `friends` field
             repository.save(userEntity);
             userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
-                    new BaseSaveException("if this error is thrown GG. it should never be thrown lol"));
+                    new BaseSaveException("Failed to retrieve saved user"));
             if (user.friends() == null) {
                 userEntity.setFriends(ftService.generateNewUserFriendTag(userEntity.getId()));
             } else {
@@ -124,7 +122,6 @@ public class UserService implements IUserService {
         }
     }
 
-    // TODO: Decide whether to make a new service for this
     public List<UUID> getUserFriendsId(UUID friendTagId) {
         return uftRepository.findFriendIdsByTagId(friendTagId);
     }
