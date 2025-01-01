@@ -88,9 +88,11 @@ public class ChatMessageService implements IChatMessageService {
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
 
+            UserDTO userSenderDTO = userService.getUserById(chatMessageDTO.userSender().id());
+
             chatMessageRepository.save(chatMessageEntity);
 
-            return ChatMessageMapper.toDTO(chatMessageEntity, userSender, List.of()); // Empty likedBy list
+            return ChatMessageMapper.toDTO(chatMessageEntity, userSenderDTO, List.of()); // Empty likedBy list
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
         }
