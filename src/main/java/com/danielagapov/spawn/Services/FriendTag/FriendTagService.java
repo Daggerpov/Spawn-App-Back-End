@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -14,6 +15,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -29,20 +31,30 @@ public class FriendTagService implements IFriendTagService {
 
     public List<FriendTagDTO> getAllFriendTags() {
         try {
-            return FriendTagMapper.toDTOList(repository.findAll(), userService);
+            // Use the helper methods you created
+            Map<FriendTag, UserDTO> ownerMap = userService.getOwnerMap();
+            Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
+            return FriendTagMapper.toDTOList(repository.findAll(), ownerMap, friendsMap);
         } catch (DataAccessException e) {
             throw new BasesNotFoundException(EntityType.FriendTag);
         }
     }
 
     public FriendTagDTO getFriendTagById(UUID id) {
-        return FriendTagMapper.toDTO(repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id)), userService);
+        return repository.findById(id)
+                .map(friendTag -> {
+                    UserDTO owner = userService.getUserById(friendTag.getOwnerId());
+                    List<UserDTO> friends = userService.getFriendsByFriendTagId(friendTag.getId());
+                    return FriendTagMapper.toDTO(friendTag, owner, friends);
+                })
+                .orElseThrow(() -> new BaseNotFoundException(id));
     }
 
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
-            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), userService);
+            Map<FriendTag, UserDTO> ownerMap = userService.getOwnerMap();
+            Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
+            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerMap, friendsMap);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving friendTags", e);
         }
@@ -50,27 +62,24 @@ public class FriendTagService implements IFriendTagService {
 
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag) {
         try {
-            FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag, userService);
+            FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
             repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, userService);
+            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(friendTag.owner().id()), List.of());
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
         }
     }
 
-    // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
-        // TODO: we may want to make this function easier to read in the future,
-        // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(friendTag -> {
             friendTag.setColorHexCode(newFriendTag.colorHexCode());
             friendTag.setDisplayName(newFriendTag.displayName());
             repository.save(friendTag);
-            return FriendTagMapper.toDTO(friendTag, userService);
+            return FriendTagMapper.toDTO(friendTag, userService.getUserById(newFriendTag.owner().id()), List.of());
         }).orElseGet(() -> {
-            FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag, userService);
+            FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag);
             repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, userService);
+            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(newFriendTag.owner().id()), List.of());
         });
     }
 
@@ -87,8 +96,6 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
-    // Creates a temporary "default" tag with no owner, so the user can be created and the owner can be later assigned
-    // This function creates a new user with given "everyone tag" details (might not be a useful method)
     public UUID generateNewUserFriendTag(FriendTagDTO ftDto, UUID ownerId) {
         if (ftDto.id() != null) {
             if (repository.existsById(ftDto.id())) {
@@ -104,24 +111,20 @@ public class FriendTagService implements IFriendTagService {
         return ft.getId();
     }
 
-    // Overloaded method in case creating a user without an empty "default" tag
     public UUID generateNewUserFriendTag(UUID ownerId) {
-        // TODO: choose color and displayName when later decided
         FriendTag ft = new FriendTag();
         ft.setDisplayName("Everyone");
         ft.setColorHexCode("#ffffff");
-        ft.setOwner(null);
+        ft.setOwnerId(null);
         repository.save(ft);
         setOwner(ft, ownerId);
         return ft.getId();
     }
 
-    // Helper to assign the owner to a previously created tag with an empty owner
     public void setOwner(FriendTag ft, UUID ownerId) {
-        if (ft.getOwner() == null) { // Very dangerous to change owners if owner already exists
-            ft.setOwner(ownerId);
+        if (ft.getOwnerId() == null) {
+            ft.setOwnerId(ownerId);
             repository.save(ft);
         }
     }
-
 }
