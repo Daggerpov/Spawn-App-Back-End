@@ -62,21 +62,23 @@ public class UserService implements IUserService {
 
     public UserDTO saveUser(UserDTO user) {
         try {
-            User userEntity = UserMapper.toEntity(user); // Handle nullable `friends` field
+            User userEntity = UserMapper.toEntity(user);
             repository.save(userEntity);
+
+            // Fetch friends and friend tags after saving the user
+            List<UserDTO> friends = getUserFriends(userEntity.getId());
+            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userEntity.getId());
+
             userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
                     new BaseSaveException("Failed to retrieve saved user"));
-            if (user.friends() == null) {
-                userEntity.setFriends(friendTagService.generateNewUserFriendTag(userEntity.getId()));
-            } else {
-                userEntity.setFriends(friendTagService.generateNewUserFriendTag(user.friendTags().get(0), userEntity.getId())); //assumes first element is "everyone" tag
-            }
+
             repository.save(userEntity);
-            return UserMapper.toDTO(userEntity, this, friendTagService);
+            return UserMapper.toDTO(userEntity, friends, friendTags);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
     }
+
 
     // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
     public UserDTO replaceUser(UserDTO newUser, UUID id) {
