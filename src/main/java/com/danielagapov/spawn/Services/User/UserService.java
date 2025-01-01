@@ -10,7 +10,7 @@ import com.danielagapov.spawn.Exceptions.Base.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.DatabaseException;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.FriendRequests;
+import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
@@ -116,7 +116,7 @@ public class UserService implements IUserService {
     }
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
-            FriendRequests friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
+            FriendRequest friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
             friendRequestsRepository.save(friendRequest);
             return FriendRequestMapper.toDTO(friendRequest, this, ftService);
         } catch (DataAccessException e) {
