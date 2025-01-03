@@ -9,6 +9,11 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.UUID;
 
+/*
+ * A table consisting of many-to-one relationships of a User's Id and a
+ * FriendTag's Id. This table is queried to find a user's association to a
+ * FriendTag.
+ */
 @Entity
 @Table(
         name = "user_friend_tags",
