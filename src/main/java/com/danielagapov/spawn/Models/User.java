@@ -12,6 +12,9 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.util.UUID;
 
+/*
+ * Represents a unique Spawn User.
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
