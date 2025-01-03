@@ -35,6 +35,12 @@ public class UserController {
         return userService.getUserById(id);
     }
 
+    // full path: /api/v1/users/{id}/friends
+    @GetMapping("{id}/friends")
+    public List<UserDTO> getUserFriends(@PathVariable UUID id) {
+        return userService.getFriendsByUserId(id);
+    }
+
     // full path: /api/v1/users/mock-endpoint
     @GetMapping("mock-endpoint")
     public String getMockEndpoint() {
