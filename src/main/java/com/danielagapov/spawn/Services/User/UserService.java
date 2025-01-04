@@ -92,15 +92,15 @@ public class UserService implements IUserService {
             User userEntity = UserMapper.toEntity(user);
             repository.save(userEntity);
 
-            // Fetch friends and friend tags after saving the user
-            List<UserDTO> friends = getFriendsByFriendTagId(userEntity.getId());
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userEntity.getId());
+            // TODO: resolve circular entity-DTO conversions
+            FriendTagDTO everyoneTag = new FriendTagDTO(null, "everyone", "#ffffff", user, List.of());
+            friendTagService.saveFriendTag(everyoneTag);
 
             userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
                     new BaseSaveException("Failed to retrieve saved user"));
 
             repository.save(userEntity);
-            return UserMapper.toDTO(userEntity, friends, friendTags);
+            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTag));
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
