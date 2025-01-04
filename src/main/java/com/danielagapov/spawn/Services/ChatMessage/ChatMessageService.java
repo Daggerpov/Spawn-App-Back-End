@@ -75,16 +75,16 @@ public class ChatMessageService implements IChatMessageService {
                     List<UserDTO> likedBy = getChatMessageLikes(chatMessage.getId());
                     return ChatMessageMapper.toDTO(chatMessage, userSender, likedBy);
                 })
-                .orElseThrow(() -> new BaseNotFoundException(id));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
     }
 
     // Other methods remain mostly the same but updated to work with mappings
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
             User userSender = userRepository.findById(chatMessageDTO.userSender().id())
-                    .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.userSender().id()));
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.userSender().id()));
             Event event = eventRepository.findById(chatMessageDTO.eventId())
-                    .orElseThrow(() -> new BaseNotFoundException(chatMessageDTO.eventId()));
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.eventId()));
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
 
@@ -100,7 +100,7 @@ public class ChatMessageService implements IChatMessageService {
 
     public boolean deleteChatMessageById(UUID id) {
         if (!chatMessageRepository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.ChatMessage, id);
         }
 
         try {
@@ -137,7 +137,7 @@ public class ChatMessageService implements IChatMessageService {
 
     public List<UserDTO> getChatMessageLikes(UUID chatMessageId) {
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
-                .orElseThrow(() -> new BaseNotFoundException(chatMessageId));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId));
 
         List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
 

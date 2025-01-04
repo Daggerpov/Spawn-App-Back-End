@@ -57,7 +57,7 @@ public class FriendTagService implements IFriendTagService {
                     List<UserDTO> friends = userService.getFriendsByFriendTagId(friendTag.getId());
                     return FriendTagMapper.toDTO(friendTag, owner, friends);
                 })
-                .orElseThrow(() -> new BaseNotFoundException(id));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
     }
 
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
@@ -95,7 +95,7 @@ public class FriendTagService implements IFriendTagService {
 
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
         }
 
         try {
@@ -108,14 +108,14 @@ public class FriendTagService implements IFriendTagService {
 
     public void saveUserToFriendTag(UUID id, UUID userId) {
         if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
         }
         if (!repository.existsById(userId)) {
-            throw new BaseNotFoundException(userId);
+            throw new BaseNotFoundException(EntityType.User, userId);
         }
         // TODO consider adding a more descriptive error
-        FriendTag friendTag = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(id));
-        User user = userRepository.findById(userId).orElseThrow(() -> new BaseNotFoundException(id));
+        FriendTag friendTag = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
+        User user = userRepository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
         UserFriendTag uft = new UserFriendTag();
         uft.setFriend(user);
         uft.setFriendTag(friendTag);
