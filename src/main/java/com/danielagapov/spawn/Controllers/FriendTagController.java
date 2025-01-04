@@ -1,7 +1,8 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.Exceptions.Base.*;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
