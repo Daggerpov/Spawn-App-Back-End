@@ -37,7 +37,7 @@ public class EventService implements IEventService {
 
     public EventDTO getEventById(UUID id) {
         return EventMapper.toDTO(repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id)));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id)));
     }
 
     public List<EventDTO> getEventsByTagId(UUID tagId) {
@@ -121,7 +121,7 @@ public class EventService implements IEventService {
 
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.Event, id);
         }
 
         try {

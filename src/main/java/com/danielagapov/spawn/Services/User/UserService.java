@@ -50,7 +50,7 @@ public class UserService implements IUserService {
 
     public UserDTO getUserById(UUID id) {
         User user = repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
         List<UserDTO> friends = getFriendsByFriendTagId(user.getId());
         List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
         return UserMapper.toDTO(user, friends, friendTags);
@@ -131,7 +131,7 @@ public class UserService implements IUserService {
 
     public boolean deleteUserById(UUID id) {
         if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.User, id);
         }
 
         try {

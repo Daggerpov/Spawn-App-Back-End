@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,6 +64,21 @@ public class FriendTagController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
         }
+    }
+
+    // full path: /api/v1/friendTags/{id}?userId=userId
+    @PostMapping("{id}")
+    public ResponseEntity<Void> addUserToFriendTag(@PathVariable UUID id, @RequestParam UUID userId) {
+        try {
+            friendTagService.saveUserToFriendTag(id, userId);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
+        } catch (BaseSaveException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // 500 TODO consider updating this
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // 500
+        }
+        return new ResponseEntity<>(HttpStatus.OK); //200
     }
 }
 

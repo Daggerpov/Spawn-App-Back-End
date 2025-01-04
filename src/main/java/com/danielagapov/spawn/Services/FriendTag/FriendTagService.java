@@ -6,9 +6,14 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.DatabaseException;
 import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.UserFriendTag;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.User.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -22,11 +27,16 @@ import java.util.UUID;
 public class FriendTagService implements IFriendTagService {
     private final IFriendTagRepository repository;
     private final UserService userService;
+    private final IUserFriendTagRepository uftRepository;
+    private final IUserRepository userRepository;
 
     @Autowired
-    public FriendTagService(IFriendTagRepository repository, UserService userService) {
+    public FriendTagService(IFriendTagRepository repository, UserService userService,
+                            IUserFriendTagRepository uftRepository, IUserRepository userRepository) {
         this.repository = repository;
         this.userService = userService;
+        this.uftRepository = uftRepository;
+        this.userRepository = userRepository;
     }
 
     public List<FriendTagDTO> getAllFriendTags() {
@@ -47,7 +57,7 @@ public class FriendTagService implements IFriendTagService {
                     List<UserDTO> friends = userService.getFriendsByFriendTagId(friendTag.getId());
                     return FriendTagMapper.toDTO(friendTag, owner, friends);
                 })
-                .orElseThrow(() -> new BaseNotFoundException(id));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
     }
 
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
@@ -85,7 +95,7 @@ public class FriendTagService implements IFriendTagService {
 
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
         }
 
         try {
@@ -93,6 +103,26 @@ public class FriendTagService implements IFriendTagService {
             return true;
         } catch (DataAccessException e) {
             return false;
+        }
+    }
+
+    public void saveUserToFriendTag(UUID id, UUID userId) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
+        }
+        if (!repository.existsById(userId)) {
+            throw new BaseNotFoundException(EntityType.User, userId);
+        }
+        // TODO consider adding a more descriptive error
+        FriendTag friendTag = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
+        User user = userRepository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+        UserFriendTag uft = new UserFriendTag();
+        uft.setFriend(user);
+        uft.setFriendTag(friendTag);
+        try {
+            uftRepository.save(uft);
+        } catch (DataAccessException e) {
+            throw new BaseSaveException("Failed to save new UserFriendTag");
         }
     }
 }
