@@ -109,4 +109,15 @@ public class UserService implements IUserService {
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
         }
     }
+
+    // if user exists, do nothing ?
+    // if user does not exist, create user account
+    public UserDTO verifyUserOAuth(UserDTO user, UUID id) {
+        if (!repository.existsById(id)) {
+            return saveUser(user);
+        }
+        return getUserById(id);
+    }
+
+
 }

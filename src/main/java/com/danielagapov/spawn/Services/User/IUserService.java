@@ -14,4 +14,5 @@ public interface IUserService {
     public UserDTO replaceUser(UserDTO user, UUID id);
     public boolean deleteUserById(UUID id);
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO);
+    public UserDTO verifyUserOAuth(UserDTO user, UUID id);
 }
