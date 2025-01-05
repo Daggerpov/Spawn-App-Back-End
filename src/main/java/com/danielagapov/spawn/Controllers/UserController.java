@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
@@ -17,10 +18,13 @@ import java.util.UUID;
 public class UserController {
     private final IUserService userService;
     private final IFriendRequestService friendRequestService;
+    private final IEventService eventService;
 
-    public UserController(IUserService userService, IFriendRequestService friendRequestService) {
+    public UserController(IUserService userService, IFriendRequestService friendRequestService,
+                          IEventService eventService) {
         this.userService = userService;
         this.friendRequestService = friendRequestService;
+        this.eventService = eventService;
     }
 
     // full path: /api/v1/users
@@ -59,13 +63,13 @@ public class UserController {
         return userService.saveUser(newUser);
     }
 
-    // full path: /api/v1/user/{id}
+    // full path: /api/v1/users/{id}
     @PutMapping("{id}")
     public UserDTO replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
         return userService.replaceUser(newUser, id);
     }
 
-    // full path: /api/v1/user/{id}
+    // full path: /api/v1/users/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         try {
@@ -82,9 +86,38 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/user/friend-request
+    // full path: /api/v1/users/friend-request
     @PostMapping("friend-request")
     public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
         return friendRequestService.saveFriendRequest(friendReq);
+    }
+
+    // full path: /api/v1/users/{id}/friend-requests
+    @GetMapping("{id}/friend-requests")
+    public List<FriendRequestDTO> getIncomingFriendRequests(@PathVariable UUID id) {
+        return friendRequestService.getIncomingFriendRequests(id);
+    }
+
+    // full path: /api/v1/users/events/{id}
+    @GetMapping("events/{id}")
+    public List<UserDTO> getUsersParticipatingInEvent(@PathVariable UUID id) {
+        return eventService.getParticipatingUsers(id);
+    }
+
+    // full path: /api/v1/users/{id}/friends?friendId=friendId
+    @DeleteMapping("{id}/friends")
+    public ResponseEntity<Void> deleteFriendFromUser(@PathVariable UUID id, @RequestParam UUID friendId) {
+        try {
+            userService.deleteFriendFromUser(id, friendId);
+        } catch (Exception e) {
+
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    // full path: /api/v1/users/{id}/recommended-friends
+    @GetMapping("{id}/recommended-friends")
+    public List<UserDTO> getRecommendedFriends(@PathVariable UUID id) {
+        return userService.getRecommendedFriends(id);
     }
 }

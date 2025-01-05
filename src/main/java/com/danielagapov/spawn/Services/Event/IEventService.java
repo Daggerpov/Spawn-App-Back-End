@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,4 +14,5 @@ public interface IEventService {
     public List<EventDTO> getEventsByUserId(UUID userId);
     public EventDTO replaceEvent(EventDTO event, UUID eventId);
     public boolean deleteEventById(UUID id);
+    public List<UserDTO> getParticipatingUsers(UUID id);
 }

@@ -51,4 +51,8 @@ public class FriendRequestService implements IFriendRequestService {
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
         }
     }
+
+    public List<FriendRequestDTO> getIncomingFriendRequests(UUID id) {
+        return List.of();
+    }
 }
