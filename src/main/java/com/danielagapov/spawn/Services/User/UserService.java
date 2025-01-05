@@ -110,11 +110,13 @@ public class UserService implements IUserService {
         }
     }
 
-    // if user exists, do nothing ?
+    // if user exists, do nothing
     // if user does not exist, create user account
     public UserDTO verifyUserOAuth(UserDTO user, UUID id) {
         if (!repository.existsById(id)) {
-            return saveUser(user);
+            User userEntity = UserMapper.toEntity(user);
+            User savedEntity = repository.save(userEntity);
+            return UserMapper.toDTO(savedEntity);
         }
         return getUserById(id);
     }

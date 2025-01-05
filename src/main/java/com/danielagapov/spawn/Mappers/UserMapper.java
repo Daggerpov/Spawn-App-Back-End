@@ -24,15 +24,16 @@ public class UserMapper {
     public static User toEntity(UserDTO dto) {
         // TODO: enable this once relations are setup within entities:
 
-        User user = new User();
-        user.setId(dto.id());
-        user.setUsername(dto.username());
-        user.setFirstName(dto.firstName());
-        user.setLastName(dto.lastName());
-        user.setBio(dto.bio());
-        user.setProfilePicture(dto.profilePicture());
+        return new User(
+                dto.id(),
+                dto.username(),
+                dto.firstName(),
+                dto.lastName(),
+                dto.bio(),
+                dto.profilePicture()
+        );
         // TODO: setup later once relations are setup within entities
-        return user;
+
     }
 
     public static List<UserDTO> toDTOList(List<User> users) {

@@ -6,8 +6,13 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -78,4 +83,33 @@ public class UserController {
     public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
         return userService.saveFriendRequest(friendReq);
     }
+
+//    // full path: /api/v1/user/oauth/google
+//    @RequestMapping("oauth/google")
+//    public ResponseEntity<Void> googleSignIn(Principal principal) {
+//        // do smt ?
+//    }
+
+    @RequestMapping("test-google")
+    public OAuth2User testGoogle(@AuthenticationPrincipal OAuth2User principal) {
+        return principal;
+    }
+
+//    givenName
+//     * - familyName
+//     * - email
+//     * - picture
+    @RequestMapping("test-google-2")
+    public String testGoogle2(@AuthenticationPrincipal OAuth2User principal) {
+        return (String) principal.getAttribute("given_name") + principal.getAttribute("family_name")
+                + principal.getAttribute("email") + principal.getAttribute("picture");
+    }
+
+    @RequestMapping("test-google-3")
+    public String testGoogle3(@AuthenticationPrincipal OAuth2User principal) {
+        return principal.getAttribute("sub");
+    }
+
+
+
 }

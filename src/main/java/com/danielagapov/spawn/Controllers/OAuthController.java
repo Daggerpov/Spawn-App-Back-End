@@ -51,6 +51,7 @@ public class OAuthController {
             UserDTO verifiedUserDTO = userService.verifyUserOAuth(userDTO, uuid); // TODO: handle case where email exists already; seems to be affected by @GeneratedValue in Model.User
             return ResponseEntity.ok().body(verifiedUserDTO.toString());
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body("Error verifying user with Google OAuth");
         }
     }
