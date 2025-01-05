@@ -94,10 +94,12 @@ public class UserService implements IUserService {
 
             // TODO: resolve circular entity-DTO conversions
             FriendTagDTO everyoneTag = new FriendTagDTO(null, "everyone", "#ffffff", user, List.of());
-            friendTagService.saveFriendTag(everyoneTag);
+            UUID everyoneTagId = friendTagService.saveFriendTag(everyoneTag).id(); // id is generated when saving
 
             userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
                     new BaseSaveException("Failed to retrieve saved user"));
+
+            userEntity.setAllFriends(everyoneTagId);
 
             repository.save(userEntity);
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTag));
