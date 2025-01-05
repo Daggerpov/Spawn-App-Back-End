@@ -14,6 +14,8 @@ import java.util.UUID;
 
 /*
  * Represents a unique Spawn User.
+ * The allFriends UUID field represents each user's unique "everyone" tag which is a special kind of FriendTag
+ * holding all of the user's friends. Each user must have such a tag.
  */
 @Entity
 @NoArgsConstructor
