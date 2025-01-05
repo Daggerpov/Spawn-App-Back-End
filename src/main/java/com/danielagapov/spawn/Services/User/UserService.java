@@ -174,4 +174,9 @@ public class UserService implements IUserService {
                 .collect(Collectors.toList());
     }
 
+    public void saveFriendToUser(UUID userId, UUID friendId) {
+        User user = repository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+        friendTagService.saveUserToFriendTag(userId, user.getAllFriends());
+    }
+
 }

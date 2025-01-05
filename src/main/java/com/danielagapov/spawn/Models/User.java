@@ -31,4 +31,5 @@ public class User implements Serializable {
         private String lastName;
         private String bio;
         private String email;
+        private UUID allFriends;
 }
