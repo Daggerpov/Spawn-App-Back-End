@@ -25,7 +25,7 @@ public interface IUserService {
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
     public List<UserDTO> getFriendsByUserId(UUID userId);
 
-    public void removeFriend(UUID id, UUID friendId);
+    public void removeFriend(UUID userId, UUID friendId);
 
     public List<UserDTO> getRecommendedFriends(UUID id);
 }
