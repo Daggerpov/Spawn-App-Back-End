@@ -59,13 +59,13 @@ public class UserController {
         return userService.saveUser(newUser);
     }
 
-    // full path: /api/v1/user/{id}
+    // full path: /api/v1/users/{id}
     @PutMapping("{id}")
     public UserDTO replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
         return userService.replaceUser(newUser, id);
     }
 
-    // full path: /api/v1/user/{id}
+    // full path: /api/v1/users/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         try {
@@ -82,9 +82,34 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/user/friend-request
+    // full path: /api/v1/users/friend-request
     @PostMapping("friend-request")
     public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
         return friendRequestService.saveFriendRequest(friendReq);
+    }
+
+    // full path: /api/v1/users/{id}/friend-requests
+    @GetMapping("{id}/friend-requests")
+    public List<FriendRequestDTO> getIncomingFriendRequests(@PathVariable UUID id) {
+        return friendRequestService.getIncomingFriendRequestsByUserId(id);
+    }
+
+    // full path: /api/v1/users/{id}/removeFriend?friendId=friendId
+    @DeleteMapping("{id}/removeFriend")
+    public ResponseEntity<Void> deleteFriendFromUser(@PathVariable UUID id, @RequestParam UUID friendId) {
+        try {
+            userService.removeFriend(id, friendId);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // 500
+        }
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    // full path: /api/v1/users/{id}/recommended-friends
+    @GetMapping("{id}/recommended-friends")
+    public List<UserDTO> getRecommendedFriends(@PathVariable UUID id) {
+        return userService.getRecommendedFriends(id);
     }
 }
