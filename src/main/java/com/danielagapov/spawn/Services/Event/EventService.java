@@ -133,7 +133,7 @@ public class EventService implements IEventService {
         }
     }
 
-    public List<UserDTO> getParticipatingUsers(UUID id) {
+    public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
         return List.of();
     }
 }

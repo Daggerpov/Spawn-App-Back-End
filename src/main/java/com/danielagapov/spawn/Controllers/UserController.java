@@ -3,7 +3,6 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
@@ -18,13 +17,10 @@ import java.util.UUID;
 public class UserController {
     private final IUserService userService;
     private final IFriendRequestService friendRequestService;
-    private final IEventService eventService;
 
-    public UserController(IUserService userService, IFriendRequestService friendRequestService,
-                          IEventService eventService) {
+    public UserController(IUserService userService, IFriendRequestService friendRequestService) {
         this.userService = userService;
         this.friendRequestService = friendRequestService;
-        this.eventService = eventService;
     }
 
     // full path: /api/v1/users
@@ -95,22 +91,18 @@ public class UserController {
     // full path: /api/v1/users/{id}/friend-requests
     @GetMapping("{id}/friend-requests")
     public List<FriendRequestDTO> getIncomingFriendRequests(@PathVariable UUID id) {
-        return friendRequestService.getIncomingFriendRequests(id);
+        return friendRequestService.getIncomingFriendRequestsByUserId(id);
     }
 
-    // full path: /api/v1/users/events/{id}
-    @GetMapping("events/{id}")
-    public List<UserDTO> getUsersParticipatingInEvent(@PathVariable UUID id) {
-        return eventService.getParticipatingUsers(id);
-    }
-
-    // full path: /api/v1/users/{id}/friends?friendId=friendId
-    @DeleteMapping("{id}/friends")
+    // full path: /api/v1/users/{id}/removeFriend?friendId=friendId
+    @DeleteMapping("{id}/removeFriend")
     public ResponseEntity<Void> deleteFriendFromUser(@PathVariable UUID id, @RequestParam UUID friendId) {
         try {
-            userService.deleteFriendFromUser(id, friendId);
+            userService.removeFriend(id, friendId);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
         } catch (Exception e) {
-
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // 500
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }

@@ -14,5 +14,5 @@ public interface IEventService {
     public List<EventDTO> getEventsByUserId(UUID userId);
     public EventDTO replaceEvent(EventDTO event, UUID eventId);
     public boolean deleteEventById(UUID id);
-    public List<UserDTO> getParticipatingUsers(UUID id);
+    public List<UserDTO> getParticipatingUsersByEventId(UUID id);
 }

@@ -52,7 +52,7 @@ public class FriendRequestService implements IFriendRequestService {
         }
     }
 
-    public List<FriendRequestDTO> getIncomingFriendRequests(UUID id) {
+    public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
         return List.of();
     }
 }

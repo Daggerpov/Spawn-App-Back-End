@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
-import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,7 @@ public interface IUserService {
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
     public List<UserDTO> getFriendsByUserId(UUID userId);
 
-    public void deleteFriendFromUser(UUID id, UUID friendId);
+    public void removeFriend(UUID id, UUID friendId);
 
     public List<UserDTO> getRecommendedFriends(UUID id);
 }

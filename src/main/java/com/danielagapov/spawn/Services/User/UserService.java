@@ -174,7 +174,7 @@ public class UserService implements IUserService {
                 .collect(Collectors.toList());
     }
 
-    public void deleteFriendFromUser(UUID userId, UUID friendId) {
+    public void removeFriend(UUID userId, UUID friendId) {
     }
 
     public List<UserDTO> getRecommendedFriends(UUID id) {
