@@ -81,7 +81,7 @@ public class    EventController {
     }
 
     // full path: /api/v1/events/{id}/users
-    @GetMapping("events/{id}")
+    @GetMapping("events/{id}/users")
     public List<UserDTO> getUsersParticipatingInEvent(@PathVariable UUID id) {
         return eventService.getParticipatingUsersByEventId(id);
     }
