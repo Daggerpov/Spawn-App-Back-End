@@ -9,9 +9,11 @@ import com.danielagapov.spawn.Models.FriendRequests;
 
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserFriendTagMapping;
+import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 
 import com.danielagapov.spawn.Repositories.IUserFriendTagMappingRepository;
+import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -25,11 +27,13 @@ public class UserService implements IUserService {
     private final IUserRepository repository;
     private final IFriendRequestsRepository friendRequestsRepository;
     private final IUserFriendTagMappingRepository userTagMappingRepository;
+    private final IUserIdExternalIdMapRepository externalIdMapRepository;
 
-    public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository, IUserFriendTagMappingRepository tagRepository) {
+    public UserService(IUserRepository repository, IFriendRequestsRepository friendRequestsRepository, IUserFriendTagMappingRepository tagRepository, IUserIdExternalIdMapRepository externalIdMapRepository) {
         this.repository = repository;
         this.friendRequestsRepository = friendRequestsRepository;
         this.userTagMappingRepository = tagRepository;
+        this.externalIdMapRepository = externalIdMapRepository;
     }
 
     public List<UserDTO> getAllUsers() {
@@ -112,13 +116,19 @@ public class UserService implements IUserService {
 
     // if user exists, do nothing
     // if user does not exist, create user account
-    public UserDTO verifyUserOAuth(UserDTO user, UUID id) {
-        if (!repository.existsById(id)) {
+    // TODO: migrate to new service class
+    public UserDTO verifyUserOAuth(UserDTO user, String externId) {
+        UserIdExternalIdMap mapping = externalIdMapRepository.findById(externId).orElse(null);
+        if (mapping == null) {
             User userEntity = UserMapper.toEntity(user);
             User savedEntity = repository.save(userEntity);
+
+            UserIdExternalIdMap newMapping = new UserIdExternalIdMap(externId, savedEntity);
+            externalIdMapRepository.save(newMapping);
+
             return UserMapper.toDTO(savedEntity);
         }
-        return getUserById(id);
+        return getUserById(mapping.getUser().getId());
     }
 
 
