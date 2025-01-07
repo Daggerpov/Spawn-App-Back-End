@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.http.HttpStatus;
@@ -77,5 +78,11 @@ public class    EventController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
         }
+    }
+
+    // full path: /api/v1/events/{id}/users
+    @GetMapping("events/{id}/users")
+    public List<UserDTO> getUsersParticipatingInEvent(@PathVariable UUID id) {
+        return eventService.getParticipatingUsersByEventId(id);
     }
 }

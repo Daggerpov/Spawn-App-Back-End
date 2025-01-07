@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -132,4 +133,7 @@ public class EventService implements IEventService {
         }
     }
 
+    public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
+        return List.of();
+    }
 }
