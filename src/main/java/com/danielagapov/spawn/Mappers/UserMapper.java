@@ -33,8 +33,7 @@ public class UserMapper {
                 dto.firstName(),
                 dto.lastName(),
                 dto.bio(),
-                dto.email(),
-                dto.friendTags().get(0).id()
+                dto.email()
         );
     }
 

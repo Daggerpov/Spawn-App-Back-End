@@ -99,7 +99,7 @@ public class UserService implements IUserService {
             userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
                     new BaseSaveException("Failed to retrieve saved user"));
 
-            userEntity.setAllFriends(everyoneTagId);
+            // TODO: save the new tag to the user.
 
             repository.save(userEntity);
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTag));
@@ -178,7 +178,7 @@ public class UserService implements IUserService {
 
     public void saveFriendToUser(UUID userId, UUID friendId) {
         User user = repository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-        friendTagService.saveUserToFriendTag(userId, user.getAllFriends());
+        friendTagService.saveUserToFriendTag(userId, friendId);
     }
 
     public void removeFriend(UUID userId, UUID friendId) {
