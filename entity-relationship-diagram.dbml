@@ -6,7 +6,6 @@ Table User {
     lastName String
     bio String
     email String
-    allFriends UUID
 }
 
 Table FriendTag {
