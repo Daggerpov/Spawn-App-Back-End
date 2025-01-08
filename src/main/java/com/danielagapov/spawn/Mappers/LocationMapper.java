@@ -15,11 +15,11 @@ public class LocationMapper {
     }
 
     public static Location toEntity(LocationDTO dto) {
-        Location location = new Location();
-        location.setId(dto.id());
-        location.setName(dto.name());
-        location.setLatitude(dto.latitude());
-        location.setLongitude(dto.longitude());
-        return location;
+        return new Location(
+                dto.id(),
+                dto.name(),
+                dto.latitude(),
+                dto.longitude()
+        );
     }
 }

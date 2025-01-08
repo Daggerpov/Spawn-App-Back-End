@@ -17,11 +17,11 @@ public class FriendRequestMapper {
     }
 
     public static FriendRequests toEntity(FriendRequestDTO friendRequestDTO) {
-        FriendRequests friendRequest = new FriendRequests();
-        friendRequest.setId(friendRequestDTO.id());
-        friendRequest.setSender(UserMapper.toEntity(friendRequestDTO.sender()));
-        friendRequest.setReceiver(UserMapper.toEntity(friendRequestDTO.receiver()));
-        return friendRequest;
+        return new FriendRequests(
+                friendRequestDTO.id(),
+                UserMapper.toEntity(friendRequestDTO.sender()),
+                UserMapper.toEntity(friendRequestDTO.receiver())
+        );
     }
 
     public static List<FriendRequestDTO> toDTOList(List<FriendRequests> friendRequests) {

@@ -27,14 +27,15 @@ public class EventMapper {
 
     // Convert DTO to entity
     public static Event toEntity(EventDTO dto, Location location) {
-        Event event = new Event();
-        event.setId(dto.id());
-        event.setTitle(dto.title());
-        event.setStartTime(dto.startTime());
-        event.setEndTime(dto.endTime());
-        event.setLocation(location); // Assign the full Location entity
-        event.setNote(dto.note());
-        return event;
+        return new Event(
+                dto.id(),
+                dto.title(),
+                dto.startTime(),
+                dto.endTime(),
+                location, // Assign the full Location entity
+                dto.note(),
+                UserMapper.toEntity(dto.creator())
+        );
     }
 
     public static List<EventDTO> toDTOList(List<Event> entities) {
