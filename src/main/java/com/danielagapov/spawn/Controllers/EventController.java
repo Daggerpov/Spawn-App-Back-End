@@ -22,7 +22,7 @@ public class    EventController {
 
     // full path: /api/v1/events
     @GetMapping
-    public String getEvents() {
+    public List<EventDTO> getEvents() {
         return eventService.getAllEvents();
     }
 
