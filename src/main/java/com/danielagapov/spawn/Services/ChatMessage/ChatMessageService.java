@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.*;
+import com.danielagapov.spawn.Exceptions.EntityAlreadyExistsException;
 import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
