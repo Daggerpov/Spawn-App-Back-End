@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.*;
+import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -93,8 +94,9 @@ public class UserService implements IUserService {
             repository.save(userEntity);
 
             // TODO: resolve circular entity-DTO conversions
-            FriendTagDTO everyoneTag = new FriendTagDTO(null, "everyone", "#ffffff", user, List.of());
-            UUID everyoneTagId = friendTagService.saveFriendTag(everyoneTag).id(); // id is generated when saving
+            FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "everyone", "#ffffff", user, List.of());
+            FriendTag everyoneTag = FriendTagMapper.toEntity(friendTagService.saveFriendTag(everyoneTagDTO)); // id is generated when saving
+            everyoneTag.setEveryone(true);
 
             userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
                     new BaseSaveException("Failed to retrieve saved user"));
@@ -102,7 +104,7 @@ public class UserService implements IUserService {
             // TODO: save the new tag to the user.
 
             repository.save(userEntity);
-            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTag));
+            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTO));
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
