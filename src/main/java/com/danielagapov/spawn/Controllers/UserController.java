@@ -25,8 +25,8 @@ public class UserController {
 
     // full path: /api/v1/users
     @GetMapping
-    public String getUsers() {
-        return "These are the users: " + userService.getAllUsers();
+    public List<UserDTO> getUsers() {
+        return userService.getAllUsers();
     }
 
     // full path: /api/v1/users/{id}
