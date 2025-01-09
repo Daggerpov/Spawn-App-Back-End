@@ -10,10 +10,7 @@ import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
 import com.danielagapov.spawn.Repositories.IChatMessageRepository;
-import com.danielagapov.spawn.Repositories.IEventRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,15 +34,6 @@ public class ChatMessageServiceTests {
 
     @Mock
     private IUserService userService;
-
-    @Mock
-    private IEventRepository eventRepository;
-
-    @Mock
-    private IFriendTagService ftService;
-
-    @Mock
-    private IUserRepository userRepository;
 
     @Mock
     private IChatMessageLikesRepository chatMessageLikesRepository;
