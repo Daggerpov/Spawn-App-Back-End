@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface IEventService {
     public List<EventDTO> getAllEvents();
     public EventDTO getEventById(UUID id);
-    public List<EventDTO> getEventsByTagId(UUID tagId);
+    public List<EventDTO> getEventsByTagId(UUID friendTagId);
     public EventDTO saveEvent(EventDTO event);
     public List<EventDTO> getEventsByUserId(UUID userId);
     public EventDTO replaceEvent(EventDTO event, UUID eventId);

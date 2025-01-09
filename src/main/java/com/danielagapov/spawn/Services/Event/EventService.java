@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -12,6 +13,7 @@ import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
+import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -23,10 +25,12 @@ import java.util.stream.Collectors;
 public class EventService implements IEventService {
     private final IEventRepository repository;
     private final ILocationRepository locationRepository;
+    private final IFriendTagService friendTagService;
 
-    public EventService(IEventRepository repository, ILocationRepository locationRepository) {
+    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
+        this.friendTagService = friendTagService;
     }
 
     public List<EventDTO> getAllEvents() {
@@ -43,9 +47,32 @@ public class EventService implements IEventService {
     }
 
     public List<EventDTO> getEventsByTagId(UUID tagId) {
-        // TODO: Implement proper logic once tag relationships are configured
         try {
-            return EventMapper.toDTOList(repository.findAll());
+            // Step 1: Get the FriendTag and associated friends
+            FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
+            List<UserDTO> friends = friendTag.friends();
+
+            if (friends.isEmpty()) {
+                throw new BasesNotFoundException(EntityType.User);
+            }
+
+            // Step 2: Collect all friend user IDs
+            List<UUID> friendIds = friends.stream()
+                    .map(UserDTO::id)
+                    .toList();
+
+            // Step 3: Filter events based on whether their owner is in the list of friend IDs
+            List<Event> allEvents = repository.findAll();
+            List<Event> filteredEvents = allEvents.stream()
+                    .filter(event -> friendIds.contains(event.getCreator().getId()))
+                    .collect(Collectors.toList());
+
+            if (filteredEvents.isEmpty()) {
+                throw new BasesNotFoundException(EntityType.Event);
+            }
+
+            // Step 4: Map filtered events to DTOs
+            return EventMapper.toDTOList(filteredEvents);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving events by tag ID", e);
         }
