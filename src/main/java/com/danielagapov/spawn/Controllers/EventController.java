@@ -22,8 +22,8 @@ public class    EventController {
 
     // full path: /api/v1/events
     @GetMapping
-    public String getEvents() {
-        return "These are the events: " + eventService.getAllEvents();
+    public List<EventDTO> getEvents() {
+        return eventService.getAllEvents();
     }
 
     // full path: /api/v1/events/{id}
@@ -33,7 +33,7 @@ public class    EventController {
     }
     
     
-    // full path: /api/v1/events/user/{id}
+    // full path: /api/v1/events/user/{userId}
     @GetMapping("user/{userId}")
     public List<EventDTO> getEventsByUserId(@PathVariable UUID userId) {
         return eventService.getEventsByUserId(userId);

@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController()
@@ -21,8 +22,8 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags
     @GetMapping
-    public String getFriendTags() {
-        return "These are the friendTags: " + friendTagService.getAllFriendTags();
+    public List<FriendTagDTO> getFriendTags() {
+        return friendTagService.getAllFriendTags();
     }
 
     // full path: /api/v1/friendTags/{id}

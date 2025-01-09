@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Exceptions.Base;
+package com.danielagapov.spawn.Exceptions;
 
 import com.danielagapov.spawn.Enums.EntityType;
 

@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Exceptions.Base;
+package com.danielagapov.spawn.Exceptions;
 
 public class DatabaseException extends RuntimeException {
     public DatabaseException(String message, Throwable cause) {
