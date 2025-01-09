@@ -59,7 +59,7 @@ public class EventController {
     @GetMapping("friendTag/{tagId}")
     public ResponseEntity<List<EventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId) {
         try {
-            return new ResponseEntity<>(eventService.getEventsByTagId(tagId), HttpStatus.OK);
+            return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
         } catch (BasesNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

@@ -46,7 +46,7 @@ public class EventService implements IEventService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id)));
     }
 
-    public List<EventDTO> getEventsByTagId(UUID tagId) {
+    public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
             // Step 1: Get the FriendTag and associated friends
             FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
