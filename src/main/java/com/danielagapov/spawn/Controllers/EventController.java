@@ -47,6 +47,8 @@ public class EventController {
     public ResponseEntity<List<EventDTO>> getEventsByUserId(@PathVariable UUID userId) {
         try {
             return new ResponseEntity<>(eventService.getEventsByUserId(userId), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
         }

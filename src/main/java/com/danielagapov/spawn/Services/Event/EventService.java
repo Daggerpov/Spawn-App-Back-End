@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService implements IEventService {
@@ -77,8 +78,16 @@ public class EventService implements IEventService {
     }
 
     public List<EventDTO> getEventsByUserId(UUID userId) {
-        // TODO: Add proper filtering logic for events by user
-        return EventMapper.toDTOList(repository.findAll());
+        List<Event> events = repository.findAll()
+                .stream()
+                .filter(event -> event.getCreator().getId().equals(userId))
+                .collect(Collectors.toList());
+
+        if (events.isEmpty()) {
+            throw new BasesNotFoundException(EntityType.Event);
+        }
+
+        return EventMapper.toDTOList(events);
     }
 
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
