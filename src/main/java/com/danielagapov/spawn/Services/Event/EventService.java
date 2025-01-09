@@ -53,7 +53,7 @@ public class EventService implements IEventService {
             List<UserDTO> friends = friendTag.friends();
 
             if (friends.isEmpty()) {
-                throw new BasesNotFoundException(EntityType.User);
+                return List.of();
             }
 
             // Step 2: Collect all friend user IDs
