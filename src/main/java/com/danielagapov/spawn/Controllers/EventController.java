@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 @RestController()
 @RequestMapping("api/v1/events")
-public class    EventController {
+public class EventController {
     private final IEventService eventService;
 
     public EventController(IEventService eventService) {
@@ -22,45 +23,76 @@ public class    EventController {
 
     // full path: /api/v1/events
     @GetMapping
-    public List<EventDTO> getEvents() {
-        return eventService.getAllEvents();
+    public ResponseEntity<List<EventDTO>> getEvents() {
+        try {
+            return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/events/{id}
     @GetMapping("{id}")
-    public EventDTO getEvent(@PathVariable UUID id) {
-        return eventService.getEventById(id);
+    public ResponseEntity<EventDTO> getEvent(@PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    
-    
+
     // full path: /api/v1/events/user/{userId}
     @GetMapping("user/{userId}")
-    public List<EventDTO> getEventsByUserId(@PathVariable UUID userId) {
-        return eventService.getEventsByUserId(userId);
+    public ResponseEntity<List<EventDTO>> getEventsByUserId(@PathVariable UUID userId) {
+        try {
+            return new ResponseEntity<>(eventService.getEventsByUserId(userId), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/events/friendTag/{tagId}
     @GetMapping("friendTag/{tagId}")
-    public List<EventDTO> getEventsByFriendTagId(@PathVariable UUID tagId) {
-        return eventService.getEventsByTagId(tagId);
+    public ResponseEntity<List<EventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId) {
+        try {
+            return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/events/mock-endpoint
     @GetMapping("mock-endpoint")
-    public String getMockEndpoint() {
-        return "This is the mock endpoint for events. Everything is working with it.";
+    public ResponseEntity<String> getMockEndpoint() {
+        return new ResponseEntity<>("This is the mock endpoint for events. Everything is working with it.", HttpStatus.OK);
     }
 
     // full path: /api/v1/events
     @PostMapping
-    public EventDTO createEvent(@RequestBody EventDTO newEvent) {
-        return eventService.saveEvent(newEvent);
+    public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO newEvent) {
+        try {
+            return new ResponseEntity<>(eventService.saveEvent(newEvent), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/events/{id}
     @PutMapping("{id}")
-    public EventDTO replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
-        return eventService.replaceEvent(newEvent, id);
+    public ResponseEntity<EventDTO> replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(eventService.replaceEvent(newEvent, id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/events/{id}
@@ -74,15 +106,21 @@ public class    EventController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
             }
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Resource not found
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     // full path: /api/v1/events/{id}/users
     @GetMapping("events/{id}/users")
-    public List<UserDTO> getUsersParticipatingInEvent(@PathVariable UUID id) {
-        return eventService.getParticipatingUsersByEventId(id);
+    public ResponseEntity<List<UserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

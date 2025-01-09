@@ -11,9 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-@RestController()
+@RestController
 @RequestMapping("api/v1/friendTags")
 public class FriendTagController {
+
     private final IFriendTagService friendTagService;
 
     public FriendTagController(IFriendTagService friendTagService) {
@@ -22,32 +23,58 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags
     @GetMapping
-    public List<FriendTagDTO> getFriendTags() {
-        return friendTagService.getAllFriendTags();
+    public ResponseEntity<List<FriendTagDTO>> getFriendTags() {
+        try {
+            return new ResponseEntity<>(friendTagService.getAllFriendTags(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/friendTags/{id}
     @GetMapping("{id}")
-    public FriendTagDTO getFriendTag(@PathVariable UUID id) {
-        return friendTagService.getFriendTagById(id);
+    public ResponseEntity<FriendTagDTO> getFriendTag(@PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(friendTagService.getFriendTagById(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/friendTags/mock-endpoint
     @GetMapping("mock-endpoint")
-    public String getMockEndpoint() {
-        return "This is the mock endpoint for friendTags. Everything is working with it.";
+    public ResponseEntity<String> getMockEndpoint() {
+        try {
+            return new ResponseEntity<>("This is the mock endpoint for friendTags. Everything is working with it.", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/friendTags
     @PostMapping
-    public FriendTagDTO createFriendTag(@RequestBody FriendTagDTO newFriendTag) {
-        return friendTagService.saveFriendTag(newFriendTag);
+    public ResponseEntity<FriendTagDTO> createFriendTag(@RequestBody FriendTagDTO newFriendTag) {
+        try {
+            return new ResponseEntity<>(friendTagService.saveFriendTag(newFriendTag), HttpStatus.CREATED);
+        } catch (BaseSaveException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/friendTags/{id}
     @PutMapping("{id}")
-    public FriendTagDTO replaceFriendTag(@RequestBody FriendTagDTO newFriendTag, @PathVariable UUID id) {
-        return friendTagService.replaceFriendTag(newFriendTag, id);
+    public ResponseEntity<FriendTagDTO> replaceFriendTag(@RequestBody FriendTagDTO newFriendTag, @PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(friendTagService.replaceFriendTag(newFriendTag, id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/friendTags/{id}
@@ -56,14 +83,14 @@ public class FriendTagController {
         try {
             boolean isDeleted = friendTagService.deleteFriendTagById(id);
             if (isDeleted) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             } else {
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Resource not found
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -72,20 +99,12 @@ public class FriendTagController {
     public ResponseEntity<Void> addUserToFriendTag(@PathVariable UUID id, @RequestParam UUID userId) {
         try {
             friendTagService.saveUserToFriendTag(id, userId);
+            return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
-        } catch (BaseSaveException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // 500 TODO consider updating this
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(HttpStatus.OK); //200
     }
 }
-
-
-
-
-
-
-

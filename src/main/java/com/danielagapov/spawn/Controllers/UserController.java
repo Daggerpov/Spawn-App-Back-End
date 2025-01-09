@@ -25,44 +25,80 @@ public class UserController {
 
     // full path: /api/v1/users
     @GetMapping
-    public List<UserDTO> getUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<List<UserDTO>> getUsers() {
+        try {
+            return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/{id}
     @GetMapping("{id}")
-    public UserDTO getUser(@PathVariable UUID id) {
-        return userService.getUserById(id);
+    public ResponseEntity<UserDTO> getUser(@PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/{id}/friends
     @GetMapping("{id}/friends")
-    public List<UserDTO> getUserFriends(@PathVariable UUID id) {
-        return userService.getFriendsByUserId(id);
+    public ResponseEntity<List<UserDTO>> getUserFriends(@PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(userService.getFriendsByUserId(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/mock-endpoint
     @GetMapping("mock-endpoint")
-    public String getMockEndpoint() {
-        return "This is the mock endpoint for users. Everything is working with it.";
+    public ResponseEntity<String> getMockEndpoint() {
+        try {
+            return new ResponseEntity<>("This is the mock endpoint for users. Everything is working with it.", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/friendtag/{tagId}
     @GetMapping("/friendTag/{tagId}")
-    public List<UserDTO> getUsersByFriendTag(@PathVariable UUID tagId) {
-        return userService.getUsersByTagId(tagId);
+    public ResponseEntity<List<UserDTO>> getUsersByFriendTag(@PathVariable UUID tagId) {
+        try {
+            return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users
     @PostMapping
-    public UserDTO createUser(@RequestBody UserDTO newUser) {
-        return userService.saveUser(newUser);
+    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO newUser) {
+        try {
+            return new ResponseEntity<>(userService.saveUser(newUser), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/{id}
     @PutMapping("{id}")
-    public UserDTO replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
-        return userService.replaceUser(newUser, id);
+    public ResponseEntity<UserDTO> replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(userService.replaceUser(newUser, id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/{id}
@@ -71,27 +107,37 @@ public class UserController {
         try {
             boolean isDeleted = userService.deleteUserById(id);
             if (isDeleted) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             } else {
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Resource not found
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Unexpected error
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     // full path: /api/v1/users/friend-request
     @PostMapping("friend-request")
-    public FriendRequestDTO createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
-        return friendRequestService.saveFriendRequest(friendReq);
+    public ResponseEntity<FriendRequestDTO> createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
+        try {
+            return new ResponseEntity<>(friendRequestService.saveFriendRequest(friendReq), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/{id}/friend-requests
     @GetMapping("{id}/friend-requests")
-    public List<FriendRequestDTO> getIncomingFriendRequests(@PathVariable UUID id) {
-        return friendRequestService.getIncomingFriendRequestsByUserId(id);
+    public ResponseEntity<List<FriendRequestDTO>> getIncomingFriendRequests(@PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // full path: /api/v1/users/{id}/removeFriend?friendId=friendId
@@ -99,17 +145,23 @@ public class UserController {
     public ResponseEntity<Void> deleteFriendFromUser(@PathVariable UUID id, @RequestParam UUID friendId) {
         try {
             userService.removeFriend(id, friendId);
+            return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     // full path: /api/v1/users/{id}/recommended-friends
     @GetMapping("{id}/recommended-friends")
-    public List<UserDTO> getRecommendedFriends(@PathVariable UUID id) {
-        return userService.getRecommendedFriends(id);
+    public ResponseEntity<List<UserDTO>> getRecommendedFriends(@PathVariable UUID id) {
+        try {
+            return new ResponseEntity<>(userService.getRecommendedFriends(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
