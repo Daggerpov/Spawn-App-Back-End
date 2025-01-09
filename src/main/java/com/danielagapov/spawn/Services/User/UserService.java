@@ -95,8 +95,8 @@ public class UserService implements IUserService {
             userEntity = repository.save(userEntity);
 
             // TODO: resolve circular entity-DTO conversions
-            FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "everyone",
-                    "#ffffff", user, List.of(), true);
+            FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "Everyone",
+                    "#1D3D3D", user, List.of(), true);
             friendTagService.saveFriendTag(everyoneTagDTO); // id is generated when saving
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTO));
         } catch (DataAccessException e) {
@@ -164,12 +164,9 @@ public class UserService implements IUserService {
 
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-        FriendTag everyoneTag;
-        try {
-            everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
-        } catch (Exception e) {
-            // if everyoneTag is not found the User doesn't exist
-            throw new BaseNotFoundException(EntityType.User, userId);
+        FriendTag everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+        if (everyoneTag == null) {
+            return List.of(); // empty list of friends
         }
 
         // Retrieve the friends for each FriendTag and return as a flattened list
