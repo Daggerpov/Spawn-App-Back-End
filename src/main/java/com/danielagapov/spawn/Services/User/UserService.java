@@ -92,17 +92,13 @@ public class UserService implements IUserService {
     public UserDTO saveUser(UserDTO user) {
         try {
             User userEntity = UserMapper.toEntity(user);
-            repository.save(userEntity);
+            userEntity = repository.save(userEntity);
 
-            // Fetch friends and friend tags after saving the user
-            List<UserDTO> friends = getFriendsByFriendTagId(userEntity.getId());
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userEntity.getId());
-
-            userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
-                    new BaseSaveException("Failed to retrieve saved user"));
-
-            repository.save(userEntity);
-            return UserMapper.toDTO(userEntity, friends, friendTags);
+            // TODO: resolve circular entity-DTO conversions
+            FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "Everyone",
+                    "#1D3D3D", user, List.of(), true);
+            friendTagService.saveFriendTag(everyoneTagDTO); // id is generated when saving
+            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTO));
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
@@ -168,12 +164,18 @@ public class UserService implements IUserService {
 
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userId);
+        FriendTag everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+        if (everyoneTag == null) {
+            return List.of(); // empty list of friends
+        }
 
         // Retrieve the friends for each FriendTag and return as a flattened list
-        return friendTags.stream()
-                .flatMap(friendTag -> getFriendsByFriendTagId(friendTag.id()).stream())
-                .collect(Collectors.toList());
+        return getFriendsByFriendTagId(everyoneTag.getId());
+    }
+
+    public void saveFriendToUser(UUID userId, UUID friendId) {
+        UUID everyoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
+        friendTagService.saveUserToFriendTag(everyoneTagId, friendId);
     }
 
     public void removeFriend(UUID userId, UUID friendId) {
@@ -182,5 +184,4 @@ public class UserService implements IUserService {
     public List<UserDTO> getRecommendedFriends(UUID id) {
         return List.of();
     }
-
 }

@@ -72,7 +72,8 @@ public class FriendTagService implements IFriendTagService {
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag) {
         try {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
-            repository.save(friendTagEntity);
+            friendTagEntity.setEveryone(false); // Should not ever manually create an "everyone" tag
+            friendTagEntity = repository.save(friendTagEntity);
             return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(friendTag.owner().id()), List.of());
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());

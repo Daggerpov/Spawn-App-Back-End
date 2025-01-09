@@ -7,7 +7,8 @@ import java.util.UUID;
 public record FriendTagDTO(
         UUID id,
         String displayName,
-        String colorHexCode, // TODO: investigate data type later
+        String colorHexCode,
         UserDTO owner,
-        List<UserDTO> friends
+        List<UserDTO> friends,
+        Boolean isEveryone
 ) implements Serializable {}

@@ -13,6 +13,7 @@ Table FriendTag {
     displayName String
     colorHexCode String
     ownerId UUID
+    isEveryone boolean
 }
 
 // Junction table for User-FriendTag relationship (One-to-Many)

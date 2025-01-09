@@ -30,4 +30,5 @@ public class FriendTag implements Serializable {
         private String displayName;
         private String colorHexCode;
         private UUID ownerId;
+        private boolean isEveryone;
 }
