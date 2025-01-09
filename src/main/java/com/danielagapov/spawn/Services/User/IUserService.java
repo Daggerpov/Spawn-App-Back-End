@@ -7,12 +7,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IUserService {
-    public List<UserDTO> getAllUsers();
-    public UserDTO getUserById(UUID id);
-    public List<UserDTO> getUsersByTagId(UUID tagId);
-    public UserDTO saveUser(UserDTO user);
-    public UserDTO replaceUser(UserDTO user, UUID id);
-    public boolean deleteUserById(UUID id);
-    public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO);
-    public UserDTO verifyUserOAuth(UserDTO user, String id);
+    List<UserDTO> getAllUsers();
+    UserDTO getUserById(UUID id);
+    List<UserDTO> getUsersByTagId(UUID tagId);
+    UserDTO saveUser(UserDTO user);
+    UserDTO replaceUser(UserDTO user, UUID id);
+    boolean deleteUserById(UUID id);
+    FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO);
 }
