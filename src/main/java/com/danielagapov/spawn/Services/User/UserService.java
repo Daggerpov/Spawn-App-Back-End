@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.parser.Entity;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -91,19 +92,12 @@ public class UserService implements IUserService {
     public UserDTO saveUser(UserDTO user) {
         try {
             User userEntity = UserMapper.toEntity(user);
-            repository.save(userEntity);
+            userEntity = repository.save(userEntity);
 
             // TODO: resolve circular entity-DTO conversions
-            FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "everyone", "#ffffff", user, List.of());
-            FriendTag everyoneTag = FriendTagMapper.toEntity(friendTagService.saveFriendTag(everyoneTagDTO)); // id is generated when saving
-            everyoneTag.setEveryone(true);
-
-            userEntity = repository.findById(userEntity.getId()).orElseThrow(() ->
-                    new BaseSaveException("Failed to retrieve saved user"));
-
-            // TODO: save the new tag to the user.
-
-            repository.save(userEntity);
+            FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "everyone",
+                    "#ffffff", user, List.of(), true);
+            friendTagService.saveFriendTag(everyoneTagDTO); // id is generated when saving
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTO));
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
@@ -170,17 +164,21 @@ public class UserService implements IUserService {
 
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userId);
+        FriendTag everyoneTag;
+        try {
+            everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+        } catch (Exception e) {
+            // if everyoneTag is not found the User doesn't exist
+            throw new BaseNotFoundException(EntityType.User, userId);
+        }
 
         // Retrieve the friends for each FriendTag and return as a flattened list
-        return friendTags.stream()
-                .flatMap(friendTag -> getFriendsByFriendTagId(friendTag.id()).stream())
-                .collect(Collectors.toList());
+        return getFriendsByFriendTagId(everyoneTag.getId());
     }
 
     public void saveFriendToUser(UUID userId, UUID friendId) {
-        User user = repository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-        friendTagService.saveUserToFriendTag(userId, friendId);
+        UUID everyoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
+        friendTagService.saveUserToFriendTag(everyoneTagId, friendId);
     }
 
     public void removeFriend(UUID userId, UUID friendId) {

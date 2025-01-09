@@ -15,7 +15,8 @@ public class FriendTagMapper {
                 entity.getDisplayName(),
                 entity.getColorHexCode(),
                 owner,
-                friends
+                friends,
+                entity.isEveryone()
         );
     }
 
@@ -24,7 +25,8 @@ public class FriendTagMapper {
                 dto.id(),
                 dto.displayName(),
                 dto.colorHexCode(),
-                dto.owner().id()
+                dto.owner().id(),
+                dto.isEveryone()
         );
     }
 
