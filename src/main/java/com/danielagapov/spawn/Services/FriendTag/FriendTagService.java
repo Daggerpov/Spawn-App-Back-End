@@ -1,45 +1,69 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.UserFriendTag;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.User.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class FriendTagService implements IFriendTagService {
     private final IFriendTagRepository repository;
+    private final UserService userService;
+    private final IUserFriendTagRepository uftRepository;
+    private final IUserRepository userRepository;
 
     @Autowired
-    public FriendTagService(IFriendTagRepository repository) {
+    public FriendTagService(IFriendTagRepository repository, UserService userService,
+                            IUserFriendTagRepository uftRepository, IUserRepository userRepository) {
         this.repository = repository;
+        this.userService = userService;
+        this.uftRepository = uftRepository;
+        this.userRepository = userRepository;
     }
 
     public List<FriendTagDTO> getAllFriendTags() {
         try {
-            return FriendTagMapper.toDTOList(repository.findAll());
+            // Use the helper methods you created
+            Map<FriendTag, UserDTO> ownerMap = userService.getOwnerMap();
+            Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
+            return FriendTagMapper.toDTOList(repository.findAll(), ownerMap, friendsMap);
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException("friendTags");
+            throw new BasesNotFoundException(EntityType.FriendTag);
         }
     }
 
     public FriendTagDTO getFriendTagById(UUID id) {
-        return FriendTagMapper.toDTO(repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id)));
+        return repository.findById(id)
+                .map(friendTag -> {
+                    UserDTO owner = userService.getUserById(friendTag.getOwnerId());
+                    List<UserDTO> friends = userService.getFriendsByFriendTagId(friendTag.getId());
+                    return FriendTagMapper.toDTO(friendTag, owner, friends);
+                })
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
     }
 
-    public List<FriendTagDTO> getFriendTagsByTagId(UUID tagId) {
-        // TODO: change this logic later, once tags are setup.
+    public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
-            return FriendTagMapper.toDTOList(repository.findAll());
+            Map<FriendTag, UserDTO> ownerMap = userService.getOwnerMap();
+            Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
+            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerMap, friendsMap);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving friendTags", e);
         }
@@ -48,32 +72,30 @@ public class FriendTagService implements IFriendTagService {
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag) {
         try {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
-            repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity);
+            friendTagEntity.setEveryone(false); // Should not ever manually create an "everyone" tag
+            friendTagEntity = repository.save(friendTagEntity);
+            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(friendTag.owner().id()), List.of());
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
         }
     }
 
-    // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
-        // TODO: we may want to make this function easier to read in the future,
-        // but for now, I left the logic the same as what Seabert wrote.
         return repository.findById(id).map(friendTag -> {
-            friendTag.setColor(newFriendTag.color());
+            friendTag.setColorHexCode(newFriendTag.colorHexCode());
             friendTag.setDisplayName(newFriendTag.displayName());
             repository.save(friendTag);
-            return FriendTagMapper.toDTO(friendTag);
+            return FriendTagMapper.toDTO(friendTag, userService.getUserById(newFriendTag.owner().id()), List.of());
         }).orElseGet(() -> {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag);
             repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity);
+            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(newFriendTag.owner().id()), List.of());
         });
     }
 
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
         }
 
         try {
@@ -84,4 +106,23 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
+    public void saveUserToFriendTag(UUID id, UUID userId) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
+        }
+        if (!repository.existsById(userId)) {
+            throw new BaseNotFoundException(EntityType.User, userId);
+        }
+        // TODO consider adding a more descriptive error
+        FriendTag friendTag = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
+        User user = userRepository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+        UserFriendTag uft = new UserFriendTag();
+        uft.setFriend(user);
+        uft.setFriendTag(friendTag);
+        try {
+            uftRepository.save(uft);
+        } catch (DataAccessException e) {
+            throw new BaseSaveException("Failed to save new UserFriendTag");
+        }
+    }
 }

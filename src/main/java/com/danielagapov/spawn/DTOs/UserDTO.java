@@ -6,10 +6,12 @@ import java.util.UUID;
 
 public record UserDTO(
         UUID id,
+        List<UserDTO> friends,
         String username,
+        String profilePicture, // TODO: adjust data type later
         String firstName,
         String lastName,
         String bio,
-        String profilePicture, // TODO: adjust data type later
-        List<FriendTagDTO> friendTags
+        List<FriendTagDTO> friendTags,
+        String email
 ) implements Serializable {}

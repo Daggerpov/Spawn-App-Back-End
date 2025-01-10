@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Models.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class FriendRequests implements Serializable {
+public class FriendRequest implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;

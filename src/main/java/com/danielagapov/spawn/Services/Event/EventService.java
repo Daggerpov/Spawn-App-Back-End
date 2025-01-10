@@ -1,17 +1,19 @@
 package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
-import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.danielagapov.spawn.Repositories.ILocationRepository;
+import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -22,30 +24,51 @@ import java.util.UUID;
 public class EventService implements IEventService {
     private final IEventRepository repository;
     private final ILocationRepository locationRepository;
+    private final IFriendTagService friendTagService;
 
-    @Autowired
-    public EventService(IEventRepository repository, ILocationRepository locationRepository) {
+    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
+        this.friendTagService = friendTagService;
     }
 
     public List<EventDTO> getAllEvents() {
         try {
             return EventMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            throw new BasesNotFoundException("events");
+            throw new BasesNotFoundException(EntityType.Event);
         }
     }
 
     public EventDTO getEventById(UUID id) {
         return EventMapper.toDTO(repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(id)));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id)));
     }
 
-    public List<EventDTO> getEventsByTagId(UUID tagId) {
-        // TODO: Implement proper logic once tag relationships are configured
+    public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
-            return EventMapper.toDTOList(repository.findAll());
+            // Step 1: Get the FriendTag and associated friends
+            FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
+            List<UserDTO> friends = friendTag.friends();
+
+            if (friends.isEmpty()) {
+                return List.of();
+            }
+
+            // Step 2: Collect all friend user IDs
+            List<UUID> friendIds = friends.stream()
+                    .map(UserDTO::id)
+                    .toList();
+
+            // Step 3: Filter events based on whether their owner is in the list of friend IDs
+            List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
+
+            if (filteredEvents.isEmpty()) {
+                throw new BasesNotFoundException(EntityType.Event);
+            }
+
+            // Step 4: Map filtered events to DTOs
+            return EventMapper.toDTOList(filteredEvents);
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving events by tag ID", e);
         }
@@ -64,13 +87,8 @@ public class EventService implements IEventService {
                 location = locationRepository.save(location);
             }
 
-            // Map EventDTO to Event entity
             Event eventEntity = EventMapper.toEntity(event, location);
-
-            // Save Event entity
             repository.save(eventEntity);
-
-            // Return the saved Event as a DTO
             return EventMapper.toDTO(eventEntity);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
@@ -78,22 +96,24 @@ public class EventService implements IEventService {
     }
 
     public List<EventDTO> getEventsByUserId(UUID userId) {
-        // TODO: Add proper filtering logic for events by user
-        return EventMapper.toDTOList(repository.findAll());
+        List<Event> events = repository.findByCreatorId(userId);
+
+        if (events.isEmpty()) {
+            throw new BasesNotFoundException(EntityType.Event);
+        }
+
+        return EventMapper.toDTOList(events);
     }
 
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
         return repository.findById(id).map(event -> {
-            // Update existing event fields
             event.setTitle(newEvent.title());
             event.setNote(newEvent.note());
             event.setEndTime(newEvent.endTime());
             event.setStartTime(newEvent.startTime());
 
-            // Convert LocationDTO to Location entity
             Location location = LocationMapper.toEntity(newEvent.location());
 
-            // Save or resolve the new location
             if (location.getId() != null) {
                 location = locationRepository.findById(location.getId())
                         .orElse(locationRepository.save(location));
@@ -102,11 +122,9 @@ public class EventService implements IEventService {
             }
 
             event.setLocation(location);
-
             repository.save(event);
             return EventMapper.toDTO(event);
         }).orElseGet(() -> {
-            // Handle case where event does not exist (create new)
             Location location = LocationMapper.toEntity(newEvent.location());
             if (location.getId() != null) {
                 location = locationRepository.findById(location.getId())
@@ -123,7 +141,7 @@ public class EventService implements IEventService {
 
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(id);
+            throw new BaseNotFoundException(EntityType.Event, id);
         }
 
         try {
@@ -134,4 +152,7 @@ public class EventService implements IEventService {
         }
     }
 
+    public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
+        return List.of();
+    }
 }

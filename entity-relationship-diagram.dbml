@@ -5,12 +5,15 @@ Table User {
     firstName String
     lastName String
     bio String
+    email String
 }
 
 Table FriendTag {
     id UUID [pk]
     displayName String
-    color String
+    colorHexCode String
+    ownerId UUID
+    isEveryone boolean
 }
 
 // Junction table for User-FriendTag relationship (One-to-Many)
@@ -75,26 +78,6 @@ Table ChatMessageLikes {
         (chatMessageId, userId) [pk]
     }
 }
-
-// Table for Friend relationships (Many-to-Many)
-Table UserFriends {
-    userId1 UUID [ref: > User.id]
-    userId2 UUID [ref: > User.id]
-    indexes {
-        (userId1, userId2) [pk]
-    }
-}
-
-Table UserFriendTagMapping {
-    id UUID [pk]
-    userId1 UUID [ref: > User.id]
-    userId2 UUID [ref: > User.id]
-    friendTagId UUID [ref: > FriendTag.id]
-    indexes {
-        (userId1, userId2, friendTagId) [pk]
-    }
-}
-
 
 // Table for Friend Requests (Many-to-Many)
 Table FriendRequests {
