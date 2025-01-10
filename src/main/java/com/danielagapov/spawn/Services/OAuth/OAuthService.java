@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Exceptions.Base.ApplicationException;
+import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
@@ -38,7 +38,7 @@ public class OAuthService implements IOAuthService {
             UserIdExternalIdMap newMapping = new UserIdExternalIdMap(externId, savedEntity);
             externalIdMapRepository.save(newMapping);
 
-            return UserMapper.toDTO(savedEntity);
+            return UserMapper.toDTO(savedEntity, null, null);
         }
         return userService.getUserById(mapping.getUser().getId());
     }
@@ -50,6 +50,6 @@ public class OAuthService implements IOAuthService {
         String email = oauthUser.getAttribute("email"); // to be used as username
         String externId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
         if (externId == null) throw new ApplicationException("Subject was null");
-        return new UserDTO(null, email, given_name, family_name, null, picture, null);
+        return new UserDTO(null, null, null, picture, given_name, family_name, null, null, email);
     }
 }
