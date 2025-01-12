@@ -30,12 +30,12 @@ public class SpawnApplication {
 		} catch (NullPointerException e) {
 			System.err.println("Error: MYSQL_PASSWORD environment variable not set. Consider setting, or adding a .env file.");
 		}
-//		try {
-//			System.setProperty("GOOGLE_CLIENT_SECRET",
-//					System.getenv("GOOGLE_CLIENT_SECRET") != null ? System.getenv("GOOGLE_CLIENT_SECRET") : dotenv.get("GOOGLE_CLIENT_SECRET"));
-//		} catch (NullPointerException e) {
-//			System.err.println("Error: GOOGLE_CLIENT_SECRET environment variable not set.");
-//		}
+		try {
+			System.setProperty("GOOGLE_CLIENT_SECRET",
+					System.getenv("GOOGLE_CLIENT_SECRET") != null ? System.getenv("GOOGLE_CLIENT_SECRET") : dotenv.get("GOOGLE_CLIENT_SECRET"));
+		} catch (NullPointerException e) {
+			System.err.println("Error: GOOGLE_CLIENT_SECRET environment variable not set.");
+		}
 		SpringApplication.run(SpawnApplication.class, args);
 	}
 }
