@@ -23,11 +23,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .anyRequest().authenticated()
+                            .anyRequest().permitAll()
+                //.anyRequest().authenticated()
             )
-            .exceptionHandling(e -> e
-                    .authenticationEntryPoint(new HttpStatusEntryPoint(UNAUTHORIZED))
-            )
+//            .exceptionHandling(e -> e
+//                    .authenticationEntryPoint(new HttpStatusEntryPoint(UNAUTHORIZED))
+//            )
             .oauth2Login(oauth2 -> {
                 oauth2.successHandler(new AuthenticationSuccessHandler() {
                     @Override
