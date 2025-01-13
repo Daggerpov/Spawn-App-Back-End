@@ -94,9 +94,9 @@ public class FriendTagController {
         }
     }
 
-    // full path: /api/v1/friendTags?ownerId=ownerId
-    @GetMapping
-    public ResponseEntity<List<FriendTagDTO>> getFriendTagsByOwnerId(@RequestParam UUID ownerId) {
+    // full path: /api/v1/friendTags/owner/{ownerId}
+    @GetMapping("owner/{ownerId}")
+    public ResponseEntity<List<FriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId) {
         try {
             return new ResponseEntity<>(friendTagService.getFriendTagsByOwnerId(ownerId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
