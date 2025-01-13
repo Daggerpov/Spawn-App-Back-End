@@ -54,7 +54,7 @@ public class FriendTagServiceTests {
 
     @Test
     void getAllFriendTags_ShouldReturnList_WhenFriendTagsExist() {
-        FriendTag friendTag = new FriendTag(UUID.randomUUID(), "Test Tag", "#FFFFFF", UUID.randomUUID());
+        FriendTag friendTag = new FriendTag(UUID.randomUUID(), "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
         UserDTO owner = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
 
         when(friendTagRepository.findAll()).thenReturn(List.of(friendTag));
@@ -82,7 +82,7 @@ public class FriendTagServiceTests {
     @Test
     void getFriendTagById_ShouldReturnFriendTag_WhenFriendTagExists() {
         UUID friendTagId = UUID.randomUUID();
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID());
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
         UserDTO owner = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
 
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag));
@@ -110,7 +110,7 @@ public class FriendTagServiceTests {
     @Test
     void saveFriendTag_ShouldSaveFriendTag_WhenValidData() {
         UUID ownerId = UUID.randomUUID();
-        FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of());
+        FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of(), false);
         FriendTag friendTag = FriendTagMapper.toEntity(friendTagDTO);
 
         when(friendTagRepository.save(any(FriendTag.class))).thenReturn(friendTag);
@@ -124,7 +124,7 @@ public class FriendTagServiceTests {
     @Test
     void saveFriendTag_ShouldThrowException_WhenDatabaseErrorOccurs() {
         UUID ownerId = UUID.randomUUID();
-        FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of());
+        FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of(), true);
 
         when(friendTagRepository.save(any(FriendTag.class))).thenThrow(new DataAccessException("Database error") {});
 
@@ -139,8 +139,8 @@ public class FriendTagServiceTests {
     void replaceFriendTag_ShouldUpdateFriendTag_WhenFriendTagExists() {
         UUID friendTagId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
-        FriendTagDTO newFriendTagDTO = new FriendTagDTO(friendTagId, "Updated Tag", "#000000", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of());
-        FriendTag existingFriendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", ownerId);
+        FriendTagDTO newFriendTagDTO = new FriendTagDTO(friendTagId, "Updated Tag", "#000000", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of(), false);
+        FriendTag existingFriendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", ownerId, false);
 
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(existingFriendTag));
         when(friendTagRepository.save(any(FriendTag.class))).thenReturn(existingFriendTag);
@@ -157,7 +157,7 @@ public class FriendTagServiceTests {
     void replaceFriendTag_ShouldCreateFriendTag_WhenFriendTagDoesNotExist() {
         UUID friendTagId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
-        FriendTagDTO newFriendTagDTO = new FriendTagDTO(friendTagId, "Test Tag", "#FFFFFF", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of());
+        FriendTagDTO newFriendTagDTO = new FriendTagDTO(friendTagId, "Test Tag", "#FFFFFF", new UserDTO(ownerId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com"), List.of(), false);
         FriendTag newFriendTag = FriendTagMapper.toEntity(newFriendTagDTO);
 
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.empty());
@@ -212,7 +212,7 @@ public class FriendTagServiceTests {
     void saveUserToFriendTag_ShouldSaveUser_WhenValidData() {
         UUID friendTagId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID());
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
         User user = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
@@ -243,7 +243,7 @@ public class FriendTagServiceTests {
     void saveUserToFriendTag_ShouldThrowException_WhenUserNotFound() {
         UUID friendTagId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID());
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
         when(userRepository.existsById(userId)).thenReturn(false);
@@ -260,7 +260,7 @@ public class FriendTagServiceTests {
     void saveUserToFriendTag_ShouldThrowException_WhenDatabaseErrorOccurs() {
         UUID friendTagId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID());
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
         User user = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);

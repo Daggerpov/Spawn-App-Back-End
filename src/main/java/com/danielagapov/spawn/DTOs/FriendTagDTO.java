@@ -10,5 +10,6 @@ public record FriendTagDTO(
         String colorHexCode,
         UserDTO owner,
         List<UserDTO> friends,
-        Boolean isEveryone
+
+        boolean isEveryone
 ) implements Serializable {}
