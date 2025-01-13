@@ -43,18 +43,6 @@ public class FriendTagController {
         }
     }
 
-    // full path: /api/v1/friendTags/{ownerId}
-    @GetMapping("{ownerId}")
-    public ResponseEntity<List<FriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId) {
-        try {
-            return new ResponseEntity<>(friendTagService.getFriendTagsByOwnerId(ownerId), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/friendTags/mock-endpoint
     @GetMapping("mock-endpoint")
     public ResponseEntity<String> getMockEndpoint() {
@@ -99,6 +87,18 @@ public class FriendTagController {
             } else {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/friendTags?ownerId=ownerId
+    @GetMapping
+    public ResponseEntity<List<FriendTagDTO>> getFriendTagsByOwnerId(@RequestParam UUID ownerId) {
+        try {
+            return new ResponseEntity<>(friendTagService.getFriendTagsByOwnerId(ownerId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
