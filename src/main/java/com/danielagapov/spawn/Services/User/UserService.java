@@ -185,6 +185,7 @@ public class UserService implements IUserService {
         });
     }
 
+    // TODO: implement this logic later
     public List<UserDTO> getRecommendedFriends(UUID id) {
         return List.of();
     }
