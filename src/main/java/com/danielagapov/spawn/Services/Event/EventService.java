@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.Event;
 
+import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
@@ -13,7 +14,9 @@ import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
+import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -25,11 +28,15 @@ public class EventService implements IEventService {
     private final IEventRepository repository;
     private final ILocationRepository locationRepository;
     private final IFriendTagService friendTagService;
+    private final IUserService userService;
+    private final IChatMessageService chatMessageService;
 
-    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService) {
+    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.friendTagService = friendTagService;
+        this.userService = userService;
+        this.chatMessageService = chatMessageService;
     }
 
     public List<EventDTO> getAllEvents() {
@@ -41,8 +48,15 @@ public class EventService implements IEventService {
     }
 
     public EventDTO getEventById(UUID id) {
-        return EventMapper.toDTO(repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id)));
+        Event event = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
+
+        UserDTO creator = userService.getUserById(event.getCreator().getId());
+        List<UserDTO> participants = userService.getParticipantsByEventId(id);
+        List<UserDTO> invited = userService.getInvitedByEventId(id);
+        List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(id);
+
+        return EventMapper.toDTO(event, creator, participants, invited, chatMessages);
     }
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
