@@ -16,7 +16,6 @@ public interface IUserService {
     public UserDTO replaceUser(UserDTO user, UUID id);
     public boolean deleteUserById(UUID id);
 
-
     // For Friend Tags:
 
     public List<UserDTO> getUsersByTagId(UUID tagId);
@@ -24,9 +23,12 @@ public interface IUserService {
     public Map<FriendTag, List<UserDTO>> getFriendsMap();
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
     public List<UserDTO> getFriendsByUserId(UUID userId);
-
     public void removeFriend(UUID userId, UUID friendId);
     public void saveFriendToUser(UUID userId, UUID friendId);
-
     public List<UserDTO> getRecommendedFriends(UUID id);
+
+    // For Events:
+
+    public List<UserDTO> getParticipantsByEventId(UUID eventId);
+    public List<UserDTO> getInvitedByEventId(UUID eventId) ;
 }
