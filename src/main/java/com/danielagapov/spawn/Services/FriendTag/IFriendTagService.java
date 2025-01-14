@@ -14,5 +14,5 @@ public interface IFriendTagService {
     public boolean deleteFriendTagById(UUID id);
     public void saveUserToFriendTag(UUID id, UUID userId);
 
-    void deleteUserFromFriendTag(UUID everyoneTagId, UUID friendId);
+    public void deleteUserFromFriendTag(UUID id, UUID userId);
 }
