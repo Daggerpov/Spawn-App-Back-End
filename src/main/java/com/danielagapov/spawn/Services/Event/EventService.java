@@ -20,6 +20,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,11 +42,29 @@ public class EventService implements IEventService {
 
     public List<EventDTO> getAllEvents() {
         try {
-            return EventMapper.toDTOList(repository.findAll());
+            List<Event> events = repository.findAll();
+            List<EventDTO> eventDTOs = new ArrayList<>();
+
+            for (Event event : events) {
+                UUID eventId = event.getId();
+
+                // Fetch related data for the current event
+                UserDTO creator = userService.getUserById(event.getCreator().getId());
+                List<UserDTO> participants = userService.getParticipantsByEventId(eventId);
+                List<UserDTO> invited = userService.getInvitedByEventId(eventId);
+                List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(eventId);
+
+                // Map the event to its DTO
+                EventDTO eventDTO = EventMapper.toDTO(event, creator, participants, invited, chatMessages);
+                eventDTOs.add(eventDTO);
+            }
+
+            return eventDTOs;
         } catch (DataAccessException e) {
             throw new BasesNotFoundException(EntityType.Event);
         }
     }
+
 
     public EventDTO getEventById(UUID id) {
         Event event = repository.findById(id)
