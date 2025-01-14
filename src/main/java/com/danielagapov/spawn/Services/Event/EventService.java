@@ -144,24 +144,34 @@ public class EventService implements IEventService {
 
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
         return repository.findById(id).map(event -> {
+            // Update basic event details
             event.setTitle(newEvent.title());
             event.setNote(newEvent.note());
             event.setEndTime(newEvent.endTime());
             event.setStartTime(newEvent.startTime());
 
+            // Handle location
             Location location = LocationMapper.toEntity(newEvent.location());
-
             if (location.getId() != null) {
                 location = locationRepository.findById(location.getId())
                         .orElse(locationRepository.save(location));
             } else {
                 location = locationRepository.save(location);
             }
-
             event.setLocation(location);
+
+            // Save updated event
             repository.save(event);
-            return EventMapper.toDTO(event);
+
+            // Fetch related data for DTO
+            UserDTO creator = userService.getUserById(event.getCreator().getId());
+            List<UserDTO> participants = userService.getParticipantsByEventId(event.getId());
+            List<UserDTO> invited = userService.getInvitedByEventId(event.getId());
+            List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(event.getId());
+
+            return EventMapper.toDTO(event, creator, participants, invited, chatMessages);
         }).orElseGet(() -> {
+            // Handle location for new event
             Location location = LocationMapper.toEntity(newEvent.location());
             if (location.getId() != null) {
                 location = locationRepository.findById(location.getId())
@@ -170,11 +180,20 @@ public class EventService implements IEventService {
                 location = locationRepository.save(location);
             }
 
+            // Map and save new event
             Event eventEntity = EventMapper.toEntity(newEvent, location);
             repository.save(eventEntity);
-            return EventMapper.toDTO(eventEntity);
+
+            // Fetch related data for DTO
+            UserDTO creator = userService.getUserById(eventEntity.getCreator().getId());
+            List<UserDTO> participants = userService.getParticipantsByEventId(eventEntity.getId());
+            List<UserDTO> invited = userService.getInvitedByEventId(eventEntity.getId());
+            List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(eventEntity.getId());
+
+            return EventMapper.toDTO(eventEntity, creator, participants, invited, chatMessages);
         });
     }
+
 
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
