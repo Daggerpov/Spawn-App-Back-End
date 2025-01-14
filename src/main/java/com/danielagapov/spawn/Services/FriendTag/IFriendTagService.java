@@ -13,6 +13,4 @@ public interface IFriendTagService {
     public FriendTagDTO replaceFriendTag(FriendTagDTO friendTag, UUID tagId);
     public boolean deleteFriendTagById(UUID id);
     public void saveUserToFriendTag(UUID id, UUID userId);
-
-    public void deleteUserFromFriendTag(UUID id, UUID userId);
 }

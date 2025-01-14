@@ -126,20 +126,4 @@ public class FriendTagService implements IFriendTagService {
             throw new BaseSaveException("Failed to save new UserFriendTag");
         }
     }
-
-    // Replaced with direct database requests in uftRepository
-    @Deprecated
-    public void deleteUserFromFriendTag(UUID id, UUID userId) {
-        if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(EntityType.FriendTag, id);
-        }
-        if (!repository.existsById(userId)) {
-            throw new BaseNotFoundException(EntityType.User, userId);
-        }
-        try {
-            uftRepository.deleteById(id);
-        } catch (DataAccessException e) {
-            throw new BaseSaveException("Failed to delete UserFriendTag");
-        }
-    }
 }
