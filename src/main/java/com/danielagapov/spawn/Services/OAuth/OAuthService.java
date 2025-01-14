@@ -50,6 +50,6 @@ public class OAuthService implements IOAuthService {
         String email = oauthUser.getAttribute("email"); // to be used as username
         String externId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
         if (externId == null) throw new ApplicationException("Subject was null");
-        return new UserDTO(null, null, null, picture, given_name, family_name, null, null, email);
+        return new UserDTO(null, null,"", picture, given_name, family_name, null, null, email);
     }
 }
