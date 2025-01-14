@@ -164,4 +164,9 @@ public class ChatMessageService implements IChatMessageService {
                     + chatMessageId + " and userId: " + userId + ". Error: " + e.getMessage(), e);
         }
     }
+
+    public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
+        // TODO
+        return List.of();
+    }
 }

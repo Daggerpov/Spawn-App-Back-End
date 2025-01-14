@@ -15,4 +15,5 @@ public interface IChatMessageService {
     public ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId);
     public List<UserDTO> getChatMessageLikes(UUID chatMessageId);
     public void deleteChatMessageLike(UUID chatMessageId, UUID userId);
+    public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId);
 }
