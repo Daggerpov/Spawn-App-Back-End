@@ -30,6 +30,7 @@ public class ChatMessageController {
         try {
             return new ResponseEntity<>(chatMessageService.getAllChatMessages(), HttpStatus.OK);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -40,8 +41,10 @@ public class ChatMessageController {
         try {
             return new ResponseEntity<>(chatMessageService.getChatMessageById(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -58,6 +61,7 @@ public class ChatMessageController {
         try {
             return new ResponseEntity<>(chatMessageService.saveChatMessage(newChatMessage), HttpStatus.CREATED);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -73,8 +77,10 @@ public class ChatMessageController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -85,8 +91,10 @@ public class ChatMessageController {
         try {
             return new ResponseEntity<>(chatMessageService.createChatMessageLike(chatMessageId, userId), HttpStatus.CREATED);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -97,8 +105,10 @@ public class ChatMessageController {
         try {
             return new ResponseEntity<>(chatMessageService.getChatMessageLikes(chatMessageId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -110,8 +120,10 @@ public class ChatMessageController {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (BasesNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

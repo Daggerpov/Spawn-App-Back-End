@@ -24,6 +24,7 @@ public class OAuthController {
             UserDTO verifiedUserDTO = oauthService.verifyUser(principal);
             return ResponseEntity.ok().body(verifiedUserDTO);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body(null);
         }
     }
