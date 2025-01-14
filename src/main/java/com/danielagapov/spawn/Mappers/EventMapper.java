@@ -1,6 +1,8 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 
@@ -10,7 +12,7 @@ import java.util.stream.Collectors;
 public class EventMapper {
 
     // Convert entity to DTO
-    public static EventDTO toDTO(Event entity) {
+    public static EventDTO toDTO(Event entity, UserDTO creator, List<UserDTO> participants, List<UserDTO> invited, List<ChatMessageDTO> chatMessages) {
         return new EventDTO(
                 entity.getId(),
                 entity.getTitle(),
@@ -18,10 +20,10 @@ public class EventMapper {
                 entity.getEndTime(),
                 entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()) : null, // Map Location to LocationDTO
                 entity.getNote(),
-                null, // Placeholder for creator
-                null, // Placeholder for participants
-                null, // Placeholder for invited
-                null  // Placeholder for chatMessages
+                creator,
+                participants,
+                invited,
+                chatMessages
         );
     }
 
