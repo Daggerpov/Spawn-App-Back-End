@@ -43,23 +43,7 @@ public class EventService implements IEventService {
     public List<EventDTO> getAllEvents() {
         try {
             List<Event> events = repository.findAll();
-            List<EventDTO> eventDTOs = new ArrayList<>();
-
-            for (Event event : events) {
-                UUID eventId = event.getId();
-
-                // Fetch related data for the current event
-                UserDTO creator = userService.getUserById(event.getCreator().getId());
-                List<UserDTO> participants = userService.getParticipantsByEventId(eventId);
-                List<UserDTO> invited = userService.getInvitedByEventId(eventId);
-                List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(eventId);
-
-                // Map the event to its DTO
-                EventDTO eventDTO = EventMapper.toDTO(event, creator, participants, invited, chatMessages);
-                eventDTOs.add(eventDTO);
-            }
-
-            return eventDTOs;
+            return getEventDTOS(events);
         } catch (DataAccessException e) {
             throw new BasesNotFoundException(EntityType.Event);
         }
@@ -112,22 +96,16 @@ public class EventService implements IEventService {
             // Convert LocationDTO to Location entity
             Location location = LocationMapper.toEntity(event.location());
 
-            System.out.println("event service: line 82");
-
             // Save or resolve location from repository
             if (location.getId() != null) {
                 location = locationRepository.findById(location.getId())
                         .orElse(locationRepository.save(location));
-                System.out.println("event service: line 88");
             } else {
                 location = locationRepository.save(location);
-                System.out.println("event service: line 91");
             }
 
             Event eventEntity = EventMapper.toEntity(event, location);
-            System.out.println("event service: line 95");
             eventEntity = repository.save(eventEntity);
-            System.out.println("event service: line 97");
             return EventMapper.toDTO(eventEntity);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
@@ -141,7 +119,27 @@ public class EventService implements IEventService {
             throw new BasesNotFoundException(EntityType.Event);
         }
 
-        return EventMapper.toDTOList(events);
+        return getEventDTOS(events);
+    }
+
+    private List<EventDTO> getEventDTOS(List<Event> events) {
+        List<EventDTO> eventDTOs = new ArrayList<>();
+
+        for (Event event : events) {
+            UUID eventId = event.getId();
+
+            // Fetch related data for the current event
+            UserDTO creator = userService.getUserById(event.getCreator().getId());
+            List<UserDTO> participants = userService.getParticipantsByEventId(eventId);
+            List<UserDTO> invited = userService.getInvitedByEventId(eventId);
+            List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(eventId);
+
+            // Map the event to its DTO
+            EventDTO eventDTO = EventMapper.toDTO(event, creator, participants, invited, chatMessages);
+            eventDTOs.add(eventDTO);
+        }
+
+        return eventDTOs;
     }
 
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
