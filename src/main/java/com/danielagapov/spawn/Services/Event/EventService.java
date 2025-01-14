@@ -79,16 +79,22 @@ public class EventService implements IEventService {
             // Convert LocationDTO to Location entity
             Location location = LocationMapper.toEntity(event.location());
 
+            System.out.println("event service: line 82");
+
             // Save or resolve location from repository
             if (location.getId() != null) {
                 location = locationRepository.findById(location.getId())
                         .orElse(locationRepository.save(location));
+                System.out.println("event service: line 88");
             } else {
                 location = locationRepository.save(location);
+                System.out.println("event service: line 91");
             }
 
             Event eventEntity = EventMapper.toEntity(event, location);
-            repository.save(eventEntity);
+            System.out.println("event service: line 95");
+            eventEntity = repository.save(eventEntity);
+            System.out.println("event service: line 97");
             return EventMapper.toDTO(eventEntity);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
