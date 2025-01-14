@@ -179,9 +179,21 @@ public class UserService implements IUserService {
     }
 
     public void removeFriend(UUID userId, UUID friendId) {
+        // TODO
     }
 
     public List<UserDTO> getRecommendedFriends(UUID id) {
+        // TODO
+        return List.of();
+    }
+
+    public List<UserDTO> getParticipantsByEventId(UUID eventId) {
+        // TODO
+        return List.of();
+    }
+
+    public List<UserDTO> getInvitedByEventId(UUID eventId) {
+        // TODO
         return List.of();
     }
 }
