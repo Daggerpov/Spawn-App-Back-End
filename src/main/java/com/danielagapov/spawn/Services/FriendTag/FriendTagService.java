@@ -127,6 +127,8 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
+    // Replaced with direct database requests in uftRepository
+    @Deprecated
     public void deleteUserFromFriendTag(UUID id, UUID userId) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);

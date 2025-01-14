@@ -179,8 +179,10 @@ public class UserService implements IUserService {
     }
 
     public void removeFriend(UUID userId, UUID friendId) {
-        UUID everyoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
-        friendTagService.deleteUserFromFriendTag(everyoneTagId, friendId);
+        // Deletes all entries in UserFriendTag
+        friendTagRepository.findByOwnerId(userId).forEach((friendTag) -> {
+            uftRepository.deleteByFriendTagIdAndUserId(friendTag.getId(), friendId);
+        });
     }
 
     public List<UserDTO> getRecommendedFriends(UUID id) {
