@@ -64,7 +64,7 @@ public class EventService implements IEventService {
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
-            // Step 1: Get the FriendTag and associated friends
+            // Step 1: Retrieve the FriendTag and its associated friends
             FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
             List<UserDTO> friends = friendTag.friends();
 
@@ -77,15 +77,23 @@ public class EventService implements IEventService {
                     .map(UserDTO::id)
                     .toList();
 
-            // Step 3: Filter events based on whether their owner is in the list of friend IDs
+            // Step 3: Retrieve events created by any of the friends
             List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
 
             if (filteredEvents.isEmpty()) {
                 throw new BasesNotFoundException(EntityType.Event);
             }
 
-            // Step 4: Map filtered events to DTOs
-            return EventMapper.toDTOList(filteredEvents);
+            // Step 4: Map filtered events to detailed DTOs
+            return filteredEvents.stream()
+                    .map(event -> EventMapper.toDTO(
+                            event,
+                            userService.getUserById(event.getCreator().getId()),
+                            userService.getParticipantsByEventId(event.getId()),
+                            userService.getInvitedByEventId(event.getId()),
+                            chatMessageService.getChatMessagesByEventId(event.getId())
+                    ))
+                    .toList();
         } catch (DataAccessException e) {
             throw new RuntimeException("Error retrieving events by tag ID", e);
         }
