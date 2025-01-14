@@ -8,4 +8,7 @@ import java.util.UUID;
 public interface IFriendRequestService {
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO);
     public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id);
+
+    void acceptFriendRequest(UUID id);
+    void deleteFriendRequest(UUID id);
 }

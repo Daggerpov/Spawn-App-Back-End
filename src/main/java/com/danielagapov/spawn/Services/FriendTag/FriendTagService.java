@@ -99,6 +99,7 @@ public class FriendTagService implements IFriendTagService {
         }
 
         try {
+            uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
             return true;
         } catch (DataAccessException e) {
@@ -123,6 +124,20 @@ public class FriendTagService implements IFriendTagService {
             uftRepository.save(uft);
         } catch (DataAccessException e) {
             throw new BaseSaveException("Failed to save new UserFriendTag");
+        }
+    }
+
+    public void deleteUserFromFriendTag(UUID id, UUID userId) {
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
+        }
+        if (!repository.existsById(userId)) {
+            throw new BaseNotFoundException(EntityType.User, userId);
+        }
+        try {
+            uftRepository.deleteById(id);
+        } catch (DataAccessException e) {
+            throw new BaseSaveException("Failed to delete UserFriendTag");
         }
     }
 }

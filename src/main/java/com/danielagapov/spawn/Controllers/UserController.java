@@ -144,6 +144,38 @@ public class UserController {
         }
     }
 
+    // full path: /api/v1/users/{id}/friend-requests/accept?friendRequestId=friendRequestId
+    @GetMapping("{id}/friend-requests/accept")
+    // TODO: edit ResponseEntity, id is unused but it makes the path nicer??
+    public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID id, @RequestParam UUID friendRequestId) {
+        try {
+            friendRequestService.acceptFriendRequest(friendRequestId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/{id}/friend-requests/reject?friendRequestId=friendRequestId
+    @GetMapping("{id}/friend-requests/accept")
+    // TODO: edit ResponseEntity, id is unused but it makes the path nicer??
+    public ResponseEntity<Void> rejectFriendRequest(@PathVariable UUID id, @RequestParam UUID friendRequestId) {
+        try {
+            friendRequestService.deleteFriendRequest(friendRequestId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // full path: /api/v1/users/{id}/friend-requests
     @GetMapping("{id}/friend-requests")
     public ResponseEntity<List<FriendRequestDTO>> getIncomingFriendRequests(@PathVariable UUID id) {

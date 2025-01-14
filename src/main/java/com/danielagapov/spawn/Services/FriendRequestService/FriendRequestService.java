@@ -3,12 +3,15 @@ package com.danielagapov.spawn.Services.FriendRequestService;
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Enums.EntityType;
+
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -54,5 +57,15 @@ public class FriendRequestService implements IFriendRequestService {
 
     public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
         return List.of();
+    }
+
+    public void acceptFriendRequest(UUID id) {
+        FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+        userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
+        userService.saveFriendToUser(fr.getReceiver().getId(), fr.getSender().getId());
+    }
+
+    public void deleteFriendRequest(UUID id) {
+        repository.deleteById(id);
     }
 }
