@@ -62,7 +62,6 @@ public class FriendRequestService implements IFriendRequestService {
     public void acceptFriendRequest(UUID id) {
         FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
         userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
-        userService.saveFriendToUser(fr.getReceiver().getId(), fr.getSender().getId());
         deleteFriendRequest(id);
     }
 

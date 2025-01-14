@@ -149,7 +149,6 @@ public class UserController {
     public ResponseEntity<Void> deleteFriendFromUser(@PathVariable UUID id, @RequestParam UUID friendId) {
         try {
             userService.removeFriend(id, friendId);
-            userService.removeFriend(friendId, id);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             System.out.println(e.getMessage());
