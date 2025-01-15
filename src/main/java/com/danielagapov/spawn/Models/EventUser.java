@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.UserParticipationStatus;
-import com.danielagapov.spawn.Models.CompositeKeys.EventInvitedId;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
 
 import jakarta.persistence.*;
