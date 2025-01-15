@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Enums.UserParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -154,5 +155,26 @@ public class EventService implements IEventService {
 
     public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
         return List.of();
+    }
+
+    public UserParticipationStatus getUserParticipationStatus(UUID eventId, UUID userId) {
+
+        return UserParticipationStatus.invited;
+
+        // get list of all users at an event -> if no event, throw exception
+
+        // search EventUser for the participation status of given user -> no user, throw notInvited enum
+    }
+
+    public EventDTO inviteUser(UUID eventId, UUID userId) {
+        // TODO
+
+        return getEventById(eventId);
+    }
+
+    public EventDTO participateUser(UUID eventId, UUID userId) {
+        // TODO
+
+        return getEventById(eventId);
     }
 }
