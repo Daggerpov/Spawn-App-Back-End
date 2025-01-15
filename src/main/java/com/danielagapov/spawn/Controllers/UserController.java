@@ -76,7 +76,7 @@ public class UserController {
     }
 
     // full path: /api/v1/users/friendtag/{tagId}
-    @GetMapping("/friendTag/{tagId}")
+    @GetMapping("friendTag/{tagId}")
     public ResponseEntity<List<UserDTO>> getUsersByFriendTag(@PathVariable UUID tagId) {
         try {
             return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
@@ -138,20 +138,6 @@ public class UserController {
     public ResponseEntity<FriendRequestDTO> createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
         try {
             return new ResponseEntity<>(friendRequestService.saveFriendRequest(friendReq), HttpStatus.CREATED);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/users/{id}/friend-requests
-    @GetMapping("{id}/friend-requests")
-    public ResponseEntity<List<FriendRequestDTO>> getIncomingFriendRequests(@PathVariable UUID id) {
-        try {
-            return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(id), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            System.out.println(e.getMessage());
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

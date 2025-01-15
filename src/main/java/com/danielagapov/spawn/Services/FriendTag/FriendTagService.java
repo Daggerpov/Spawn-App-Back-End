@@ -99,6 +99,7 @@ public class FriendTagService implements IFriendTagService {
         }
 
         try {
+            uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
             return true;
         } catch (DataAccessException e) {
