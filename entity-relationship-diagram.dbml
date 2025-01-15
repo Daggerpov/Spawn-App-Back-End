@@ -44,24 +44,6 @@ Table EventTag {
     }
 }
 
-// Junction table for Event Participants (One-to-Many)
-Table EventParticipants {
-    eventId UUID [ref: > Event.id]
-    userId UUID [ref: > User.id]
-    indexes {
-        (eventId, userId) [pk]
-    }
-}
-
-// Junction table for Event Invited (One-to-Many)
-Table EventInvited {
-    eventId UUID [ref: > Event.id]
-    userId UUID [ref: > User.id]
-    indexes {
-        (eventId, userId) [pk]
-    }
-}
-
 Table ChatMessage {
     id UUID [pk]
     timestamp Timestamp
