@@ -2,6 +2,8 @@ package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.UserParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.EventInvitedId;
+import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,13 +20,8 @@ import java.util.UUID;
 @Getter
 @Setter
 public class EventUser implements Serializable {
-    // @EmbeddedId
-    // private EventParticipantsId id;
-
-    // TODO: switch to embeddedID
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+    @EmbeddedId
+    private EventUsersId id;
 
     @ManyToOne
     @MapsId("eventId")
