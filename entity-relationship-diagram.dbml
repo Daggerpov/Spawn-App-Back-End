@@ -44,24 +44,6 @@ Table EventTag {
     }
 }
 
-// Junction table for Event Participants (One-to-Many)
-Table EventParticipants {
-    eventId UUID [ref: > Event.id]
-    userId UUID [ref: > User.id]
-    indexes {
-        (eventId, userId) [pk]
-    }
-}
-
-// Junction table for Event Invited (One-to-Many)
-Table EventInvited {
-    eventId UUID [ref: > Event.id]
-    userId UUID [ref: > User.id]
-    indexes {
-        (eventId, userId) [pk]
-    }
-}
-
 Table ChatMessage {
     id UUID [pk]
     timestamp Timestamp
@@ -88,9 +70,22 @@ Table FriendRequests {
     }
 }
 
+// Event locations
 Table Location {
     id UUID [pk]
     name String
     latitude Double
     longitude Double
+}
+
+// Junction table for Events and Users (Many-to-Many)
+// - one event can have many participating/invited Users
+// - one user can participate or be invited to many Events
+Table EventUser {
+    eventId UUID [ref: > Event.id]
+    userId UUID [ref: > User.id]
+    status EventParticipationStatus
+    indexes {
+        (eventId, userId) [pk]
+    }
 }

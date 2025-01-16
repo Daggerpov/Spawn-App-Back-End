@@ -7,16 +7,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @Embeddable
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class EventParticipantsId implements Serializable {
+public class EventUsersId implements Serializable {
     @Column(name = "event_id", nullable = false)
-    private Long eventId;
+    private UUID eventId;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private UUID userId;
 }

@@ -17,6 +17,7 @@ public class FriendTagMapper {
                 owner,
                 friends,
                 entity.isEveryone()
+
         );
     }
 

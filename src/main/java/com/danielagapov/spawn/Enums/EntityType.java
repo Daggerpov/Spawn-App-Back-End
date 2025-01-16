@@ -8,7 +8,8 @@ public enum EntityType {
     User("User"),
 
     // Relationships between entities
-    ChatMessageLike("Chat Message Like");
+    ChatMessageLike("Chat Message Like"),
+    FriendRequest("Friend Request");
     // TODO: add more here
 
     private final String description;

@@ -27,6 +27,7 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -37,8 +38,10 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -49,8 +52,10 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.getEventsByUserId(userId), HttpStatus.OK);
         } catch (BasesNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -61,8 +66,10 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
         } catch (BasesNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -79,6 +86,7 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.saveEvent(newEvent), HttpStatus.CREATED);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -89,8 +97,10 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.replaceEvent(newEvent, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -106,8 +116,10 @@ public class EventController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
             }
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -118,8 +130,10 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

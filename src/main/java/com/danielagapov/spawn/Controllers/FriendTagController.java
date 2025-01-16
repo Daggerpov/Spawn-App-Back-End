@@ -27,6 +27,7 @@ public class FriendTagController {
         try {
             return new ResponseEntity<>(friendTagService.getAllFriendTags(), HttpStatus.OK);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -37,8 +38,10 @@ public class FriendTagController {
         try {
             return new ResponseEntity<>(friendTagService.getFriendTagById(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -49,6 +52,7 @@ public class FriendTagController {
         try {
             return new ResponseEntity<>("This is the mock endpoint for friendTags. Everything is working with it.", HttpStatus.OK);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -59,8 +63,10 @@ public class FriendTagController {
         try {
             return new ResponseEntity<>(friendTagService.saveFriendTag(newFriendTag), HttpStatus.CREATED);
         } catch (BaseSaveException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -71,8 +77,10 @@ public class FriendTagController {
         try {
             return new ResponseEntity<>(friendTagService.replaceFriendTag(newFriendTag, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -88,8 +96,24 @@ public class FriendTagController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/friendTags/owner/{ownerId}
+    @GetMapping("owner/{ownerId}")
+    public ResponseEntity<List<FriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId) {
+        try {
+            return new ResponseEntity<>(friendTagService.getFriendTagsByOwnerId(ownerId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -101,8 +125,10 @@ public class FriendTagController {
             friendTagService.saveUserToFriendTag(id, userId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

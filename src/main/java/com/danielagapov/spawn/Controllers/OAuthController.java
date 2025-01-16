@@ -36,6 +36,7 @@ public class OAuthController {
            UserDTO user = oauthService.makeUser(userDTO, id);
            return ResponseEntity.ok().body(user);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body(null);
         }
     }

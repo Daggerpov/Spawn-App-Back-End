@@ -173,15 +173,38 @@ public class UserService implements IUserService {
         return getFriendsByFriendTagId(everyoneTag.getId());
     }
 
+    // Adds friend bidirectionally
     public void saveFriendToUser(UUID userId, UUID friendId) {
-        UUID everyoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
-        friendTagService.saveUserToFriendTag(everyoneTagId, friendId);
+        UUID userEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
+        friendTagService.saveUserToFriendTag(userEveryoneTagId, friendId);
+        UUID friendEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
+        friendTagService.saveUserToFriendTag(friendEveryoneTagId, userId);
     }
 
+    // Removes friend bidirectionally
     public void removeFriend(UUID userId, UUID friendId) {
+        // Deletes all entries in UserFriendTag
+        friendTagRepository.findByOwnerId(userId).forEach((friendTag) -> {
+            uftRepository.deleteByFriendTagIdAndUserId(friendTag.getId(), friendId);
+        });
+        friendTagRepository.findByOwnerId(friendId).forEach((friendTag) -> {
+            uftRepository.deleteByFriendTagIdAndUserId(friendTag.getId(), userId);
+        });
     }
 
+    // TODO: implement this logic later
     public List<UserDTO> getRecommendedFriends(UUID id) {
+        // TODO
+        return List.of();
+    }
+
+    public List<UserDTO> getParticipantsByEventId(UUID eventId) {
+        // TODO
+        return List.of();
+    }
+
+    public List<UserDTO> getInvitedByEventId(UUID eventId) {
+        // TODO
         return List.of();
     }
 }
