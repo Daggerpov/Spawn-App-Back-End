@@ -72,6 +72,9 @@ public class ChatMessageService implements IChatMessageService {
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.ChatMessage);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -103,6 +106,9 @@ public class ChatMessageService implements IChatMessageService {
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -114,7 +120,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             chatMessageRepository.deleteById(id);
             return true;
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             logger.log(e.getMessage());
             return false;
         }
