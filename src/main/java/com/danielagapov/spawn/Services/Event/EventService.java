@@ -16,6 +16,7 @@ import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.Logger.ILogger;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -31,13 +32,15 @@ public class EventService implements IEventService {
     private final IFriendTagService friendTagService;
     private final IUserService userService;
     private final IChatMessageService chatMessageService;
+    private final ILogger logger;
 
-    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService) {
+    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService, ILogger logger) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.friendTagService = friendTagService;
         this.userService = userService;
         this.chatMessageService = chatMessageService;
+        this.logger = logger;
     }
 
     public List<EventDTO> getAllEvents() {
@@ -45,10 +48,10 @@ public class EventService implements IEventService {
             List<Event> events = repository.findAll();
             return getEventDTOS(events);
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.Event);
         }
     }
-
 
     public EventDTO getEventById(UUID id) {
         Event event = repository.findById(id)
@@ -95,6 +98,7 @@ public class EventService implements IEventService {
                     ))
                     .toList();
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving events by tag ID", e);
         }
     }
@@ -124,6 +128,7 @@ public class EventService implements IEventService {
                     chatMessageService.getChatMessagesByEventId(eventEntity.getId())
             );
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
         }
     }
@@ -220,6 +225,7 @@ public class EventService implements IEventService {
             repository.deleteById(id);
             return true;
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             return false;
         }
     }

@@ -4,7 +4,9 @@ import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
-import com.danielagapov.spawn.Exceptions.Base.*;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.DatabaseException;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendTag;
@@ -13,6 +15,7 @@ import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.Logger.ILogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -29,21 +32,24 @@ public class UserService implements IUserService {
     private final IUserFriendTagRepository uftRepository;
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
+    private final ILogger logger;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository) {
+                       IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, ILogger logger) {
         this.repository = repository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
+        this.logger = logger;
     }
 
     public List<UserDTO> getAllUsers() {
         try {
             return getUserDTOs();
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.User);
         }
     }
@@ -83,8 +89,10 @@ public class UserService implements IUserService {
         try {
             return getUserDTOs();
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new DatabaseException("Failed to get users by tag ID: " + e.getMessage(), e);
         } catch (Exception e) {
+            logger.log(e.getMessage());
             throw new ApplicationException("Unexpected error occurred while getting users by tag ID: " + e.getMessage(), e);
         }
     }
@@ -100,6 +108,7 @@ public class UserService implements IUserService {
             friendTagService.saveFriendTag(everyoneTagDTO); // id is generated when saving
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTO));
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
         }
     }
@@ -136,6 +145,7 @@ public class UserService implements IUserService {
             repository.deleteById(id);
             return true;
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             return false;
         }
     }

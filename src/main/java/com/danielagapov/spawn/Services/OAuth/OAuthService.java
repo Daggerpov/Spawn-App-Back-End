@@ -7,6 +7,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.Logger.ILogger;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -16,11 +17,13 @@ public class OAuthService implements IOAuthService {
     private final IUserRepository userRepository;
     private final IUserIdExternalIdMapRepository externalIdMapRepository;
     private final IUserService userService;
+    private final ILogger logger;
 
-    public OAuthService(IUserRepository userRepository, IUserIdExternalIdMapRepository externalIdMapRepository, IUserService userService) {
+    public OAuthService(IUserRepository userRepository, IUserIdExternalIdMapRepository externalIdMapRepository, IUserService userService, ILogger logger) {
         this.userRepository = userRepository;
         this.externalIdMapRepository = externalIdMapRepository;
         this.userService = userService;
+        this.logger = logger;
     }
 
     @Override
