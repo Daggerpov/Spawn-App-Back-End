@@ -55,6 +55,9 @@ public class FriendRequestService implements IFriendRequestService {
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
