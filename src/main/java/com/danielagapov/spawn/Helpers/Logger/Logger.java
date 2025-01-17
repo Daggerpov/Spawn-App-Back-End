@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class Logger implements ILogger{
     public void log(String message) {
-        System.out.println("got into log method");
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         // Get the caller's stack trace element (index 2 since index 0 is getStackTrace and index 1 is this log method)
         StackTraceElement caller = stackTrace[2];

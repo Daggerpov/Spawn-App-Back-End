@@ -46,7 +46,6 @@ public class EventService implements IEventService {
     }
 
     public List<EventDTO> getAllEvents() {
-        System.out.println("entered getallevents");
         try {
             List<Event> events = repository.findAll();
             return getEventDTOS(events);

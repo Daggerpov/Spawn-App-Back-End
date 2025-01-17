@@ -26,7 +26,6 @@ public class OAuthController {
             AbstractUserDTO verifiedUserDTO = oauthService.verifyUser(principal);
             return verifiedUserDTO instanceof UserDTO ? ResponseEntity.ok().body(verifiedUserDTO) : ResponseEntity.created(URI.create("api/v1/users")).body(verifiedUserDTO);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().body(null);
         }
     }
