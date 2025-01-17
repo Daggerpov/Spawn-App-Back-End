@@ -34,7 +34,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}
     @GetMapping("{id}")
-    public ResponseEntity<EventDTO> getEvent(@PathVariable UUID id) {
+    public ResponseEntity<EventDTO> getEventById(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
