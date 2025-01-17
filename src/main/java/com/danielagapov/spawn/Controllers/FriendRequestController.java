@@ -26,10 +26,8 @@ public class FriendRequestController {
         try {
             return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -41,10 +39,8 @@ public class FriendRequestController {
             friendRequestService.acceptFriendRequest(friendRequestId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -56,10 +52,8 @@ public class FriendRequestController {
             friendRequestService.deleteFriendRequest(friendRequestId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
