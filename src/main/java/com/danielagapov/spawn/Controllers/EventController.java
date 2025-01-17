@@ -4,12 +4,10 @@ import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Helpers.UUIDValidator;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,14 +34,10 @@ public class EventController {
 
     // full path: /api/v1/events/{id}
     @GetMapping("{id}")
-    public ResponseEntity<EventDTO> getEventById(@PathVariable UUID id) {
+    public ResponseEntity<EventDTO> getEvent(@PathVariable UUID id) {
         try {
-            UUID validUUID = UUIDValidator.getInstance().validateUUID(String.valueOf(id));
-            EventDTO event = eventService.getEventById(validUUID);
-            return new ResponseEntity<>(event, HttpStatus.OK);
-        } catch (MethodArgumentTypeMismatchException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        } catch (BasesNotFoundException e) {
+            return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
