@@ -5,23 +5,19 @@ import com.danielagapov.spawn.DTOs.TempUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @Service
 public class OAuthService implements IOAuthService {
-    private final IUserRepository userRepository;
     private final IUserIdExternalIdMapRepository externalIdMapRepository;
     private final IUserService userService;
 
 
-    public OAuthService(IUserRepository userRepository, IUserIdExternalIdMapRepository externalIdMapRepository, IUserService userService) {
-        this.userRepository = userRepository;
+    public OAuthService(IUserIdExternalIdMapRepository externalIdMapRepository, IUserService userService) {
         this.externalIdMapRepository = externalIdMapRepository;
         this.userService = userService;
     }
