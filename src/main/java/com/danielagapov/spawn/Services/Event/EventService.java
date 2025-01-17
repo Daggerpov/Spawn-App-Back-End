@@ -34,7 +34,9 @@ public class EventService implements IEventService {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
 
-    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService, ILogger logger) {
+    public EventService(IEventRepository repository, ILocationRepository locationRepository,
+            IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
+            ILogger logger) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.friendTagService = friendTagService;
@@ -47,13 +49,13 @@ public class EventService implements IEventService {
         System.out.println("entered getallevents");
         try {
             List<Event> events = repository.findAll();
-            System.out.println("entered try");
             return getEventDTOS(events);
         } catch (DataAccessException e) {
-            System.out.println("entered catch");
             logger.log(e.getMessage());
-            System.out.println("entered catch, after logger");
             throw new BasesNotFoundException(EntityType.Event);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -98,13 +100,16 @@ public class EventService implements IEventService {
                             userService.getUserById(event.getCreator().getId()),
                             userService.getParticipantsByEventId(event.getId()),
                             userService.getInvitedByEventId(event.getId()),
-                            chatMessageService.getChatMessagesByEventId(event.getId())
-                    ))
+                            chatMessageService.getChatMessagesByEventId(event.getId())))
                     .toList();
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving events by tag ID", e);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
+
     }
 
     public EventDTO saveEvent(EventDTO event) {
@@ -114,7 +119,7 @@ public class EventService implements IEventService {
             Location finalLocation = location;
             location = (location.getId() != null)
                     ? locationRepository.findById(location.getId())
-                    .orElseGet(() -> locationRepository.save(finalLocation))
+                            .orElseGet(() -> locationRepository.save(finalLocation))
                     : locationRepository.save(location);
 
             // Map EventDTO to Event entity with the resolved Location
@@ -129,12 +134,15 @@ public class EventService implements IEventService {
                     userService.getUserById(eventEntity.getCreator().getId()),
                     userService.getParticipantsByEventId(eventEntity.getId()),
                     userService.getInvitedByEventId(eventEntity.getId()),
-                    chatMessageService.getChatMessagesByEventId(eventEntity.getId())
-            );
+                    chatMessageService.getChatMessagesByEventId(eventEntity.getId()));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
+
     }
 
     public List<EventDTO> getEventsByUserId(UUID userId) {
@@ -219,7 +227,6 @@ public class EventService implements IEventService {
         });
     }
 
-
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.Event, id);
@@ -228,7 +235,7 @@ public class EventService implements IEventService {
         try {
             repository.deleteById(id);
             return true;
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             logger.log(e.getMessage());
             return false;
         }
