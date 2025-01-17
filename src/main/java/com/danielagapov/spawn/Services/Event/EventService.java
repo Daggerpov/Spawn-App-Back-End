@@ -44,11 +44,15 @@ public class EventService implements IEventService {
     }
 
     public List<EventDTO> getAllEvents() {
+        System.out.println("entered getallevents");
         try {
             List<Event> events = repository.findAll();
+            System.out.println("entered try");
             return getEventDTOS(events);
         } catch (DataAccessException e) {
+            System.out.println("entered catch");
             logger.log(e.getMessage());
+            System.out.println("entered catch, after logger");
             throw new BasesNotFoundException(EntityType.Event);
         }
     }

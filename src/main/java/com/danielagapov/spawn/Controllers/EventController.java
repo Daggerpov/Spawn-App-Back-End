@@ -27,6 +27,7 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
         } catch (Exception e) {
+            System.out.println("entered catch in controller");
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
