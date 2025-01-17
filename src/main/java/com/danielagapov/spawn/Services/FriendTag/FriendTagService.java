@@ -6,6 +6,7 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -28,14 +29,16 @@ public class FriendTagService implements IFriendTagService {
     private final UserService userService;
     private final IUserFriendTagRepository uftRepository;
     private final IUserRepository userRepository;
+    private final ILogger logger;
 
     @Autowired
     public FriendTagService(IFriendTagRepository repository, UserService userService,
-                            IUserFriendTagRepository uftRepository, IUserRepository userRepository) {
+                            IUserFriendTagRepository uftRepository, IUserRepository userRepository, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
         this.uftRepository = uftRepository;
         this.userRepository = userRepository;
+        this.logger = logger;
     }
 
     public List<FriendTagDTO> getAllFriendTags() {
@@ -45,7 +48,11 @@ public class FriendTagService implements IFriendTagService {
             Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
             return FriendTagMapper.toDTOList(repository.findAll(), ownerMap, friendsMap);
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.FriendTag);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -65,7 +72,11 @@ public class FriendTagService implements IFriendTagService {
             Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
             return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerMap, friendsMap);
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving friendTags", e);
+        }  catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -76,7 +87,11 @@ public class FriendTagService implements IFriendTagService {
             friendTagEntity = repository.save(friendTagEntity);
             return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(friendTag.owner().id()), List.of());
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -102,7 +117,8 @@ public class FriendTagService implements IFriendTagService {
             uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
             return true;
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
+            logger.log(e.getMessage());
             return false;
         }
     }
@@ -123,7 +139,11 @@ public class FriendTagService implements IFriendTagService {
         try {
             uftRepository.save(uft);
         } catch (DataAccessException e) {
+            logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save new UserFriendTag");
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 }
