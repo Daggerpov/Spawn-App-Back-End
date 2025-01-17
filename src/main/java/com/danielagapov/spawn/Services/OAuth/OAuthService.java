@@ -33,16 +33,14 @@ public class OAuthService implements IOAuthService {
         return mapping == null ? tempUser : getUserDTO(mapping);
     }
 
-    // REQUIRES: userDTO.id() == externId from unpackOAuthUser()
+    // REQUIRES: tempUserDTO.id() == externId from unpackOAuthUser()
     public UserDTO makeUser(UserDTO userDTO, String externId) {
-        // user dto -> entity
-        User userEntity = UserMapper.toEntity(userDTO);
-        // save entity
-        userEntity = userRepository.save(userEntity);
+        // user dto -> entity & save user
+        userDTO = userService.saveUser(userDTO);
         // create and save mapping
-        externalIdMapRepository.save(new UserIdExternalIdMap(externId, userEntity));
+        externalIdMapRepository.save(new UserIdExternalIdMap(externId, UserMapper.toEntity(userDTO)));
 
-        return UserMapper.toDTO(userEntity, null, null);
+        return userDTO;
     }
 
     private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
