@@ -51,6 +51,9 @@ public class UserService implements IUserService {
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.User);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -110,6 +113,9 @@ public class UserService implements IUserService {
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -144,7 +150,7 @@ public class UserService implements IUserService {
         try {
             repository.deleteById(id);
             return true;
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             logger.log(e.getMessage());
             return false;
         }
