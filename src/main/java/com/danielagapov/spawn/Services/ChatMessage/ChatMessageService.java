@@ -22,7 +22,7 @@ import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Services.Logger.ILogger;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;

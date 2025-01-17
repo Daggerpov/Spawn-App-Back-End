@@ -15,7 +15,7 @@ import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Services.Logger.ILogger;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;

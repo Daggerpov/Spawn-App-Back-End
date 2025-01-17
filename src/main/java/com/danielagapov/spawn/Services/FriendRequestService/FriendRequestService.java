@@ -10,7 +10,7 @@ import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Services.Logger.ILogger;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
