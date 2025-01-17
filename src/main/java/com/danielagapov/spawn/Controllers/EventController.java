@@ -42,7 +42,7 @@ public class EventController {
             EventDTO event = eventService.getEventById(validUUID);
             return new ResponseEntity<>(event, HttpStatus.OK);
         } catch (MethodArgumentTypeMismatchException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // from invalid UUID passed-in
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (BasesNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
