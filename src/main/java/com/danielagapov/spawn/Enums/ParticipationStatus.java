@@ -1,5 +1,5 @@
 package com.danielagapov.spawn.Enums;
 
-public enum UserParticipationStatus {
+public enum ParticipationStatus {
     participating, invited, notInvited;
 }

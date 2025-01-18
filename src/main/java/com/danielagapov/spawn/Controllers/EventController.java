@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Enums.UserParticipationStatus;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
@@ -71,7 +71,8 @@ public class EventController {
     // full path: /api/v1/events/mock-endpoint
     @GetMapping("mock-endpoint")
     public ResponseEntity<String> getMockEndpoint() {
-        return new ResponseEntity<>("This is the mock endpoint for events. Everything is working with it.", HttpStatus.OK);
+        return new ResponseEntity<>("This is the mock endpoint for events. Everything is working with it.",
+                HttpStatus.OK);
     }
 
     // full path: /api/v1/events
@@ -114,7 +115,7 @@ public class EventController {
     }
 
     // full path: /api/v1/events/{id}/users
-    @GetMapping("events/{id}/users")
+    @GetMapping("{id}/users")
     public ResponseEntity<List<UserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
@@ -126,11 +127,11 @@ public class EventController {
     }
 
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
-    @GetMapping("events/{eventId}?userId/participating?userId={userid}")
+    @GetMapping("{eventId}?userId/participating?userId={userid}")
     public ResponseEntity<Boolean> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
         try {
-            if (eventService.getUserParticipationStatus(eventId, userId) == UserParticipationStatus.participating) {
-            return new ResponseEntity<>(true, HttpStatus.OK);
+            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
+                return new ResponseEntity<>(true, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
@@ -142,11 +143,11 @@ public class EventController {
     }
 
     // full path: /api/v1/events/{eventId}/invited?userId={userid}
-    @GetMapping("events/{eventId}/invited?userId={userid}")
+    @GetMapping("{eventId}/invited?userId={userid}")
     public ResponseEntity<Boolean> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
         try {
-            if (eventService.getUserParticipationStatus(eventId, userId) == UserParticipationStatus.invited) {
-            return new ResponseEntity<>(true, HttpStatus.OK);
+            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
+                return new ResponseEntity<>(true, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
@@ -157,24 +158,48 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{eventId}/toggleStatus?userId={userId}
-    @GetMapping("events/{eventId}/toggleStatus?userId={userId}")
-    public ResponseEntity<Void> toggleParticipation(@PathVariable UUID eventId, @RequestParam UUID userId) {
+    // full path: /api/v1/events/{eventId}/invited?userId={userid}
+    @GetMapping("{eventId}/invited?userId={userid}")
+    public ResponseEntity<Boolean> isInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
+        // TODO: put DTO in response entity
+
         try {
-            if (eventService.getUserParticipationStatus(eventId, userId) == UserParticipationStatus.invited) {
-                eventService.participateUser(eventId, userId);
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else if (eventService.getUserParticipationStatus(eventId, userId) == UserParticipationStatus.participating) {
-                eventService.inviteUser(eventId, userId);
-                return new ResponseEntity<>(HttpStatus.OK);
+            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
+                return new ResponseEntity<>(true, HttpStatus.OK);
             } else {
-                // TODO: throw something when not invited?
-                return new ResponseEntity<>(null);
+                return new ResponseEntity<>(false, HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // this corresponds to the button on the event for invited users
+    // full path: /api/v1/events/{eventId}/toggleStatus?userId={userId}
+    @GetMapping("{eventId}/toggleStatus?userId={userId}")
+    public ResponseEntity<Void> toggleParticipation(@PathVariable UUID eventId, @RequestParam UUID userId) {
+        try {
+            if (eventService.toggleParticipation(eventId, userId)) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/events/{}
+
+    public ResponseEntity<List<EventDTO>>getEventsInvitedTo(UUID id) {
+        try {
+            return new ResponseEntity<>(eventService.getEventsByUserId(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 }

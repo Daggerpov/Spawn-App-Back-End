@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Enums.UserParticipationStatus;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -12,12 +12,17 @@ import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
+import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Repositories.IEventRepository;
+import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,11 +30,14 @@ import java.util.UUID;
 public class EventService implements IEventService {
     private final IEventRepository repository;
     private final ILocationRepository locationRepository;
+    private final IEventUserRepository eventUserRepository;
     private final IFriendTagService friendTagService;
 
-    public EventService(IEventRepository repository, ILocationRepository locationRepository, IFriendTagService friendTagService) {
+    public EventService(IEventRepository repository, ILocationRepository locationRepository,
+            IEventUserRepository eventUserRepository, IFriendTagService friendTagService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
+        this.eventUserRepository = eventUserRepository;
         this.friendTagService = friendTagService;
     }
 
@@ -61,7 +69,8 @@ public class EventService implements IEventService {
                     .map(UserDTO::id)
                     .toList();
 
-            // Step 3: Filter events based on whether their owner is in the list of friend IDs
+            // Step 3: Filter events based on whether their owner is in the list of friend
+            // IDs
             List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
 
             if (filteredEvents.isEmpty()) {
@@ -157,24 +166,52 @@ public class EventService implements IEventService {
         return List.of();
     }
 
-    public UserParticipationStatus getUserParticipationStatus(UUID eventId, UUID userId) {
+    // TODO: optimize this
+    public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
+        if (!eventUserRepository.existsById(eventId)) {
+            throw new BaseNotFoundException(EntityType.Event, eventId);
+        }
 
-        return UserParticipationStatus.invited;
+        try {
+            List<EventDTO> events = getAllEvents();
+            for (int i = 0; i < events.size(); i++) {
+                if (events.get(i).id().equals(eventId)) {
+                    List<UserDTO> invited = events.get(i).invited();
+                    List<UserDTO> participants = events.get(i).participants();
+                    for (int j = 0; j < invited.size(); i++) {
+                        if (invited.get(j).id().equals(userId)) {
+                            return ParticipationStatus.invited;
+                        }
+                    }
 
-        // get list of all users at an event -> if no event, throw exception
+                    for (int j = 0; j < participants.size(); i++) {
+                        if (participants.get(j).id().equals(userId)) {
+                            return ParticipationStatus.participating;
+                        }
+                    }
 
-        // search EventUser for the participation status of given user -> no user, throw notInvited enum
+                    return ParticipationStatus.notInvited;
+                }
+                ;
+            }
+        } catch (DataAccessException e) {
+            return ParticipationStatus.notInvited;
+        }
+
+        return ParticipationStatus.invited;
     }
 
-    public EventDTO inviteUser(UUID eventId, UUID userId) {
-        // TODO
-
-        return getEventById(eventId);
+    public void inviteUser(UUID eventId, UUID userId) {
+        // TODO: take an eventId and userId and give the status of invited to that user
+        // to that event
+        // will need to start thinking about utilizing EventParticipationDTO and a
+        // mapper for it
     }
 
-    public EventDTO participateUser(UUID eventId, UUID userId) {
-        // TODO
-
-        return getEventById(eventId);
+    public boolean toggleParticipation(UUID eventId, UUID userId) {
+        // TODO: best to do this after implementing EventUser table and DTO fully
+        // returns true after either setting an invited to a participants or vice versa
+        // otherwise returns false
+        return false;
     }
 }
