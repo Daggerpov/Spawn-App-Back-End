@@ -31,7 +31,7 @@ public class OAuthController {
         }
     }
 
-    @PostMapping("make-user/{id}")
+    @PostMapping("make-user")
     public ResponseEntity<UserDTO> makeUser(@RequestParam("user") UserDTO userDTO, @RequestParam("id") String id) {
         try {
            UserDTO user = oauthService.makeUser(userDTO, id);
