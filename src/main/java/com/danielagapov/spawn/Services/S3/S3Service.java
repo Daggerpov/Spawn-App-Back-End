@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.S3;
 
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -13,9 +14,11 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 public class S3Service implements IS3Service {
     private final S3Client s3;
     private static final String BUCKET = "spawn-pfp-store";
+    private final ILogger logger;
 
-    public S3Service(S3Client s3) {
+    public S3Service(S3Client s3, ILogger logger) {
         this.s3 = s3;
+        this.logger = logger;
     }
 
     /**
@@ -30,7 +33,8 @@ public class S3Service implements IS3Service {
         try {
             s3.putObject(request, RequestBody.fromBytes(file));
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log(e.getMessage()); // TODO: decide correct behaviour
+            throw e;
         }
     }
 
@@ -47,7 +51,7 @@ public class S3Service implements IS3Service {
             ResponseInputStream<GetObjectResponse> response = s3.getObject(request);
             return response.readAllBytes();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log(e.getMessage()); // TODO: decide correct behaviour
             return null;
         }
     }
@@ -64,7 +68,8 @@ public class S3Service implements IS3Service {
         try {
             s3.deleteObject(request);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log(e.getMessage()); // TODO: decide correct behaviour
+            throw e;
         }
     }
 }
