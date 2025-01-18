@@ -193,9 +193,9 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{}
-
-    public ResponseEntity<List<EventDTO>>getEventsInvitedTo(UUID id) {
+    // full path: /api/v1/events/{userId}/invitedEvents
+    @GetMapping("{userId}/invitedEvents")
+    public ResponseEntity<List<EventDTO>>getEventsInvitedTo(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(eventService.getEventsByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
