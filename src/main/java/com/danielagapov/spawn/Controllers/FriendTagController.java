@@ -94,6 +94,18 @@ public class FriendTagController {
         }
     }
 
+    // full path: /api/v1/friendTags/owner/{ownerId}
+    @GetMapping("owner/{ownerId}")
+    public ResponseEntity<List<FriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId) {
+        try {
+            return new ResponseEntity<>(friendTagService.getFriendTagsByOwnerId(ownerId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // full path: /api/v1/friendTags/{id}?userId=userId
     @PostMapping("{id}")
     public ResponseEntity<Void> addUserToFriendTag(@PathVariable UUID id, @RequestParam UUID userId) {

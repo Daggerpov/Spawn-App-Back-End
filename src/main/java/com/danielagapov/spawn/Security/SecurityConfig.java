@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -23,11 +24,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .anyRequest().authenticated()
+                            .anyRequest().permitAll()
+                //.anyRequest().authenticated()
             )
-            .exceptionHandling(e -> e
-                    .authenticationEntryPoint(new HttpStatusEntryPoint(UNAUTHORIZED))
-            )
+                .csrf(AbstractHttpConfigurer::disable)
+//            .exceptionHandling(e -> e
+//                    .authenticationEntryPoint(new HttpStatusEntryPoint(UNAUTHORIZED))
+//            )
             .oauth2Login(oauth2 -> {
                 oauth2.successHandler(new AuthenticationSuccessHandler() {
                     @Override
