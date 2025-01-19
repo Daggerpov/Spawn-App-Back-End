@@ -262,4 +262,14 @@ public class UserService implements IUserService {
         // TODO
         return List.of();
     }
+
+    public List<UUID> getParticipantUserIdsByEventId(UUID eventId) {
+        // TODO
+        return List.of();
+    }
+
+    public List<UUID> getInvitedUserIdsByEventId(UUID eventId) {
+        // TODO
+        return List.of();
+    }
 }

@@ -62,12 +62,12 @@ public class EventService implements IEventService {
         Event event = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
 
-        UserDTO creator = userService.getUserById(event.getCreator().getId());
-        List<UserDTO> participants = userService.getParticipantsByEventId(id);
-        List<UserDTO> invited = userService.getInvitedByEventId(id);
-        List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(id);
+        UUID creatorUserId =event.getCreator().getId();
+        List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(id);
+        List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(id);
+        List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
 
-        return EventMapper.toDTO(event, creator, participants, invited, chatMessages);
+        return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
