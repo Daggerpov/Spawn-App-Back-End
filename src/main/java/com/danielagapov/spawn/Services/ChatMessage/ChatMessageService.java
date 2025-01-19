@@ -58,17 +58,14 @@ public class ChatMessageService implements IChatMessageService {
         try {
             List<ChatMessage> chatMessages = chatMessageRepository.findAll();
 
-            // Fetch the senderUserId and likedByUserIds data for each chatMessage
-            Map<ChatMessage, UserDTO> userSenderMap = chatMessages.stream()
-                    .collect(Collectors.toMap(chatMessage -> chatMessage, chatMessage -> userService.getUserById(chatMessage.getUserSender().getId())));
-
-            Map<ChatMessage, List<UserDTO>> likedByMap = chatMessages.stream()
+            Map<ChatMessage, List<UUID>> likedByMap = chatMessages.stream()
                     .collect(Collectors.toMap(
                             chatMessage -> chatMessage,
-                            chatMessage -> getChatMessageLikes(chatMessage.getId())
+                            chatMessage -> getChatMessageLikeUserIds(chatMessage.getId())
                     ));
 
-            return ChatMessageMapper.toDTOList(chatMessages, userSenderMap, likedByMap);
+            // Return the mapped DTOs including the sender and likedByUserIds
+            return ChatMessageMapper.toDTOList(chatMessages, likedByMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.ChatMessage);
@@ -77,6 +74,21 @@ public class ChatMessageService implements IChatMessageService {
             throw e;
         }
     }
+
+    public List<UUID> getChatMessageLikeUserIds(UUID chatMessageId) {
+        // Retrieve the ChatMessage by its ID
+        ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageId));
+
+        // Retrieve all the likes for the given chat message
+        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
+
+        // Extract the user IDs of the users who liked the chat message
+        return likes.stream()
+                .map(like -> like.getUser().getId())  // Extract the user ID from each like
+                .collect(Collectors.toList());  // Collect them into a list
+    }
+
 
     public ChatMessageDTO getChatMessageById(UUID id) {
         return chatMessageRepository.findById(id)

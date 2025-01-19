@@ -201,17 +201,17 @@ public class UserService implements IUserService {
 
     private List<UserDTO> getUserDTOs() {
         List<User> users = repository.findAll();
-        Map<User, List<UserDTO>> friendsMap = users.stream()
+        Map<User, List<UUID>> friendUserIdsMap = users.stream()
                 .collect(Collectors.toMap(
                         user -> user,
-                        user -> getFriendsByFriendTagId(user.getId())
+                        user -> getFriendUserIdsByUserId(user.getId())
                 ));
-        Map<User, List<FriendTagDTO>> friendTagsMap = users.stream()
+        Map<User, List<UUID>> friendTagIdsMap = users.stream()
                 .collect(Collectors.toMap(
                         user -> user,
-                        user -> friendTagService.getFriendTagsByOwnerId(user.getId())
+                        user -> friendTagService.getFriendTagIdsByOwnerUserId(user.getId())
                 ));
-        return UserMapper.toDTOList(users, friendsMap, friendTagsMap);
+        return UserMapper.toDTOList(users, friendUserIdsMap, friendTagIdsMap);
     }
 
     public List<UserDTO> getFriendsByUserId(UUID userId) {
