@@ -72,27 +72,22 @@ public class EventService implements IEventService {
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
-            // Step 1: Retrieve the FriendTag and its associated friends
+            // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
             FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
-            List<UserDTO> friends = friendTag.friends();
+            List<UUID> friendIds = friendTag.friendUserIds();  // Use friendUserIds instead of friends
 
-            if (friends.isEmpty()) {
-                return List.of();
+            if (friendIds.isEmpty()) {
+                return List.of();  // Return an empty list if there are no friends
             }
 
-            // Step 2: Collect all friend user IDs
-            List<UUID> friendIds = friends.stream()
-                    .map(UserDTO::id)
-                    .toList();
-
-            // Step 3: Retrieve events created by any of the friends
+            // Step 2: Retrieve events created by any of the friends
             List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
 
             if (filteredEvents.isEmpty()) {
                 throw new BasesNotFoundException(EntityType.Event);
             }
 
-            // Step 4: Map filtered events to detailed DTOs
+            // Step 3: Map filtered events to detailed DTOs
             return filteredEvents.stream()
                     .map(event -> EventMapper.toDTO(
                             event,
@@ -103,13 +98,16 @@ public class EventService implements IEventService {
                     .toList();
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
-            throw new RuntimeException("Error retrieving events by tag ID", e);
+            throw new RuntimeException("Error retrieving events by friend tag ID", e);
+        } catch (BaseNotFoundException e) {
+            logger.log(e.getMessage());
+            throw e; // Rethrow if it's a custom not-found exception
         } catch (Exception e) {
             logger.log(e.getMessage());
-            throw e;
+            throw new RuntimeException("Unexpected error", e);  // Generic error handling
         }
-
     }
+
 
     public EventDTO saveEvent(EventDTO event) {
         try {
