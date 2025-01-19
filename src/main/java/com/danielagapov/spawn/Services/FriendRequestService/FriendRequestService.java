@@ -44,7 +44,7 @@ public class FriendRequestService implements IFriendRequestService {
             repository.save(friendRequest);
 
             // Return the saved friend request DTO with additional details (friends and friend tags)
-            return FriendRequestMapper.toDTO(friendRequest, senderFriends, senderFriendTags, receiverFriends, receiverFriendTags);
+            return FriendRequestMapper.toDTO(friendRequest);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
