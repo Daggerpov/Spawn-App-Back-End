@@ -5,7 +5,6 @@ import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class FriendRequestMapper {
@@ -32,9 +31,24 @@ public class FriendRequestMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<FriendRequest> toEntityList(List<FriendRequestDTO> friendRequestDTOList) {
+    public static List<FriendRequest> toEntityList(List<FriendRequestDTO> friendRequestDTOList, List<User> users) {
         return friendRequestDTOList.stream()
-                .map(FriendRequestMapper::toEntity)
+                .map(dto -> {
+                    // Find sender user by matching senderId
+                    User sender = users.stream()
+                            .filter(user -> user.getId().equals(dto.senderUserId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    // Find receiver user by matching receiverId
+                    User receiver = users.stream()
+                            .filter(user -> user.getId().equals(dto.receiverUserId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    return toEntity(dto, sender, receiver); // Convert DTO to entity
+                })
                 .collect(Collectors.toList());
     }
+
 }
