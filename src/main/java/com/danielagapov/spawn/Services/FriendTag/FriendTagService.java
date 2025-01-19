@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -98,7 +97,7 @@ public class FriendTagService implements IFriendTagService {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
             friendTagEntity.setEveryone(false); // Should not ever manually create an "everyone" tag
             friendTagEntity = repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(friendTag.owner().id()), List.of());
+            return FriendTagMapper.toDTO(friendTagEntity, friendTag.ownerUserId(), List.of());
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
@@ -113,11 +112,11 @@ public class FriendTagService implements IFriendTagService {
             friendTag.setColorHexCode(newFriendTag.colorHexCode());
             friendTag.setDisplayName(newFriendTag.displayName());
             repository.save(friendTag);
-            return FriendTagMapper.toDTO(friendTag, userService.getUserById(newFriendTag.ownerUserId()), List.of());
+            return FriendTagMapper.toDTO(friendTag, newFriendTag.ownerUserId(), List.of());
         }).orElseGet(() -> {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag);
             repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(newFriendTag.ownerUserId()), List.of());
+            return FriendTagMapper.toDTO(friendTagEntity, newFriendTag.ownerUserId(), List.of());
         });
     }
 
