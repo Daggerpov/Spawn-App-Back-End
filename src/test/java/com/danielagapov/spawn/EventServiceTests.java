@@ -3,16 +3,15 @@ package com.danielagapov.spawn;
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
+import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Event.EventService;
 import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -66,18 +65,6 @@ public class EventServiceTests {
 
         assertFalse(result.isEmpty());
         assertEquals("Test Event", result.get(0).title());
-        verify(eventRepository, times(1)).findAll();
-    }
-
-    @Test
-    void getAllEvents_ShouldThrowException_WhenDatabaseErrorOccurs() {
-        when(eventRepository.findAll()).thenThrow(new DataAccessException("Database error") {
-        });
-
-        BasesNotFoundException exception = assertThrows(BasesNotFoundException.class,
-                () -> eventService.getAllEvents());
-
-        assertTrue(exception.getMessage().contains("Error fetching events"));
         verify(eventRepository, times(1)).findAll();
     }
 

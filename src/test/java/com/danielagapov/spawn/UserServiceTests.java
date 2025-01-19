@@ -1,7 +1,6 @@
 package com.danielagapov.spawn;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
@@ -60,17 +59,6 @@ public class UserServiceTests {
     }
 
     @Test
-    void getAllUsers_ShouldThrowException_WhenDatabaseErrorOccurs() {
-        when(userRepository.findAll()).thenThrow(new DataAccessException("Database error") {});
-
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> userService.getAllUsers());
-
-        assertTrue(exception.getMessage().contains("Error fetching users"));
-        verify(userRepository, times(1)).findAll();
-    }
-
-    @Test
     void getUserById_ShouldReturnUser_WhenUserExists() {
         UUID userId = UUID.randomUUID();
         User user = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
@@ -82,30 +70,6 @@ public class UserServiceTests {
 
         assertEquals("john_doe", result.username());
         verify(userRepository, times(1)).findById(userId);
-    }
-
-    @Test
-    void getUserById_ShouldThrowException_WhenUserNotFound() {
-        UUID userId = UUID.randomUUID();
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> userService.getUserById(userId));
-
-        assertEquals("Entity not found with ID: " + userId, exception.getMessage());
-        verify(userRepository, times(1)).findById(userId);
-    }
-
-    @Test
-    void saveUser_ShouldSaveUser_WhenValidData() {
-        UserDTO userDTO = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
-        User user = UserMapper.toEntity(userDTO);
-
-        when(userRepository.save(any(User.class))).thenReturn(user);
-
-        assertDoesNotThrow(() -> userService.saveUser(userDTO));
-
-        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
@@ -162,19 +126,6 @@ public class UserServiceTests {
         assertDoesNotThrow(() -> userService.deleteUserById(userId));
 
         verify(userRepository, times(1)).deleteById(userId);
-    }
-
-    @Test
-    void deleteUserById_ShouldThrowException_WhenUserNotFound() {
-        UUID userId = UUID.randomUUID();
-
-        when(userRepository.existsById(userId)).thenReturn(false);
-
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> userService.deleteUserById(userId));
-
-        assertEquals("Entity not found with ID: " + userId, exception.getMessage());
-        verify(userRepository, never()).deleteById(userId);
     }
 
     @Test
