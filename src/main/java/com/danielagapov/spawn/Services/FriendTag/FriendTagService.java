@@ -67,7 +67,7 @@ public class FriendTagService implements IFriendTagService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
     }
 
-    public List<UUID> getFriendTagIdsByUserId(UUID id) {
+    public List<UUID> getFriendTagIdsByOwnerUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
         List<FriendTag> friendTags = repository.findByOwnerId(id);
 
@@ -111,11 +111,11 @@ public class FriendTagService implements IFriendTagService {
             friendTag.setColorHexCode(newFriendTag.colorHexCode());
             friendTag.setDisplayName(newFriendTag.displayName());
             repository.save(friendTag);
-            return FriendTagMapper.toDTO(friendTag, userService.getUserById(newFriendTag.owner().id()), List.of());
+            return FriendTagMapper.toDTO(friendTag, userService.getUserById(newFriendTag.ownerUserId()), List.of());
         }).orElseGet(() -> {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag);
             repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(newFriendTag.owner().id()), List.of());
+            return FriendTagMapper.toDTO(friendTagEntity, userService.getUserById(newFriendTag.ownerUserId()), List.of());
         });
     }
 
