@@ -96,10 +96,10 @@ public class EventService implements IEventService {
             return filteredEvents.stream()
                     .map(event -> EventMapper.toDTO(
                             event,
-                            userService.getUserById(event.getCreator().getId()),
-                            userService.getParticipantsByEventId(event.getId()),
-                            userService.getInvitedByEventId(event.getId()),
-                            chatMessageService.getChatMessagesByEventId(event.getId())))
+                            event.getCreator().getId(),
+                            userService.getParticipantUserIdsByEventId(event.getId()),
+                            userService.getInvitedUserIdsByEventId(event.getId()),
+                            chatMessageService.getChatMessageIdsByEventId(event.getId())))
                     .toList();
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
@@ -113,16 +113,10 @@ public class EventService implements IEventService {
 
     public EventDTO saveEvent(EventDTO event) {
         try {
-            // Convert LocationDTO to Location entity and handle save or resolve
-            Location location = LocationMapper.toEntity(event.location());
-            Location finalLocation = location;
-            location = (location.getId() != null)
-                    ? locationRepository.findById(location.getId())
-                            .orElseGet(() -> locationRepository.save(finalLocation))
-                    : locationRepository.save(location);
+            Location location = locationRepository.findById(event.locationId()).orElse(null);
 
             // Map EventDTO to Event entity with the resolved Location
-            Event eventEntity = EventMapper.toEntity(event, location);
+            Event eventEntity = EventMapper.toEntity(event, location, userService.getUserEntityById(event.creatorUserId()));
 
             // Save the Event entity
             eventEntity = repository.save(eventEntity);
@@ -130,10 +124,11 @@ public class EventService implements IEventService {
             // Map saved Event entity back to EventDTO with all necessary fields
             return EventMapper.toDTO(
                     eventEntity,
-                    userService.getUserById(eventEntity.getCreator().getId()),
-                    userService.getParticipantsByEventId(eventEntity.getId()),
-                    userService.getInvitedByEventId(eventEntity.getId()),
-                    chatMessageService.getChatMessagesByEventId(eventEntity.getId()));
+                    eventEntity.getCreator().getId(), // creatorUserId
+                    userService.getParticipantUserIdsByEventId(eventEntity.getId()), // participantUserIds
+                    userService.getInvitedUserIdsByEventId(eventEntity.getId()), // invitedUserIds
+                    chatMessageService.getChatMessageIdsByEventId(eventEntity.getId()) // chatMessageIds
+            );
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
@@ -141,8 +136,8 @@ public class EventService implements IEventService {
             logger.log(e.getMessage());
             throw e;
         }
-
     }
+
 
     public List<EventDTO> getEventsByUserId(UUID userId) {
         List<Event> events = repository.findByCreatorId(userId);

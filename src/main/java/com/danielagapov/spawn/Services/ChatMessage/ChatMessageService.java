@@ -109,8 +109,6 @@ public class ChatMessageService implements IChatMessageService {
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
 
-            UserDTO userSenderDTO = userService.getUserById(chatMessageDTO.senderUserId());
-
             chatMessageRepository.save(chatMessageEntity);
 
             return ChatMessageMapper.toDTO(chatMessageEntity, List.of()); // Empty likedByUserIds list
@@ -122,6 +120,29 @@ public class ChatMessageService implements IChatMessageService {
             throw e;
         }
     }
+
+    public List<UUID> getChatMessageIdsByEventId(UUID eventId) {
+        try {
+            // Find the event by its ID
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
+
+            // Retrieve all chat messages for the specified event
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
+
+            // Extract the IDs of the chat messages and return them as a list
+            return chatMessages.stream()
+                    .map(ChatMessage::getId)
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BaseNotFoundException(EntityType.ChatMessage, eventId);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
 
     public boolean deleteChatMessageById(UUID id) {
         if (!chatMessageRepository.existsById(id)) {
