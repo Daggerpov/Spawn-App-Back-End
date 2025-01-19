@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -10,6 +9,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.EntityAlreadyExistsException;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -22,7 +22,6 @@ import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -114,7 +113,7 @@ public class ChatMessageService implements IChatMessageService {
 
             chatMessageRepository.save(chatMessageEntity);
 
-            return ChatMessageMapper.toDTO(chatMessageEntity, userSenderDTO, List.of()); // Empty likedByUserIds list
+            return ChatMessageMapper.toDTO(chatMessageEntity, List.of()); // Empty likedByUserIds list
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
