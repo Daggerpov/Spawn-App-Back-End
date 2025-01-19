@@ -4,9 +4,9 @@ import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendRequest;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class FriendRequestMapper {
@@ -19,11 +19,11 @@ public class FriendRequestMapper {
         );
     }
 
-    public static FriendRequest toEntity(FriendRequestDTO friendRequestDTO) {
+    public static FriendRequest toEntity(FriendRequestDTO friendRequestDTO, User sender, User receiver) {
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setId(friendRequestDTO.id());
-        friendRequest.setSender(UserMapper.toEntity(friendRequestDTO.sender()));
-        friendRequest.setReceiver(UserMapper.toEntity(friendRequestDTO.receiver()));
+        friendRequest.setSender(sender);
+        friendRequest.setReceiver(receiver);
         return friendRequest;
     }
 
