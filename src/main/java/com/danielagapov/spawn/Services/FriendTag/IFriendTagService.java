@@ -6,11 +6,12 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IFriendTagService {
-    public List<FriendTagDTO> getAllFriendTags();
-    public FriendTagDTO getFriendTagById(UUID id);
-    public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId);
-    public FriendTagDTO saveFriendTag(FriendTagDTO friendTag);
-    public FriendTagDTO replaceFriendTag(FriendTagDTO friendTag, UUID tagId);
-    public boolean deleteFriendTagById(UUID id);
-    public void saveUserToFriendTag(UUID id, UUID userId);
+    List<FriendTagDTO> getAllFriendTags();
+    FriendTagDTO getFriendTagById(UUID id);
+    List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId);
+    FriendTagDTO saveFriendTag(FriendTagDTO friendTag);
+    FriendTagDTO replaceFriendTag(FriendTagDTO friendTag, UUID tagId);
+    boolean deleteFriendTagById(UUID id);
+    void saveUserToFriendTag(UUID id, UUID userId);
+    List<UUID> getFriendTagIdsByUserId(UUID id);
 }

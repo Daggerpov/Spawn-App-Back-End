@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class FriendTagService implements IFriendTagService {
@@ -64,6 +65,16 @@ public class FriendTagService implements IFriendTagService {
                     return FriendTagMapper.toDTO(friendTag, owner, friends);
                 })
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
+    }
+
+    public List<UUID> getFriendTagIdsByUserId(UUID id) {
+        // Fetch FriendTag entities related to the given user (for example, by userId)
+        List<FriendTag> friendTags = repository.findByOwnerId(id);
+
+        // Extract and return the FriendTag IDs
+        return friendTags.stream()
+                .map(FriendTag::getId) // Get the ID of each FriendTag
+                .collect(Collectors.toList());
     }
 
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
