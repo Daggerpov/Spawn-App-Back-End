@@ -38,23 +38,23 @@ public class EventMapper {
                 dto.endTime(),
                 location, // Assign the full Location entity
                 dto.note(),
-                UserMapper.toEntity(dto.creator())
+                UserMapper.toEntity(dto.creatorUserId())
         );
     }
 
     public static List<EventDTO> toDTOList(
             List<Event> entities,
-            Map<UUID, UserDTO> creatorMap, // Map of Event ID to creator UserDTO
-            Map<UUID, List<UserDTO>> participantsMap, // Map of Event ID to participants
-            Map<UUID, List<UserDTO>> invitedMap, // Map of Event ID to invited users
+            Map<UUID, UserDTO> creatorMap, // Map of Event ID to creatorUserId UserDTO
+            Map<UUID, List<UserDTO>> participantsMap, // Map of Event ID to participantUserIds
+            Map<UUID, List<UserDTO>> invitedMap, // Map of Event ID to invitedUserIds users
             Map<UUID, List<ChatMessageDTO>> chatMessagesMap // Map of Event ID to chat messages
     ) {
         return entities.stream()
                 .map(entity -> toDTO(
                         entity,
-                        creatorMap.get(entity.getId()), // Fetch the creator UserDTO
-                        participantsMap.getOrDefault(entity.getId(), List.of()), // Fetch participants or default empty
-                        invitedMap.getOrDefault(entity.getId(), List.of()), // Fetch invited users or default empty
+                        creatorMap.get(entity.getId()), // Fetch the creatorUserId UserDTO
+                        participantsMap.getOrDefault(entity.getId(), List.of()), // Fetch participantUserIds or default empty
+                        invitedMap.getOrDefault(entity.getId(), List.of()), // Fetch invitedUserIds users or default empty
                         chatMessagesMap.getOrDefault(entity.getId(), List.of()) // Fetch chat messages or default empty
                 ))
                 .collect(Collectors.toList());

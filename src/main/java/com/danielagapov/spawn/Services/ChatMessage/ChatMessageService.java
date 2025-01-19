@@ -58,7 +58,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             List<ChatMessage> chatMessages = chatMessageRepository.findAll();
 
-            // Fetch the userSender and likedBy data for each chatMessage
+            // Fetch the senderUserId and likedByUserIds data for each chatMessage
             Map<ChatMessage, UserDTO> userSenderMap = chatMessages.stream()
                     .collect(Collectors.toMap(chatMessage -> chatMessage, chatMessage -> userService.getUserById(chatMessage.getUserSender().getId())));
 
@@ -91,18 +91,18 @@ public class ChatMessageService implements IChatMessageService {
     // Other methods remain mostly the same but updated to work with mappings
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
-            User userSender = userRepository.findById(chatMessageDTO.userSender().id())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.userSender().id()));
+            User userSender = userRepository.findById(chatMessageDTO.senderUserId().id())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.senderUserId().id()));
             Event event = eventRepository.findById(chatMessageDTO.eventId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.eventId()));
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
 
-            UserDTO userSenderDTO = userService.getUserById(chatMessageDTO.userSender().id());
+            UserDTO userSenderDTO = userService.getUserById(chatMessageDTO.senderUserId().id());
 
             chatMessageRepository.save(chatMessageEntity);
 
-            return ChatMessageMapper.toDTO(chatMessageEntity, userSenderDTO, List.of()); // Empty likedBy list
+            return ChatMessageMapper.toDTO(chatMessageEntity, userSenderDTO, List.of()); // Empty likedByUserIds list
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());

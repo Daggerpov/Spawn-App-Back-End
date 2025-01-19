@@ -3,5 +3,8 @@ package com.danielagapov.spawn.DTOs;
 import java.io.Serializable;
 import java.util.UUID;
 
-public record FriendRequestDTO(UUID id, UserDTO sender, UserDTO receiver) implements Serializable {
-}
+public record FriendRequestDTO(
+        UUID id,
+        UUID senderUserId,
+        UUID receiverUserId
+) implements Serializable { }

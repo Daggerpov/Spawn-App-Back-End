@@ -86,7 +86,7 @@ public class ChatMessageServiceTests {
 
         // Assert that the result is not empty and contains the correct user data
         assertFalse(result.isEmpty());
-        assertEquals("John", result.get(0).userSender().firstName());
+        assertEquals("John", result.get(0).senderUserId().firstName());
 
         // Verify interactions with the repository
         verify(chatMessageRepository, times(1)).findAll();
@@ -148,7 +148,7 @@ public class ChatMessageServiceTests {
         ChatMessageDTO result = chatMessageService.getChatMessageById(chatMessageId);
 
         // Assert that the result is correct and contains the expected user data
-        assertEquals("Jane", result.userSender().firstName());
+        assertEquals("Jane", result.senderUserId().firstName());
 
         // Verify the repository interaction
         verify(chatMessageRepository, times(1)).findById(chatMessageId);
@@ -262,7 +262,7 @@ public class ChatMessageServiceTests {
         // Create a valid event ID (UUID) for the event
         UUID eventId = UUID.randomUUID();
 
-        // Create a list for likedBy (can be empty or contain UserDTOs)
+        // Create a list for likedByUserIds (can be empty or contain UserDTOs)
         List<UserDTO> likedBy = List.of(); // Empty list for this case
 
         // Create a ChatMessageDTO with all necessary fields
@@ -270,9 +270,9 @@ public class ChatMessageServiceTests {
                 UUID.randomUUID(), // generate a random ID for the chat message
                 "Hello!", // message content
                 Instant.now(), // timestamp
-                userDTO, // userSender
+                userDTO, // senderUserId
                 eventId, // eventId
-                likedBy // likedBy
+                likedBy // likedByUserIds
         );
 
         // Mock the save method to throw an exception
