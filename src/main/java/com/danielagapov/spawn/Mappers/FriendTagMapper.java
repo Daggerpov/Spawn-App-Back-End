@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 
 import java.util.List;
@@ -34,14 +33,14 @@ public class FriendTagMapper {
 
     public static List<FriendTagDTO> toDTOList(
             List<FriendTag> entities,
-            Map<FriendTag, UserDTO> ownerMap,
-            Map<FriendTag, List<UserDTO>> friendsMap
+            Map<FriendTag, UUID> ownerUserIdsMap,
+            Map<FriendTag, List<UUID>> friendUserIdsMap
     ) {
         return entities.stream()
                 .map(friendTag -> toDTO(
                         friendTag,
-                        ownerMap.getOrDefault(friendTag, null), // Default to null if owner is missing
-                        friendsMap.getOrDefault(friendTag, List.of()) // Default to an empty list if friends are missing
+                        ownerUserIdsMap.getOrDefault(friendTag, null), // Default to null if owner is missing
+                        friendUserIdsMap.getOrDefault(friendTag, List.of()) // Default to an empty list if friends are missing
                 ))
                 .collect(Collectors.toList());
     }
