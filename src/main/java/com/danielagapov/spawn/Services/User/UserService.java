@@ -62,10 +62,29 @@ public class UserService implements IUserService {
     public UserDTO getUserById(UUID id) {
         User user = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-        List<UserDTO> friends = getFriendsByFriendTagId(user.getId());
+
+        // Fetch friendUserIds based on the user ID (adjust this logic as needed for your application)
+        List<UUID> friendUserIds = getFriendUserIdsByUserId(user.getId());
+
+        // Fetch FriendTags for the user
         List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
-        return UserMapper.toDTO(user, friends, friendTags);
+
+        // Pass in the friendUserIds and friendTags as needed
+        return UserMapper.toDTO(user, friendUserIds, friendTags);
     }
+
+
+    public List<UUID> getFriendUserIdsByUserId(UUID id) {
+        // Fetch FriendTag entities related to the given user (for example, by userId)
+        List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
+
+        // Retrieve the user IDs associated with those FriendTags
+        return friendTags.stream()
+                .flatMap(friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()).stream())
+                .distinct() // Remove duplicates
+                .collect(Collectors.toList());
+    }
+
 
     public User getUserEntityById(UUID id) {
         return repository.findById(id)

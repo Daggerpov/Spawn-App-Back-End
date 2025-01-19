@@ -18,6 +18,9 @@ public interface IUserService {
     UserDTO replaceUser(UserDTO user, UUID id);
     boolean deleteUserById(UUID id);
 
+    // For Friends:
+    List<UUID> getFriendUserIdsByUserId(UUID id);
+
     // For Friend Tags:
 
     List<UserDTO> getUsersByTagId(UUID tagId);
