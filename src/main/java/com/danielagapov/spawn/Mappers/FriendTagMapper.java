@@ -6,16 +6,17 @@ import com.danielagapov.spawn.Models.FriendTag;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class FriendTagMapper {
-    public static FriendTagDTO toDTO(FriendTag entity, UserDTO owner, List<UserDTO> friends) {
+    public static FriendTagDTO toDTO(FriendTag entity, UUID ownerUserId, List<UUID> friendUserIds) {
         return new FriendTagDTO(
                 entity.getId(),
                 entity.getDisplayName(),
                 entity.getColorHexCode(),
-                owner,
-                friends,
+                ownerUserId,
+                friendUserIds,
                 entity.isEveryone()
 
         );

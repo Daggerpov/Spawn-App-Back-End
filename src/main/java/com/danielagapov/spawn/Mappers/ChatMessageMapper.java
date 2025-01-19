@@ -8,18 +8,19 @@ import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ChatMessageMapper {
 
-    public static ChatMessageDTO toDTO(ChatMessage entity, UserDTO userSender, List<UserDTO> likedBy) {
+    public static ChatMessageDTO toDTO(ChatMessage entity, List<UUID> likedByUserIds) {
         return new ChatMessageDTO(
                 entity.getId(),
                 entity.getContent(),
                 entity.getTimestamp(),
-                userSender,
+                entity.getUserSender().getId(),
                 entity.getEvent().getId(),
-                likedBy
+                likedByUserIds
         );
     }
 

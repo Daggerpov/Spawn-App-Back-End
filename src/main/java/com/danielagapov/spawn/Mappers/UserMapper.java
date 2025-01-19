@@ -6,21 +6,22 @@ import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class UserMapper {
 
-    public static UserDTO toDTO(User user, List<UserDTO> friends, List<FriendTagDTO> friendTags) {
+    public static UserDTO toDTO(User user, List<UUID> friendUserIds, List<UUID> friendTagIds) {
 
         return new UserDTO(
                 user.getId(),
-                friends,
+                friendUserIds,
                 user.getUsername(),
                 user.getProfilePicture(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getBio(),
-                friendTags,
+                friendTagIds,
                 user.getEmail()
         );
     }
