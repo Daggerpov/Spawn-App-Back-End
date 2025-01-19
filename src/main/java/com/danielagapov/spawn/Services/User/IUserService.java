@@ -28,6 +28,7 @@ public interface IUserService {
     Map<FriendTag, UUID> getOwnerUserIdsMap();
     Map<FriendTag, List<UUID>> getFriendUserIdsMap();
     List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
+    List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId);
     List<UserDTO> getFriendsByUserId(UUID userId);
     void removeFriend(UUID userId, UUID friendId);
     void saveFriendToUser(UUID userId, UUID friendId);

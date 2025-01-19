@@ -62,9 +62,9 @@ public class FriendTagService implements IFriendTagService {
     public FriendTagDTO getFriendTagById(UUID id) {
         return repository.findById(id)
                 .map(friendTag -> {
-                    UserDTO owner = userService.getUserById(friendTag.getOwnerId());
-                    List<UserDTO> friends = userService.getFriendsByFriendTagId(friendTag.getId());
-                    return FriendTagMapper.toDTO(friendTag, owner, friends);
+                    UUID ownerId = friendTag.getOwnerId();
+                    List<UUID> friendUserIds = userService.getFriendUserIdsByFriendTagId(friendTag.getId());
+                    return FriendTagMapper.toDTO(friendTag, ownerId, friendUserIds);
                 })
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
     }
@@ -82,7 +82,7 @@ public class FriendTagService implements IFriendTagService {
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
-            Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendsMap();
+            Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
             return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
