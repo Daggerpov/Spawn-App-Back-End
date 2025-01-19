@@ -154,13 +154,13 @@ public class EventService implements IEventService {
             UUID eventId = event.getId();
 
             // Fetch related data for the current event
-            UserDTO creator = userService.getUserById(event.getCreator().getId());
-            List<UserDTO> participants = userService.getParticipantsByEventId(eventId);
-            List<UserDTO> invited = userService.getInvitedByEventId(eventId);
-            List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(eventId);
+            UUID creatorUserId = event.getCreator().getId();
+            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventId);
+            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventId);
+            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventId);
 
             // Map the event to its DTO
-            EventDTO eventDTO = EventMapper.toDTO(event, creator, participants, invited, chatMessages);
+            EventDTO eventDTO = EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
             eventDTOs.add(eventDTO);
         }
 
