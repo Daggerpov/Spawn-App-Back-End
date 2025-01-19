@@ -93,12 +93,12 @@ public class ChatMessageService implements IChatMessageService {
     public ChatMessageDTO getChatMessageById(UUID id) {
         return chatMessageRepository.findById(id)
                 .map(chatMessage -> {
-                    UserDTO userSender = userService.getUserById(chatMessage.getUserSender().getId());
-                    List<UserDTO> likedBy = getChatMessageLikes(chatMessage.getId());
-                    return ChatMessageMapper.toDTO(chatMessage, userSender, likedBy);
+                    List<UUID> likedByUserIds = getChatMessageLikeUserIds(chatMessage.getId());
+                    return ChatMessageMapper.toDTO(chatMessage, likedByUserIds );
                 })
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
     }
+
 
     // Other methods remain mostly the same but updated to work with mappings
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
