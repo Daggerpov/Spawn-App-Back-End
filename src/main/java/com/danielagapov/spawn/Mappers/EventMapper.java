@@ -14,18 +14,18 @@ import java.util.stream.Collectors;
 public class EventMapper {
 
     // Convert entity to DTO
-    public static EventDTO toDTO(Event entity, UserDTO creator, List<UserDTO> participants, List<UserDTO> invited, List<ChatMessageDTO> chatMessages) {
+    public static EventDTO toDTO(Event entity, UUID creatorUserId, List<UUID> participantUserIds, List<UUID> invitedUserIds, List<UUID> chatMessageIds) {
         return new EventDTO(
                 entity.getId(),
                 entity.getTitle(),
                 entity.getStartTime(),
                 entity.getEndTime(),
-                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()) : null, // Map Location to LocationDTO
+                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).id() : null, // Map Location to LocationDTO
                 entity.getNote(),
-                creator,
-                participants,
-                invited,
-                chatMessages
+                creatorUserId,
+                participantUserIds,
+                invitedUserIds,
+                chatMessageIds
         );
     }
 
