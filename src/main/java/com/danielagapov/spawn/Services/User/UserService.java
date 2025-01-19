@@ -64,7 +64,7 @@ public class UserService implements IUserService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
         // Fetch FriendTag IDs based on the user ID
-        List<UUID> friendTagIds = friendTagService.getFriendTagIdsByUserId(user.getId());
+        List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(user.getId());
 
         // Fetch FriendTags for the user
         List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
@@ -153,9 +153,9 @@ public class UserService implements IUserService {
             user.setLastName(newUser.lastName());
             user.setUsername(newUser.username());
             repository.save(user);
-            List<UserDTO> friends = getFriendsByFriendTagId(user.getId());
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
-            return UserMapper.toDTO(user, friends, friendTags);
+            List<UUID> friendUserIds = getFriendUserIdsByFriendTagId(user.getId());
+            List<FriendTagDTO> friendTags = friendTagService.getFriendTagIdsByOwnerUserId(user.getId());
+            return UserMapper.toDTO(user, friendUserIds , friendTags);
         }).orElseGet(() -> {
             User userEntity = UserMapper.toEntity(newUser);
             repository.save(userEntity);
@@ -183,6 +183,17 @@ public class UserService implements IUserService {
         return uftRepository.findFriendIdsByTagId(friendTagId)
                 .stream()
                 .map(this::getUserById)
+                .collect(Collectors.toList());
+    }
+
+    public List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId) {
+        // Call the method to get the list of UserDTOs
+        List<UserDTO> friends = getFriendsByFriendTagId(friendTagId);
+
+        // Extract the user IDs from the UserDTO list
+        return friends.stream()
+                .map(UserDTO::id)
+                .distinct()
                 .collect(Collectors.toList());
     }
 
