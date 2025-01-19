@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
@@ -8,15 +7,16 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
-import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
+import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -33,16 +33,18 @@ public class EventService implements IEventService {
     private final IUserService userService;
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
+    private final ILocationService locationService;
 
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
             IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-            ILogger logger) {
+            ILogger logger, ILocationService locationService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.friendTagService = friendTagService;
         this.userService = userService;
         this.chatMessageService = chatMessageService;
         this.logger = logger;
+        this.locationService = locationService;
     }
 
     public List<EventDTO> getAllEvents() {
@@ -175,6 +177,10 @@ public class EventService implements IEventService {
             event.setEndTime(newEvent.endTime());
             event.setStartTime(newEvent.startTime());
 
+            // Fetch the location entity by locationId from DTO
+            Location location = locationService.getLocationById(newEvent.locationId());
+            event.setLocation(location);
+
             // Save updated event
             repository.save(event);
 
@@ -184,10 +190,15 @@ public class EventService implements IEventService {
             List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(event.getId());
             List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(event.getId());
 
+            // Convert updated event to DTO
             return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         }).orElseGet(() -> {
-            // Map and save new event
-            Event eventEntity = EventMapper.toEntity(newEvent);
+            // Map and save new event, fetch location and creator
+            Location location = locationService.getLocationById(newEvent.locationId());
+            User creator = userService.getUserEntityById(newEvent.creatorUserId());
+
+            // Convert DTO to entity
+            Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
             repository.save(eventEntity);
 
             // Fetch related data for DTO
@@ -196,9 +207,11 @@ public class EventService implements IEventService {
             List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
             List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
 
+            // Return DTO after entity creation
             return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         });
     }
+
 
 
     public boolean deleteEventById(UUID id) {
