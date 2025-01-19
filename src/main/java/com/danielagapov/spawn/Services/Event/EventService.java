@@ -189,12 +189,12 @@ public class EventService implements IEventService {
             repository.save(event);
 
             // Fetch related data for DTO
-            UserDTO creator = userService.getUserById(event.getCreator().getId());
-            List<UserDTO> participants = userService.getParticipantsByEventId(event.getId());
-            List<UserDTO> invited = userService.getInvitedByEventId(event.getId());
-            List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(event.getId());
+            UUID creatorUserId = event.getCreator().getId();
+            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(event.getId());
+            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(event.getId());
+            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(event.getId());
 
-            return EventMapper.toDTO(event, creator, participants, invited, chatMessages);
+            return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         }).orElseGet(() -> {
             // Handle location for new event
             Location location = LocationMapper.toEntity(newEvent.location());
@@ -210,14 +210,16 @@ public class EventService implements IEventService {
             repository.save(eventEntity);
 
             // Fetch related data for DTO
-            UserDTO creator = userService.getUserById(eventEntity.getCreator().getId());
-            List<UserDTO> participants = userService.getParticipantsByEventId(eventEntity.getId());
-            List<UserDTO> invited = userService.getInvitedByEventId(eventEntity.getId());
-            List<ChatMessageDTO> chatMessages = chatMessageService.getChatMessagesByEventId(eventEntity.getId());
+            UUID creatorUserId = eventEntity.getCreator().getId();
+            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventEntity.getId());
+            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
+            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
 
-            return EventMapper.toDTO(eventEntity, creator, participants, invited, chatMessages);
+            return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         });
     }
+
+
 
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
