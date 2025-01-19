@@ -93,21 +93,24 @@ public class UserService implements IUserService {
 
     // For Friend Tags:
 
-    public Map<FriendTag, UserDTO> getOwnerMap() {
+    public Map<FriendTag, UUID> getOwnerUserIdsMap() {
         List<FriendTag> friendTags = friendTagRepository.findAll();
         return friendTags.stream()
                 .collect(Collectors.toMap(
                         friendTag -> friendTag,
-                        friendTag -> getUserById(friendTag.getOwnerId()) // Map each FriendTag to its owner (UserDTO)
+                        FriendTag::getOwnerId
                 ));
     }
 
-    public Map<FriendTag, List<UserDTO>> getFriendsMap() {
+    public Map<FriendTag, List<UUID>> getFriendUserIdsMap() {
+        // Fetch all FriendTags
         List<FriendTag> friendTags = friendTagRepository.findAll();
+
+        // Create a map of FriendTag to a list of associated user IDs
         return friendTags.stream()
                 .collect(Collectors.toMap(
-                        friendTag -> friendTag,
-                        friendTag -> getFriendsByFriendTagId(friendTag.getId()) // Map each FriendTag to its friends list (List<UserDTO>)
+                        friendTag -> friendTag, // Use FriendTag as the key
+                        friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()) // List of user IDs for each FriendTag
                 ));
     }
 

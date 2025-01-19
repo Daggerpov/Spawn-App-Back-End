@@ -2,7 +2,6 @@ package com.danielagapov.spawn;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -58,7 +57,7 @@ public class FriendTagServiceTests {
         UserDTO owner = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
 
         when(friendTagRepository.findAll()).thenReturn(List.of(friendTag));
-        when(userService.getOwnerMap()).thenReturn(Map.of(friendTag, owner));
+        when(userService.getOwnerUserIdsMap()).thenReturn(Map.of(friendTag, owner));
         when(userService.getFriendsMap()).thenReturn(Map.of(friendTag, List.of()));
 
         List<FriendTagDTO> result = friendTagService.getAllFriendTags();

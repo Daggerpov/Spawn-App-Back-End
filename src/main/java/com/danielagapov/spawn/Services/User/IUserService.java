@@ -19,13 +19,14 @@ public interface IUserService {
     boolean deleteUserById(UUID id);
 
     // For Friends:
+
     List<UUID> getFriendUserIdsByUserId(UUID id);
 
     // For Friend Tags:
 
     List<UserDTO> getUsersByTagId(UUID tagId);
-    Map<FriendTag, UserDTO> getOwnerMap();
-    Map<FriendTag, List<UserDTO>> getFriendsMap();
+    Map<FriendTag, UUID> getOwnerUserIdsMap();
+    Map<FriendTag, List<UUID>> getFriendUserIdsMap();
     List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
     List<UserDTO> getFriendsByUserId(UUID userId);
     void removeFriend(UUID userId, UUID friendId);

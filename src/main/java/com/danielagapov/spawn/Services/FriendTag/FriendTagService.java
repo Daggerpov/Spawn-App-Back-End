@@ -14,7 +14,7 @@ import com.danielagapov.spawn.Models.UserFriendTag;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.User.UserService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -27,13 +27,13 @@ import java.util.stream.Collectors;
 @Service
 public class FriendTagService implements IFriendTagService {
     private final IFriendTagRepository repository;
-    private final UserService userService;
+    private final IUserService userService;
     private final IUserFriendTagRepository uftRepository;
     private final IUserRepository userRepository;
     private final ILogger logger;
 
     @Autowired
-    public FriendTagService(IFriendTagRepository repository, UserService userService,
+    public FriendTagService(IFriendTagRepository repository, IUserService userService,
                             IUserFriendTagRepository uftRepository, IUserRepository userRepository, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
@@ -45,9 +45,11 @@ public class FriendTagService implements IFriendTagService {
     public List<FriendTagDTO> getAllFriendTags() {
         try {
             // Use the helper methods you created
-            Map<FriendTag, UserDTO> ownerMap = userService.getOwnerMap();
-            Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
-            return FriendTagMapper.toDTOList(repository.findAll(), ownerMap, friendsMap);
+            Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
+            Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
+
+            // Corrected the argument names to match the method signature
+            return FriendTagMapper.toDTOList(repository.findAll(), ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.FriendTag);
@@ -79,13 +81,13 @@ public class FriendTagService implements IFriendTagService {
 
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
-            Map<FriendTag, UserDTO> ownerMap = userService.getOwnerMap();
-            Map<FriendTag, List<UserDTO>> friendsMap = userService.getFriendsMap();
-            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerMap, friendsMap);
+            Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
+            Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendsMap();
+            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving friendTags", e);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
         }
