@@ -153,15 +153,17 @@ public class UserService implements IUserService {
             user.setLastName(newUser.lastName());
             user.setUsername(newUser.username());
             repository.save(user);
-            List<UUID> friendUserIds = getFriendUserIdsByFriendTagId(user.getId());
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagIdsByOwnerUserId(user.getId());
-            return UserMapper.toDTO(user, friendUserIds , friendTags);
+
+            List<UUID> friendUserIds = getFriendUserIdsByUserId(user.getId());
+            List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(user.getId());
+            return UserMapper.toDTO(user, friendUserIds, friendTagIds);
         }).orElseGet(() -> {
             User userEntity = UserMapper.toEntity(newUser);
             repository.save(userEntity);
-            List<UserDTO> friends = getFriendsByFriendTagId(userEntity.getId());
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(userEntity.getId());
-            return UserMapper.toDTO(userEntity, friends, friendTags);
+
+            List<UUID> friendUserIds = getFriendUserIdsByUserId(userEntity.getId());
+            List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(userEntity.getId());
+            return UserMapper.toDTO(userEntity, friendUserIds, friendTagIds);
         });
     }
 
