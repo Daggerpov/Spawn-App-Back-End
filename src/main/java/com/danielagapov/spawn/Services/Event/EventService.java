@@ -175,16 +175,6 @@ public class EventService implements IEventService {
             event.setEndTime(newEvent.endTime());
             event.setStartTime(newEvent.startTime());
 
-            // Handle location
-            Location location = LocationMapper.toEntity(newEvent.location());
-            if (location.getId() != null) {
-                location = locationRepository.findById(location.getId())
-                        .orElse(locationRepository.save(location));
-            } else {
-                location = locationRepository.save(location);
-            }
-            event.setLocation(location);
-
             // Save updated event
             repository.save(event);
 
@@ -196,17 +186,8 @@ public class EventService implements IEventService {
 
             return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         }).orElseGet(() -> {
-            // Handle location for new event
-            Location location = LocationMapper.toEntity(newEvent.location());
-            if (location.getId() != null) {
-                location = locationRepository.findById(location.getId())
-                        .orElse(locationRepository.save(location));
-            } else {
-                location = locationRepository.save(location);
-            }
-
             // Map and save new event
-            Event eventEntity = EventMapper.toEntity(newEvent, location);
+            Event eventEntity = EventMapper.toEntity(newEvent);
             repository.save(eventEntity);
 
             // Fetch related data for DTO
@@ -218,7 +199,6 @@ public class EventService implements IEventService {
             return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         });
     }
-
 
 
     public boolean deleteEventById(UUID id) {
