@@ -27,7 +27,7 @@ public class FriendTagMapper {
                 dto.id(),
                 dto.displayName(),
                 dto.colorHexCode(),
-                dto.owner().id(),
+                dto.ownerUserId(),
                 dto.isEveryone()
         );
     }
