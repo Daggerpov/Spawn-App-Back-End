@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.User;
 
@@ -38,12 +37,12 @@ public class UserMapper {
         );
     }
 
-    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UserDTO>> friendsMap, Map<User, List<FriendTagDTO>> friendTagsMap) {
+    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UUID>> friendUserIdsMap, Map<User, List<UUID>> friendTagIdsMap) {
         return users.stream()
                 .map(user -> toDTO(
                         user,
-                        friendsMap.getOrDefault(user, List.of()),
-                        friendTagsMap.getOrDefault(user, List.of())
+                        friendUserIdsMap.getOrDefault(user, List.of()),
+                        friendTagIdsMap.getOrDefault(user, List.of())
                 ))
                 .collect(Collectors.toList());
     }
