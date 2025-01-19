@@ -1,16 +1,14 @@
 package com.danielagapov.spawn.Services.FriendRequestService;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
+import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -22,30 +20,25 @@ import java.util.UUID;
 public class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
     private final IUserService userService;
-    private final IFriendTagService friendTagService;
     private final ILogger logger;
 
-    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService, IFriendTagService friendTagService, ILogger logger) {
+    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService,ILogger logger) {
         this.repository = repository;
         this.userService = userService;
-        this.friendTagService = friendTagService;
         this.logger = logger;
     }
 
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
             // Extract sender and receiver IDs from the FriendRequestDTO
-            UUID senderId = friendRequestDTO.sender().id();
-            UUID receiverId = friendRequestDTO.receiver().id();
+            UUID senderId = friendRequestDTO.senderUserId();
+            UUID receiverId = friendRequestDTO.receiverUserId();
 
-            // Fetch sender and receiver friends and friend tags using UserService
-            List<UserDTO> senderFriends = userService.getFriendsByUserId(senderId);
-            List<FriendTagDTO> senderFriendTags = friendTagService.getFriendTagsByOwnerId(senderId);
-            List<UserDTO> receiverFriends = userService.getFriendsByUserId(receiverId);
-            List<FriendTagDTO> receiverFriendTags = friendTagService.getFriendTagsByOwnerId(receiverId);
+            User sender = userService.getUserEntityById(senderId);
+            User receiver = userService.getUserEntityById(receiverId);
 
             // Map the DTO to entity
-            FriendRequest friendRequest = FriendRequestMapper.toEntity(friendRequestDTO);
+            FriendRequest friendRequest = FriendRequestMapper.toEntity(friendRequestDTO, sender, receiver);
 
             // Save the friend request
             repository.save(friendRequest);

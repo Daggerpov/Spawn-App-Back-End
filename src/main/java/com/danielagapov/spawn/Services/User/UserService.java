@@ -67,6 +67,11 @@ public class UserService implements IUserService {
         return UserMapper.toDTO(user, friends, friendTags);
     }
 
+    public User getUserEntityById(UUID id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+    }
+
     // For Friend Tags:
 
     public Map<FriendTag, UserDTO> getOwnerMap() {
