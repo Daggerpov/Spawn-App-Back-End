@@ -103,14 +103,14 @@ public class ChatMessageService implements IChatMessageService {
     // Other methods remain mostly the same but updated to work with mappings
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
-            User userSender = userRepository.findById(chatMessageDTO.senderUserId().id())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.senderUserId().id()));
+            User userSender = userRepository.findById(chatMessageDTO.senderUserId())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.senderUserId()));
             Event event = eventRepository.findById(chatMessageDTO.eventId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.eventId()));
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
 
-            UserDTO userSenderDTO = userService.getUserById(chatMessageDTO.senderUserId().id());
+            UserDTO userSenderDTO = userService.getUserById(chatMessageDTO.senderUserId());
 
             chatMessageRepository.save(chatMessageEntity);
 
@@ -171,9 +171,9 @@ public class ChatMessageService implements IChatMessageService {
 
         return likes.stream()
                 .map(like -> {
-                    List<UserDTO> friends = userService.getFriendsByUserId(like.getUser().getId());
-                    List<FriendTagDTO> friendTags = ftService.getFriendTagsByOwnerId(like.getUser().getId());
-                    return UserMapper.toDTO(like.getUser(), friends, friendTags);
+                    List<UUID> friendsUserIds = userService.getFriendUserIdsByUserId(like.getUser().getId());
+                    List<UUID> friendTagIds = ftService.getFriendTagIdsByOwnerUserId(like.getUser().getId());
+                    return UserMapper.toDTO(like.getUser(), friendsUserIds, friendTagIds);
                 })
                 .collect(Collectors.toList());
     }
