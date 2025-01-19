@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,7 @@ public class EventMapper {
     }
 
     // Convert DTO to entity
-    public static Event toEntity(EventDTO dto, Location location) {
+    public static Event toEntity(EventDTO dto, Location location, User creator) {
         return new Event(
                 dto.id(),
                 dto.title(),
@@ -38,7 +39,7 @@ public class EventMapper {
                 dto.endTime(),
                 location, // Assign the full Location entity
                 dto.note(),
-                UserMapper.toEntity(dto.creatorUserId())
+                creator
         );
     }
 
