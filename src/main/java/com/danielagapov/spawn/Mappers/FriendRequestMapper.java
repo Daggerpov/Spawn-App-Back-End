@@ -6,19 +6,16 @@ import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendRequest;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class FriendRequestMapper {
 
-    public static FriendRequestDTO toDTO(FriendRequest friendRequest,
-                                         List<UserDTO> senderFriends,
-                                         List<FriendTagDTO> senderFriendTags,
-                                         List<UserDTO> receiverFriends,
-                                         List<FriendTagDTO> receiverFriendTags) {
+    public static FriendRequestDTO toDTO(FriendRequest friendRequest) {
         return new FriendRequestDTO(
                 friendRequest.getId(),
-                UserMapper.toDTO(friendRequest.getSender(), senderFriends, senderFriendTags),
-                UserMapper.toDTO(friendRequest.getReceiver(), receiverFriends, receiverFriendTags)
+                friendRequest.getSender().getId(),
+                friendRequest.getReceiver().getId()
         );
     }
 
