@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
@@ -36,14 +35,12 @@ public class ChatMessageMapper {
 
     public static List<ChatMessageDTO> toDTOList(
             List<ChatMessage> chatMessages,
-            Map<ChatMessage, UserDTO> userSenderMap,
-            Map<ChatMessage, List<UserDTO>> likedByMap
+            Map<ChatMessage, List< UUID>> likedByUserIdsMap
     ) {
         return chatMessages.stream()
                 .map(chatMessage -> toDTO(
                         chatMessage,
-                        userSenderMap.getOrDefault(chatMessage, null), // Default to null if senderUserId is missing
-                        likedByMap.getOrDefault(chatMessage, List.of()) // Default to an empty list if likedByUserIds is missing
+                        likedByUserIdsMap.getOrDefault(chatMessage, List.of()) // Default to an empty list if likedByUserIds is missing
                 ))
                 .collect(Collectors.toList());
     }
@@ -52,7 +49,7 @@ public class ChatMessageMapper {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
-                            .filter(user -> user.getId().equals(dto.senderUserId().id()))
+                            .filter(user -> user.getId().equals(dto.senderUserId()))
                             .findFirst()
                             .orElse(null);
                     Event event = events.stream()
