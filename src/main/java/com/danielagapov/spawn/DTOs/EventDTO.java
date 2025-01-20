@@ -11,10 +11,10 @@ public record EventDTO(
         String title,
         OffsetDateTime startTime,
         OffsetDateTime endTime,
-        LocationDTO location, // TODO: investigate data type later
+        UUID locationId,
         String note,
-        UserDTO creator,
-        List<UserDTO> participants,
-        List<UserDTO> invited,
-        List<ChatMessageDTO> chatMessages
+        UUID creatorUserId,
+        List<UUID> participantUserIds,
+        List<UUID> invitedUserIds,
+        List<UUID> chatMessageIds
 ) implements Serializable {}
