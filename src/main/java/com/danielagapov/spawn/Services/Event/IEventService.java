@@ -17,6 +17,6 @@ public interface IEventService {
     public boolean deleteEventById(UUID id);
     public List<UserDTO> getParticipatingUsersByEventId(UUID id);
     public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
-    public void inviteUser(UUID eventId, UUID userId);
+    public boolean inviteUser(UUID eventId, UUID userId);
     public boolean toggleParticipation(UUID eventId, UUID userId);
 }

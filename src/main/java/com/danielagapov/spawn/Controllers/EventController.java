@@ -127,7 +127,7 @@ public class EventController {
     }
 
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
-    @GetMapping("{eventId}?userId/participating?userId={userid}")
+    @GetMapping("{eventId}/participating?userId={userid}")
     public ResponseEntity<Boolean> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
@@ -145,24 +145,6 @@ public class EventController {
     // full path: /api/v1/events/{eventId}/invited?userId={userid}
     @GetMapping("{eventId}/invited?userId={userid}")
     public ResponseEntity<Boolean> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
-        try {
-            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
-                return new ResponseEntity<>(true, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(false, HttpStatus.OK);
-            }
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/events/{eventId}/invited?userId={userid}
-    @GetMapping("{eventId}/invited?userId={userid}")
-    public ResponseEntity<Boolean> isInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
-        // TODO: put DTO in response entity
-
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
                 return new ResponseEntity<>(true, HttpStatus.OK);

@@ -10,8 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IEventUserRepository extends JpaRepository<EventUser, UUID> {
-    // TODO: queries?
+    List<EventUser> findByEvent_Id(UUID eventId);
 
-    @Query()
-    List<EventUser> getEventUsersByEventId(UUID eventId);
+    List<EventUser> findByUser_Id(UUID userId);
 }
