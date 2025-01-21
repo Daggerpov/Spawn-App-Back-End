@@ -43,4 +43,7 @@ public interface IUserService {
     List<UserDTO> getInvitedByEventId(UUID eventId) ;
     List<UUID> getParticipantUserIdsByEventId(UUID eventId);
     List<UUID> getInvitedUserIdsByEventId(UUID eventId);
+
+    // Helper
+    FullUserDTO getFullUserByUser(UserDTO user);
 }
