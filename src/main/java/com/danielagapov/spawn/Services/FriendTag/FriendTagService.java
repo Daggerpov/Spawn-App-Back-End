@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FullFriendTagDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -68,6 +69,11 @@ public class FriendTagService implements IFriendTagService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
     }
 
+    public FullFriendTagDTO getFullFriendTagById(UUID id) {
+        FriendTagDTO ft = getFriendTagById(id);
+        return getFullFriendTagByFriendTag(ft);
+    }
+
     public List<UUID> getFriendTagIdsByOwnerUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
         List<FriendTag> friendTags = repository.findByOwnerId(id);
@@ -90,6 +96,10 @@ public class FriendTagService implements IFriendTagService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    public List<FullFriendTagDTO> getFullFriendTagsByOwnerId(UUID ownerId) {
+        return getFriendTagsByOwnerId(ownerId).stream().map(this::getFullFriendTagByFriendTag).collect(Collectors.toList());
     }
 
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag) {
@@ -157,5 +167,15 @@ public class FriendTagService implements IFriendTagService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    public FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag) {
+        return new FullFriendTagDTO(
+                friendTag.id(),
+                friendTag.displayName(),
+                friendTag.colorHexCode(),
+                friendTag.ownerUserId(),
+                friendTag.friendUserIds().stream().map(userService::getUserById).collect(Collectors.toList()),
+                friendTag.isEveryone());
     }
 }

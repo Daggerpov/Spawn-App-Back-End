@@ -1,6 +1,8 @@
 package com.danielagapov.spawn.DTOs;
 
 
+import com.danielagapov.spawn.Models.Location;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -11,9 +13,9 @@ public record FullEventDTO(
         String title,
         OffsetDateTime startTime,
         OffsetDateTime endTime,
-        UUID locationId,
+        Location locationId,
         String note,
-        UUID creatorUserId,
+        UserDTO creatorUserId,
         List<UserDTO> participantUsers,
         List<UserDTO> invitedUsers,
         List<ChatMessageDTO> chatMessages

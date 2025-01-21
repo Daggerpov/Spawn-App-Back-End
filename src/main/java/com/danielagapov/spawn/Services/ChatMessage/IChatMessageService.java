@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface IChatMessageService {
     List<ChatMessageDTO> getAllChatMessages();
     ChatMessageDTO getChatMessageById(UUID id);
-    FullChatMessageDTO getFullChatMessagesById(UUID id);
+    FullChatMessageDTO getFullChatMessageById(UUID id);
     ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessage);
     boolean deleteChatMessageById(UUID id);
     ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId);

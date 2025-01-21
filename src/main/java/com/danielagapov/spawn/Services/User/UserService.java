@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -73,6 +74,10 @@ public class UserService implements IUserService {
         return UserMapper.toDTO(user, friendTagIds, friendTagIds);
     }
 
+    public FullUserDTO getFullUserById(UUID id) {
+        return getFullUserByUser(getUserById(id));
+    }
+
 
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
@@ -83,6 +88,10 @@ public class UserService implements IUserService {
                 .flatMap(friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()).stream())
                 .distinct() // Remove duplicates
                 .collect(Collectors.toList());
+    }
+
+    public List<UserDTO> getFriendUsersByUserId(UUID id) {
+        return getFriendUserIdsByFriendTagId(id).stream().map(this::getUserById).collect(Collectors.toList());
     }
 
 
@@ -271,5 +280,19 @@ public class UserService implements IUserService {
     public List<UUID> getInvitedUserIdsByEventId(UUID eventId) {
         // TODO
         return List.of();
+    }
+
+    public FullUserDTO getFullUserByUser(UserDTO user) {
+        return new FullUserDTO(
+                user.id(),
+                getFriendsByUserId(user.id()),
+                user.username(),
+                user.profilePicture(),
+                user.firstName(),
+                user.lastName(),
+                user.bio(),
+                friendTagService.getFriendTagsByOwnerId(user.id()),
+                user.email()
+        );
     }
 }

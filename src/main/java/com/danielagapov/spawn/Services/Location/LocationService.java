@@ -38,6 +38,7 @@ public class LocationService implements ILocationService {
         }
     }
 
+    // TODO shouldn't this return a dto?
     public Location getLocationById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id));
     }

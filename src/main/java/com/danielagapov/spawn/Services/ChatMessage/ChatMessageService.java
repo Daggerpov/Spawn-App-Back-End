@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
+import com.danielagapov.spawn.DTOs.FullChatMessageDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -21,6 +22,7 @@ import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
 import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
@@ -36,17 +38,19 @@ public class ChatMessageService implements IChatMessageService {
     private final IChatMessageRepository chatMessageRepository;
     private final IUserService userService;
     private final IEventRepository eventRepository;
+    private final IEventService eventService;
     private final IFriendTagService ftService;
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
-                              IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
+                              IEventRepository eventRepository, IEventService eventService, IChatMessageLikesRepository chatMessageLikesRepository,
                               IFriendTagService ftService, IUserRepository userRepository, ILogger logger) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.eventRepository = eventRepository;
+        this.eventService = eventService;
         this.chatMessageLikesRepository = chatMessageLikesRepository;
         this.ftService = ftService;
         this.userRepository = userRepository;
@@ -96,6 +100,10 @@ public class ChatMessageService implements IChatMessageService {
                     return ChatMessageMapper.toDTO(chatMessage, likedByUserIds );
                 })
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
+    }
+
+    public FullChatMessageDTO getFullChatMessageById(UUID id) {
+        return getFullChatMessageByChatMessage(getChatMessageById(id));
     }
 
 
@@ -216,5 +224,16 @@ public class ChatMessageService implements IChatMessageService {
     public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
         // TODO
         return List.of();
+    }
+
+    public FullChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
+        return new FullChatMessageDTO(
+                chatMessage.id(),
+                chatMessage.content(),
+                chatMessage.timestamp(),
+                userService.getUserById(chatMessage.senderUserId()),
+                eventService.getEventById(chatMessage.eventId()),
+                getChatMessageLikes(chatMessage.id())
+        );
     }
 }

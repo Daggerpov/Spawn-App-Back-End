@@ -1,8 +1,6 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -70,6 +68,10 @@ public class EventService implements IEventService {
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
 
         return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+    }
+
+    public FullEventDTO getFullEventById(UUID id) {
+        return getFullEventByEvent(getEventById(id));
     }
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
@@ -230,5 +232,20 @@ public class EventService implements IEventService {
 
     public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
         return List.of();
+    }
+
+    public FullEventDTO getFullEventByEvent(EventDTO event) {
+        return new FullEventDTO(
+                event.id(),
+                event.title(),
+                event.startTime(),
+                event.endTime(),
+                locationService.getLocationById(event.locationId()),
+                event.note(),
+                userService.getUserById(event.creatorUserId()),
+                userService.getParticipantsByEventId(event.id()),
+                userService.getInvitedByEventId(event.id()),
+                chatMessageService.getChatMessagesByEventId(event.id())
+        );
     }
 }
