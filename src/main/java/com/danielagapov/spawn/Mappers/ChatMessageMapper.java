@@ -1,25 +1,25 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ChatMessageMapper {
 
-    public static ChatMessageDTO toDTO(ChatMessage entity, UserDTO userSender, List<UserDTO> likedBy) {
+    public static ChatMessageDTO toDTO(ChatMessage entity, List<UUID> likedByUserIds) {
         return new ChatMessageDTO(
                 entity.getId(),
                 entity.getContent(),
                 entity.getTimestamp(),
-                userSender,
+                entity.getUserSender().getId(),
                 entity.getEvent().getId(),
-                likedBy
+                likedByUserIds
         );
     }
 
@@ -35,14 +35,12 @@ public class ChatMessageMapper {
 
     public static List<ChatMessageDTO> toDTOList(
             List<ChatMessage> chatMessages,
-            Map<ChatMessage, UserDTO> userSenderMap,
-            Map<ChatMessage, List<UserDTO>> likedByMap
+            Map<ChatMessage, List< UUID>> likedByUserIdsMap
     ) {
         return chatMessages.stream()
                 .map(chatMessage -> toDTO(
                         chatMessage,
-                        userSenderMap.getOrDefault(chatMessage, null), // Default to null if userSender is missing
-                        likedByMap.getOrDefault(chatMessage, List.of()) // Default to an empty list if likedBy is missing
+                        likedByUserIdsMap.getOrDefault(chatMessage, List.of()) // Default to an empty list if likedByUserIds is missing
                 ))
                 .collect(Collectors.toList());
     }
@@ -51,7 +49,7 @@ public class ChatMessageMapper {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
-                            .filter(user -> user.getId().equals(dto.userSender().id()))
+                            .filter(user -> user.getId().equals(dto.senderUserId()))
                             .findFirst()
                             .orElse(null);
                     Event event = events.stream()

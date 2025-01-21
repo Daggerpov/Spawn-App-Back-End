@@ -3,30 +3,33 @@ package com.danielagapov.spawn.Mappers;
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class EventMapper {
 
     // Convert entity to DTO
-    public static EventDTO toDTO(Event entity) {
+    public static EventDTO toDTO(Event entity, UUID creatorUserId, List<UUID> participantUserIds, List<UUID> invitedUserIds, List<UUID> chatMessageIds) {
         return new EventDTO(
                 entity.getId(),
                 entity.getTitle(),
                 entity.getStartTime(),
                 entity.getEndTime(),
-                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()) : null, // Map Location to LocationDTO
+                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).id() : null, // Map Location to LocationDTO
                 entity.getNote(),
-                null, // Placeholder for creator
-                null, // Placeholder for participants
-                null, // Placeholder for invited
-                null  // Placeholder for chatMessages
+                creatorUserId,
+                participantUserIds,
+                invitedUserIds,
+                chatMessageIds
         );
     }
 
     // Convert DTO to entity
-    public static Event toEntity(EventDTO dto, Location location) {
+    public static Event toEntity(EventDTO dto, Location location, User creator) {
         return new Event(
                 dto.id(),
                 dto.title(),
@@ -34,25 +37,46 @@ public class EventMapper {
                 dto.endTime(),
                 location, // Assign the full Location entity
                 dto.note(),
-                UserMapper.toEntity(dto.creator())
+                creator
         );
     }
 
-    public static List<EventDTO> toDTOList(List<Event> entities) {
+    public static List<EventDTO> toDTOList(
+            List<Event> entities,
+            Map<UUID, UUID> creatorUserIdMap, // Map of Event ID to creatorUserId UserDTO
+            Map<UUID, List<UUID>> participantUserIdsMap, // Map of Event ID to participantUserIds
+            Map<UUID, List<UUID>> invitedUserIdsMap, // Map of Event ID to invitedUserIds users
+            Map<UUID, List<UUID>> chatMessageIdsMap // Map of Event ID to chat messages
+    ) {
         return entities.stream()
-                .map(EventMapper::toDTO)
+                .map(entity -> toDTO(
+                        entity,
+                        creatorUserIdMap.get(entity.getId()), // Fetch the creatorUserId UserDTO
+                        participantUserIdsMap.getOrDefault(entity.getId(), List.of()), // Fetch participantUserIds or default empty
+                        invitedUserIdsMap.getOrDefault(entity.getId(), List.of()), // Fetch invitedUserIds users or default empty
+                        chatMessageIdsMap.getOrDefault(entity.getId(), List.of()) // Fetch chat messages or default empty
+                ))
                 .collect(Collectors.toList());
     }
 
-    public static List<Event> toEntityList(List<EventDTO> eventDTOS, List<Location> locations) {
+    public static List<Event> toEntityList(List<EventDTO> eventDTOS, List<Location> locations, List<User> creators) {
         return eventDTOS.stream()
                 .map(dto -> {
+                    // Find the Location entity based on the locationId from DTO
                     Location location = locations.stream()
-                            .filter(loc -> loc.getId().equals(dto.location().id())) // Match LocationDTO's UUID with Location entity
+                            .filter(loc -> loc.getId().equals(dto.locationId())) // Match LocationDTO's UUID with Location entity
                             .findFirst()
                             .orElse(null);
-                    return toEntity(dto, location);
+
+                    // Find the User entity (creator) based on the creatorUserId from DTO
+                    User creator = creators.stream()
+                            .filter(user -> user.getId().equals(dto.creatorUserId())) // Match creatorUserId with User entity
+                            .findFirst()
+                            .orElse(null);
+
+                    return toEntity(dto, location, creator); // Convert DTO to entity
                 })
                 .collect(Collectors.toList());
     }
+
 }

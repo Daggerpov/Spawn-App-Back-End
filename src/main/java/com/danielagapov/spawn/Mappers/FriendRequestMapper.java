@@ -1,57 +1,55 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendRequest;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FriendRequestMapper {
 
-    public static FriendRequestDTO toDTO(FriendRequest friendRequest,
-                                         List<UserDTO> senderFriends,
-                                         List<FriendTagDTO> senderFriendTags,
-                                         List<UserDTO> receiverFriends,
-                                         List<FriendTagDTO> receiverFriendTags) {
+    public static FriendRequestDTO toDTO(FriendRequest friendRequest) {
         return new FriendRequestDTO(
                 friendRequest.getId(),
-                UserMapper.toDTO(friendRequest.getSender(), senderFriends, senderFriendTags),
-                UserMapper.toDTO(friendRequest.getReceiver(), receiverFriends, receiverFriendTags)
+                friendRequest.getSender().getId(),
+                friendRequest.getReceiver().getId()
         );
     }
 
-    public static FriendRequest toEntity(FriendRequestDTO friendRequestDTO) {
+    public static FriendRequest toEntity(FriendRequestDTO friendRequestDTO, User sender, User receiver) {
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setId(friendRequestDTO.id());
-        friendRequest.setSender(UserMapper.toEntity(friendRequestDTO.sender()));
-        friendRequest.setReceiver(UserMapper.toEntity(friendRequestDTO.receiver()));
+        friendRequest.setSender(sender);
+        friendRequest.setReceiver(receiver);
         return friendRequest;
     }
 
-    public static List<FriendRequestDTO> toDTOList(List<FriendRequest> friendRequests,
-                                                   List<List<UserDTO>> allSenderFriends,
-                                                   List<List<FriendTagDTO>> allSenderFriendTags,
-                                                   List<List<UserDTO>> allReceiverFriends,
-                                                   List<List<FriendTagDTO>> allReceiverFriendTags) {
+    public static List<FriendRequestDTO> toDTOList(List<FriendRequest> friendRequests) {
         return friendRequests.stream()
-                .map(friendRequest -> {
-                    int index = friendRequests.indexOf(friendRequest); // Match data by index
-                    return toDTO(
-                            friendRequest,
-                            allSenderFriends.get(index),
-                            allSenderFriendTags.get(index),
-                            allReceiverFriends.get(index),
-                            allReceiverFriendTags.get(index)
-                    );
+                .map(FriendRequestMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public static List<FriendRequest> toEntityList(List<FriendRequestDTO> friendRequestDTOList, List<User> userSenders, List<User> userReceivers) {
+        return friendRequestDTOList.stream()
+                .map(dto -> {
+                    // Find sender user by matching senderId from userSenders list
+                    User sender = userSenders.stream()
+                            .filter(user -> user.getId().equals(dto.senderUserId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    // Find receiver user by matching receiverId from userReceivers list
+                    User receiver = userReceivers.stream()
+                            .filter(user -> user.getId().equals(dto.receiverUserId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    return toEntity(dto, sender, receiver); // Convert DTO to entity
                 })
                 .collect(Collectors.toList());
     }
 
-    public static List<FriendRequest> toEntityList(List<FriendRequestDTO> friendRequestDTOList) {
-        return friendRequestDTOList.stream()
-                .map(FriendRequestMapper::toEntity)
-                .collect(Collectors.toList());
-    }
+
 }
