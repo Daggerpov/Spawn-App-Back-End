@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -13,6 +14,7 @@ public interface IUserService {
 
     // CRUD operations:
     UserDTO getUserById(UUID id);
+    FullUserDTO getFullUserById(UUID id);
     User getUserEntityById(UUID id);
     UserDTO saveUser(UserDTO user);
     UserDTO replaceUser(UserDTO user, UUID id);
@@ -21,6 +23,7 @@ public interface IUserService {
     // For Friends:
 
     List<UUID> getFriendUserIdsByUserId(UUID id);
+    List<UserDTO> getFriendUsersByUserId(UUID id);
 
     // For Friend Tags:
 
