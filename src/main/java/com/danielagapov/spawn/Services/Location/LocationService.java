@@ -38,7 +38,7 @@ public class LocationService implements ILocationService {
         }
     }
 
-    public Location getLocationById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id));
+    public LocationDTO getLocationById(UUID id) {
+        return LocationMapper.toDTO(repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id)));
     }
 }

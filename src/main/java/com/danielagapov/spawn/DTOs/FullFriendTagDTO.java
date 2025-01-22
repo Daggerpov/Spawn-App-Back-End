@@ -4,11 +4,11 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public record FriendTagDTO(
+public record FullFriendTagDTO(
         UUID id,
         String displayName,
         String colorHexCode,
-        UUID ownerUserId,
-        List<UUID> friendUserIds,
+        UserDTO ownerUser,
+        List<UserDTO> friendUsers,
         boolean isEveryone
 ) implements Serializable, IFriendTagDTO {}

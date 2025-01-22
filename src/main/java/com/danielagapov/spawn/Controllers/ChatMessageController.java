@@ -1,8 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
@@ -34,11 +32,15 @@ public class ChatMessageController {
         }
     }
 
-    // full path: /api/v1/chatMessages/{id}
+    // full path: /api/v1/chatMessages/{id}?full=full
     @GetMapping("/{id}")
-    public ResponseEntity<ChatMessageDTO> getChatMessage(@PathVariable UUID id) {
+    public ResponseEntity<IChatMessageDTO> getChatMessage(@PathVariable UUID id, @RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(chatMessageService.getChatMessageById(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(chatMessageService.getFullChatMessageById(id), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(chatMessageService.getChatMessageById(id), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

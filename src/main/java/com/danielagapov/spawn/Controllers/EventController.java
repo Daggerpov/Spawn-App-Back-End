@@ -1,6 +1,8 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.FullEventDTO;
+import com.danielagapov.spawn.DTOs.IEventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -32,11 +34,15 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{id}
+    // full path: /api/v1/events/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<EventDTO> getEventById(@PathVariable UUID id) {
+    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(eventService.getFullEventById(id), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

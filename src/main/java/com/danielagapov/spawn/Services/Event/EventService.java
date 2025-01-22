@@ -1,8 +1,6 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -10,6 +8,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
+import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.EventUser;
@@ -22,6 +21,8 @@ import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,6 +44,8 @@ public class EventService implements IEventService {
     private final ILogger logger;
     private final ILocationService locationService;
 
+    @Autowired
+    @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
             IEventUserRepository eventUserRepository, IUserRepository userRepository,
             IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
@@ -81,6 +84,10 @@ public class EventService implements IEventService {
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
 
         return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+    }
+
+    public FullEventDTO getFullEventById(UUID id) {
+        return getFullEventByEvent(getEventById(id));
     }
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
@@ -191,8 +198,8 @@ public class EventService implements IEventService {
             event.setStartTime(newEvent.startTime());
 
             // Fetch the location entity by locationId from DTO
-            Location location = locationService.getLocationById(newEvent.locationId());
-            event.setLocation(location);
+            LocationDTO location = locationService.getLocationById(newEvent.locationId());
+            event.setLocation(LocationMapper.toEntity(location));
 
             // Save updated event
             repository.save(event);
@@ -207,7 +214,7 @@ public class EventService implements IEventService {
             return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
-            Location location = locationService.getLocationById(newEvent.locationId());
+            Location location = LocationMapper.toEntity(locationService.getLocationById(newEvent.locationId()));
             User creator = userService.getUserEntityById(newEvent.creatorUserId());
 
             // Convert DTO to entity
@@ -335,5 +342,20 @@ public class EventService implements IEventService {
         }
 
         return getEventDTOS(events);
+    }
+
+    public FullEventDTO getFullEventByEvent(EventDTO event) {
+        return new FullEventDTO(
+                event.id(),
+                event.title(),
+                event.startTime(),
+                event.endTime(),
+                locationService.getLocationById(event.locationId()),
+                event.note(),
+                userService.getUserById(event.creatorUserId()),
+                userService.getParticipantsByEventId(event.id()),
+                userService.getInvitedByEventId(event.id()),
+                chatMessageService.getChatMessagesByEventId(event.id())
+        );
     }
 }
