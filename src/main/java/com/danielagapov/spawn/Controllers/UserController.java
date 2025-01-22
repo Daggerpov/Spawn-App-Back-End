@@ -153,7 +153,7 @@ public class UserController {
     @GetMapping("{id}/recommended-friends")
     public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriends(@PathVariable UUID id) {
         try {
-            return new ResponseEntity<>(userService.getRecommendedFriends(id), HttpStatus.OK);
+            return new ResponseEntity<>(userService.getRecommendedFriendsForUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

@@ -258,10 +258,46 @@ public class UserService implements IUserService {
     }
 
     // TODO: implement this logic later
-    public List<RecommendedFriendUserDTO> getRecommendedFriends(UUID id) {
-        // TODO
-        // TODO include the property `mutualFriendCount`, with the instantiation of `RecommendedFriendUserDTO()`.
-        return List.of();
+    // returns top 3 friends with most mutuals with user (with `userId`) as
+    // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
+    public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
+        // Fetch the requesting user
+        UserDTO requestingUser = allUsers.stream()
+                .filter(user -> user.id().equals(requestingUserId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Requesting user not found"));
+
+        // Create a map of friends for quick lookup
+        Set<UUID> requestingUserFriends = new HashSet<>(requestingUser.friendIds());
+
+        // Calculate mutual friends for all users
+        List<RecommendedFriendUserDTO> recommendations = allUsers.stream()
+                .filter(user -> !user.id().equals(requestingUserId)) // Exclude the requesting user
+                .map(user -> {
+                    // Calculate mutual friend count
+                    long mutualFriendCount = user.friendIds().stream()
+                            .filter(requestingUserFriends::contains)
+                            .count();
+
+                    return new RecommendedFriendUserDTO(
+                            user.id(),
+                            null, // Assuming full `friends` data is not necessary here
+                            user.username(),
+                            user.profilePicture(),
+                            user.firstName(),
+                            user.lastName(),
+                            user.bio(),
+                            null, // Assuming friend tags can be null for now
+                            user.email(),
+                            (int) mutualFriendCount
+                    );
+                })
+                .filter(dto -> dto.mutualFriendCount() > 0) // Exclude users with no mutual friends
+                .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::mutualFriendCount).reversed()) // Sort by mutual friend count descending
+                .limit(3) // Get the top 3
+                .collect(Collectors.toList());
+
+        return recommendations;
     }
 
     public List<UserDTO> getParticipantsByEventId(UUID eventId) {
