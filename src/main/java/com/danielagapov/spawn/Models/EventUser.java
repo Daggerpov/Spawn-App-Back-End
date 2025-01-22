@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Enums.UserParticipationStatus;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
 
 import jakarta.persistence.*;
@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 @Entity
 @Table(name = "event_users")
@@ -33,5 +32,5 @@ public class EventUser implements Serializable {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    private UserParticipationStatus status;
+    private ParticipationStatus status;
 }
