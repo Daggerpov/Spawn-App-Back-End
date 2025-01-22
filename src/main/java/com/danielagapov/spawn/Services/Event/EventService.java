@@ -380,7 +380,8 @@ public class EventService implements IEventService {
                 userService.getParticipantsByEventId(event.id()),
                 userService.getInvitedByEventId(event.id()),
                 chatMessageService.getChatMessagesByEventId(event.id()),
-                getFriendTagColorHexCodeForRequestingUser(event, requestingUserId)
+                getFriendTagColorHexCodeForRequestingUser(event, requestingUserId),
+                getParticipationStatus(event.id(), requestingUserId)
         );
     }
 

@@ -1,6 +1,8 @@
 package com.danielagapov.spawn.DTOs;
 
 
+import com.danielagapov.spawn.Enums.ParticipationStatus;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -18,5 +20,6 @@ public record FullFeedEventDTO(
         List<UserDTO> invitedUsers,
         List<ChatMessageDTO> chatMessages,
         /// useful for event retrieval from a user's feed/map view on mobile:
-        String eventFriendTagColorHexCodeForRequestingUser
+        String eventFriendTagColorHexCodeForRequestingUser,
+        ParticipationStatus participationStatus
 ) implements Serializable, IEventDTO {}
