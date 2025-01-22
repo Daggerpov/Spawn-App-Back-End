@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullEventDTO;
 import com.danielagapov.spawn.DTOs.IEventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -36,10 +35,10 @@ public class EventController {
 
     // full path: /api/v1/events/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full, @RequestParam UUID requestingUserId) {
         try {
             if (full) {
-                return new ResponseEntity<>(eventService.getFullEventById(id), HttpStatus.OK);
+                return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
             }

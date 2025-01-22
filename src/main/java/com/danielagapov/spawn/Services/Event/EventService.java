@@ -88,6 +88,8 @@ public class EventService implements IEventService {
 
     public FullEventDTO getFullEventById(UUID id) {
         return getFullEventByEvent(getEventById(id));
+    public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
+        return getFullEventByEvent(getEventById(id), requestingUserId);
     }
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
@@ -351,6 +353,8 @@ public class EventService implements IEventService {
 
     public FullEventDTO getFullEventByEvent(EventDTO event) {
         return new FullEventDTO(
+    public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
+        return new FullFeedEventDTO(
                 event.id(),
                 event.title(),
                 event.startTime(),
@@ -361,6 +365,8 @@ public class EventService implements IEventService {
                 userService.getParticipantsByEventId(event.id()),
                 userService.getInvitedByEventId(event.id()),
                 chatMessageService.getChatMessagesByEventId(event.id())
+                chatMessageService.getChatMessagesByEventId(event.id()),
+                getFriendTagColorHexCodeForRequestingUser(event, requestingUserId)
         );
     }
 }
