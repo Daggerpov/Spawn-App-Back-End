@@ -9,7 +9,7 @@ public record FullChatMessageDTO(
         UUID id,
         String content,
         Instant timestamp,
-        UserDTO senderUserId,
-        EventDTO eventId,
+        UserDTO senderUser,
+        EventDTO event,
         List<UserDTO> likedByUsers
 ) implements Serializable {}
