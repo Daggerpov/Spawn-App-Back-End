@@ -271,16 +271,36 @@ public class UserService implements IUserService {
         return allUsers.stream()
                 .filter(user -> !user.id().equals(userId) && !requestingUserFriendSet.contains(user.id()))
                 .map(user -> {
-                    // Calculate mutual friend count
-                    List<UUID> mutualFriends = user.friendIds().stream()
+                    // Calculate mutual friends
+                    List<UUID> userFriendIds = getFriendUserIdsByUserId(user.id());
+                    int mutualFriendCount = (int) userFriendIds.stream()
                             .filter(requestingUserFriendSet::contains)
-                            .collect(Collectors.toList());
-                    return new RecommendedFriendUserDTO(user.id(), user.firstName(), user.lastName(), user.username(), mutualFriends.size());
+                            .count();
+
+                    // Fetch FullUserDTO for detailed user information
+                    FullUserDTO fullUser = getFullUserById(user.id());
+
+                    // Construct the RecommendedFriendUserDTO
+                    return new RecommendedFriendUserDTO(
+                            fullUser.id(),
+                            fullUser.friends(),
+                            fullUser.username(),
+                            fullUser.profilePicture(),
+                            fullUser.firstName(),
+                            fullUser.lastName(),
+                            fullUser.bio(),
+                            fullUser.friendTags(),
+                            fullUser.email(),
+                            mutualFriendCount
+                    );
                 })
-                .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::getMutualFriendCount).reversed())
-                .limit(3) // Top 3 recommendations
+                // Sort by mutual friend count in descending order
+                .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::mutualFriendCount).reversed())
+                // Limit to top 3 recommendations
+                .limit(3)
                 .collect(Collectors.toList());
     }
+
 
 
     public List<UserDTO> getParticipantsByEventId(UUID eventId) {
