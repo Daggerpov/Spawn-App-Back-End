@@ -37,7 +37,7 @@ public class EventController {
     @GetMapping("{id}")
     public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full, @RequestParam UUID requestingUserId) {
         try {
-            if (full) {
+            if (full && requestingUserId != null) {
                 return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
@@ -182,9 +182,15 @@ public class EventController {
 
     // full path: /api/v1/events/{userId}/invitedEvents
     @GetMapping("{userId}/invitedEvents")
-    public ResponseEntity<List<EventDTO>>getEventsInvitedTo(@PathVariable UUID id) {
+    // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
+    //
+    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(eventService.getEventsInvitedTo(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

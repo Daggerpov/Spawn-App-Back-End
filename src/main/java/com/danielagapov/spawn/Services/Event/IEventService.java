@@ -22,6 +22,7 @@ public interface IEventService {
     boolean inviteUser(UUID eventId, UUID userId);
     boolean toggleParticipation(UUID eventId, UUID userId);
     List<EventDTO> getEventsInvitedTo(UUID id);
+    List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id);
     FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId);
     String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
 }

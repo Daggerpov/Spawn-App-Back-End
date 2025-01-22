@@ -347,6 +347,30 @@ public class EventService implements IEventService {
         return getEventDTOS(events);
     }
 
+    public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
+        List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
+
+        List<Event> events = new ArrayList<>();
+
+        if (eventUsers.isEmpty()) {
+            // throws no user found exception
+            throw new BaseNotFoundException(EntityType.User, id);
+        }
+
+        for (EventUser eventUser : eventUsers) {
+            if (eventUser.getUser().getId().equals(id)) {
+                events.add(eventUser.getEvent());
+            }
+        }
+
+        List<EventDTO> eventDTOs = getEventDTOS(events);
+
+        // Transform each EventDTO into a FullFeedEventDTO
+        return eventDTOs.stream()
+                .map(eventDTO -> getFullEventByEvent(eventDTO, id))
+                .toList();
+    }
+
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
         return new FullFeedEventDTO(
                 event.id(),
