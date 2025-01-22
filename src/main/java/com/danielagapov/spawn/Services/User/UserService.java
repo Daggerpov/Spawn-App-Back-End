@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -258,9 +257,8 @@ public class UserService implements IUserService {
     }
 
     // TODO: implement this logic later
-    public List<RecommendedFriendUserDTO> getRecommendedFriends(UUID id) {
+    public List<UserDTO> getRecommendedFriends(UUID id) {
         // TODO
-        // TODO include the property `mutualFriendCount`, with the instantiation of `RecommendedFriendUserDTO()`.
         return List.of();
     }
 

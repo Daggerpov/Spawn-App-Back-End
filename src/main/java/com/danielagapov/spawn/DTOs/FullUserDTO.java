@@ -14,4 +14,4 @@ public record FullUserDTO(
         String bio,
         List<FriendTagDTO> friendTags,
         String email
-) implements Serializable, IOnboardedUserDTO {}
+) implements Serializable, OnboardedUserDTO {}
