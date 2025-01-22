@@ -13,9 +13,9 @@ public record FullEventDTO(
         String title,
         OffsetDateTime startTime,
         OffsetDateTime endTime,
-        LocationDTO locationId,
+        LocationDTO location,
         String note,
-        UserDTO creatorUserId,
+        UserDTO creatorUser,
         List<UserDTO> participantUsers,
         List<UserDTO> invitedUsers,
         List<ChatMessageDTO> chatMessages
