@@ -13,10 +13,10 @@ public record FullEventDTO(
         String title,
         OffsetDateTime startTime,
         OffsetDateTime endTime,
-        Location locationId,
+        LocationDTO location,
         String note,
-        UserDTO creatorUserId,
+        UserDTO creatorUser,
         List<UserDTO> participantUsers,
         List<UserDTO> invitedUsers,
         List<ChatMessageDTO> chatMessages
-) implements Serializable {}
+) implements Serializable, IEventDTO {}

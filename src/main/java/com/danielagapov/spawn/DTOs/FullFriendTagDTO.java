@@ -8,7 +8,7 @@ public record FullFriendTagDTO(
         UUID id,
         String displayName,
         String colorHexCode,
-        UUID ownerUserId,
+        UserDTO ownerUser,
         List<UserDTO> friendUsers,
         boolean isEveryone
-) implements Serializable {}
+) implements Serializable, IFriendTagDTO {}
