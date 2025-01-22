@@ -17,6 +17,8 @@ import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +36,8 @@ public class EventService implements IEventService {
     private final ILogger logger;
     private final ILocationService locationService;
 
+    @Autowired
+    @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
             IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
             ILogger logger, ILocationService locationService) {
