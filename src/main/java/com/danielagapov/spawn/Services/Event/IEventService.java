@@ -18,9 +18,9 @@ public interface IEventService {
     EventDTO replaceEvent(EventDTO event, UUID eventId);
     boolean deleteEventById(UUID id);
     List<UserDTO> getParticipatingUsersByEventId(UUID id);
-    public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
-    public boolean inviteUser(UUID eventId, UUID userId);
-    public boolean toggleParticipation(UUID eventId, UUID userId);
-
+    ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
+    boolean inviteUser(UUID eventId, UUID userId);
+    boolean toggleParticipation(UUID eventId, UUID userId);
+    List<EventDTO> getEventsInvitedTo(UUID id);
     FullEventDTO getFullEventByEvent(EventDTO event);
 }

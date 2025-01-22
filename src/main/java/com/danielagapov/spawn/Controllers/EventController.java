@@ -185,7 +185,7 @@ public class EventController {
     @GetMapping("{userId}/invitedEvents")
     public ResponseEntity<List<EventDTO>>getEventsInvitedTo(@PathVariable UUID id) {
         try {
-            return new ResponseEntity<>(eventService.getEventsByUserId(id), HttpStatus.OK);
+            return new ResponseEntity<>(eventService.getEventsInvitedTo(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

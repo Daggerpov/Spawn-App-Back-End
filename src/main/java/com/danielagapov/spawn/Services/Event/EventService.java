@@ -316,7 +316,7 @@ public class EventService implements IEventService {
             throw new BaseNotFoundException(EntityType.Event, eventId);
         }
         for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(userId)) {
+            if (eventUser.getUser().getId().equals(userId) && !eventUser.getStatus().equals(ParticipationStatus.notInvited)) {
                 // if invited -> set status to participating
                 // if participating -> set status to invited
                 if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
@@ -330,10 +330,15 @@ public class EventService implements IEventService {
         return false;
     }
 
-    public List<EventDTO> EventsInvitedTo(UUID id) {
+    public List<EventDTO> getEventsInvitedTo(UUID id) {
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
         List<Event> events = new ArrayList<>();
+
+        if (events.isEmpty()) {
+            // throws no user found exception
+            throw new BaseNotFoundException(EntityType.User, id);
+        }
 
         for (EventUser eventUser : eventUsers) {
             if (eventUser.getUser().getId().equals(id)) {
