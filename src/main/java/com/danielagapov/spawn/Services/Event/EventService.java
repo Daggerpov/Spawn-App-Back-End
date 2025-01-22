@@ -24,8 +24,6 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -86,8 +84,6 @@ public class EventService implements IEventService {
         return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
-    public FullEventDTO getFullEventById(UUID id) {
-        return getFullEventByEvent(getEventById(id));
     public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
         return getFullEventByEvent(getEventById(id), requestingUserId);
     }
@@ -351,8 +347,6 @@ public class EventService implements IEventService {
         return getEventDTOS(events);
     }
 
-    public FullEventDTO getFullEventByEvent(EventDTO event) {
-        return new FullEventDTO(
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
         return new FullFeedEventDTO(
                 event.id(),
@@ -364,9 +358,22 @@ public class EventService implements IEventService {
                 userService.getUserById(event.creatorUserId()),
                 userService.getParticipantsByEventId(event.id()),
                 userService.getInvitedByEventId(event.id()),
-                chatMessageService.getChatMessagesByEventId(event.id())
                 chatMessageService.getChatMessagesByEventId(event.id()),
                 getFriendTagColorHexCodeForRequestingUser(event, requestingUserId)
         );
+    }
+
+    public String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId) {
+        // get event creator from eventDTO
+        friendTagService.getFriendTagFriendPartOfByOwnerUserId(requestingUserId, eventDTO.creatorUserId());
+
+        // use creator to get the friend tag that relates the requesting user to see
+        // which friend tag they've placed them in
+
+        // -> for now, handle tie-breaks (user has same friend within two friend tags) in whichever way (just choose one)
+
+        // using that friend tag, grab its colorHexCode property to return from this method
+
+        return "";
     }
 }
