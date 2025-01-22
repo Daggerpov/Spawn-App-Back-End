@@ -183,7 +183,7 @@ public class FriendTagService implements IFriendTagService {
     /// it will return precisely one of the friend tags that the owner has placed this
     /// friend inside, even if they've placed them in multiple friend tags
     /// -> currently, on the product side, we don't specify a rule for which should take precedence.
-    public FriendTagDTO getFriendTagFriendPartOfByOwnerUserId(UUID ownerUserId, UUID friendUserId) {
+    public FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId) {
         // Fetch all friend tags for the owner
         return getFriendTagsByOwnerId(ownerUserId).stream()
                 // Filter to include only friend tags where friendUserId exists in friendUserIds
