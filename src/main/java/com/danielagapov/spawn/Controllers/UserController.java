@@ -1,8 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.OnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
@@ -39,7 +38,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<AbstractUserDTO> getUser(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<OnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
