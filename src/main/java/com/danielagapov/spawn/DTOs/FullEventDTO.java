@@ -19,4 +19,4 @@ public record FullEventDTO(
         List<UserDTO> participantUsers,
         List<UserDTO> invitedUsers,
         List<ChatMessageDTO> chatMessages
-) implements Serializable {}
+) implements Serializable, IEventDTO {}

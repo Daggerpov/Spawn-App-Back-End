@@ -11,4 +11,4 @@ public record FullFriendTagDTO(
         UserDTO ownerUser,
         List<UserDTO> friendUsers,
         boolean isEveryone
-) implements Serializable {}
+) implements Serializable, IFriendTagDTO {}

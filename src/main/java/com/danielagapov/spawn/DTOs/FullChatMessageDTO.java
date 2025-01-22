@@ -12,4 +12,4 @@ public record FullChatMessageDTO(
         UserDTO senderUser,
         EventDTO event,
         List<UserDTO> likedByUsers
-) implements Serializable {}
+) implements Serializable, IChatMessageDTO{}
