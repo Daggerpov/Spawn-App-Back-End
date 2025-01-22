@@ -335,7 +335,7 @@ public class EventService implements IEventService {
 
         List<Event> events = new ArrayList<>();
 
-        if (events.isEmpty()) {
+        if (eventUsers.isEmpty()) {
             // throws no user found exception
             throw new BaseNotFoundException(EntityType.User, id);
         }
