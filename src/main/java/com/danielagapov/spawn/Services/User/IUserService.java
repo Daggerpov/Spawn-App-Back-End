@@ -1,34 +1,49 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public interface IUserService {
-    public List<UserDTO> getAllUsers();
+    List<UserDTO> getAllUsers();
 
     // CRUD operations:
-    public UserDTO getUserById(UUID id);
-    public UserDTO saveUser(UserDTO user);
-    public UserDTO replaceUser(UserDTO user, UUID id);
-    public boolean deleteUserById(UUID id);
+    UserDTO getUserById(UUID id);
+    FullUserDTO getFullUserById(UUID id);
+    User getUserEntityById(UUID id);
+    UserDTO saveUser(UserDTO user);
+    UserDTO replaceUser(UserDTO user, UUID id);
+    boolean deleteUserById(UUID id);
+
+    // For Friends:
+
+    List<UUID> getFriendUserIdsByUserId(UUID id);
+    List<UserDTO> getFriendUsersByUserId(UUID id);
 
     // For Friend Tags:
 
-    public List<UserDTO> getUsersByTagId(UUID tagId);
-    public Map<FriendTag, UserDTO> getOwnerMap();
-    public Map<FriendTag, List<UserDTO>> getFriendsMap();
-    public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
-    public List<UserDTO> getFriendsByUserId(UUID userId);
-    public void removeFriend(UUID userId, UUID friendId);
-    public void saveFriendToUser(UUID userId, UUID friendId);
-    public List<UserDTO> getRecommendedFriends(UUID id);
+    List<UserDTO> getUsersByTagId(UUID tagId);
+    Map<FriendTag, UUID> getOwnerUserIdsMap();
+    Map<FriendTag, List<UUID>> getFriendUserIdsMap();
+    List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
+    List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId);
+    List<UserDTO> getFriendsByUserId(UUID userId);
+    void removeFriend(UUID userId, UUID friendId);
+    void saveFriendToUser(UUID userId, UUID friendId);
+    List<UserDTO> getRecommendedFriends(UUID id);
 
     // For Events:
 
-    public List<UserDTO> getParticipantsByEventId(UUID eventId);
-    public List<UserDTO> getInvitedByEventId(UUID eventId) ;
+    List<UserDTO> getParticipantsByEventId(UUID eventId);
+    List<UserDTO> getInvitedByEventId(UUID eventId) ;
+    List<UUID> getParticipantUserIdsByEventId(UUID eventId);
+    List<UUID> getInvitedUserIdsByEventId(UUID eventId);
+
+    // Helper
+    FullUserDTO getFullUserByUser(UserDTO user);
 }

@@ -3,6 +3,9 @@ package com.danielagapov.spawn.Mappers;
 import com.danielagapov.spawn.DTOs.LocationDTO;
 import com.danielagapov.spawn.Models.Location;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class LocationMapper {
 
     public static LocationDTO toDTO(Location entity) {
@@ -21,5 +24,11 @@ public class LocationMapper {
                 dto.latitude(),
                 dto.longitude()
         );
+    }
+
+    public static List<LocationDTO> toDTOList(List<Location> entities) {
+        return entities.stream()
+                .map(LocationMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }
