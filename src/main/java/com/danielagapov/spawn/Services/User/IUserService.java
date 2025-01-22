@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -35,7 +36,7 @@ public interface IUserService {
     List<UserDTO> getFriendsByUserId(UUID userId);
     void removeFriend(UUID userId, UUID friendId);
     void saveFriendToUser(UUID userId, UUID friendId);
-    List<UserDTO> getRecommendedFriends(UUID id);
+    List<RecommendedFriendUserDTO> getRecommendedFriends(UUID id);
 
     // For Events:
 
