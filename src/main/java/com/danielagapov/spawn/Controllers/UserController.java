@@ -4,12 +4,15 @@ import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
+import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,10 +22,12 @@ import java.util.UUID;
 public class UserController {
     private final IUserService userService;
     private final IFriendRequestService friendRequestService;
+    private final IS3Service s3Service;
 
-    public UserController(IUserService userService, IFriendRequestService friendRequestService) {
+    public UserController(IUserService userService, IFriendRequestService friendRequestService, IS3Service s3Service) {
         this.userService = userService;
         this.friendRequestService = friendRequestService;
+        this.s3Service = s3Service;
     }
 
     // full path: /api/v1/users
@@ -172,5 +177,25 @@ public class UserController {
     @RequestMapping("test-google-3")
     public String testGoogle3(@AuthenticationPrincipal OAuth2User principal) {
         return principal.getAttribute("sub");
+    }
+
+    @Deprecated(since = "For testing purposes")
+    @PostMapping(value = "test-s3")
+    public String testPostS3(@RequestBody byte[] file) {
+        try {
+            return s3Service.putObject(file);
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+
+    @Deprecated(since = "For testing purposes")
+    @GetMapping(value = "test-s3/{key}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public byte[] testGetS3(@PathVariable String key) {
+        try {
+            return s3Service.getObject(key);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
