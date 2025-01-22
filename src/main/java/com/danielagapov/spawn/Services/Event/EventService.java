@@ -202,14 +202,7 @@ public class EventService implements IEventService {
             // Save updated event
             repository.save(event);
 
-            // Fetch related data for DTO
-            UUID creatorUserId = event.getCreator().getId();
-            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(event.getId());
-            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(event.getId());
-            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(event.getId());
-
-            // Convert updated event to DTO
-            return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+            return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
             Location location = LocationMapper.toEntity(locationService.getLocationById(newEvent.locationId()));
@@ -219,15 +212,19 @@ public class EventService implements IEventService {
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
             repository.save(eventEntity);
 
-            // Fetch related data for DTO
-            UUID creatorUserId = eventEntity.getCreator().getId();
-            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventEntity.getId());
-            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
-            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
-
-            // Return DTO after entity creation
-            return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+            return constructDTOFromEntity(eventEntity);
         });
+    }
+
+    private EventDTO constructDTOFromEntity(Event eventEntity) {
+        // Fetch related data for DTO
+        UUID creatorUserId = eventEntity.getCreator().getId();
+        List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventEntity.getId());
+        List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
+        List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
+
+        // Return DTO after entity creation
+        return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
     public boolean deleteEventById(UUID id) {
