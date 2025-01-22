@@ -8,6 +8,6 @@ import java.util.UUID;
 
 public interface ILocationService {
     List<LocationDTO> getAllLocations();
-    Location getLocationById(UUID id);
+    LocationDTO getLocationById(UUID id);
 
 }

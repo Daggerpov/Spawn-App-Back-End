@@ -13,7 +13,7 @@ public record FullEventDTO(
         String title,
         OffsetDateTime startTime,
         OffsetDateTime endTime,
-        Location locationId,
+        LocationDTO locationId,
         String note,
         UserDTO creatorUserId,
         List<UserDTO> participantUsers,

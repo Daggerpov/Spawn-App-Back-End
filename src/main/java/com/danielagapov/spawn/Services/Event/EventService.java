@@ -7,6 +7,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
+import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User;
@@ -180,8 +181,8 @@ public class EventService implements IEventService {
             event.setStartTime(newEvent.startTime());
 
             // Fetch the location entity by locationId from DTO
-            Location location = locationService.getLocationById(newEvent.locationId());
-            event.setLocation(location);
+            LocationDTO location = locationService.getLocationById(newEvent.locationId());
+            event.setLocation(LocationMapper.toEntity(location));
 
             // Save updated event
             repository.save(event);
@@ -196,7 +197,7 @@ public class EventService implements IEventService {
             return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
-            Location location = locationService.getLocationById(newEvent.locationId());
+            Location location = LocationMapper.toEntity(locationService.getLocationById(newEvent.locationId()));
             User creator = userService.getUserEntityById(newEvent.creatorUserId());
 
             // Convert DTO to entity
