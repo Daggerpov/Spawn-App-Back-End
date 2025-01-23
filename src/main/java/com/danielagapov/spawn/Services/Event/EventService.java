@@ -246,8 +246,25 @@ public class EventService implements IEventService {
         }
     }
 
-    public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
-        return List.of();
+    public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
+        try {
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+
+            if (eventUsers.isEmpty()) {
+                throw new BaseNotFoundException(EntityType.Event, eventId);
+            }
+
+            return eventUsers.stream()
+                    .filter(eventUser -> eventUser.getStatus().equals(ParticipationStatus.participating))
+                    .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BaseNotFoundException(EntityType.Event, eventId);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
     public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
