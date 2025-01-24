@@ -264,23 +264,26 @@ public class UserService implements IUserService {
         // Create a set of the requesting user's friends for quick lookup
         Set<UUID> requestingUserFriendSet = new HashSet<>(requestingUserFriendIds);
 
-        // Get all users from the repository (using getUserDTOs for detailed info)
-        List<UserDTO> allUsers = getUserDTOs();
+        // Collect friends of friends (excluding already existing friends and the user itself)
+        Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
+        for (UUID friendId : requestingUserFriendIds) {
+            List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
 
-        // Filter users who are not the requesting user and are not already friends
-        return allUsers.stream()
-                .filter(user -> !user.id().equals(userId) && !requestingUserFriendSet.contains(user.id()))
-                .map(user -> {
-                    // Calculate mutual friends
-                    List<UUID> userFriendIds = getFriendUserIdsByUserId(user.id());
-                    int mutualFriendCount = (int) userFriendIds.stream()
-                            .filter(requestingUserFriendSet::contains)
-                            .count();
+            for (UUID friendOfFriendId : friendOfFriendIds) {
+                if (!friendOfFriendId.equals(userId) && !requestingUserFriendSet.contains(friendOfFriendId)) {
+                    mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
+                }
+            }
+        }
 
-                    // Fetch FullUserDTO for detailed user information
-                    FullUserDTO fullUser = getFullUserById(user.id());
+        // Fetch only users in the mutualFriendCounts map
+        List<RecommendedFriendUserDTO> recommendedFriends = mutualFriendCounts.entrySet().stream()
+                // Get detailed user information for each friend of friend
+                .map(entry -> {
+                    UUID mutualFriendId = entry.getKey();
+                    int mutualFriendCount = entry.getValue();
+                    FullUserDTO fullUser = getFullUserById(mutualFriendId);
 
-                    // Construct the RecommendedFriendUserDTO
                     return new RecommendedFriendUserDTO(
                             fullUser.id(),
                             fullUser.friends(),
@@ -299,9 +302,9 @@ public class UserService implements IUserService {
                 // Limit to top 3 recommendations
                 .limit(3)
                 .collect(Collectors.toList());
+
+        return recommendedFriends;
     }
-
-
 
     public List<UserDTO> getParticipantsByEventId(UUID eventId) {
         // TODO

@@ -36,7 +36,7 @@ public interface IUserService {
     List<UserDTO> getFriendsByUserId(UUID userId);
     void removeFriend(UUID userId, UUID friendId);
     void saveFriendToUser(UUID userId, UUID friendId);
-    List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userIdd);
+    List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId);
 
     // For Events:
 
