@@ -55,7 +55,21 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
-        return List.of();
+        try {
+            List<FriendRequest> friendRequests = repository.findByReceiverId(id);
+
+            if (friendRequests.isEmpty()) {
+                throw new BaseNotFoundException(EntityType.FriendRequest, id);
+            }
+
+            return FriendRequestMapper.toDTOList(friendRequests);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BaseNotFoundException(EntityType.FriendRequest, id);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
     public void acceptFriendRequest(UUID id) {

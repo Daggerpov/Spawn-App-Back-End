@@ -124,15 +124,31 @@ public class UserService implements IUserService {
     }
 
     public List<UserDTO> getUsersByTagId(UUID tagId) {
-        // TODO: adjust this stub implementation
         try {
-            return getUserDTOs();
+            FriendTag friendTag = friendTagRepository.findById(tagId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, tagId));
+
+            List<UUID> userIds = uftRepository.findFriendIdsByTagId(tagId);
+
+            if (userIds.isEmpty()) {
+                throw new BasesNotFoundException(EntityType.User);
+            }
+
+            return userIds.stream()
+                    .map(this::getUserById)
+                    .collect(Collectors.toList());
+
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
-            throw new DatabaseException("Failed to get users by tag ID: " + e.getMessage(), e);
+            throw new DatabaseException("Error accessing database while fetching users by tag ID: " + tagId, e);
+
+        } catch (BaseNotFoundException | BasesNotFoundException e) {
+            logger.log(e.getMessage());
+            throw e;
+
         } catch (Exception e) {
             logger.log(e.getMessage());
-            throw new ApplicationException("Unexpected error occurred while getting users by tag ID: " + e.getMessage(), e);
+            throw new ApplicationException("Unexpected error occurred while fetching users by tag ID: " + tagId, e);
         }
     }
 

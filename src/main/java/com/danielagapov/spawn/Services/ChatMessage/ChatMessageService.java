@@ -222,8 +222,22 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
-        // TODO
-        return List.of();
+        try {
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
+
+            return chatMessages.stream()
+                    .map(chatMessage -> {
+                        List<UUID> likedByUserIds = getChatMessageLikeUserIds(chatMessage.getId());
+                        return ChatMessageMapper.toDTO(chatMessage, likedByUserIds);
+                    })
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ChatMessage);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
     public FullChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
