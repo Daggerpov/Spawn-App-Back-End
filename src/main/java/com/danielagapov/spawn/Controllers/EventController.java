@@ -180,7 +180,7 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{userId}/invitedEvents?full=true
+    // full path: /api/v1/events/{userId}/invitedEvents?full=full
     @GetMapping("{userId}/invitedEvents")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
