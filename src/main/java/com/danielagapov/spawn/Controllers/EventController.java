@@ -33,7 +33,7 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{id}?full=full
+    // full path: /api/v1/events/{id}?full=full&requestingUserId=requestingUserId
     @GetMapping("{id}")
     public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full, @RequestParam UUID requestingUserId) {
         try {
@@ -180,7 +180,7 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{userId}/invitedEvents
+    // full path: /api/v1/events/{userId}/invitedEvents?full=true
     @GetMapping("{userId}/invitedEvents")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
