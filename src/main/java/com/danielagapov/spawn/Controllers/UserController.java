@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -101,9 +100,9 @@ public class UserController {
 
     // full path: /api/v1/users
     @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO newUser) {
+    public ResponseEntity<UserDTO> createUser(@RequestParam("user") UserDTO newUser, @RequestParam("pfp") byte[] file) {
         try {
-            return new ResponseEntity<>(userService.saveUser(newUser), HttpStatus.CREATED);
+            return new ResponseEntity<>(userService.saveUser(s3Service.putObjectWithUser(file, newUser)), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -172,6 +171,14 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+//    // full path: api/v1/users/{id}/update-pfp
+//    @PatchMapping("{id}/update-pfp")
+//    public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
+//        try {
+//            userService.updateProfilePicture(id, file);
+//        }
+//    }
 
     @Deprecated(since = "For testing purposes")
     @RequestMapping("test-google")

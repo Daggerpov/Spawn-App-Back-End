@@ -19,6 +19,7 @@ public interface IUserService {
     UserDTO saveUser(UserDTO user);
     UserDTO replaceUser(UserDTO user, UUID id);
     boolean deleteUserById(UUID id);
+    User saveEntity(User user);
 
     // For Friends:
 
@@ -46,4 +47,7 @@ public interface IUserService {
 
     // Helper
     FullUserDTO getFullUserByUser(UserDTO user);
+
+    // For Profile Pictures:
+    //UserDTO updateProfilePicture(UUID id, byte[] file);
 }

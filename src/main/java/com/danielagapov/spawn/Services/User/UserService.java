@@ -256,6 +256,11 @@ public class UserService implements IUserService {
         });
     }
 
+    // Allows saving from other services without needing a repository
+    public User saveEntity(User user) {
+        return repository.save(user);
+    }
+
     // TODO: implement this logic later
     public List<UserDTO> getRecommendedFriends(UUID id) {
         // TODO
