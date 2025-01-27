@@ -31,14 +31,6 @@ public class SecurityConfig {
 //            .exceptionHandling(e -> e
 //                    .authenticationEntryPoint(new HttpStatusEntryPoint(UNAUTHORIZED))
 //            )
-            .oauth2Login(oauth2 -> {
-                oauth2.successHandler(new AuthenticationSuccessHandler() {
-                    @Override
-                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-                        response.sendRedirect("/api/v1/oauth/google/sign-in");
-                    }
-                });
-            })
         ;
         return http.build();
     }
