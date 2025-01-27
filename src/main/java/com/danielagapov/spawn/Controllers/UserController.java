@@ -8,7 +8,6 @@ import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestServic
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -124,6 +123,7 @@ public class UserController {
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         try {
+            s3Service.deleteObjectFromUser(id);
             boolean isDeleted = userService.deleteUserById(id);
             if (isDeleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -172,13 +172,15 @@ public class UserController {
         }
     }
 
-//    // full path: api/v1/users/{id}/update-pfp
-//    @PatchMapping("{id}/update-pfp")
-//    public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
-//        try {
-//            userService.updateProfilePicture(id, file);
-//        }
-//    }
+    // full path: api/v1/users/{id}/update-pfp
+    @PatchMapping("{id}/update-pfp")
+    public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
+        try {
+            return new ResponseEntity<>(s3Service.updateProfilePicture(file, id), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     @Deprecated(since = "For testing purposes")
     @RequestMapping("test-google")
@@ -206,16 +208,6 @@ public class UserController {
             return s3Service.putObject(file);
         } catch (Exception e) {
             return e.getMessage();
-        }
-    }
-
-    @Deprecated(since = "For testing purposes")
-    @GetMapping(value = "test-s3/{key}", produces = MediaType.IMAGE_JPEG_VALUE)
-    public byte[] testGetS3(@PathVariable String key) {
-        try {
-            return s3Service.getObject(key);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 }

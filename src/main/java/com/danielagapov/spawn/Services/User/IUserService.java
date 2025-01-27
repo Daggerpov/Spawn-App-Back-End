@@ -47,7 +47,4 @@ public interface IUserService {
 
     // Helper
     FullUserDTO getFullUserByUser(UserDTO user);
-
-    // For Profile Pictures:
-    //UserDTO updateProfilePicture(UUID id, byte[] file);
 }
