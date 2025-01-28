@@ -26,6 +26,7 @@ public class LocationService implements ILocationService {
         this.logger = logger;
     }
 
+    @Override
     public List<LocationDTO> getAllLocations() {
         try {
             return LocationMapper.toDTOList(repository.findAll());
@@ -38,7 +39,14 @@ public class LocationService implements ILocationService {
         }
     }
 
+    @Override
     public LocationDTO getLocationById(UUID id) {
         return LocationMapper.toDTO(repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id)));
     }
+
+    @Override
+    public Location getLocationEntityById(UUID id) {
+        return repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id));
+    }
+
 }

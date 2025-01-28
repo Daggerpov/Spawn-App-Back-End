@@ -45,6 +45,7 @@ public class UserService implements IUserService {
         this.logger = logger;
     }
 
+    @Override
     public List<UserDTO> getAllUsers() {
         try {
             return getUserDTOs();
@@ -59,6 +60,7 @@ public class UserService implements IUserService {
 
     // CRUD operations:
 
+    @Override
     public UserDTO getUserById(UUID id) {
         User user = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
@@ -72,10 +74,12 @@ public class UserService implements IUserService {
         return UserMapper.toDTO(user, friendUserIds , friendTagIds);
     }
 
+    @Override
     public FullUserDTO getFullUserById(UUID id) {
         return getFullUserByUser(getUserById(id));
     }
 
+    @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
         List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
@@ -87,11 +91,7 @@ public class UserService implements IUserService {
                 .collect(Collectors.toList());
     }
 
-    public List<UserDTO> getFriendUsersByUserId(UUID id) {
-        return getFriendUserIdsByFriendTagId(id).stream().map(this::getUserById).collect(Collectors.toList());
-    }
-
-
+    @Override
     public User getUserEntityById(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
@@ -99,6 +99,7 @@ public class UserService implements IUserService {
 
     // For Friend Tags:
 
+    @Override
     public Map<FriendTag, UUID> getOwnerUserIdsMap() {
         List<FriendTag> friendTags = friendTagRepository.findAll();
         return friendTags.stream()
@@ -108,6 +109,7 @@ public class UserService implements IUserService {
                 ));
     }
 
+    @Override
     public Map<FriendTag, List<UUID>> getFriendUserIdsMap() {
         // Fetch all FriendTags
         List<FriendTag> friendTags = friendTagRepository.findAll();
@@ -120,6 +122,7 @@ public class UserService implements IUserService {
                 ));
     }
 
+    @Override
     public List<UserDTO> getUsersByTagId(UUID tagId) {
         try {
             FriendTag friendTag = friendTagRepository.findById(tagId)
@@ -149,6 +152,7 @@ public class UserService implements IUserService {
         }
     }
 
+    @Override
     public UserDTO saveUser(UserDTO user) {
         try {
             User userEntity = UserMapper.toEntity(user);
@@ -169,6 +173,7 @@ public class UserService implements IUserService {
 
 
     // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
+    @Override
     public UserDTO replaceUser(UserDTO newUser, UUID id) {
         // TODO: we may want to make this function easier to read in the future,
         // but for now, I left the logic the same as what Seabert wrote.
@@ -192,6 +197,7 @@ public class UserService implements IUserService {
         });
     }
 
+    @Override
     public boolean deleteUserById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.User, id);
@@ -206,7 +212,7 @@ public class UserService implements IUserService {
         }
     }
 
-
+    @Override
     public User saveEntity(User user) {
         return repository.save(user);
     }
@@ -218,6 +224,7 @@ public class UserService implements IUserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId) {
         // Call the method to get the list of UserDTOs
         List<UserDTO> friends = getFriendsByFriendTagId(friendTagId);
@@ -244,6 +251,7 @@ public class UserService implements IUserService {
         return UserMapper.toDTOList(users, friendUserIdsMap, friendTagIdsMap);
     }
 
+    @Override
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
         FriendTag everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
@@ -256,6 +264,7 @@ public class UserService implements IUserService {
     }
 
     // Adds friend bidirectionally
+    @Override
     public void saveFriendToUser(UUID userId, UUID friendId) {
         UUID userEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
         friendTagService.saveUserToFriendTag(userEveryoneTagId, friendId);
@@ -264,6 +273,7 @@ public class UserService implements IUserService {
     }
 
     // Removes friend bidirectionally
+    @Override
     public void removeFriend(UUID userId, UUID friendId) {
         // Deletes all entries in UserFriendTag
         friendTagRepository.findByOwnerId(userId).forEach((friendTag) -> {
@@ -276,6 +286,7 @@ public class UserService implements IUserService {
 
     // returns top 3 friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
+    @Override
     public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
@@ -325,26 +336,31 @@ public class UserService implements IUserService {
         return recommendedFriends;
     }
 
+    @Override
     public List<UserDTO> getParticipantsByEventId(UUID eventId) {
         // TODO
         return List.of();
     }
 
+    @Override
     public List<UserDTO> getInvitedByEventId(UUID eventId) {
         // TODO
         return List.of();
     }
 
+    @Override
     public List<UUID> getParticipantUserIdsByEventId(UUID eventId) {
         // TODO
         return List.of();
     }
 
+    @Override
     public List<UUID> getInvitedUserIdsByEventId(UUID eventId) {
         // TODO
         return List.of();
     }
 
+    @Override
     public FullUserDTO getFullUserByUser(UserDTO user) {
         return new FullUserDTO(
                 user.id(),

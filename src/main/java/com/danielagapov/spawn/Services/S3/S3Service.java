@@ -46,6 +46,7 @@ public class S3Service implements IS3Service {
         }
     }
 
+    @Override
     public String putObject(byte[] file) {
         String key = UUID.randomUUID().toString();
         return putObjectWithKey(file, key);
@@ -65,6 +66,7 @@ public class S3Service implements IS3Service {
         );
     }
 
+    @Override
     public UserDTO updateProfilePicture(byte[] file, UUID id) {
         User user = UserMapper.toEntity(userService.getUserById(id));
         String urlString = user.getProfilePictureUrlString();

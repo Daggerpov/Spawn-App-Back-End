@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -8,10 +11,9 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
-import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.EventUser;
+import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
@@ -59,6 +61,7 @@ public class EventService implements IEventService {
         this.locationService = locationService;
     }
 
+    @Override
     public List<EventDTO> getAllEvents() {
         try {
             List<Event> events = repository.findAll();
@@ -72,6 +75,7 @@ public class EventService implements IEventService {
         }
     }
 
+    @Override
     public EventDTO getEventById(UUID id) {
         Event event = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
@@ -88,6 +92,7 @@ public class EventService implements IEventService {
         return getFullEventByEvent(getEventById(id), requestingUserId);
     }
 
+    @Override
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
             // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
@@ -187,6 +192,7 @@ public class EventService implements IEventService {
         return eventDTOs;
     }
 
+    @Override
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
         return repository.findById(id).map(event -> {
             // Update basic event details
@@ -196,8 +202,7 @@ public class EventService implements IEventService {
             event.setStartTime(newEvent.startTime());
 
             // Fetch the location entity by locationId from DTO
-            LocationDTO location = locationService.getLocationById(newEvent.locationId());
-            event.setLocation(LocationMapper.toEntity(location));
+            event.setLocation(locationService.getLocationEntityById(newEvent.locationId()));
 
             // Save updated event
             repository.save(event);
@@ -205,7 +210,7 @@ public class EventService implements IEventService {
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
-            Location location = LocationMapper.toEntity(locationService.getLocationById(newEvent.locationId()));
+            Location location = locationService.getLocationEntityById(newEvent.locationId());
             User creator = userService.getUserEntityById(newEvent.creatorUserId());
 
             // Convert DTO to entity
@@ -278,14 +283,14 @@ public class EventService implements IEventService {
             }
         }
 
-        // if for loop doesnt find it, return notInvited
+        // if for loop doesn't find it, return notInvited
         return ParticipationStatus.notInvited;
     }
 
     // return type boolean represents whether the user was already invited or not
     // if false -> invites them
     // if true -> return 400 in Controller to indicate that the user has already
-    // been invited or it is a bad request.
+    // been invited, or it is a bad request.
     public boolean inviteUser(UUID eventId, UUID userId) {
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
@@ -312,7 +317,7 @@ public class EventService implements IEventService {
                 return false;
             }
         }
-        // if the loop doesn't return, its a bad request
+        // if the loop doesn't return, it's a bad request
         return true;
     }
 

@@ -22,6 +22,7 @@ public class OAuthService implements IOAuthService {
         this.userService = userService;
     }
 
+    @Override
     public AbstractUserDTO verifyUser(OAuth2User oauthUser) {
         TempUserDTO tempUser = unpackOAuthUser(oauthUser);
         UserIdExternalIdMap mapping = getMapping(tempUser);
@@ -30,6 +31,7 @@ public class OAuthService implements IOAuthService {
     }
 
     // REQUIRES: tempUserDTO.id() == externId from unpackOAuthUser()
+    @Override
     public UserDTO makeUser(UserDTO userDTO, String externId) {
         // user dto -> entity & save user
         userDTO = userService.saveUser(userDTO);

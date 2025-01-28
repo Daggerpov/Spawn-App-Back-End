@@ -42,6 +42,7 @@ public class FriendTagService implements IFriendTagService {
         this.logger = logger;
     }
 
+    @Override
     public List<FriendTagDTO> getAllFriendTags() {
         try {
             // Use the helper methods you created
@@ -59,6 +60,7 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
+    @Override
     public FriendTagDTO getFriendTagById(UUID id) {
         return repository.findById(id)
                 .map(friendTag -> {
@@ -69,11 +71,13 @@ public class FriendTagService implements IFriendTagService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
     }
 
+    @Override
     public FullFriendTagDTO getFullFriendTagById(UUID id) {
         FriendTagDTO ft = getFriendTagById(id);
         return getFullFriendTagByFriendTag(ft);
     }
 
+    @Override
     public List<UUID> getFriendTagIdsByOwnerUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
         List<FriendTag> friendTags = repository.findByOwnerId(id);
@@ -84,6 +88,7 @@ public class FriendTagService implements IFriendTagService {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
@@ -98,10 +103,12 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
+    @Override
     public List<FullFriendTagDTO> getFullFriendTagsByOwnerId(UUID ownerId) {
         return getFriendTagsByOwnerId(ownerId).stream().map(this::getFullFriendTagByFriendTag).collect(Collectors.toList());
     }
 
+    @Override
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag) {
         try {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
@@ -117,6 +124,7 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
+    @Override
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
         return repository.findById(id).map(friendTag -> {
             friendTag.setColorHexCode(newFriendTag.colorHexCode());
@@ -130,6 +138,7 @@ public class FriendTagService implements IFriendTagService {
         });
     }
 
+    @Override
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -145,6 +154,7 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
+    @Override
     public void saveUserToFriendTag(UUID id, UUID userId) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -169,6 +179,7 @@ public class FriendTagService implements IFriendTagService {
         }
     }
 
+    @Override
     public FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag) {
         return new FullFriendTagDTO(
                 friendTag.id(),

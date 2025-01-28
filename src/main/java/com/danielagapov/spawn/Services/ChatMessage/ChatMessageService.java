@@ -57,6 +57,7 @@ public class ChatMessageService implements IChatMessageService {
         this.logger = logger;
     }
 
+    @Override
     public List<ChatMessageDTO> getAllChatMessages() {
         try {
             List<ChatMessage> chatMessages = chatMessageRepository.findAll();
@@ -78,6 +79,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<UUID> getChatMessageLikeUserIds(UUID chatMessageId) {
         // Retrieve the ChatMessage by its ID
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
@@ -93,6 +95,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
 
+    @Override
     public ChatMessageDTO getChatMessageById(UUID id) {
         return chatMessageRepository.findById(id)
                 .map(chatMessage -> {
@@ -102,12 +105,14 @@ public class ChatMessageService implements IChatMessageService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
     }
 
+    @Override
     public FullChatMessageDTO getFullChatMessageById(UUID id) {
         return getFullChatMessageByChatMessage(getChatMessageById(id));
     }
 
 
     // Other methods remain mostly the same but updated to work with mappings
+    @Override
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
             User userSender = userRepository.findById(chatMessageDTO.senderUserId())
@@ -129,6 +134,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<UUID> getChatMessageIdsByEventId(UUID eventId) {
         try {
             // Find the event by its ID
@@ -152,6 +158,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
 
+    @Override
     public boolean deleteChatMessageById(UUID id) {
         if (!chatMessageRepository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.ChatMessage, id);
@@ -166,6 +173,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId) {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
@@ -191,6 +199,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<UserDTO> getChatMessageLikes(UUID chatMessageId) {
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId));
@@ -207,6 +216,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
 
+    @Override
     public void deleteChatMessageLike(UUID chatMessageId, UUID userId) {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
@@ -221,6 +231,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
         try {
             List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
@@ -240,6 +251,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public FullChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
         return new FullChatMessageDTO(
                 chatMessage.id(),

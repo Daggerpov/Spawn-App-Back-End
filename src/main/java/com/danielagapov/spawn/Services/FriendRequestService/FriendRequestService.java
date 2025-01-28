@@ -28,6 +28,7 @@ public class FriendRequestService implements IFriendRequestService {
         this.logger = logger;
     }
 
+    @Override
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
             // Extract sender and receiver IDs from the FriendRequestDTO
@@ -54,6 +55,7 @@ public class FriendRequestService implements IFriendRequestService {
         }
     }
 
+    @Override
     public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
@@ -72,12 +74,14 @@ public class FriendRequestService implements IFriendRequestService {
         }
     }
 
+    @Override
     public void acceptFriendRequest(UUID id) {
         FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
         userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
         deleteFriendRequest(id);
     }
 
+    @Override
     public void deleteFriendRequest(UUID id) {
         repository.deleteById(id);
     }
