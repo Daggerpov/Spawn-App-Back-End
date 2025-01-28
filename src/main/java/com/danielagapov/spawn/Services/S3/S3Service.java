@@ -66,17 +66,17 @@ public class S3Service implements IS3Service {
 
     public UserDTO updateProfilePicture(byte[] file, UUID id) {
         User user = UserMapper.toEntity(userService.getUserById(id));
-        String urlString = user.getProfilePicture();
+        String urlString = user.getProfilePicUrlString();
         String key = extractObjectKey(urlString);
         String newUrl = putObjectWithKey(file, key);
-        user.setProfilePicture(newUrl);
+        user.setProfilePicUrlString(newUrl);
         user = userService.saveEntity(user);
         return userService.getUserById(user.getId()); // because converting user -> dto is hard
     }
 
     public void deleteObjectByUserId(UUID id) {
         User user = UserMapper.toEntity(userService.getUserById(id));
-        String urlString = user.getProfilePicture();
+        String urlString = user.getProfilePicUrlString();
         String key = extractObjectKey(urlString);
         deleteObject(key);
     }
