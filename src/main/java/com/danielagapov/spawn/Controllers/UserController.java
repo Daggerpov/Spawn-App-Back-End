@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
+import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +22,12 @@ import java.util.UUID;
 public class UserController {
     private final IUserService userService;
     private final IFriendRequestService friendRequestService;
+    private final IS3Service s3Service;
 
-    public UserController(IUserService userService, IFriendRequestService friendRequestService) {
+    public UserController(IUserService userService, IFriendRequestService friendRequestService, IS3Service s3Service) {
         this.userService = userService;
         this.friendRequestService = friendRequestService;
+        this.s3Service = s3Service;
     }
 
     // full path: /api/v1/users
@@ -89,8 +92,9 @@ public class UserController {
 
     // full path: /api/v1/users
     @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO newUser) {
+    public ResponseEntity<UserDTO> createUser(@RequestParam("user") UserDTO newUser, @RequestParam("pfp") byte[] file) {
         try {
+            newUser = s3Service.putProfilePictureWithUser(file, newUser);
             return new ResponseEntity<>(userService.saveUser(newUser), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -113,6 +117,7 @@ public class UserController {
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         try {
+            s3Service.deleteObjectByUserId(id);
             boolean isDeleted = userService.deleteUserById(id);
             if (isDeleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -161,6 +166,16 @@ public class UserController {
         }
     }
 
+    // full path: api/v1/users/{id}/update-pfp
+    @PatchMapping("{id}/update-pfp")
+    public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
+        try {
+            return new ResponseEntity<>(s3Service.updateProfilePicture(file, id), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @Deprecated(since = "For testing purposes")
     @RequestMapping("test-google")
     public OAuth2User testGoogle(@AuthenticationPrincipal OAuth2User principal) {
@@ -178,5 +193,15 @@ public class UserController {
     @RequestMapping("test-google-3")
     public String testGoogle3(@AuthenticationPrincipal OAuth2User principal) {
         return principal.getAttribute("sub");
+    }
+
+    @Deprecated(since = "For testing purposes")
+    @PostMapping(value = "test-s3")
+    public String testPostS3(@RequestBody byte[] file) {
+        try {
+            return s3Service.putObject(file);
+        } catch (Exception e) {
+            return e.getMessage();
+        }
     }
 }
