@@ -51,7 +51,7 @@ public class S3Service implements IS3Service {
         return putObjectWithKey(file, key);
     }
 
-    public UserDTO putObjectWithUser(byte[] file, UserDTO user) {
+    public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
         return new UserDTO(
                 user.id(),
                 user.friendIds(),
