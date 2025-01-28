@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Security;
+package com.danielagapov.spawn.Config;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,11 +10,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 import java.io.IOException;
-
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Configuration
 @EnableWebSecurity
