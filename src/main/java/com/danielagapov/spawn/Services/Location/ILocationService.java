@@ -9,5 +9,5 @@ import java.util.UUID;
 public interface ILocationService {
     List<LocationDTO> getAllLocations();
     LocationDTO getLocationById(UUID id);
-
+    Location getLocationEntityById(UUID id);
 }

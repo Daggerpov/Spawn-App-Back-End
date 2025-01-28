@@ -35,7 +35,7 @@ public class LocationController {
     @GetMapping("{id}")
     public ResponseEntity<LocationDTO> getLocationById(@PathVariable UUID id) {
         try {
-            return new ResponseEntity<>(locationService.getLocationDTOById(id), HttpStatus.OK);
+            return new ResponseEntity<>(locationService.getLocationById(id), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

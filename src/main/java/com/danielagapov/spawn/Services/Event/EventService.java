@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -8,10 +11,9 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
-import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.EventUser;
+import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
@@ -200,8 +202,7 @@ public class EventService implements IEventService {
             event.setStartTime(newEvent.startTime());
 
             // Fetch the location entity by locationId from DTO
-            LocationDTO location = locationService.getLocationById(newEvent.locationId());
-            event.setLocation(LocationMapper.toEntity(location));
+            event.setLocation(locationService.getLocationEntityById(newEvent.locationId()));
 
             // Save updated event
             repository.save(event);
@@ -209,7 +210,7 @@ public class EventService implements IEventService {
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
-            Location location = LocationMapper.toEntity(locationService.getLocationById(newEvent.locationId()));
+            Location location = locationService.getLocationEntityById(newEvent.locationId());
             User creator = userService.getUserEntityById(newEvent.creatorUserId());
 
             // Convert DTO to entity
