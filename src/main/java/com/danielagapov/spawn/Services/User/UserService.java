@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -9,6 +10,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.DatabaseException;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -16,15 +18,12 @@ import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -64,20 +63,18 @@ public class UserService implements IUserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
+        List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
+
         // Fetch FriendTag IDs based on the user ID
         List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(user.getId());
 
-        // Fetch FriendTags for the user
-        List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(user.getId());
-
         // Pass in the friendTagIds and friendTags as needed
-        return UserMapper.toDTO(user, friendTagIds, friendTagIds);
+        return UserMapper.toDTO(user, friendUserIds , friendTagIds);
     }
 
     public FullUserDTO getFullUserById(UUID id) {
         return getFullUserByUser(getUserById(id));
     }
-
 
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
@@ -272,10 +269,55 @@ public class UserService implements IUserService {
         });
     }
 
-    // TODO: implement this logic later
-    public List<UserDTO> getRecommendedFriends(UUID id) {
-        // TODO
-        return List.of();
+    // returns top 3 friends with most mutuals with user (with `userId`) as
+    // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
+    public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
+        // Fetch the requesting user's friends
+        List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
+
+        // Create a set of the requesting user's friends for quick lookup
+        Set<UUID> requestingUserFriendSet = new HashSet<>(requestingUserFriendIds);
+
+        // Collect friends of friends (excluding already existing friends and the user itself)
+        Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
+        for (UUID friendId : requestingUserFriendIds) {
+            List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
+
+            for (UUID friendOfFriendId : friendOfFriendIds) {
+                if (!friendOfFriendId.equals(userId) && !requestingUserFriendSet.contains(friendOfFriendId)) {
+                    mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
+                }
+            }
+        }
+
+        // Fetch only users in the mutualFriendCounts map
+        List<RecommendedFriendUserDTO> recommendedFriends = mutualFriendCounts.entrySet().stream()
+                // Get detailed user information for each friend of friend
+                .map(entry -> {
+                    UUID mutualFriendId = entry.getKey();
+                    int mutualFriendCount = entry.getValue();
+                    FullUserDTO fullUser = getFullUserById(mutualFriendId);
+
+                    return new RecommendedFriendUserDTO(
+                            fullUser.id(),
+                            fullUser.friends(),
+                            fullUser.username(),
+                            fullUser.profilePicture(),
+                            fullUser.firstName(),
+                            fullUser.lastName(),
+                            fullUser.bio(),
+                            fullUser.friendTags(),
+                            fullUser.email(),
+                            mutualFriendCount
+                    );
+                })
+                // Sort by mutual friend count in descending order
+                .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::mutualFriendCount).reversed())
+                // Limit to top 3 recommendations
+                .limit(3)
+                .collect(Collectors.toList());
+
+        return recommendedFriends;
     }
 
     public List<UserDTO> getParticipantsByEventId(UUID eventId) {
