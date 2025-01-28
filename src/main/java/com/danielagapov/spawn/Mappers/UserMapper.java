@@ -16,7 +16,7 @@ public class UserMapper {
                 user.getId(),
                 friendUserIds,
                 user.getUsername(),
-                user.getProfilePicUrlString(),
+                user.getProfilePictureUrlString(),
                 user.getFirstName(),
                 user.getLastName(),
                 user.getBio(),
