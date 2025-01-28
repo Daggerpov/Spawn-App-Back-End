@@ -19,6 +19,7 @@ import java.util.UUID;
 public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
     private static final String CDN_BASE = Dotenv.load().get("CDN_BASE");
+    private static final String DEFAULT_PFP = "";
     private final S3Client s3;
     private final ILogger logger;
     private final UserService userService;
@@ -30,8 +31,7 @@ public class S3Service implements IS3Service {
     }
 
 
-    @Override
-    public String putObject(byte[] file, String key) {
+    public String putObjectWithKey(byte[] file, String key) {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(key)
@@ -49,16 +49,15 @@ public class S3Service implements IS3Service {
     @Override
     public String putObject(byte[] file) {
         String key = UUID.randomUUID().toString();
-        return putObject(file, key);
+        return putObjectWithKey(file, key);
     }
 
-    @Override
-    public UserDTO putObjectWithUser(byte[] file, UserDTO user) {
+    public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
         return new UserDTO(
                 user.id(),
                 user.friendIds(),
                 user.username(),
-                putObject(file),
+                file == null ? DEFAULT_PFP : putObject(file),
                 user.firstName(),
                 user.lastName(),
                 user.bio(),
@@ -70,18 +69,23 @@ public class S3Service implements IS3Service {
     @Override
     public UserDTO updateProfilePicture(byte[] file, UUID id) {
         User user = UserMapper.toEntity(userService.getUserById(id));
-        String urlString = user.getProfilePicture();
+        String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
-        String newUrl = putObject(file, key);
-        user.setProfilePicture(newUrl);
+        String newUrl;
+        if (file == null) {
+            newUrl = DEFAULT_PFP;
+            deleteObject(key);
+        } else {
+            newUrl = putObjectWithKey(file, key);
+        }
+        user.setProfilePictureUrlString(newUrl);
         user = userService.saveEntity(user);
         return userService.getUserById(user.getId()); // because converting user -> dto is hard
     }
 
-    @Override
-    public void deleteObjectFromUser(UUID id) {
+    public void deleteObjectByUserId(UUID id) {
         User user = UserMapper.toEntity(userService.getUserById(id));
-        String urlString = user.getProfilePicture();
+        String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
         deleteObject(key);
     }

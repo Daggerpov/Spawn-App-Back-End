@@ -39,10 +39,8 @@ public class LocationService implements ILocationService {
         }
     }
 
-    // TODO shouldn't this return a dto? answer from Daniel: no, according to usages in `EventService`
-    @Override
-    public Location getLocationById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id));
+    public LocationDTO getLocationById(UUID id) {
+        return LocationMapper.toDTO(repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id)));
     }
 
     @Override

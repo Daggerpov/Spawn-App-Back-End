@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.S3;
+package com.danielagapov.spawn.Config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
