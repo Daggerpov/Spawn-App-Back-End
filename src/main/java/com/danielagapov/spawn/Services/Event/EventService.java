@@ -283,14 +283,14 @@ public class EventService implements IEventService {
             }
         }
 
-        // if for loop doesnt find it, return notInvited
+        // if for loop doesn't find it, return notInvited
         return ParticipationStatus.notInvited;
     }
 
     // return type boolean represents whether the user was already invited or not
     // if false -> invites them
     // if true -> return 400 in Controller to indicate that the user has already
-    // been invited or it is a bad request.
+    // been invited, or it is a bad request.
     public boolean inviteUser(UUID eventId, UUID userId) {
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
@@ -317,7 +317,7 @@ public class EventService implements IEventService {
                 return false;
             }
         }
-        // if the loop doesn't return, its a bad request
+        // if the loop doesn't return, it's a bad request
         return true;
     }
 

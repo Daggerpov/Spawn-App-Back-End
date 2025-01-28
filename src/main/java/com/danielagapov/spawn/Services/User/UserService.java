@@ -92,12 +92,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getFriendUsersByUserId(UUID id) {
-        return getFriendUserIdsByFriendTagId(id).stream().map(this::getUserById).collect(Collectors.toList());
-    }
-
-
-    @Override
     public User getUserEntityById(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
@@ -219,7 +213,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-
     public User saveEntity(User user) {
         return repository.save(user);
     }
@@ -293,6 +286,7 @@ public class UserService implements IUserService {
 
     // returns top 3 friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
+    @Override
     public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
@@ -340,17 +334,6 @@ public class UserService implements IUserService {
                 .collect(Collectors.toList());
 
         return recommendedFriends;
-    // Allows saving from other services without needing a repository
-    @Override
-    public User saveEntity(User user) {
-        return repository.save(user);
-    }
-
-    // TODO: implement this logic later
-    @Override
-    public List<UserDTO> getRecommendedFriends(UUID id) {
-        // TODO
-        return List.of();
     }
 
     @Override

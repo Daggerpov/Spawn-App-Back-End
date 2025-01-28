@@ -25,7 +25,6 @@ public interface IUserService {
     // For Friends:
 
     List<UUID> getFriendUserIdsByUserId(UUID id);
-    List<UserDTO> getFriendUsersByUserId(UUID id);
 
     // For Friend Tags:
 
