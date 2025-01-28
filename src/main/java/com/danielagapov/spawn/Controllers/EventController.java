@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullEventDTO;
 import com.danielagapov.spawn.DTOs.IEventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -34,12 +33,12 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{id}?full=full
+    // full path: /api/v1/events/{id}?full=full&requestingUserId=requestingUserId
     @GetMapping("{id}")
-    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full, @RequestParam UUID requestingUserId) {
         try {
-            if (full) {
-                return new ResponseEntity<>(eventService.getFullEventById(id), HttpStatus.OK);
+            if (full && requestingUserId != null) {
+                return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
             }
@@ -181,11 +180,17 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{userId}/invitedEvents
+    // full path: /api/v1/events/{userId}/invitedEvents?full=full
     @GetMapping("{userId}/invitedEvents")
-    public ResponseEntity<List<EventDTO>>getEventsInvitedTo(@PathVariable UUID id) {
+    // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
+    // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
+    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(eventService.getEventsInvitedTo(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

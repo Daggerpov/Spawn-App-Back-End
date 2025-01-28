@@ -24,8 +24,6 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -86,8 +84,8 @@ public class EventService implements IEventService {
         return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
-    public FullEventDTO getFullEventById(UUID id) {
-        return getFullEventByEvent(getEventById(id));
+    public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
+        return getFullEventByEvent(getEventById(id), requestingUserId);
     }
 
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
@@ -204,14 +202,7 @@ public class EventService implements IEventService {
             // Save updated event
             repository.save(event);
 
-            // Fetch related data for DTO
-            UUID creatorUserId = event.getCreator().getId();
-            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(event.getId());
-            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(event.getId());
-            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(event.getId());
-
-            // Convert updated event to DTO
-            return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+            return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
             Location location = LocationMapper.toEntity(locationService.getLocationById(newEvent.locationId()));
@@ -221,15 +212,19 @@ public class EventService implements IEventService {
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
             repository.save(eventEntity);
 
-            // Fetch related data for DTO
-            UUID creatorUserId = eventEntity.getCreator().getId();
-            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventEntity.getId());
-            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
-            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
-
-            // Return DTO after entity creation
-            return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+            return constructDTOFromEntity(eventEntity);
         });
+    }
+
+    private EventDTO constructDTOFromEntity(Event eventEntity) {
+        // Fetch related data for DTO
+        UUID creatorUserId = eventEntity.getCreator().getId();
+        List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventEntity.getId());
+        List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
+        List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
+
+        // Return DTO after entity creation
+        return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
     public boolean deleteEventById(UUID id) {
@@ -366,8 +361,32 @@ public class EventService implements IEventService {
         return getEventDTOS(events);
     }
 
-    public FullEventDTO getFullEventByEvent(EventDTO event) {
-        return new FullEventDTO(
+    public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
+        List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
+
+        List<Event> events = new ArrayList<>();
+
+        if (eventUsers.isEmpty()) {
+            // throws no user found exception
+            throw new BaseNotFoundException(EntityType.User, id);
+        }
+
+        for (EventUser eventUser : eventUsers) {
+            if (eventUser.getUser().getId().equals(id)) {
+                events.add(eventUser.getEvent());
+            }
+        }
+
+        List<EventDTO> eventDTOs = getEventDTOS(events);
+
+        // Transform each EventDTO into a FullFeedEventDTO
+        return eventDTOs.stream()
+                .map(eventDTO -> getFullEventByEvent(eventDTO, id))
+                .toList();
+    }
+
+    public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
+        return new FullFeedEventDTO(
                 event.id(),
                 event.title(),
                 event.startTime(),
@@ -377,7 +396,23 @@ public class EventService implements IEventService {
                 userService.getUserById(event.creatorUserId()),
                 userService.getParticipantsByEventId(event.id()),
                 userService.getInvitedByEventId(event.id()),
-                chatMessageService.getChatMessagesByEventId(event.id())
+                chatMessageService.getChatMessagesByEventId(event.id()),
+                getFriendTagColorHexCodeForRequestingUser(event, requestingUserId),
+                getParticipationStatus(event.id(), requestingUserId)
         );
+    }
+
+    public String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId) {
+        // get event creator from eventDTO
+
+        // use creator to get the friend tag that relates the requesting user to see
+        // which friend tag they've placed them in
+        FriendTagDTO pertainingFriendTag = friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.creatorUserId());
+
+        // -> for now, we handle tie-breaks (user has same friend within two friend tags) in whichever way (just choose one)
+
+        // using that friend tag, grab its colorHexCode property to return from this method
+
+        return pertainingFriendTag.colorHexCode();
     }
 }
