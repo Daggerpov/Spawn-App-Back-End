@@ -69,7 +69,13 @@ public class S3Service implements IS3Service {
         User user = UserMapper.toEntity(userService.getUserById(id));
         String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
-        String newUrl = putObjectWithKey(file, key);
+        String newUrl;
+        if (file == null) {
+            newUrl = DEFAULT_PFP;
+            deleteObject(key);
+        } else {
+            newUrl = putObjectWithKey(file, key);
+        }
         user.setProfilePictureUrlString(newUrl);
         user = userService.saveEntity(user);
         return userService.getUserById(user.getId()); // because converting user -> dto is hard

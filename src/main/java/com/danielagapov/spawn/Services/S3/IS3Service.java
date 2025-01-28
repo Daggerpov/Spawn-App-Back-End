@@ -9,6 +9,6 @@ public interface IS3Service {
     String putObjectWithKey(byte[] file, String key);
     void deleteObjectByUserId(UUID id);
     String putObject(byte[] file);
-    UserDTO putObjectWithUser(byte[] file, UserDTO user);
+    UserDTO putProfilePictureWithUser(byte[] file, UserDTO user);
     UserDTO updateProfilePicture(byte[] file, UUID id);
 }
