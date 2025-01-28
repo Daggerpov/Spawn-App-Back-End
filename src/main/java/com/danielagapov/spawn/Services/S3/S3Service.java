@@ -30,6 +30,7 @@ public class S3Service implements IS3Service {
     }
 
 
+    @Override
     public String putObject(byte[] file, String key) {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -45,11 +46,13 @@ public class S3Service implements IS3Service {
         }
     }
 
+    @Override
     public String putObject(byte[] file) {
         String key = UUID.randomUUID().toString();
         return putObject(file, key);
     }
 
+    @Override
     public UserDTO putObjectWithUser(byte[] file, UserDTO user) {
         return new UserDTO(
                 user.id(),
@@ -64,6 +67,7 @@ public class S3Service implements IS3Service {
         );
     }
 
+    @Override
     public UserDTO updateProfilePicture(byte[] file, UUID id) {
         User user = UserMapper.toEntity(userService.getUserById(id));
         String urlString = user.getProfilePicture();
@@ -74,6 +78,7 @@ public class S3Service implements IS3Service {
         return userService.getUserById(user.getId()); // because converting user -> dto is hard
     }
 
+    @Override
     public void deleteObjectFromUser(UUID id) {
         User user = UserMapper.toEntity(userService.getUserById(id));
         String urlString = user.getProfilePicture();

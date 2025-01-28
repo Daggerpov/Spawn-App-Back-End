@@ -45,6 +45,7 @@ public class EventService implements IEventService {
         this.locationService = locationService;
     }
 
+    @Override
     public List<EventDTO> getAllEvents() {
         try {
             List<Event> events = repository.findAll();
@@ -58,6 +59,7 @@ public class EventService implements IEventService {
         }
     }
 
+    @Override
     public EventDTO getEventById(UUID id) {
         Event event = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
@@ -70,10 +72,12 @@ public class EventService implements IEventService {
         return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
+    @Override
     public FullEventDTO getFullEventById(UUID id) {
         return getFullEventByEvent(getEventById(id));
     }
 
+    @Override
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
             // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
@@ -113,6 +117,7 @@ public class EventService implements IEventService {
     }
 
 
+    @Override
     public EventDTO saveEvent(EventDTO event) {
         try {
             Location location = locationRepository.findById(event.locationId()).orElse(null);
@@ -141,6 +146,7 @@ public class EventService implements IEventService {
     }
 
 
+    @Override
     public List<EventDTO> getEventsByUserId(UUID userId) {
         List<Event> events = repository.findByCreatorId(userId);
 
@@ -171,6 +177,7 @@ public class EventService implements IEventService {
         return eventDTOs;
     }
 
+    @Override
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
         return repository.findById(id).map(event -> {
             // Update basic event details
@@ -216,6 +223,7 @@ public class EventService implements IEventService {
 
 
 
+    @Override
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.Event, id);
@@ -230,10 +238,12 @@ public class EventService implements IEventService {
         }
     }
 
+    @Override
     public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
         return List.of();
     }
 
+    @Override
     public FullEventDTO getFullEventByEvent(EventDTO event) {
         return new FullEventDTO(
                 event.id(),
