@@ -19,6 +19,7 @@ import java.util.UUID;
 public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
     private static final String CDN_BASE = Dotenv.load().get("CDN_BASE");
+    private static final String DEFAULT_PFP = "";
     private final S3Client s3;
     private final ILogger logger;
     private final UserService userService;
@@ -55,7 +56,7 @@ public class S3Service implements IS3Service {
                 user.id(),
                 user.friendIds(),
                 user.username(),
-                putObject(file),
+                file == null ? DEFAULT_PFP : putObject(file),
                 user.firstName(),
                 user.lastName(),
                 user.bio(),
