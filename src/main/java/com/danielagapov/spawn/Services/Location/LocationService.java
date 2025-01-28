@@ -44,4 +44,10 @@ public class LocationService implements ILocationService {
     public Location getLocationById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id));
     }
+
+    @Override
+    public LocationDTO getLocationDTOById(UUID id) {
+        Location locationEntity = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id));
+        return LocationMapper.toDTO(locationEntity);
+    }
 }
