@@ -12,4 +12,4 @@ public record ChatMessageDTO(
         UUID senderUserId,
         UUID eventId,
         List<UUID> likedByUserIds
-) implements Serializable {}
+) implements Serializable, IChatMessageDTO{}

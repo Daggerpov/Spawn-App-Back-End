@@ -17,4 +17,4 @@ public record EventDTO(
         List<UUID> participantUserIds,
         List<UUID> invitedUserIds,
         List<UUID> chatMessageIds
-) implements Serializable {}
+) implements Serializable, IEventDTO{}

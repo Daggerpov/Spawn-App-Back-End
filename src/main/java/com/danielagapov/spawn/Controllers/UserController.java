@@ -1,7 +1,8 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
+import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
@@ -39,23 +40,15 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}
-    @GetMapping("{id}")
-    public ResponseEntity<UserDTO> getUser(@PathVariable UUID id) {
-        try {
-            return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<FullUserDTO> getFullUser(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -162,9 +155,9 @@ public class UserController {
 
     // full path: /api/v1/users/{id}/recommended-friends
     @GetMapping("{id}/recommended-friends")
-    public ResponseEntity<List<UserDTO>> getRecommendedFriends(@PathVariable UUID id) {
+    public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriends(@PathVariable UUID id) {
         try {
-            return new ResponseEntity<>(userService.getRecommendedFriends(id), HttpStatus.OK);
+            return new ResponseEntity<>(userService.getRecommendedFriendsForUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
