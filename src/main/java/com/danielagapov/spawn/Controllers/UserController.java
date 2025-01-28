@@ -116,7 +116,7 @@ public class UserController {
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         try {
-            s3Service.deleteObjectFromUser(id);
+            s3Service.deleteObjectByUserId(id);
             boolean isDeleted = userService.deleteUserById(id);
             if (isDeleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);

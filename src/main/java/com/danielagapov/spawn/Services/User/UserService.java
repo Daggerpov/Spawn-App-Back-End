@@ -206,6 +206,11 @@ public class UserService implements IUserService {
         }
     }
 
+
+    public User saveEntity(User user) {
+        return repository.save(user);
+    }
+
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         return uftRepository.findFriendIdsByTagId(friendTagId)
                 .stream()
