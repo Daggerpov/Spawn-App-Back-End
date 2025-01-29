@@ -23,11 +23,15 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    // full path: /api/v1/events
+    // full path: /api/v1/eventsi?full=full
     @GetMapping
-    public ResponseEntity<List<EventDTO>> getEvents() {
+    public ResponseEntity<List<? extends IEventDTO>> getEvents(@RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(eventService.getAllFullEvents(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

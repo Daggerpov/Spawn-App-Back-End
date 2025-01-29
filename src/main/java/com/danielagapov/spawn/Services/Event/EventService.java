@@ -62,6 +62,15 @@ public class EventService implements IEventService {
     }
 
     @Override
+    public List<FullFeedEventDTO> getAllFullEvents() {
+        ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
+        for (EventDTO e: getAllEvents()) {
+            fullEvents.add(getFullEventByEvent(e, null));
+        }
+        return fullEvents;
+    }
+
+    @Override
     public List<EventDTO> getAllEvents() {
         try {
             List<Event> events = repository.findAll();
@@ -402,8 +411,8 @@ public class EventService implements IEventService {
                 userService.getParticipantsByEventId(event.id()),
                 userService.getInvitedByEventId(event.id()),
                 chatMessageService.getChatMessagesByEventId(event.id()),
-                getFriendTagColorHexCodeForRequestingUser(event, requestingUserId),
-                getParticipationStatus(event.id(), requestingUserId)
+                requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
+                requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
         );
     }
 
