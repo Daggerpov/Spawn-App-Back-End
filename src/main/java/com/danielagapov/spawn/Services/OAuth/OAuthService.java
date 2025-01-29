@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.DTOs.AbstractUserDTO;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.TempUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -10,6 +11,9 @@ import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.Map;
 
 @Service
 public class OAuthService implements IOAuthService {
@@ -41,6 +45,17 @@ public class OAuthService implements IOAuthService {
         return userDTO;
     }
 
+    @Override
+    public Map<Boolean, FullUserDTO> isUser(String externId) {
+        UserIdExternalIdMap mapping = getMapping(externId);
+        if (mapping == null) {
+            return Collections.singletonMap(false, null);
+        } else {
+            return Collections.singletonMap(true, getFullUserDTO(mapping));
+        }
+    }
+
+
     private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
         String given_name = oauthUser.getAttribute("given_name");
         String family_name = oauthUser.getAttribute("family_name");
@@ -55,7 +70,15 @@ public class OAuthService implements IOAuthService {
         return externalIdMapRepository.findById(tempUser.id()).orElse(null);
     }
 
+    private UserIdExternalIdMap getMapping(String externalId) {
+        return externalIdMapRepository.findById(externalId).orElse(null);
+    }
+
     private UserDTO getUserDTO(UserIdExternalIdMap mapping) {
         return userService.getUserById(mapping.getUser().getId());
+    }
+
+    private FullUserDTO getFullUserDTO(UserIdExternalIdMap mapping) {
+        return userService.getFullUserById(mapping.getUser().getId());
     }
 }
