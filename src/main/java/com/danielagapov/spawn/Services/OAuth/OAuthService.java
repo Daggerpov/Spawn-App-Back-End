@@ -13,7 +13,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-import java.util.Map;
 
 @Service
 public class OAuthService implements IOAuthService {
@@ -46,13 +45,9 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public Map<Boolean, FullUserDTO> isOnboardedUser(String externId) {
+    public FullUserDTO isOnboardedUser(String externId) {
         UserIdExternalIdMap mapping = getMapping(externId);
-        if (mapping == null) {
-            return Collections.singletonMap(false, null);
-        } else {
-            return Collections.singletonMap(true, getFullUserDTO(mapping));
-        }
+        return mapping == null ? null : getFullUserDTO(mapping);
     }
 
 
