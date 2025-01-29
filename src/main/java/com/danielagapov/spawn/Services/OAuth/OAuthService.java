@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.DTOs.AbstractUserDTO;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.TempUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -32,14 +33,21 @@ public class OAuthService implements IOAuthService {
 
     // REQUIRES: tempUserDTO.id() == externId from unpackOAuthUser()
     @Override
-    public UserDTO makeUser(UserDTO userDTO, String externId) {
+    public UserDTO makeUser(UserDTO userDTO, String externId, byte[] profilePicture) {
         // user dto -> entity & save user
-        userDTO = userService.saveUser(userDTO);
+        userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
         // create and save mapping
         externalIdMapRepository.save(new UserIdExternalIdMap(externId, UserMapper.toEntity(userDTO)));
 
         return userDTO;
     }
+
+    @Override
+    public FullUserDTO getUserIfExistsbyExternalId(String externId) {
+        UserIdExternalIdMap mapping = getMapping(externId);
+        return mapping == null ? null : getFullUserDTO(mapping);
+    }
+
 
     private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
         String given_name = oauthUser.getAttribute("given_name");
@@ -55,7 +63,15 @@ public class OAuthService implements IOAuthService {
         return externalIdMapRepository.findById(tempUser.id()).orElse(null);
     }
 
+    private UserIdExternalIdMap getMapping(String externalId) {
+        return externalIdMapRepository.findById(externalId).orElse(null);
+    }
+
     private UserDTO getUserDTO(UserIdExternalIdMap mapping) {
         return userService.getUserById(mapping.getUser().getId());
+    }
+
+    private FullUserDTO getFullUserDTO(UserIdExternalIdMap mapping) {
+        return userService.getFullUserById(mapping.getUser().getId());
     }
 }

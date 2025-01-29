@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.AbstractUserDTO;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import org.springframework.http.ResponseEntity;
@@ -30,10 +31,20 @@ public class OAuthController {
         }
     }
 
-    @PostMapping("make-user")
-    public ResponseEntity<UserDTO> makeUser(@RequestParam("user") UserDTO userDTO, @RequestParam("id") String id) {
+    // full path: /api/v1/oauth/sign-in?sub=su
+    @GetMapping("sign-in?sub=sub")
+    public ResponseEntity<FullUserDTO> signIn(@RequestParam("sub") String sub) {
         try {
-           UserDTO user = oauthService.makeUser(userDTO, id);
+            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(sub));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(null);
+        }
+    }
+
+    @PostMapping("make-user")
+    public ResponseEntity<UserDTO> makeUser(@RequestParam("user") UserDTO userDTO, @RequestParam("id") String id, @RequestParam("pfp") byte[] file) {
+        try {
+           UserDTO user = oauthService.makeUser(userDTO, id, file);
            return ResponseEntity.ok().body(user);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);

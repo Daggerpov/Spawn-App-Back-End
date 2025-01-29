@@ -94,8 +94,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserDTO> createUser(@RequestParam("user") UserDTO newUser, @RequestParam("pfp") byte[] file) {
         try {
-            newUser = s3Service.putProfilePictureWithUser(file, newUser);
-            return new ResponseEntity<>(userService.saveUser(newUser), HttpStatus.CREATED);
+            return new ResponseEntity<>(userService.saveUserWithProfilePicture(newUser, file), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
