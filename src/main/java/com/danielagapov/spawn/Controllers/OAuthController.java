@@ -36,7 +36,7 @@ public class OAuthController {
     @GetMapping("/sign-in?sub=sub")
     public ResponseEntity<Map<Boolean, FullUserDTO>> signIn(@RequestParam("sub") String sub) {
         try {
-            return ResponseEntity.ok().body(oauthService.isUser(sub));
+            return ResponseEntity.ok().body(oauthService.isOnboardedUser(sub));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }

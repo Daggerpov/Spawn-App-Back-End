@@ -46,7 +46,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public Map<Boolean, FullUserDTO> isUser(String externId) {
+    public Map<Boolean, FullUserDTO> isOnboardedUser(String externId) {
         UserIdExternalIdMap mapping = getMapping(externId);
         if (mapping == null) {
             return Collections.singletonMap(false, null);

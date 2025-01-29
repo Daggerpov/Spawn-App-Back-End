@@ -11,5 +11,5 @@ public interface IOAuthService {
 
     AbstractUserDTO verifyUser(OAuth2User user);
     UserDTO makeUser(UserDTO user, String externId);
-    Map<Boolean, FullUserDTO> isUser(String externId);
+    Map<Boolean, FullUserDTO> isOnboardedUser(String externId);
 }
