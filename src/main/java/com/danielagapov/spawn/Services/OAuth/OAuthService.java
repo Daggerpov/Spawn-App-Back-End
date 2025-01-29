@@ -31,20 +31,23 @@ public class OAuthService implements IOAuthService {
         return mapping == null ? tempUser : getUserDTO(mapping);
     }
 
-    // REQUIRES: tempUserDTO.id() == externId from unpackOAuthUser()
+    // REQUIRES: tempUserDTO.id() == externalUserId from unpackOAuthUser()
     @Override
-    public UserDTO makeUser(UserDTO userDTO, String externId, byte[] profilePicture) {
+    public UserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture) {
         // user dto -> entity & save user
         userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
-        // create and save mapping
-        externalIdMapRepository.save(new UserIdExternalIdMap(externId, UserMapper.toEntity(userDTO)));
+
+        if (externalUserId != null) {
+            // create and save mapping, if the user was created externally through Google or Apple
+            externalIdMapRepository.save(new UserIdExternalIdMap(externalUserId, UserMapper.toEntity(userDTO)));
+        }
 
         return userDTO;
     }
 
     @Override
-    public FullUserDTO getUserIfExistsbyExternalId(String externId) {
-        UserIdExternalIdMap mapping = getMapping(externId);
+    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId) {
+        UserIdExternalIdMap mapping = getMapping(externalUserId);
         return mapping == null ? null : getFullUserDTO(mapping);
     }
 
@@ -54,9 +57,9 @@ public class OAuthService implements IOAuthService {
         String family_name = oauthUser.getAttribute("family_name");
         String picture = oauthUser.getAttribute("picture"); // TODO: may need to change once S3 is set
         String email = oauthUser.getAttribute("email"); // to be used as username
-        String externId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
-        if (externId == null) throw new ApplicationException("Subject was null");
-        return new TempUserDTO(externId, given_name, family_name, email, picture);
+        String externalUserId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
+        if (externalUserId == null) throw new ApplicationException("Subject was null");
+        return new TempUserDTO(externalUserId, given_name, family_name, email, picture);
     }
 
     private UserIdExternalIdMap getMapping(TempUserDTO tempUser) {

@@ -29,7 +29,13 @@ public class S3Service implements IS3Service {
         this.userService = userService;
     }
 
-
+    /**
+     * This is the closest method directly to our S3Client, which puts an object to 
+     * our S3 bucket, given a key to map it to
+     * 
+     * Returns the profile picture url string where it's now hosted through a CDN
+     */
+    @Override
     public String putObjectWithKey(byte[] file, String key) {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(BUCKET)
@@ -45,12 +51,21 @@ public class S3Service implements IS3Service {
         }
     }
 
+    /**
+     * Puts object to S3, by mapping a file to a randomly generated key
+     */
     @Override
     public String putObject(byte[] file) {
         String key = UUID.randomUUID().toString();
         return putObjectWithKey(file, key);
     }
 
+
+    /** 
+     * This method, if given a `file` argument will put that profile picture object to S3
+     * Otherwise, it will use our default pfp url string as the user's profile picture
+     */
+    @Override
     public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
         return new UserDTO(
                 user.id(),
@@ -65,9 +80,16 @@ public class S3Service implements IS3Service {
         );
     }
 
+    /** 
+     * Given an existing `userId`, this method will update the profile picture 
+     * attribute of that user, and also replace the image at its currently hosted 
+     * image url (through our CDN) with a supplied image, `file` argument
+     * 
+     * If given no `file` argument, we simply supply the default pfp url string
+     */
     @Override
-    public UserDTO updateProfilePicture(byte[] file, UUID id) {
-        User user = UserMapper.toEntity(userService.getUserById(id));
+    public UserDTO updateProfilePicture(byte[] file, UUID userId) {
+        User user = UserMapper.toEntity(userService.getUserById(userId));
         String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
         String newUrl;
@@ -82,13 +104,22 @@ public class S3Service implements IS3Service {
         return userService.getUserById(user.getId()); // because converting user -> dto is hard
     }
 
-    public void deleteObjectByUserId(UUID id) {
-        User user = UserMapper.toEntity(userService.getUserById(id));
+    /**
+     * Delete the associated profile picture object in S3, that pertains
+     * to a given `userId`
+     */
+    @Override
+    public void deleteObjectByUserId(UUID userId) {
+        User user = UserMapper.toEntity(userService.getUserById(userId));
         String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
         deleteObject(key);
+        // ? shouldn't we also set the user's `profilePictureUrlString` attribute to null here? 
     }
 
+    /**
+     * Deletes an object given the key (where it's stored)
+     */
     private void deleteObject(String key) {
         DeleteObjectRequest request = DeleteObjectRequest.builder()
                 .bucket(BUCKET)
@@ -104,6 +135,10 @@ public class S3Service implements IS3Service {
     }
 
 
+    /**
+     * @param url - the profile picture url string
+     * @return the object key part of the profile picture url string
+     */
     // url is of the form: <cdn-base>/<object-key>
     private String extractObjectKey(String url) {
         try {
