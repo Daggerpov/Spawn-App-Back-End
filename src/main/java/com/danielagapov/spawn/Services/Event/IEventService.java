@@ -10,19 +10,29 @@ import java.util.UUID;
 
 public interface IEventService {
     List<EventDTO> getAllEvents();
+    
+    // CRUD operations:
     EventDTO getEventById(UUID id);
-    FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId);
-    List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
     EventDTO saveEvent(EventDTO event);
-    List<EventDTO> getEventsByUserId(UUID userId);
     EventDTO replaceEvent(EventDTO event, UUID eventId);
     boolean deleteEventById(UUID id);
+
+    // Participation-related methods:
     List<UserDTO> getParticipatingUsersByEventId(UUID id);
     ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
     boolean inviteUser(UUID eventId, UUID userId);
     boolean toggleParticipation(UUID eventId, UUID userId);
     List<EventDTO> getEventsInvitedTo(UUID id);
+   
+
+    // Get 'Full' Event Methods:
     List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id);
     FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId);
+    public List<FullFeedEventDTO> getAllFullEvents();
+    FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId);
+
+    // Additional Methods:
+    List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
+    List<EventDTO> getEventsByUserId(UUID userId);
     String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
 }
