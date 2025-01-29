@@ -10,7 +10,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.Map;
 
 @RestController()
 @RequestMapping("api/v1/oauth")
@@ -36,7 +35,7 @@ public class OAuthController {
     @GetMapping("sign-in?sub=sub")
     public ResponseEntity<FullUserDTO> signIn(@RequestParam("sub") String sub) {
         try {
-            return ResponseEntity.ok().body(oauthService.isOnboardedUser(sub));
+            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(sub));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }

@@ -45,7 +45,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public FullUserDTO isOnboardedUser(String externId) {
+    public FullUserDTO getUserIfExistsbyExternalId(String externId) {
         UserIdExternalIdMap mapping = getMapping(externId);
         return mapping == null ? null : getFullUserDTO(mapping);
     }
