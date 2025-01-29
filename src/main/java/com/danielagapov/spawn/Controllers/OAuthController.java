@@ -42,9 +42,9 @@ public class OAuthController {
     }
 
     @PostMapping("make-user")
-    public ResponseEntity<UserDTO> makeUser(@RequestParam("user") UserDTO userDTO, @RequestParam("id") String id) {
+    public ResponseEntity<UserDTO> makeUser(@RequestParam("user") UserDTO userDTO, @RequestParam("id") String id, @RequestParam("pfp") byte[] file) {
         try {
-           UserDTO user = oauthService.makeUser(userDTO, id);
+           UserDTO user = oauthService.makeUser(userDTO, id, file);
            return ResponseEntity.ok().body(user);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);

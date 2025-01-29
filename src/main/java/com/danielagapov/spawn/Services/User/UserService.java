@@ -18,6 +18,7 @@ import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -32,16 +33,18 @@ public class UserService implements IUserService {
     private final IUserFriendTagRepository uftRepository;
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
+    private final IS3Service s3Service;
     private final ILogger logger;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, ILogger logger) {
+                       IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, ILogger logger) {
         this.repository = repository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
+        this.s3Service = s3Service;
         this.logger = logger;
     }
 
@@ -215,6 +218,14 @@ public class UserService implements IUserService {
     @Override
     public User saveEntity(User user) {
         return repository.save(user);
+    }
+
+    @Override
+    public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
+        if (user.profilePicture() == null) {
+            user = s3Service.putProfilePictureWithUser(profilePicture, user);
+        }
+        return saveUser(user);
     }
 
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {

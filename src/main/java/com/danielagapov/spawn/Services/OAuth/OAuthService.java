@@ -12,8 +12,6 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-
 @Service
 public class OAuthService implements IOAuthService {
     private final IUserIdExternalIdMapRepository externalIdMapRepository;
@@ -35,9 +33,9 @@ public class OAuthService implements IOAuthService {
 
     // REQUIRES: tempUserDTO.id() == externId from unpackOAuthUser()
     @Override
-    public UserDTO makeUser(UserDTO userDTO, String externId) {
+    public UserDTO makeUser(UserDTO userDTO, String externId, byte[] profilePicture) {
         // user dto -> entity & save user
-        userDTO = userService.saveUser(userDTO);
+        userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
         // create and save mapping
         externalIdMapRepository.save(new UserIdExternalIdMap(externId, UserMapper.toEntity(userDTO)));
 

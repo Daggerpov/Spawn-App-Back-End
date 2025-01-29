@@ -8,6 +8,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 public interface IOAuthService {
 
     AbstractUserDTO verifyUser(OAuth2User user);
-    UserDTO makeUser(UserDTO user, String externId);
+    UserDTO makeUser(UserDTO user, String externId, byte[] profilePicture);
     FullUserDTO getUserIfExistsbyExternalId(String externId);
 }
