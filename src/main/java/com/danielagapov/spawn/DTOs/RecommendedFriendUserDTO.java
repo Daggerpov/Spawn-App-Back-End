@@ -6,13 +6,13 @@ import java.util.UUID;
 
 public record RecommendedFriendUserDTO(
     UUID id,
-    List<UserDTO> friends,
+    List<FullUserDTO> friends,
     String username,
     String profilePicture, // TODO: adjust data type later
     String firstName,
     String lastName,
     String bio,
-    List<FriendTagDTO> friendTags,
+    List<FullFriendTagDTO> friendTags,
     String email,
     // Added property from `FullUserDTO`:
     int mutualFriendCount

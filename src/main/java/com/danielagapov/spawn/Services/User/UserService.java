@@ -375,13 +375,13 @@ public class UserService implements IUserService {
     public FullUserDTO getFullUserByUser(UserDTO user) {
         return new FullUserDTO(
                 user.id(),
-                getFriendsByUserId(user.id()),
+                convertUsersToFullUsers(getFriendsByUserId(user.id())),
                 user.username(),
                 user.profilePicture(),
                 user.firstName(),
                 user.lastName(),
                 user.bio(),
-                friendTagService.getFriendTagsByOwnerId(user.id()),
+                friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(user.id())),
                 user.email()
         );
     }

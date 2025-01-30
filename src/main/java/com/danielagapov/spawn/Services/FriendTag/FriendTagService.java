@@ -190,6 +190,13 @@ public class FriendTagService implements IFriendTagService {
                 friendTag.isEveryone());
     }
 
+    @Override
+    public List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags) {
+        return friendTags.stream()
+                .map(this::getFullFriendTagByFriendTag)
+                .collect(Collectors.toList());
+    }
+
     /// this function takes the owner user id of a friend tag, and the friend's user id
     /// it will return precisely one of the friend tags that the owner has placed this
     /// friend inside, even if they've placed them in multiple friend tags

@@ -8,15 +8,24 @@ import java.util.UUID;
 
 public interface IFriendTagService {
     List<FriendTagDTO> getAllFriendTags();
+
+    // CRUD operations:
     FriendTagDTO getFriendTagById(UUID id);
-    FullFriendTagDTO getFullFriendTagById(UUID id);
-    List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId);
-    List<FullFriendTagDTO> getFullFriendTagsByOwnerId(UUID ownerId);
     FriendTagDTO saveFriendTag(FriendTagDTO friendTag);
     FriendTagDTO replaceFriendTag(FriendTagDTO friendTag, UUID tagId);
     boolean deleteFriendTagById(UUID id);
-    void saveUserToFriendTag(UUID id, UUID userId);
+
+    // owner-related:
+    List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId);
     List<UUID> getFriendTagIdsByOwnerUserId(UUID id);
-    FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag);
+
+    // friend-related:
     FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId);
+    void saveUserToFriendTag(UUID id, UUID userId);
+
+    // full helpers:
+    List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags);
+    List<FullFriendTagDTO> getFullFriendTagsByOwnerId(UUID ownerId);
+    FullFriendTagDTO getFullFriendTagById(UUID id);
+    FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag);
 }
