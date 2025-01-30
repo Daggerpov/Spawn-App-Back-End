@@ -114,7 +114,8 @@ public class S3Service implements IS3Service {
         String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
         deleteObject(key);
-        // ? shouldn't we also set the user's `profilePictureUrlString` attribute to null here? 
+        user.setProfilePictureUrlString(null);
+        userService.saveEntity(user);
     }
 
     /**
