@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
@@ -30,27 +31,27 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public UserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture) {
+    public UserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         // user dto -> entity & save user
         userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
 
         if (externalUserId != null) {
             // create and save mapping, if the user was created externally through Google or Apple
-            saveMapping(externalUserId, userDTO);
+            saveMapping(externalUserId, userDTO, provider);
         }
 
         return userDTO;
     }
 
     @Override
-    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email) {
+    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email, OAuthProvider provider) {
         UserIdExternalIdMap mapping = getMapping(externalUserId);
         if (mapping != null) {
             return getFullUserDTO(mapping);
         } else {
             FullUserDTO fullUserDTO = userService.getUserByEmail(email);
             if (fullUserDTO != null) {
-                saveMapping(externalUserId, fullUserDTO);
+                saveMapping(externalUserId, fullUserDTO, provider);
             }
             return fullUserDTO;
         }
@@ -83,13 +84,13 @@ public class OAuthService implements IOAuthService {
         return userService.getFullUserById(mapping.getUser().getId());
     }
 
-    private void saveMapping(String externalUserId, IOnboardedUserDTO userDTO) {
+    private void saveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
         User user;
         if (userDTO instanceof FullUserDTO) {
             user = UserMapper.toEntityFromFullDTO((FullUserDTO) userDTO);
         } else {
             user = UserMapper.toEntity((UserDTO) userDTO);
         }
-        externalIdMapRepository.save(new UserIdExternalIdMap(externalUserId, user));
+        externalIdMapRepository.save(new UserIdExternalIdMap(externalUserId, user, provider));
     }
 }

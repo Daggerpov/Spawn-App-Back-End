@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -47,9 +48,9 @@ public class OAuthController {
      */
     // full path: /api/v1/oauth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email) {
+    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email, @RequestParam("provider") OAuthProvider provider) {
         try {
-            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email));
+            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email, provider));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
@@ -69,9 +70,14 @@ public class OAuthController {
      */
     // full path: /api/v1/oauth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<UserDTO> makeUser(@RequestParam("user") UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam("pfp") byte[] profilePicture) {
+    public ResponseEntity<UserDTO> makeUser(
+            @RequestParam("user") UserDTO userDTO,
+            @RequestParam("externalUserId") String externalUserId,
+            @RequestParam("pfp") byte[] profilePicture,
+            @RequestParam("provider") OAuthProvider provider
+    ) {
         try {
-           UserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture);
+           UserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
            return ResponseEntity.ok().body(user);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
