@@ -410,7 +410,7 @@ public class EventService implements IEventService {
                 userService.getUserById(event.creatorUserId()),
                 userService.getParticipantsByEventId(event.id()),
                 userService.getInvitedByEventId(event.id()),
-                chatMessageService.getChatMessagesByEventId(event.id()),
+                chatMessageService.getFullChatMessagesByEventId(event.id()),
                 requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                 requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
         );

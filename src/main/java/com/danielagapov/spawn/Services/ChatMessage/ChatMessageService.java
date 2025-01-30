@@ -110,6 +110,15 @@ public class ChatMessageService implements IChatMessageService {
         return getFullChatMessageByChatMessage(getChatMessageById(id));
     }
 
+    @Override
+    public List<FullChatMessageDTO> getFullChatMessagesByEventId(UUID eventId) {
+        ArrayList<FullChatMessageDTO> fullChatMessages = new ArrayList<>();
+        for(ChatMessageDTO cm: getChatMessagesByEventId(eventId)) {
+            fullChatMessages.add(getFullChatMessageByChatMessage(cm));
+        }
+        return fullChatMessages;
+    }
+
 
     // Other methods remain mostly the same but updated to work with mappings
     @Override
@@ -262,4 +271,6 @@ public class ChatMessageService implements IChatMessageService {
                 getChatMessageLikes(chatMessage.id())
         );
     }
+
+    
 }
