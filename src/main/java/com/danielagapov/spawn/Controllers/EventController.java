@@ -28,7 +28,7 @@ public class EventController {
 
     // full path: /api/v1/events?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IEventDTO>> getEvents(@RequestParam boolean full) {
+    public ResponseEntity<List<? extends IEventDTO>> getEvents(@RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getAllFullEvents(), HttpStatus.OK);
@@ -42,7 +42,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}?full=full&requestingUserId=requestingUserId
     @GetMapping("{id}")
-    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam boolean full, @RequestParam UUID requestingUserId) {
+    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full, @RequestParam UUID requestingUserId) {
         try {
             if (full && requestingUserId != null) {
                 return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
@@ -58,7 +58,7 @@ public class EventController {
 
     // full path: /api/v1/events/user/{userId}?full=full
     @GetMapping("user/{userId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByUserId(@PathVariable UUID userId, @RequestParam boolean full) {
+    public ResponseEntity<List<? extends IEventDTO>> getEventsByUserId(@PathVariable UUID userId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByUserId(userId), userId), HttpStatus.OK);
@@ -74,7 +74,7 @@ public class EventController {
 
     // full path: /api/v1/events/friendTag/{tagId}?full=full&requestingUserId=requestingUserId
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId, @RequestParam boolean full, @RequestParam UUID requestingUserId) {
+    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full, @RequestParam UUID requestingUserId) {
         try {
             if (full && requestingUserId != null) {
                 return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByFriendTagId(tagId), requestingUserId), HttpStatus.OK);
@@ -136,7 +136,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(eventService.getParticipatingUsersByEventId(id)), HttpStatus.OK);
@@ -203,7 +203,7 @@ public class EventController {
     @GetMapping("{userId}/invitedEvents")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam boolean full) {
+    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);

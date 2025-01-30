@@ -24,7 +24,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IFriendTagDTO>> getFriendTags(@RequestParam boolean full) {
+    public ResponseEntity<List<? extends IFriendTagDTO>> getFriendTags(@RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getAllFriendTags()), HttpStatus.OK);
@@ -38,7 +38,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<IFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<IFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.getFullFriendTagById(id), HttpStatus.OK);
@@ -105,7 +105,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/owner/{ownerId}?full=full
     @GetMapping("owner/{ownerId}")
-    public ResponseEntity<List<? extends IFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam boolean full) {
+    public ResponseEntity<List<? extends IFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(ownerId)), HttpStatus.OK);

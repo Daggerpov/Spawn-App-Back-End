@@ -32,7 +32,7 @@ public class UserController {
 
     // full path: /api/v1/users?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers()), HttpStatus.OK);
@@ -46,7 +46,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
@@ -62,7 +62,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}/friends?full=full
     @GetMapping("{id}/friends")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getFriendsByUserId(id)), HttpStatus.OK);
@@ -88,7 +88,7 @@ public class UserController {
 
     // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId)), HttpStatus.OK);
