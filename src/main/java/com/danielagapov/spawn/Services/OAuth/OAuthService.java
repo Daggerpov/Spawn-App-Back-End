@@ -1,11 +1,9 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.AbstractUserDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.TempUserDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Mappers.UserMapper;
+import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -31,7 +29,6 @@ public class OAuthService implements IOAuthService {
         return mapping == null ? tempUser : getUserDTO(mapping);
     }
 
-    // REQUIRES: tempUserDTO.id() == externalUserId from unpackOAuthUser()
     @Override
     public UserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture) {
         // user dto -> entity & save user
@@ -39,16 +36,24 @@ public class OAuthService implements IOAuthService {
 
         if (externalUserId != null) {
             // create and save mapping, if the user was created externally through Google or Apple
-            externalIdMapRepository.save(new UserIdExternalIdMap(externalUserId, UserMapper.toEntity(userDTO)));
+            saveMapping(externalUserId, userDTO);
         }
 
         return userDTO;
     }
 
     @Override
-    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId) {
+    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email) {
         UserIdExternalIdMap mapping = getMapping(externalUserId);
-        return mapping == null ? null : getFullUserDTO(mapping);
+        if (mapping != null) {
+            return getFullUserDTO(mapping);
+        } else {
+            FullUserDTO fullUserDTO = userService.getUserByEmail(email);
+            if (fullUserDTO != null) {
+                saveMapping(externalUserId, fullUserDTO);
+            }
+            return fullUserDTO;
+        }
     }
 
 
@@ -76,5 +81,15 @@ public class OAuthService implements IOAuthService {
 
     private FullUserDTO getFullUserDTO(UserIdExternalIdMap mapping) {
         return userService.getFullUserById(mapping.getUser().getId());
+    }
+
+    private void saveMapping(String externalUserId, IOnboardedUserDTO userDTO) {
+        User user;
+        if (userDTO instanceof FullUserDTO) {
+            user = UserMapper.toEntityFromFullDTO((FullUserDTO) userDTO);
+        } else {
+            user = UserMapper.toEntity((UserDTO) userDTO);
+        }
+        externalIdMapRepository.save(new UserIdExternalIdMap(externalUserId, user));
     }
 }

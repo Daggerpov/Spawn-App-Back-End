@@ -9,4 +9,5 @@ import java.util.UUID;
 @Repository
 public interface IUserRepository extends JpaRepository<User, UUID> {
     // The JpaRepository interface already includes methods like save() and findById()
+    User findByEmail(String email);
 }

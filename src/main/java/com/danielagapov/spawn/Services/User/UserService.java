@@ -228,6 +228,12 @@ public class UserService implements IUserService {
         return saveUser(user);
     }
 
+    @Override
+    public FullUserDTO getUserByEmail(String email) {
+        User user = repository.findByEmail(email);
+        return user == null ? null : getFullUserById(user.getId());
+    }
+
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         return uftRepository.findFriendIdsByTagId(friendTagId)
                 .stream()

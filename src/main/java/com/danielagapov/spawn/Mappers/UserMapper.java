@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.User;
 
@@ -51,5 +52,17 @@ public class UserMapper {
         return userDTOs.stream()
                 .map(UserMapper::toEntity)
                 .collect(Collectors.toList());
+    }
+
+    public static User toEntityFromFullDTO(FullUserDTO dto) {
+        return new User(
+                dto.id(),
+                dto.username(),
+                dto.profilePicture(),
+                dto.firstName(),
+                dto.lastName(),
+                dto.bio(),
+                dto.email()
+        );
     }
 }

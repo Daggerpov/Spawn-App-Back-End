@@ -45,11 +45,11 @@ public class OAuthController {
      * 
      * If the user is already saved within Spawn -> we return its `FullUserDTO`. Otherwise, null.
      */
-    // full path: /api/v1/oauth/sign-in?externalUserId=externalUserId
+    // full path: /api/v1/oauth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId) {
+    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email) {
         try {
-            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId));
+            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
