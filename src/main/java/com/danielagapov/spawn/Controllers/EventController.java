@@ -27,7 +27,7 @@ public class EventController {
     @GetMapping
     public ResponseEntity<List<? extends IEventDTO>> getEvents(@RequestParam boolean full) {
         try {
-            if (full != null) {
+            if (full) {
                 return new ResponseEntity<>(eventService.getAllFullEvents(), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
