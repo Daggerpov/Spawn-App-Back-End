@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.FullChatMessageDTO;
+import com.danielagapov.spawn.DTOs.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 
 import java.util.List;
@@ -28,7 +28,7 @@ public interface IChatMessageService {
 
 
     // full chat messages:
-    FullChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage);
-    FullChatMessageDTO getFullChatMessageById(UUID id);
-    List<FullChatMessageDTO> getFullChatMessagesByEventId(UUID eventId);
+    FullEventChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage);
+    FullEventChatMessageDTO getFullChatMessageById(UUID id);
+    List<FullEventChatMessageDTO> getFullChatMessagesByEventId(UUID eventId);
 }
