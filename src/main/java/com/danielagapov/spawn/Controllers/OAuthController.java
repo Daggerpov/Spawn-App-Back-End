@@ -69,7 +69,7 @@ public class OAuthController {
      */
     // full path: /api/v1/oauth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<UserDTO> makeUser(@RequestParam("user") UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam("pfp") byte[] profilePicture) {
+    public ResponseEntity<UserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam("pfp") byte[] profilePicture) {
         try {
            UserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture);
            return ResponseEntity.ok().body(user);
