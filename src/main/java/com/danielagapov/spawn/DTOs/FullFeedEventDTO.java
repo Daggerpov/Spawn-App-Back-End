@@ -19,7 +19,7 @@ public record FullFeedEventDTO(
         UserDTO creatorUser,
         List<UserDTO> participantUsers,
         List<UserDTO> invitedUsers,
-        List<ChatMessageDTO> chatMessages,
+        List<FullChatMessageDTO> chatMessages,
         /// useful for event retrieval from a user's feed/map view on mobile:
         String eventFriendTagColorHexCodeForRequestingUser,
         // ensures string formatting when serialized to JSON, for mobile (client)
