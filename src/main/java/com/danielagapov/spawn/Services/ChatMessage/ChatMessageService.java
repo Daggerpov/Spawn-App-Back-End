@@ -273,5 +273,12 @@ public class ChatMessageService implements IChatMessageService {
         );
     }
 
+    @Override
+    public List<FullEventChatMessageDTO> convertChatMessagesToFullFeedEventChatMessages(List<ChatMessageDTO> chatMessages) {
+        return chatMessages.stream()
+                .map(this::getFullChatMessageByChatMessage)
+                .collect(Collectors.toList());
+    }
+
     
 }

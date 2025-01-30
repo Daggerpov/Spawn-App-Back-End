@@ -22,11 +22,15 @@ public class ChatMessageController {
         this.chatMessageService = chatMessageService;
     }
 
-    // full path: /api/v1/chatMessages
+    // full path: /api/v1/chatMessages?full=full
     @GetMapping
-    public ResponseEntity<List<ChatMessageDTO>> getChatMessages() {
+    public ResponseEntity<List<? extends IChatMessageDTO>> getChatMessages(@RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(chatMessageService.getAllChatMessages(), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageService.getAllChatMessages()), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(chatMessageService.getAllChatMessages(), HttpStatus.OK);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

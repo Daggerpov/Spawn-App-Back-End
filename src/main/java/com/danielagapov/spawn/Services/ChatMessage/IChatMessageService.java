@@ -31,4 +31,5 @@ public interface IChatMessageService {
     FullEventChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage);
     FullEventChatMessageDTO getFullChatMessageById(UUID id);
     List<FullEventChatMessageDTO> getFullChatMessagesByEventId(UUID eventId);
+    List<FullEventChatMessageDTO> convertChatMessagesToFullFeedEventChatMessages(List<ChatMessageDTO> chatMessages);
 }

@@ -2,11 +2,12 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.IEventDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +19,11 @@ import java.util.UUID;
 @RequestMapping("api/v1/events")
 public class EventController {
     private final IEventService eventService;
+    private final IUserService userService;
 
-    public EventController(IEventService eventService) {
+    public EventController(IEventService eventService, IUserService userService) {
         this.eventService = eventService;
+        this.userService = userService;
     }
 
     // full path: /api/v1/events?full=full
@@ -53,11 +56,15 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/user/{userId}
+    // full path: /api/v1/events/user/{userId}?full=full
     @GetMapping("user/{userId}")
-    public ResponseEntity<List<EventDTO>> getEventsByUserId(@PathVariable UUID userId) {
+    public ResponseEntity<List<? extends IEventDTO>> getEventsByUserId(@PathVariable UUID userId, @RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(eventService.getEventsByUserId(userId), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByUserId(userId), userId), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(eventService.getEventsByUserId(userId), HttpStatus.OK);
+            }
         } catch (BasesNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -65,11 +72,15 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/friendTag/{tagId}
+    // full path: /api/v1/events/friendTag/{tagId}?full=full&requestingUserId=requestingUserId
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<EventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId) {
+    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId, @RequestParam boolean full, @RequestParam UUID requestingUserId) {
         try {
-            return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
+            if (full && requestingUserId != null) {
+                return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByFriendTagId(tagId), requestingUserId), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
+            }
         } catch (BasesNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -123,11 +134,15 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{id}/users
+    // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
-    public ResponseEntity<List<UserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam boolean full) {
         try {
-            return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(userService.convertUsersToFullUsers(eventService.getParticipatingUsersByEventId(id)), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

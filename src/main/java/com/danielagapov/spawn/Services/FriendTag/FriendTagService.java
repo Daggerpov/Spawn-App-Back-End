@@ -61,6 +61,13 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    public List<FullFriendTagDTO> getAllFullFriendTags() {
+        return getAllFriendTags().stream()
+                .map(this::getFullFriendTagByFriendTag)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public FriendTagDTO getFriendTagById(UUID id) {
         return repository.findById(id)
                 .map(friendTag -> {

@@ -28,8 +28,9 @@ public interface IEventService {
     // Get 'Full' Event Methods:
     List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id);
     FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId);
-    public List<FullFeedEventDTO> getAllFullEvents();
+    List<FullFeedEventDTO> getAllFullEvents();
     FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId);
+    List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId);
 
     // Additional Methods:
     List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
