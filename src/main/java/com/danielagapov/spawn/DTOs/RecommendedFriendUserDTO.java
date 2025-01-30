@@ -8,7 +8,7 @@ public record RecommendedFriendUserDTO(
     UUID id,
     List<FullUserDTO> friends,
     String username,
-    String profilePicture, // TODO: adjust data type later
+    String profilePicture,
     String firstName,
     String lastName,
     String bio,

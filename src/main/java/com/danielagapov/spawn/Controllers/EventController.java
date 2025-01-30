@@ -42,7 +42,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}?full=full&requestingUserId=requestingUserId
     @GetMapping("{id}")
-    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full, @RequestParam UUID requestingUserId) {
+    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full, @RequestParam(required=false) UUID requestingUserId) {
         try {
             if (full && requestingUserId != null) {
                 return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
