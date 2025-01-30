@@ -23,7 +23,7 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    // full path: /api/v1/eventsi?full=full
+    // full path: /api/v1/events?full=full
     @GetMapping
     public ResponseEntity<List<? extends IEventDTO>> getEvents(@RequestParam boolean full) {
         try {
