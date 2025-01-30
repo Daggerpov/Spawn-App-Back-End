@@ -192,7 +192,6 @@ public class FriendTagService implements IFriendTagService {
                 friendTag.id(),
                 friendTag.displayName(),
                 friendTag.colorHexCode(),
-                userService.getUserById(friendTag.ownerUserId()),
                 friendTag.friendUserIds().stream().map(userService::getUserById).collect(Collectors.toList()),
                 friendTag.isEveryone());
     }
