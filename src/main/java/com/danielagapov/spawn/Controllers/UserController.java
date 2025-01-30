@@ -32,7 +32,7 @@ public class UserController {
 
     // full path: /api/v1/users?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IUserDTO>> getUsers(@RequestParam boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers()), HttpStatus.OK);
