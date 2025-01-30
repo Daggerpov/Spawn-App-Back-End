@@ -28,4 +28,5 @@ public interface IFriendTagService {
     List<FullFriendTagDTO> getFullFriendTagsByOwnerId(UUID ownerId);
     FullFriendTagDTO getFullFriendTagById(UUID id);
     FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag);
+    List<FullFriendTagDTO> getAllFullFriendTags();
 }

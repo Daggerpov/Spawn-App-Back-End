@@ -97,6 +97,7 @@ public class EventService implements IEventService {
         return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
+    @Override
     public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
         return getFullEventByEvent(getEventById(id), requestingUserId);
     }
@@ -142,6 +143,7 @@ public class EventService implements IEventService {
         }
     }
 
+    @Override
     public EventDTO saveEvent(EventDTO event) {
         try {
             Location location = locationRepository.findById(event.locationId()).orElse(null);
@@ -170,6 +172,7 @@ public class EventService implements IEventService {
         }
     }
 
+    @Override
     public List<EventDTO> getEventsByUserId(UUID userId) {
         List<Event> events = repository.findByCreatorId(userId);
 
@@ -241,6 +244,7 @@ public class EventService implements IEventService {
         return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
+    @Override
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.Event, id);
@@ -255,6 +259,7 @@ public class EventService implements IEventService {
         }
     }
 
+    @Override
     public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
         try {
             List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
@@ -276,6 +281,7 @@ public class EventService implements IEventService {
         }
     }
 
+    @Override
     public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
         if (!eventUserRepository.existsById(eventId)) {
             throw new BaseNotFoundException(EntityType.Event, eventId);
@@ -300,6 +306,7 @@ public class EventService implements IEventService {
     // if false -> invites them
     // if true -> return 400 in Controller to indicate that the user has already
     // been invited, or it is a bad request.
+    @Override
     public boolean inviteUser(UUID eventId, UUID userId) {
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
@@ -335,6 +342,7 @@ public class EventService implements IEventService {
     // if true -> change status
     // if false -> return 400 in controller to indicate that the user is not
     // invited/participating
+    @Override
     public boolean toggleParticipation(UUID eventId, UUID userId) {
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
@@ -356,6 +364,7 @@ public class EventService implements IEventService {
         return false;
     }
 
+    @Override
     public List<EventDTO> getEventsInvitedTo(UUID id) {
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
@@ -375,6 +384,7 @@ public class EventService implements IEventService {
         return getEventDTOS(events);
     }
 
+    @Override
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
@@ -399,6 +409,7 @@ public class EventService implements IEventService {
                 .toList();
     }
 
+    @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
         return new FullFeedEventDTO(
                 event.id(),
@@ -416,6 +427,7 @@ public class EventService implements IEventService {
         );
     }
 
+    @Override
     public String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId) {
         // get event creator from eventDTO
 
@@ -428,5 +440,16 @@ public class EventService implements IEventService {
         // using that friend tag, grab its colorHexCode property to return from this method
 
         return pertainingFriendTag.colorHexCode();
+    }
+
+    @Override
+    public List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId) {
+        ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
+
+        for(EventDTO eventDTO : events) {
+            fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId));
+        }
+
+        return fullEvents;
     }
 }
