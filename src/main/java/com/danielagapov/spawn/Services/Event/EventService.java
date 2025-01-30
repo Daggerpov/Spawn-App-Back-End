@@ -407,9 +407,9 @@ public class EventService implements IEventService {
                 event.endTime(),
                 locationService.getLocationById(event.locationId()),
                 event.note(),
-                userService.getUserById(event.creatorUserId()),
-                userService.getParticipantsByEventId(event.id()),
-                userService.getInvitedByEventId(event.id()),
+                userService.getFullUserById(event.creatorUserId()),
+                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id())),
+                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id())),
                 chatMessageService.getFullChatMessagesByEventId(event.id()),
                 requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                 requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null

@@ -48,4 +48,5 @@ public interface IUserService {
 
     // Helper
     FullUserDTO getFullUserByUser(UserDTO user);
+    List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users);
 }

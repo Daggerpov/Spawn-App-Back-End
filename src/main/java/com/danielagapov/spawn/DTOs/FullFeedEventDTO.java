@@ -16,9 +16,9 @@ public record FullFeedEventDTO(
         OffsetDateTime endTime,
         LocationDTO location,
         String note,
-        UserDTO creatorUser,
-        List<UserDTO> participantUsers,
-        List<UserDTO> invitedUsers,
+        FullUserDTO creatorUser,
+        List<FullUserDTO> participantUsers,
+        List<FullUserDTO> invitedUsers,
         List<FullChatMessageDTO> chatMessages,
         /// useful for event retrieval from a user's feed/map view on mobile:
         String eventFriendTagColorHexCodeForRequestingUser,

@@ -385,4 +385,11 @@ public class UserService implements IUserService {
                 user.email()
         );
     }
+
+    @Override
+    public List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users) {
+        return users.stream()
+                .map(this::getFullUserByUser)
+                .collect(Collectors.toList());
+    }
 }
