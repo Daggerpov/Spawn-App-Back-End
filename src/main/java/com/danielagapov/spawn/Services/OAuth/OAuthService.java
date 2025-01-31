@@ -45,7 +45,7 @@ public class OAuthService implements IOAuthService {
 
     // REQUIRES: tempUserDTO.id() == externalUserId from unpackOAuthUser()
     @Override
-    public UserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture) {
+    public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture) {
         try {
             // user dto -> entity & save user
             userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
@@ -55,7 +55,7 @@ public class OAuthService implements IOAuthService {
                 externalIdMapRepository.save(new UserIdExternalIdMap(externalUserId, UserMapper.toEntity(userDTO)));
             }
 
-            return userDTO;
+            return userService.getFullUserByUser(userDTO);
         } catch (DataAccessException e) {
             logger.log("Database error while creating user: " + e.getMessage());
             throw e;
