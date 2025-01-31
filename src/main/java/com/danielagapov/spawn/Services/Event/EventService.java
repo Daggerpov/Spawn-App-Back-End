@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -144,13 +141,21 @@ public class EventService implements IEventService {
     }
 
     @Override
-    public EventDTO saveEvent(EventDTO event) {
+    public IEventDTO saveEvent(IEventDTO event) {
         try {
-            Location location = locationRepository.findById(event.locationId()).orElse(null);
+            Event eventEntity;
 
-            // Map EventDTO to Event entity with the resolved Location
-            Event eventEntity = EventMapper.toEntity(event, location,
-                    userService.getUserEntityById(event.creatorUserId()));
+            if (event instanceof FullFeedEventDTO fullFeedEventDTO) {
+                eventEntity = EventMapper.convertFullFeedEventDTOToEventEntity( fullFeedEventDTO);
+            } else if (event instanceof EventDTO eventDTO) {
+                Location location = locationRepository.findById(eventDTO.locationId()).orElse(null);
+
+                // Map EventDTO to Event entity with the resolved Location
+                eventEntity = EventMapper.toEntity(eventDTO, location,
+                        userService.getUserEntityById(eventDTO.creatorUserId()));
+            } else {
+                throw new IllegalArgumentException("Unsupported event type");
+            }
 
             // Save the Event entity
             eventEntity = repository.save(eventEntity);

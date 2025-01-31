@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.IEventDTO;
 import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -97,7 +98,7 @@ public class EventController {
 
     // full path: /api/v1/events
     @PostMapping
-    public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO newEvent) {
+    public ResponseEntity<IEventDTO> createEvent(@RequestBody FullFeedEventDTO newEvent) {
         try {
             return new ResponseEntity<>(eventService.saveEvent(newEvent), HttpStatus.CREATED);
         } catch (Exception e) {
