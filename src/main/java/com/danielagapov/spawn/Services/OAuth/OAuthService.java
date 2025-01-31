@@ -66,7 +66,7 @@ public class OAuthService implements IOAuthService {
     public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email) {
         try {
             UserIdExternalIdMap mapping = getMapping(externalUserId);
-            return mapping == null ? null : getFullUserDTO(mapping);
+            return mapping == null ? userService.getUserByEmail(email) : getFullUserDTO(mapping);
         } catch (DataAccessException e) {
             logger.log("Database error while fetching user by external ID: " + e.getMessage());
             throw e;
