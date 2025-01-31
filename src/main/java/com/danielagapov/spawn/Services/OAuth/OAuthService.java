@@ -10,6 +10,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
+import lombok.extern.java.Log;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -46,12 +47,16 @@ public class OAuthService implements IOAuthService {
     public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
             // user dto -> entity & save user
+            logger.log(String.format("Making user: {userDTO: %s}", userDTO));
             userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
             if (externalUserId != null) {
                 // create and save mapping, if the user was created externally through Google or Apple
+                logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
                 saveMapping(externalUserId, userDTO, provider);
             }
-            return userService.getFullUserByUser(userDTO);
+            FullUserDTO fullUserDTO =  userService.getFullUserByUser(userDTO);
+            logger.log(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
+            return fullUserDTO;
         } catch(DataAccessException e){
             logger.log("Database error while creating user: " + e.getMessage());
             throw e;
@@ -152,6 +157,9 @@ public class OAuthService implements IOAuthService {
         } else {
             user = UserMapper.toEntity((UserDTO) userDTO);
         }
-        externalIdMapRepository.save(new UserIdExternalIdMap(externalUserId, user, provider));
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
+        logger.log(String.format("Saving mapping: {mapping: %s}", mapping));
+        externalIdMapRepository.save(mapping);
+        logger.log("Mapping saved");
     }
 }

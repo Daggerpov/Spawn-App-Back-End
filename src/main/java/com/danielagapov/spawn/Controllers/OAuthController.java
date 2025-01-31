@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,9 +17,11 @@ import java.net.URI;
 @RequestMapping("api/v1/oauth")
 public class OAuthController {
     private final IOAuthService oauthService;
+    private final ILogger logger;
 
-    public OAuthController(IOAuthService oauthService) {
+    public OAuthController(IOAuthService oauthService, ILogger logger) {
         this.oauthService = oauthService;
+        this.logger = logger;
     }
 
     /**
@@ -50,6 +53,7 @@ public class OAuthController {
     @GetMapping("sign-in")
     public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email) {
         try {
+            logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
             return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
@@ -72,6 +76,7 @@ public class OAuthController {
     @PostMapping("make-user")
     public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value="profilePicture", required=false) byte[] profilePicture, @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
+            logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}", userDTO, externalUserId, provider));
            FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
            return ResponseEntity.ok().body(user);
         } catch (Exception e) {
