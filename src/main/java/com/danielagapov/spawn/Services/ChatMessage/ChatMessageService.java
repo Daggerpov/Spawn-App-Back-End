@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.FullChatMessageDTO;
+import com.danielagapov.spawn.DTOs.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -107,13 +107,13 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public FullChatMessageDTO getFullChatMessageById(UUID id) {
+    public FullEventChatMessageDTO getFullChatMessageById(UUID id) {
         return getFullChatMessageByChatMessage(getChatMessageById(id));
     }
 
     @Override
-    public List<FullChatMessageDTO> getFullChatMessagesByEventId(UUID eventId) {
-        ArrayList<FullChatMessageDTO> fullChatMessages = new ArrayList<>();
+    public List<FullEventChatMessageDTO> getFullChatMessagesByEventId(UUID eventId) {
+        ArrayList<FullEventChatMessageDTO> fullChatMessages = new ArrayList<>();
         for(ChatMessageDTO cm: getChatMessagesByEventId(eventId)) {
             fullChatMessages.add(getFullChatMessageByChatMessage(cm));
         }
@@ -262,15 +262,22 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public FullChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
-        return new FullChatMessageDTO(
+    public FullEventChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
+        return new FullEventChatMessageDTO(
                 chatMessage.id(),
                 chatMessage.content(),
                 chatMessage.timestamp(),
-                userService.getUserById(chatMessage.senderUserId()),
-                eventService.getEventById(chatMessage.eventId()),
-                getChatMessageLikes(chatMessage.id())
+                userService.getFullUserById(chatMessage.senderUserId()),
+                chatMessage.eventId(),
+                userService.convertUsersToFullUsers(getChatMessageLikes(chatMessage.id()))
         );
+    }
+
+    @Override
+    public List<FullEventChatMessageDTO> convertChatMessagesToFullFeedEventChatMessages(List<ChatMessageDTO> chatMessages) {
+        return chatMessages.stream()
+                .map(this::getFullChatMessageByChatMessage)
+                .collect(Collectors.toList());
     }
 
     

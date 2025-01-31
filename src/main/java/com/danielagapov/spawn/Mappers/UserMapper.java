@@ -54,15 +54,15 @@ public class UserMapper {
                 .collect(Collectors.toList());
     }
 
-    public static User toEntityFromFullDTO(FullUserDTO dto) {
-        return new User(
-                dto.id(),
-                dto.username(),
-                dto.profilePicture(),
-                dto.firstName(),
-                dto.lastName(),
-                dto.bio(),
-                dto.email()
-        );
+    public static User convertFullUserToUserEntity(FullUserDTO dto) {
+        User user = new User();
+        user.setId(dto.id()); // Set the UUID
+        user.setUsername(dto.username()); // Set the username
+        user.setProfilePictureUrlString(dto.profilePicture()); // Set the profile picture URL
+        user.setFirstName(dto.firstName()); // Set the first name
+        user.setLastName(dto.lastName()); // Set the last name
+        user.setBio(dto.bio()); // Set the bio
+        user.setEmail(dto.email()); // Set the email
+        return user;
     }
 }

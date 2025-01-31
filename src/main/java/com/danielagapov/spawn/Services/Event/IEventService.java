@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.IEventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
@@ -13,7 +14,7 @@ public interface IEventService {
     
     // CRUD operations:
     EventDTO getEventById(UUID id);
-    EventDTO saveEvent(EventDTO event);
+    IEventDTO saveEvent(IEventDTO event);
     EventDTO replaceEvent(EventDTO event, UUID eventId);
     boolean deleteEventById(UUID id);
 
@@ -28,8 +29,9 @@ public interface IEventService {
     // Get 'Full' Event Methods:
     List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id);
     FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId);
-    public List<FullFeedEventDTO> getAllFullEvents();
+    List<FullFeedEventDTO> getAllFullEvents();
     FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId);
+    List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId);
 
     // Additional Methods:
     List<EventDTO> getEventsByFriendTagId(UUID friendTagId);

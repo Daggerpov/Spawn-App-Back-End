@@ -30,11 +30,15 @@ public class UserController {
         this.s3Service = s3Service;
     }
 
-    // full path: /api/v1/users
+    // full path: /api/v1/users?full=full
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getUsers() {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam(value="full", required=false) boolean full) {
         try {
-            return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers()), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -42,7 +46,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
@@ -56,11 +60,15 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}/friends
+    // full path: /api/v1/users/{id}/friends?full=full
     @GetMapping("{id}/friends")
-    public ResponseEntity<List<UserDTO>> getUserFriends(@PathVariable UUID id) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
-            return new ResponseEntity<>(userService.getFriendsByUserId(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getFriendsByUserId(id)), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(userService.getFriendsByUserId(id), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -78,11 +86,15 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/friendtag/{tagId}
+    // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<UserDTO>> getUsersByFriendTag(@PathVariable UUID tagId) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full) {
         try {
-            return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId)), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
