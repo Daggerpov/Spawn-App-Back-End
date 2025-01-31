@@ -48,9 +48,9 @@ public class OAuthController {
      */
     // full path: /api/v1/oauth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email, @RequestParam("provider") OAuthProvider provider) {
+    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email) {
         try {
-            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email, provider));
+            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }

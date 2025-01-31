@@ -10,5 +10,5 @@ public interface IOAuthService {
 
     AbstractUserDTO verifyUser(OAuth2User user);
     FullUserDTO makeUser(UserDTO user, String externalUserId, byte[] profilePicture, OAuthProvider provider);
-    FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email, OAuthProvider provider);
+    FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email);
 }

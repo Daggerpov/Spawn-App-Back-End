@@ -62,9 +62,8 @@ public class OAuthService implements IOAuthService {
     }
 
 
-
     @Override
-    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email, OAuthProvider provider) {
+    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email) {
         try {
             UserIdExternalIdMap mapping = getMapping(externalUserId);
             return mapping == null ? null : getFullUserDTO(mapping);
