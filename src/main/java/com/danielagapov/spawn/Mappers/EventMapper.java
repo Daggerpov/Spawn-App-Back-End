@@ -82,19 +82,19 @@ public class EventMapper {
 
     public static Event convertFullFeedEventDTOToEventEntity(FullFeedEventDTO dto) {
         Event event = new Event();
-        event.setId(dto.id()); // Set the UUID
-        event.setTitle(dto.title()); // Set the title
-        event.setStartTime(dto.startTime()); // Set the start time
-        event.setEndTime(dto.endTime()); // Set the end time
+        event.setId(dto.getId()); // Set the UUID
+        event.setTitle(dto.getTitle()); // Set the title
+        event.setStartTime(dto.getStartTime()); // Set the start time
+        event.setEndTime(dto.getEndTime()); // Set the end time
 
         // Convert LocationDTO to Location entity (assuming a similar method exists)
-        Location location = LocationMapper.toEntity(dto.location());
+        Location location = LocationMapper.toEntity(dto.getLocation());
         event.setLocation(location); // Set the location
 
-        event.setNote(dto.note()); // Set the note
+        event.setNote(dto.getNote()); // Set the note
 
         // Convert FullUserDTO to User entity (assuming a similar method exists)
-        User creator = UserMapper.convertFullUserToUserEntity(dto.creatorUser());
+        User creator = UserMapper.convertFullUserToUserEntity(dto.getCreatorUser());
         event.setCreator(creator); // Set the creator
 
         return event;

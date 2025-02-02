@@ -216,7 +216,7 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/feedEvents/{userId}?full=full
+    // full path: /api/v1/events/feedEvents/{requestingUserId}
     // this method will return the events created by a given user (like in `getEventsCreatedByUserId()`),
     // in the universal accent color, followed by feed events (like in `getEventsInvitedTo()`
     @GetMapping("feedEvents/{requestingUserId}")
