@@ -57,14 +57,14 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/user/{userId}?full=full
-    @GetMapping("user/{userId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByUserId(@PathVariable UUID userId, @RequestParam(value="full", required=false) boolean full) {
+    // full path: /api/v1/events/user/{creatorUserId}?full=full
+    @GetMapping("user/{creatorUserId}")
+    public ResponseEntity<List<? extends IEventDTO>> getEventsCreatedByUserId(@PathVariable UUID creatorUserId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
-                return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByUserId(userId), userId), HttpStatus.OK);
+                return new ResponseEntity<>(eventService.convertEventsToFullFeedSelfOwnedEvents(eventService.getEventsByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(eventService.getEventsByUserId(userId), HttpStatus.OK);
+                return new ResponseEntity<>(eventService.getEventsByOwnerId(creatorUserId), HttpStatus.OK);
             }
         } catch (BasesNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -211,6 +211,20 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
             }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // full path: /api/v1/events/feedEvents/{userId}?full=full
+    // this method will return the events created by a given user (like in `getEventsCreatedByUserId()`),
+    // in the universal accent color, followed by feed events (like in `getEventsInvitedTo()`
+    @GetMapping("feedEvents/{userId}")
+    // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
+    // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
+    public ResponseEntity<List<? extends IEventDTO>>getFeedEvents(@PathVariable UUID userId) {
+        try {
+            return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
