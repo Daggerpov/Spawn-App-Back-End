@@ -178,8 +178,8 @@ public class EventService implements IEventService {
     }
 
     @Override
-    public List<EventDTO> getEventsByUserId(UUID userId) {
-        List<Event> events = repository.findByCreatorId(userId);
+    public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
+        List<Event> events = repository.findByCreatorId(creatorUserId);
 
         if (events.isEmpty()) {
             throw new BasesNotFoundException(EntityType.Event);
@@ -414,6 +414,23 @@ public class EventService implements IEventService {
                 .toList();
     }
 
+    /**
+     * @param requestingUserId
+     * @return This method returns the feed events for a user, with their created ones
+     * first in the `universalAccentColor`, followed by events they're invited to
+     */
+    @Override
+    public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
+        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+
+        // Combine the lists with eventsCreated first
+        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+        combinedEvents.addAll(eventsInvitedTo);
+
+        return combinedEvents;
+    }
+
     @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
         return new FullFeedEventDTO(
@@ -455,6 +472,18 @@ public class EventService implements IEventService {
             fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId));
         }
 
+        return fullEvents;
+    }
+
+    @Override
+    public List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId) {
+        ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
+
+        for(EventDTO eventDTO : events) {
+            FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId);
+            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D"); // from Figma & Mobile
+            fullEvents.add(fullFeedEvent);
+        }
         return fullEvents;
     }
 }
