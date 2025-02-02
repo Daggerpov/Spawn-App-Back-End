@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
@@ -27,6 +28,7 @@ public interface IUserService {
     // For Friends:
 
     List<UUID> getFriendUserIdsByUserId(UUID id);
+    List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId);
 
     // For Friend Tags:
 

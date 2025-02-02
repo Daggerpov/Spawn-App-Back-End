@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -401,5 +398,38 @@ public class UserService implements IUserService {
         return users.stream()
                 .map(this::getFullUserByUser)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     *
+     * @param requestingUserId the user who's requesting this from the mobile app,
+     *                         from either the event creation view or friends view.
+     * @return `FullFriendUserDTO` list of friends for the requesting user,
+     * which includes all that's in `FullUserDTO`, plus the friend tags that
+     * the requesting user has associated to their friends
+     */
+    @Override
+    public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
+        List<UserDTO> userFriends = getFriendsByUserId(requestingUserId);
+        List<FullUserDTO> fullUserFriends = convertUsersToFullUsers(userFriends);
+
+        List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<FullFriendUserDTO>();
+        for (FullUserDTO user: fullUserFriends) {
+            FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO (
+                    user.id(),
+                    convertUsersToFullUsers(getFriendsByUserId(user.id())),
+                    user.username(),
+                    user.profilePicture(),
+                    user.firstName(),
+                    user.lastName(),
+                    user.bio(),
+                    friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(user.id())),
+                    user.email(),
+                    friendTagService.getPertainingFriendTagsForFriend(requestingUserId, user.id())
+            );
+            fullFriendUserDTOList.add(fullFriendUserDTO);
+        }
+
+        return fullFriendUserDTOList;
     }
 }
