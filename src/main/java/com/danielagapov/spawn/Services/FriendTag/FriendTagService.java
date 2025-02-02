@@ -207,6 +207,7 @@ public class FriendTagService implements IFriendTagService {
     /// it will return precisely one of the friend tags that the owner has placed this
     /// friend inside, even if they've placed them in multiple friend tags
     /// -> currently, on the product side, we don't specify a rule for which should take precedence.
+    @Override
     public FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId) {
         // Fetch all friend tags for the owner
         return getFriendTagsByOwnerId(ownerUserId).stream()
@@ -217,4 +218,13 @@ public class FriendTagService implements IFriendTagService {
                 .orElseThrow(() -> new IllegalArgumentException("No friend tag found containing the specified friendUserId."));
     }
 
+    @Override
+    public List<FullFriendTagDTO> getPertainingFriendTagsForFriend(UUID ownerUserId, UUID friendUserId) {
+        // Fetch all friend tags for the owner
+        List<FriendTagDTO> friendTags = getFriendTagsByOwnerId(ownerUserId).stream()
+                // Filter to include only friend tags where friendUserId exists in friendUserIds
+                .filter(friendTag -> friendTag.friendUserIds().contains(friendUserId))
+                .collect(Collectors.toList());
+        return convertFriendTagsToFullFriendTags(friendTags);
+    }
 }

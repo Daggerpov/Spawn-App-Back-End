@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.IFriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -125,6 +126,27 @@ public class FriendTagController {
         try {
             friendTagService.saveUserToFriendTag(id, userId);
             return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/friendTags/friendTagsForFriend?ownerUserId&friendUserId
+
+    /**
+     * The purpose of this endpoint is to show which friend tags a user has placed a friend into
+     * on mobile -> in the event creation view when adding friends to an event, or in the friends view
+     * @param ownerUserId
+     * @param friendUserId
+     * @return friend tags that `owner` has placed `friend` into
+     */
+    @GetMapping("{friendTagsForFriend}")
+    public ResponseEntity<List<FullFriendTagDTO>> getFriendTagsForFriend(@RequestParam UUID ownerUserId, @RequestParam UUID friendUserId) {
+        try {
+            return new ResponseEntity<>(friendTagService.getPertainingFriendTagsForFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
