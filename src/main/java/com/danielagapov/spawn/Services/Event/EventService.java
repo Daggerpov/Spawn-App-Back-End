@@ -401,7 +401,7 @@ public class EventService implements IEventService {
         }
 
         for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(id)) {
+            if (eventUser.getUser().getId().equals(id) && eventUser.getStatus() != ParticipationStatus.notInvited) {
                 events.add(eventUser.getEvent());
             }
         }
