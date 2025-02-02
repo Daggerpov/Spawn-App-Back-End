@@ -219,12 +219,12 @@ public class EventController {
     // full path: /api/v1/events/feedEvents/{userId}?full=full
     // this method will return the events created by a given user (like in `getEventsCreatedByUserId()`),
     // in the universal accent color, followed by feed events (like in `getEventsInvitedTo()`
-    @GetMapping("feedEvents/{userId}")
+    @GetMapping("feedEvents/{requestingUserId}")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends IEventDTO>>getFeedEvents(@PathVariable UUID userId) {
+    public ResponseEntity<List<? extends IEventDTO>>getFeedEvents(@PathVariable UUID requestingUserId) {
         try {
-            return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
+            return new ResponseEntity<>(eventService.getFeedEvents(requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
