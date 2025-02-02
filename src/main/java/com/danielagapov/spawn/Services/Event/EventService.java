@@ -481,6 +481,7 @@ public class EventService implements IEventService {
 
         for(EventDTO eventDTO : events) {
             FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId);
+            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D"); // from Figma & Mobile
             fullEvents.add(fullFeedEvent);
         }
         return fullEvents;
