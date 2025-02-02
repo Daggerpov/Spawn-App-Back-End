@@ -60,15 +60,11 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}/friends?full=full
+    // full path: /api/v1/users/{id}/friends
     @GetMapping("{id}/friends")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id){
         try {
-            if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getFriendsByUserId(id)), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(userService.getFriendsByUserId(id), HttpStatus.OK);
-            }
+            return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
