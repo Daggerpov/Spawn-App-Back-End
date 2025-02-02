@@ -6,7 +6,6 @@ import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Services.User.UserService;
-import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -18,7 +17,8 @@ import java.util.UUID;
 @Service
 public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
-    private static final String CDN_BASE = Dotenv.load().get("CDN_BASE");
+    private static final String CDN_BASE = System.getenv("CDN_BASE");
+    private static final String DEFAULT_PFP = "";
     private final S3Client s3;
     private final ILogger logger;
     private final UserService userService;
@@ -29,8 +29,14 @@ public class S3Service implements IS3Service {
         this.userService = userService;
     }
 
-
-    public String putObject(byte[] file, String key) {
+    /**
+     * This is the closest method directly to our S3Client, which puts an object to 
+     * our S3 bucket, given a key to map it to
+     * 
+     * Returns the profile picture url string where it's now hosted through a CDN
+     */
+    @Override
+    public String putObjectWithKey(byte[] file, String key) {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(key)
@@ -45,17 +51,27 @@ public class S3Service implements IS3Service {
         }
     }
 
+    /**
+     * Puts object to S3, by mapping a file to a randomly generated key
+     */
+    @Override
     public String putObject(byte[] file) {
         String key = UUID.randomUUID().toString();
-        return putObject(file, key);
+        return putObjectWithKey(file, key);
     }
 
-    public UserDTO putObjectWithUser(byte[] file, UserDTO user) {
+
+    /** 
+     * This method, if given a `file` argument will put that profile picture object to S3
+     * Otherwise, it will use our default pfp url string as the user's profile picture
+     */
+    @Override
+    public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
         return new UserDTO(
                 user.id(),
                 user.friendIds(),
                 user.username(),
-                putObject(file),
+                file == null ? DEFAULT_PFP : putObject(file),
                 user.firstName(),
                 user.lastName(),
                 user.bio(),
@@ -64,23 +80,47 @@ public class S3Service implements IS3Service {
         );
     }
 
-    public UserDTO updateProfilePicture(byte[] file, UUID id) {
-        User user = UserMapper.toEntity(userService.getUserById(id));
-        String urlString = user.getProfilePicture();
+    /** 
+     * Given an existing `userId`, this method will update the profile picture 
+     * attribute of that user, and also replace the image at its currently hosted 
+     * image url (through our CDN) with a supplied image, `file` argument
+     * 
+     * If given no `file` argument, we simply supply the default pfp url string
+     */
+    @Override
+    public UserDTO updateProfilePicture(byte[] file, UUID userId) {
+        User user = UserMapper.toEntity(userService.getUserById(userId));
+        String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
-        String newUrl = putObject(file, key);
-        user.setProfilePicture(newUrl);
+        String newUrl;
+        if (file == null) {
+            newUrl = DEFAULT_PFP;
+            deleteObject(key);
+        } else {
+            newUrl = putObjectWithKey(file, key);
+        }
+        user.setProfilePictureUrlString(newUrl);
         user = userService.saveEntity(user);
         return userService.getUserById(user.getId()); // because converting user -> dto is hard
     }
 
-    public void deleteObjectFromUser(UUID id) {
-        User user = UserMapper.toEntity(userService.getUserById(id));
-        String urlString = user.getProfilePicture();
+    /**
+     * Delete the associated profile picture object in S3, that pertains
+     * to a given `userId`
+     */
+    @Override
+    public void deleteObjectByUserId(UUID userId) {
+        User user = UserMapper.toEntity(userService.getUserById(userId));
+        String urlString = user.getProfilePictureUrlString();
         String key = extractObjectKey(urlString);
         deleteObject(key);
+        user.setProfilePictureUrlString(null);
+        userService.saveEntity(user);
     }
 
+    /**
+     * Deletes an object given the key (where it's stored)
+     */
     private void deleteObject(String key) {
         DeleteObjectRequest request = DeleteObjectRequest.builder()
                 .bucket(BUCKET)
@@ -96,6 +136,10 @@ public class S3Service implements IS3Service {
     }
 
 
+    /**
+     * @param url - the profile picture url string
+     * @return the object key part of the profile picture url string
+     */
     // url is of the form: <cdn-base>/<object-key>
     private String extractObjectKey(String url) {
         try {

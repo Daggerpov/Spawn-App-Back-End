@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -20,11 +21,12 @@ public interface IUserService {
     UserDTO replaceUser(UserDTO user, UUID id);
     boolean deleteUserById(UUID id);
     User saveEntity(User user);
+    UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
+    FullUserDTO getUserByEmail(String email);
 
     // For Friends:
 
     List<UUID> getFriendUserIdsByUserId(UUID id);
-    List<UserDTO> getFriendUsersByUserId(UUID id);
 
     // For Friend Tags:
 
@@ -36,7 +38,7 @@ public interface IUserService {
     List<UserDTO> getFriendsByUserId(UUID userId);
     void removeFriend(UUID userId, UUID friendId);
     void saveFriendToUser(UUID userId, UUID friendId);
-    List<UserDTO> getRecommendedFriends(UUID id);
+    List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId);
 
     // For Events:
 
@@ -47,4 +49,5 @@ public interface IUserService {
 
     // Helper
     FullUserDTO getFullUserByUser(UserDTO user);
+    List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users);
 }

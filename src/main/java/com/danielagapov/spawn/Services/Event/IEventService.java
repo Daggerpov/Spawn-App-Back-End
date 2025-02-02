@@ -1,22 +1,42 @@
 package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullEventDTO;
+import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.IEventDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface IEventService {
     List<EventDTO> getAllEvents();
+    
+    // CRUD operations:
     EventDTO getEventById(UUID id);
-    FullEventDTO getFullEventById(UUID id);
-    List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
-    EventDTO saveEvent(EventDTO event);
-    List<EventDTO> getEventsByUserId(UUID userId);
+    IEventDTO saveEvent(IEventDTO event);
     EventDTO replaceEvent(EventDTO event, UUID eventId);
     boolean deleteEventById(UUID id);
-    List<UserDTO> getParticipatingUsersByEventId(UUID id);
 
-    FullEventDTO getFullEventByEvent(EventDTO event);
+    // Participation-related methods:
+    List<UserDTO> getParticipatingUsersByEventId(UUID id);
+    ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
+    boolean inviteUser(UUID eventId, UUID userId);
+    boolean toggleParticipation(UUID eventId, UUID userId);
+    List<EventDTO> getEventsInvitedTo(UUID id);
+   
+
+    // Get 'Full' Event Methods:
+    List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id);
+    FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId);
+    List<FullFeedEventDTO> getAllFullEvents();
+    FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId);
+    List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId);
+    List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId);
+    List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId);
+
+    // Additional Methods:
+    List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
+    List<EventDTO> getEventsByOwnerId(UUID creatorUserId);
+    String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
 }

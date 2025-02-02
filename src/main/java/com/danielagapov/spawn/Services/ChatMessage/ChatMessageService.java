@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.FullChatMessageDTO;
+import com.danielagapov.spawn.DTOs.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -28,6 +28,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -57,6 +58,7 @@ public class ChatMessageService implements IChatMessageService {
         this.logger = logger;
     }
 
+    @Override
     public List<ChatMessageDTO> getAllChatMessages() {
         try {
             List<ChatMessage> chatMessages = chatMessageRepository.findAll();
@@ -78,6 +80,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<UUID> getChatMessageLikeUserIds(UUID chatMessageId) {
         // Retrieve the ChatMessage by its ID
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
@@ -93,6 +96,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
 
+    @Override
     public ChatMessageDTO getChatMessageById(UUID id) {
         return chatMessageRepository.findById(id)
                 .map(chatMessage -> {
@@ -102,12 +106,23 @@ public class ChatMessageService implements IChatMessageService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
     }
 
-    public FullChatMessageDTO getFullChatMessageById(UUID id) {
+    @Override
+    public FullEventChatMessageDTO getFullChatMessageById(UUID id) {
         return getFullChatMessageByChatMessage(getChatMessageById(id));
+    }
+
+    @Override
+    public List<FullEventChatMessageDTO> getFullChatMessagesByEventId(UUID eventId) {
+        ArrayList<FullEventChatMessageDTO> fullChatMessages = new ArrayList<>();
+        for(ChatMessageDTO cm: getChatMessagesByEventId(eventId)) {
+            fullChatMessages.add(getFullChatMessageByChatMessage(cm));
+        }
+        return fullChatMessages;
     }
 
 
     // Other methods remain mostly the same but updated to work with mappings
+    @Override
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
             User userSender = userRepository.findById(chatMessageDTO.senderUserId())
@@ -129,6 +144,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<UUID> getChatMessageIdsByEventId(UUID eventId) {
         try {
             // Find the event by its ID
@@ -152,6 +168,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
 
+    @Override
     public boolean deleteChatMessageById(UUID id) {
         if (!chatMessageRepository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.ChatMessage, id);
@@ -166,6 +183,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId) {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
@@ -191,6 +209,7 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<UserDTO> getChatMessageLikes(UUID chatMessageId) {
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId));
@@ -207,6 +226,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
 
+    @Override
     public void deleteChatMessageLike(UUID chatMessageId, UUID userId) {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
@@ -221,19 +241,44 @@ public class ChatMessageService implements IChatMessageService {
         }
     }
 
+    @Override
     public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
-        // TODO
-        return List.of();
+        try {
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
+
+            return chatMessages.stream()
+                    .map(chatMessage -> {
+                        List<UUID> likedByUserIds = getChatMessageLikeUserIds(chatMessage.getId());
+                        return ChatMessageMapper.toDTO(chatMessage, likedByUserIds);
+                    })
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ChatMessage);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
-    public FullChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
-        return new FullChatMessageDTO(
+    @Override
+    public FullEventChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
+        return new FullEventChatMessageDTO(
                 chatMessage.id(),
                 chatMessage.content(),
                 chatMessage.timestamp(),
-                userService.getUserById(chatMessage.senderUserId()),
-                eventService.getEventById(chatMessage.eventId()),
-                getChatMessageLikes(chatMessage.id())
+                userService.getFullUserById(chatMessage.senderUserId()),
+                chatMessage.eventId(),
+                userService.convertUsersToFullUsers(getChatMessageLikes(chatMessage.id()))
         );
     }
+
+    @Override
+    public List<FullEventChatMessageDTO> convertChatMessagesToFullFeedEventChatMessages(List<ChatMessageDTO> chatMessages) {
+        return chatMessages.stream()
+                .map(this::getFullChatMessageByChatMessage)
+                .collect(Collectors.toList());
+    }
+
+    
 }

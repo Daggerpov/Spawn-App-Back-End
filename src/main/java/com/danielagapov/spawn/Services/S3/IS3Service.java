@@ -6,9 +6,9 @@ import com.danielagapov.spawn.DTOs.UserDTO;
 import java.util.UUID;
 
 public interface IS3Service {
-    String putObject(byte[] file, String key);
-    void deleteObjectFromUser(UUID id);
+    String putObjectWithKey(byte[] file, String key);
+    void deleteObjectByUserId(UUID userId);
     String putObject(byte[] file);
-    UserDTO putObjectWithUser(byte[] file, UserDTO user);
-    UserDTO updateProfilePicture(byte[] file, UUID id);
+    UserDTO putProfilePictureWithUser(byte[] file, UserDTO user);
+    UserDTO updateProfilePicture(byte[] file, UUID userId);
 }

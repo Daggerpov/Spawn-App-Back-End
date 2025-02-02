@@ -11,4 +11,4 @@ public record FriendTagDTO(
         UUID ownerUserId,
         List<UUID> friendUserIds,
         boolean isEveryone
-) implements Serializable {}
+) implements Serializable, IFriendTagDTO {}

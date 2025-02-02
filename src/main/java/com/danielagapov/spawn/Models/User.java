@@ -15,7 +15,7 @@ import java.util.UUID;
 /*
  * Represents a unique Spawn User.
  * The allFriends UUID field represents each user's unique "everyone" tag which is a special kind of FriendTag
- * holding all of the user's friends. Each user must have such a tag.
+ * holding all the user's friends. Each user must have such a tag.
  */
 @Entity
 @NoArgsConstructor
@@ -28,7 +28,7 @@ public class User implements Serializable {
         private UUID id;
         @Column(nullable = false, unique = true) // Ensures the username is unique and not null
         private String username;
-        private String profilePicture; // TODO: reconsider data type later
+        private String profilePictureUrlString;
         private String firstName;
         private String lastName;
         private String bio;

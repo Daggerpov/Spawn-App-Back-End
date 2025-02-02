@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.FullChatMessageDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
@@ -25,23 +22,15 @@ public class ChatMessageController {
         this.chatMessageService = chatMessageService;
     }
 
-    // full path: /api/v1/chatMessages
+    // full path: /api/v1/chatMessages?full=full
     @GetMapping
-    public ResponseEntity<List<ChatMessageDTO>> getChatMessages() {
+    public ResponseEntity<List<? extends IChatMessageDTO>> getChatMessages(@RequestParam(value="full", required=false) boolean full) {
         try {
-            return new ResponseEntity<>(chatMessageService.getAllChatMessages(), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/chatMessages/{id}
-    @GetMapping("/{id}")
-    public ResponseEntity<ChatMessageDTO> getChatMessage(@PathVariable UUID id) {
-        try {
-            return new ResponseEntity<>(chatMessageService.getChatMessageById(id), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            if (full) {
+                return new ResponseEntity<>(chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageService.getAllChatMessages()), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(chatMessageService.getAllChatMessages(), HttpStatus.OK);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -49,9 +38,13 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages/{id}?full=full
     @GetMapping("/{id}")
-    public ResponseEntity<FullChatMessageDTO> getFullChatMessage(@PathVariable UUID id, @RequestParam boolean full) {
+    public ResponseEntity<IChatMessageDTO> getChatMessage(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
-            return new ResponseEntity<>(chatMessageService.getFullChatMessageById(id), HttpStatus.OK);
+            if (full) {
+                return new ResponseEntity<>(chatMessageService.getFullChatMessageById(id), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(chatMessageService.getChatMessageById(id), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
