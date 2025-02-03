@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.IEventDTO;
-import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -101,6 +98,17 @@ public class EventController {
     public ResponseEntity<IEventDTO> createEvent(@RequestBody FullFeedEventDTO newEvent) {
         try {
             return new ResponseEntity<>(eventService.saveEvent(newEvent), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/events/create-with-invites
+    @PostMapping("/create-with-invites")
+    public ResponseEntity<IEventDTO> createEventWithInvites(@RequestBody EventCreationDTO eventCreationDTO) {
+        try {
+            IEventDTO createdEvent = eventService.createEvent(eventCreationDTO);
+            return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

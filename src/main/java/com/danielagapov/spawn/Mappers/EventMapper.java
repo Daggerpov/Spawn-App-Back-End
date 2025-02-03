@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
 import com.danielagapov.spawn.Models.Event;
@@ -97,6 +98,17 @@ public class EventMapper {
         User creator = UserMapper.convertFullUserToUserEntity(dto.getCreatorUser());
         event.setCreator(creator); // Set the creator
 
+        return event;
+    }
+
+    public static Event fromCreationDTO(EventCreationDTO dto, Location location, User creator) {
+        Event event = new Event();
+        event.setTitle(dto.title());
+        event.setStartTime(dto.startTime());
+        event.setEndTime(dto.endTime());
+        event.setLocation(location);
+        event.setNote(dto.note());
+        event.setCreator(creator);
         return event;
     }
 
