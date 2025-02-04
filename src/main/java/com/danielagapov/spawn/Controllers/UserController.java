@@ -173,11 +173,21 @@ public class UserController {
         }
     }
 
-    // full path: api/v1/users/{id}/update-pfp
+    // full path: /api/v1/users/{id}/update-pfp
     @PatchMapping("{id}/update-pfp")
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
         try {
             return new ResponseEntity<>(s3Service.updateProfilePicture(file, id), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/default-pfp
+    @GetMapping
+    public ResponseEntity<String> getDefaultProfilePicture() {
+        try {
+            return new ResponseEntity<>(s3Service.getDefaultProfilePicture(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
