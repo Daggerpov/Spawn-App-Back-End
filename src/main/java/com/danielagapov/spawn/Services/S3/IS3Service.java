@@ -36,4 +36,9 @@ public interface IS3Service {
      */
     UserDTO putProfilePictureWithUser(byte[] file, UserDTO user);
     UserDTO updateProfilePicture(byte[] file, UUID userId);
+
+    /**
+     * Returns the default profile picture url string
+     */
+    String getDefaultProfilePicture();
 }

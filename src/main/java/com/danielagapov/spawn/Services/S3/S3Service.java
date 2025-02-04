@@ -18,7 +18,7 @@ import java.util.UUID;
 public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
     private static final String CDN_BASE = System.getenv("CDN_BASE");
-    private static final String DEFAULT_PFP = "";
+    private static final String DEFAULT_PFP = System.getenv("DEFAULT_PFP");
     private final S3Client s3;
     private final ILogger logger;
     private final UserService userService;
@@ -116,6 +116,10 @@ public class S3Service implements IS3Service {
         deleteObject(key);
         user.setProfilePictureUrlString(null);
         userService.saveEntity(user);
+    }
+
+    public String getDefaultProfilePicture() {
+        return DEFAULT_PFP;
     }
 
     /**
