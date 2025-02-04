@@ -187,7 +187,7 @@ public class EventService implements IEventService {
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
 
             Event event = EventMapper.fromCreationDTO(eventCreationDTO, creator);
-            event.setLocation(location);
+            
 
             event = repository.save(event);
 
