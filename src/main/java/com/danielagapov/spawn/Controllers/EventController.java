@@ -184,9 +184,9 @@ public class EventController {
     }
 
     // this corresponds to the button on the event for invited users
-    // full path: /api/v1/events/{eventId}/toggleStatus?userId={userId}
-    @GetMapping("{eventId}/toggleStatus?userId={userId}")
-    public ResponseEntity<Void> toggleParticipation(@PathVariable UUID eventId, @RequestParam UUID userId) {
+    // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
+    @GetMapping("{eventId}/toggleStatus/{userId}")
+    public ResponseEntity<Void> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
         try {
             if (eventService.toggleParticipation(eventId, userId)) {
                 return new ResponseEntity<>(HttpStatus.OK);
@@ -204,7 +204,7 @@ public class EventController {
     @GetMapping("invitedEvents/{userId}")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
