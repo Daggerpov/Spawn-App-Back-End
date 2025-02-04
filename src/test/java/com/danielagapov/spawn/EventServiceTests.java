@@ -2,6 +2,7 @@ package com.danielagapov.spawn;
 
 import com.danielagapov.spawn.DTOs.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.EventDTO;
+import com.danielagapov.spawn.DTOs.LocationDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -19,6 +20,7 @@ import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Event.EventService;
+import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,9 +44,10 @@ public class EventServiceTests {
 
     @Mock
     private ILogger logger;
-
     @Mock
     private ILocationRepository locationRepository;
+    @Mock
+    private ILocationService locationService;
     @Mock
     private IUserRepository userRepository;
     @Mock
@@ -189,34 +192,36 @@ public class EventServiceTests {
     @Test
     void createEvent_Successful() {
         // Arrange
-        UUID locationId = UUID.randomUUID();
         UUID creatorId = UUID.randomUUID();
         UUID friendTagId = UUID.randomUUID();
         UUID explicitInviteId = UUID.randomUUID();
         UUID friendTagUserId = UUID.randomUUID();
+
+        // Create a LocationDTO for event creation.
+        LocationDTO locationDTO = new LocationDTO(null, "Test Location", 0.0, 0.0);
 
         EventCreationDTO creationDTO = new EventCreationDTO(
                 null,
                 "Test Event",
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
-                locationId,
+                locationDTO,
                 "Test note",
                 creatorId,
                 List.of(friendTagId),
                 List.of(explicitInviteId)
         );
 
-        // Stub location and creator lookup
-        Location location = new Location();
-        location.setId(locationId);
-        when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
+        // Stub location creation using locationService.save.
+        Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
+        when(locationService.save(any(Location.class))).thenReturn(location);
 
+        // Stub creator lookup.
         User creator = new User();
         creator.setId(creatorId);
         when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
 
-        // Stub eventRepository.save: simulate saving the event (assign new UUID)
+        // Stub eventRepository.save to simulate saving the event (assign new UUID).
         Event savedEvent = new Event();
         UUID eventId = UUID.randomUUID();
         savedEvent.setId(eventId);
@@ -228,13 +233,13 @@ public class EventServiceTests {
         savedEvent.setCreator(creator);
         when(eventRepository.save(any(Event.class))).thenReturn(savedEvent);
 
-        // Stub userService.getFriendUserIdsByFriendTagId to return a list containing friendTagUserId
+        // Stub friend tag lookup: when userService.getFriendUserIdsByFriendTagId is called, return friendTagUserId.
         when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of(friendTagUserId));
 
-        // Stub chatMessageService to return an empty list for the new event
+        // Stub chatMessageService to return an empty list for the new event.
         when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
 
-        // Stub userRepository for invited users (both friendTag and explicit)
+        // Stub userRepository for invited users (both friend tag and explicit).
         User friendTagUser = new User();
         friendTagUser.setId(friendTagUserId);
         when(userRepository.findById(friendTagUserId)).thenReturn(Optional.of(friendTagUser));
@@ -243,7 +248,7 @@ public class EventServiceTests {
         explicitInvitedUser.setId(explicitInviteId);
         when(userRepository.findById(explicitInviteId)).thenReturn(Optional.of(explicitInvitedUser));
 
-        // IMPORTANT: Stub userService.getInvitedUserIdsByEventId to return the merged invites.
+        // Stub userService.getInvitedUserIdsByEventId to return the merged invites.
         Set<UUID> expectedInvited = new HashSet<>(Arrays.asList(friendTagUserId, explicitInviteId));
         when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(new ArrayList<>(expectedInvited));
 
@@ -253,7 +258,6 @@ public class EventServiceTests {
         // Assert
         assertNotNull(eventDTO);
         assertEquals("Test Event", eventDTO.title());
-
         assertEquals(expectedInvited, new HashSet<>(eventDTO.invitedUserIds()));
 
         ArgumentCaptor<EventUser> captor = ArgumentCaptor.forClass(EventUser.class);
@@ -273,32 +277,29 @@ public class EventServiceTests {
      * Test 2: Event creation fails when the Location is not found.
      */
     @Test
-    void createEvent_Fails_WhenLocationNotFound() {
+    void createEvent_Fails_WhenLocationNotCreated() {
         // Arrange
-        UUID locationId = UUID.randomUUID();
         UUID creatorId = UUID.randomUUID();
-
         EventCreationDTO creationDTO = new EventCreationDTO(
                 null,
                 "Test Event",
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
-                locationId,
+                new LocationDTO(null, "Test Location", 0.0, 0.0),
                 "Test note",
                 creatorId,
                 List.of(),
                 List.of()
         );
 
-        // Stub locationRepository to simulate missing location.
-        when(locationRepository.findById(locationId)).thenReturn(Optional.empty());
+        // Stub locationService.save to simulate failure (throw an exception).
+        when(locationService.save(any(Location.class))).thenThrow(new DataAccessException("Location save error") {});
 
-        // Act & Assert: Expect an ApplicationException with cause BaseNotFoundException.
+        // Act & Assert: Expect an ApplicationException.
         ApplicationException ex = assertThrows(ApplicationException.class, () ->
                 eventService.createEvent(creationDTO));
         assertNotNull(ex.getCause());
-        assertTrue(ex.getCause() instanceof BaseNotFoundException);
-        assertTrue(ex.getCause().getMessage().contains(EntityType.Location.name()));
+        assertTrue(ex.getMessage().contains("Failed to create event"));
     }
 
     /**
@@ -308,7 +309,6 @@ public class EventServiceTests {
     @Test
     void createEvent_MergesInvites_Correctly() {
         // Arrange
-        UUID locationId = UUID.randomUUID();
         UUID creatorId = UUID.randomUUID();
         UUID friendTagId = UUID.randomUUID();
         // Both friend tag and explicit invite refer to the same user.
@@ -319,17 +319,16 @@ public class EventServiceTests {
                 "Merged Invites Event",
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
-                locationId,
+                new LocationDTO(null, "Test Location", 0.0, 0.0),
                 "Merged invites test",
                 creatorId,
                 List.of(friendTagId),
                 List.of(commonUserId)
         );
 
-        // Stub location lookup.
-        Location location = new Location();
-        location.setId(locationId);
-        when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
+        // Stub location creation using locationService.save.
+        Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
+        when(locationService.save(any(Location.class))).thenReturn(location);
 
         // Stub creator lookup.
         User creator = new User();
@@ -360,11 +359,8 @@ public class EventServiceTests {
         commonUser.setId(commonUserId);
         when(userRepository.findById(commonUserId)).thenReturn(Optional.of(commonUser));
 
-        // Stub userService for final invited user IDs:
-        // Let the method return a list with the common user ID (simulating that the final invited list is built as expected).
+        // Stub userService for final invited user IDs.
         when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of(commonUserId));
-
-        // Also, stub participant user IDs to an empty list.
         when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
 
         // Act
@@ -380,5 +376,4 @@ public class EventServiceTests {
         // Verify that eventUserRepository.save is called exactly once.
         verify(eventUserRepository, times(1)).save(any(EventUser.class));
     }
-
 }

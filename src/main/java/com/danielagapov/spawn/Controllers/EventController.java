@@ -95,17 +95,7 @@ public class EventController {
 
     // full path: /api/v1/events
     @PostMapping
-    public ResponseEntity<IEventDTO> createEvent(@RequestBody FullFeedEventDTO newEvent) {
-        try {
-            return new ResponseEntity<>(eventService.saveEvent(newEvent), HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/events/create-with-invites
-    @PostMapping("/create-with-invites")
-    public ResponseEntity<IEventDTO> createEventWithInvites(@RequestBody EventCreationDTO eventCreationDTO) {
+    public ResponseEntity<IEventDTO> createEvent(@RequestBody EventCreationDTO eventCreationDTO) {
         try {
             IEventDTO createdEvent = eventService.createEvent(eventCreationDTO);
             return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);

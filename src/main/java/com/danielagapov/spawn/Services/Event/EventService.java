@@ -9,6 +9,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
+import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.EventUser;
@@ -180,12 +181,13 @@ public class EventService implements IEventService {
     @Override
     public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
-            Location location = locationRepository.findById(eventCreationDTO.locationId())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Location, eventCreationDTO.locationId()));
-            User creator = userRepository.findById(eventCreationDTO.creator())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creator()));
+            Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.location()));
 
-            Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
+            User creator = userRepository.findById(eventCreationDTO.creatorUserID())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserID()));
+
+            Event event = EventMapper.fromCreationDTO(eventCreationDTO, creator);
+            event.setLocation(location);
 
             event = repository.save(event);
 
@@ -203,29 +205,22 @@ public class EventService implements IEventService {
             for (UUID userId : allInvitedUserIds) {
                 User invitedUser = userRepository.findById(userId)
                         .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-
                 EventUsersId compositeId = new EventUsersId(event.getId(), userId);
                 EventUser eventUser = new EventUser();
                 eventUser.setId(compositeId);
                 eventUser.setEvent(event);
                 eventUser.setUser(invitedUser);
                 eventUser.setStatus(ParticipationStatus.invited);
-
                 eventUserRepository.save(eventUser);
             }
 
-            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(event.getId());
-            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(event.getId());
-            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(event.getId());
-
-            return EventMapper.toDTO(event, creator.getId(), participantUserIds, invitedUserIds, chatMessageIds);
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds)
+                    , null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
         }
     }
-
-
 
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {

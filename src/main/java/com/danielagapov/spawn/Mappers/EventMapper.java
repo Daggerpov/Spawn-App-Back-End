@@ -101,12 +101,12 @@ public class EventMapper {
         return event;
     }
 
-    public static Event fromCreationDTO(EventCreationDTO dto, Location location, User creator) {
+    public static Event fromCreationDTO(EventCreationDTO dto, User creator) {
         Event event = new Event();
         event.setTitle(dto.title());
         event.setStartTime(dto.startTime());
         event.setEndTime(dto.endTime());
-        event.setLocation(location);
+        event.setLocation(LocationMapper.toEntity(dto.location()));
         event.setNote(dto.note());
         event.setCreator(creator);
         return event;

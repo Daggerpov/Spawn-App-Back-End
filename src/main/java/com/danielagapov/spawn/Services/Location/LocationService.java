@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.Location;
 
 import com.danielagapov.spawn.DTOs.LocationDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
@@ -49,4 +50,13 @@ public class LocationService implements ILocationService {
         return repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id));
     }
 
+    @Override
+    public Location save(Location location) {
+        try {
+            return repository.save(location);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new ApplicationException("Failed to save location", e);
+        }
+    }
 }
