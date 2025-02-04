@@ -12,7 +12,7 @@ public record EventCreationDTO(
         OffsetDateTime endTime,
         LocationDTO location,
         String note,
-        UUID creatorUserID,
+        UUID creatorUserId,
         List<UUID> invitedFriendTagIds,
         List<UUID> invitedFriendUserIds
 ) implements Serializable {}

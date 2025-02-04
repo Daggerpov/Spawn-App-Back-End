@@ -183,8 +183,8 @@ public class EventService implements IEventService {
         try {
             Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.location()));
 
-            User creator = userRepository.findById(eventCreationDTO.creatorUserID())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserID()));
+            User creator = userRepository.findById(eventCreationDTO.creatorUserId())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
 
             Event event = EventMapper.fromCreationDTO(eventCreationDTO, creator);
             event.setLocation(location);
