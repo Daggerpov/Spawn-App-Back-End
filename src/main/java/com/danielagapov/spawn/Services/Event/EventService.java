@@ -186,9 +186,7 @@ public class EventService implements IEventService {
             User creator = userRepository.findById(eventCreationDTO.creatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
 
-            Event event = EventMapper.fromCreationDTO(eventCreationDTO, creator);
-            event.setLocation(location);
-
+            Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
             event = repository.save(event);
 
             Set<UUID> allInvitedUserIds = new HashSet<>();
@@ -214,8 +212,7 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
-            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds)
-                    , null);
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
