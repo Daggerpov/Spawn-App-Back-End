@@ -20,7 +20,8 @@ public interface IEventService {
     List<UserDTO> getParticipatingUsersByEventId(UUID id);
     ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
     boolean inviteUser(UUID eventId, UUID userId);
-    boolean toggleParticipation(UUID eventId, UUID userId);
+    // returns back the updated event dto, with participants and invited users updated:
+    FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId);
     List<EventDTO> getEventsInvitedTo(UUID id);
    
 

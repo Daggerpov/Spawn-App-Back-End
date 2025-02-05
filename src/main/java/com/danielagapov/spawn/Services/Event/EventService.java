@@ -384,13 +384,13 @@ public class EventService implements IEventService {
         return true;
     }
 
-    // return type boolean represents whether the user was already
+    // returns the updated event, with modified participants and invited users
     // invited/participating
     // if true -> change status
     // if false -> return 400 in controller to indicate that the user is not
     // invited/participating
     @Override
-    public boolean toggleParticipation(UUID eventId, UUID userId) {
+    public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
             // throw BaseNotFound for events if eventIf has no eventUsers
@@ -408,7 +408,7 @@ public class EventService implements IEventService {
                 }
             }
         }
-        return false;
+        return getFullEventById(eventId, userId);
     }
 
     @Override

@@ -183,14 +183,11 @@ public class EventController {
 
     // this corresponds to the button on the event for invited users
     // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
-    @GetMapping("{eventId}/toggleStatus/{userId}")
-    public ResponseEntity<Void> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
+    @PutMapping ("{eventId}/toggleStatus/{userId}")
+    public ResponseEntity<FullFeedEventDTO> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
         try {
-            if (eventService.toggleParticipation(eventId, userId)) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
+            FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
+            return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
