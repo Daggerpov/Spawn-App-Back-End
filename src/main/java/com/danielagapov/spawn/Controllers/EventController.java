@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.IEventDTO;
-import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -98,9 +95,10 @@ public class EventController {
 
     // full path: /api/v1/events
     @PostMapping
-    public ResponseEntity<IEventDTO> createEvent(@RequestBody FullFeedEventDTO newEvent) {
+    public ResponseEntity<IEventDTO> createEvent(@RequestBody EventCreationDTO eventCreationDTO) {
         try {
-            return new ResponseEntity<>(eventService.saveEvent(newEvent), HttpStatus.CREATED);
+            IEventDTO createdEvent = eventService.createEvent(eventCreationDTO);
+            return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -184,15 +182,12 @@ public class EventController {
     }
 
     // this corresponds to the button on the event for invited users
-    // full path: /api/v1/events/{eventId}/toggleStatus?userId={userId}
-    @GetMapping("{eventId}/toggleStatus?userId={userId}")
-    public ResponseEntity<Void> toggleParticipation(@PathVariable UUID eventId, @RequestParam UUID userId) {
+    // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
+    @PutMapping ("{eventId}/toggleStatus/{userId}")
+    public ResponseEntity<FullFeedEventDTO> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
         try {
-            if (eventService.toggleParticipation(eventId, userId)) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
+            FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
+            return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -204,7 +199,7 @@ public class EventController {
     @GetMapping("invitedEvents/{userId}")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);

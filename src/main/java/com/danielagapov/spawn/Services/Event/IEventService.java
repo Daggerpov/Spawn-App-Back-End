@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.IEventDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
 import java.util.List;
@@ -15,6 +12,7 @@ public interface IEventService {
     // CRUD operations:
     EventDTO getEventById(UUID id);
     IEventDTO saveEvent(IEventDTO event);
+    IEventDTO createEvent(EventCreationDTO eventCreationDTO);
     EventDTO replaceEvent(EventDTO event, UUID eventId);
     boolean deleteEventById(UUID id);
 
@@ -22,7 +20,8 @@ public interface IEventService {
     List<UserDTO> getParticipatingUsersByEventId(UUID id);
     ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
     boolean inviteUser(UUID eventId, UUID userId);
-    boolean toggleParticipation(UUID eventId, UUID userId);
+    // returns back the updated event dto, with participants and invited users updated:
+    FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId);
     List<EventDTO> getEventsInvitedTo(UUID id);
    
 

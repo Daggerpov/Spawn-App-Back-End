@@ -10,4 +10,5 @@ public interface ILocationService {
     List<LocationDTO> getAllLocations();
     LocationDTO getLocationById(UUID id);
     Location getLocationEntityById(UUID id);
+    Location save(Location location);
 }
