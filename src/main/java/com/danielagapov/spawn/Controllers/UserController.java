@@ -184,7 +184,7 @@ public class UserController {
     }
 
     // full path: /api/v1/users/default-pfp
-    @GetMapping
+    @GetMapping("default-pfp")
     public ResponseEntity<String> getDefaultProfilePicture() {
         try {
             return new ResponseEntity<>(s3Service.getDefaultProfilePicture(), HttpStatus.OK);
