@@ -3,11 +3,14 @@ package com.danielagapov.spawn.Services.Event;
 import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
+import com.danielagapov.spawn.Mappers.LocationMapper;
+import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.Location;
@@ -25,9 +28,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class EventService implements IEventService {
@@ -174,6 +175,47 @@ public class EventService implements IEventService {
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
+        }
+    }
+
+    @Override
+    public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
+        try {
+            Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.location()));
+
+            User creator = userRepository.findById(eventCreationDTO.creatorUserId())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
+            Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
+
+            event = repository.save(event);
+
+            Set<UUID> allInvitedUserIds = new HashSet<>();
+            if (eventCreationDTO.invitedFriendTagIds() != null) {
+                for (UUID friendTagId : eventCreationDTO.invitedFriendTagIds()) {
+                    List<UUID> friendIdsForTag = userService.getFriendUserIdsByFriendTagId(friendTagId);
+                    allInvitedUserIds.addAll(friendIdsForTag);
+                }
+            }
+            if (eventCreationDTO.invitedFriendUserIds() != null) {
+                allInvitedUserIds.addAll(eventCreationDTO.invitedFriendUserIds());
+            }
+
+            for (UUID userId : allInvitedUserIds) {
+                User invitedUser = userRepository.findById(userId)
+                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+                EventUsersId compositeId = new EventUsersId(event.getId(), userId);
+                EventUser eventUser = new EventUser();
+                eventUser.setId(compositeId);
+                eventUser.setEvent(event);
+                eventUser.setUser(invitedUser);
+                eventUser.setStatus(ParticipationStatus.invited);
+                eventUserRepository.save(eventUser);
+            }
+
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
+        } catch (Exception e) {
+            logger.log("Error creating event: " + e.getMessage());
+            throw new ApplicationException("Failed to create event", e);
         }
     }
 
@@ -342,13 +384,13 @@ public class EventService implements IEventService {
         return true;
     }
 
-    // return type boolean represents whether the user was already
+    // returns the updated event, with modified participants and invited users
     // invited/participating
     // if true -> change status
     // if false -> return 400 in controller to indicate that the user is not
     // invited/participating
     @Override
-    public boolean toggleParticipation(UUID eventId, UUID userId) {
+    public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
             // throw BaseNotFound for events if eventIf has no eventUsers
@@ -366,7 +408,7 @@ public class EventService implements IEventService {
                 }
             }
         }
-        return false;
+        return getFullEventById(eventId, userId);
     }
 
     @Override

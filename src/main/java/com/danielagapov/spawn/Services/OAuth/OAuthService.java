@@ -10,7 +10,6 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
-import lombok.extern.java.Log;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -54,13 +53,13 @@ public class OAuthService implements IOAuthService {
                 logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
                 saveMapping(externalUserId, userDTO, provider);
             }
-            FullUserDTO fullUserDTO =  userService.getFullUserByUser(userDTO);
+            FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO);
             logger.log(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
             return fullUserDTO;
-        } catch(DataAccessException e){
+        } catch (DataAccessException e) {
             logger.log("Database error while creating user: " + e.getMessage());
             throw e;
-        } catch(Exception e){
+        } catch (Exception e) {
             logger.log("Unexpected error while creating user: " + e.getMessage());
             throw e;
         }
@@ -151,15 +150,20 @@ public class OAuthService implements IOAuthService {
     }
 
     private void saveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
-        User user;
-        if (userDTO instanceof FullUserDTO) {
-            user = UserMapper.convertFullUserToUserEntity((FullUserDTO) userDTO);
-        } else {
-            user = UserMapper.toEntity((UserDTO) userDTO);
+        try {
+            User user;
+            if (userDTO instanceof FullUserDTO) {
+                user = UserMapper.convertFullUserToUserEntity((FullUserDTO) userDTO);
+            } else {
+                user = UserMapper.toEntity((UserDTO) userDTO);
+            }
+            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
+            logger.log(String.format("Saving mapping: {mapping: %s}", mapping));
+            externalIdMapRepository.save(mapping);
+            logger.log("Mapping saved");
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
-        UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
-        logger.log(String.format("Saving mapping: {mapping: %s}", mapping));
-        externalIdMapRepository.save(mapping);
-        logger.log("Mapping saved");
     }
 }

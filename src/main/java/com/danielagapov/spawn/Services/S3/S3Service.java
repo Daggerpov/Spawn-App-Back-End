@@ -11,6 +11,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
 import java.util.UUID;
 
 
@@ -18,7 +19,7 @@ import java.util.UUID;
 public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
     private static final String CDN_BASE = System.getenv("CDN_BASE");
-    private static final String DEFAULT_PFP = "";
+    private static final String DEFAULT_PFP = System.getenv("DEFAULT_PFP");
     private final S3Client s3;
     private final ILogger logger;
     private final UserService userService;
@@ -30,9 +31,9 @@ public class S3Service implements IS3Service {
     }
 
     /**
-     * This is the closest method directly to our S3Client, which puts an object to 
+     * This is the closest method directly to our S3Client, which puts an object to
      * our S3 bucket, given a key to map it to
-     * 
+     * <p>
      * Returns the profile picture url string where it's now hosted through a CDN
      */
     @Override
@@ -56,52 +57,67 @@ public class S3Service implements IS3Service {
      */
     @Override
     public String putObject(byte[] file) {
-        String key = UUID.randomUUID().toString();
-        return putObjectWithKey(file, key);
+        try {
+            String key = UUID.randomUUID().toString();
+            return putObjectWithKey(file, key);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
 
-    /** 
+    /**
      * This method, if given a `file` argument will put that profile picture object to S3
      * Otherwise, it will use our default pfp url string as the user's profile picture
      */
     @Override
     public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
-        return new UserDTO(
-                user.id(),
-                user.friendIds(),
-                user.username(),
-                file == null ? DEFAULT_PFP : putObject(file),
-                user.firstName(),
-                user.lastName(),
-                user.bio(),
-                user.friendTagIds(),
-                user.email()
-        );
+        try {
+            return new UserDTO(
+                    user.id(),
+                    user.friendIds(),
+                    user.username(),
+                    file == null ? DEFAULT_PFP : putObject(file), // this line could throw
+                    user.firstName(),
+                    user.lastName(),
+                    user.bio(),
+                    user.friendTagIds(),
+                    user.email()
+            );
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
-    /** 
-     * Given an existing `userId`, this method will update the profile picture 
-     * attribute of that user, and also replace the image at its currently hosted 
+    /**
+     * Given an existing `userId`, this method will update the profile picture
+     * attribute of that user, and also replace the image at its currently hosted
      * image url (through our CDN) with a supplied image, `file` argument
-     * 
+     * <p>
      * If given no `file` argument, we simply supply the default pfp url string
      */
     @Override
     public UserDTO updateProfilePicture(byte[] file, UUID userId) {
-        User user = UserMapper.toEntity(userService.getUserById(userId));
-        String urlString = user.getProfilePictureUrlString();
-        String key = extractObjectKey(urlString);
-        String newUrl;
-        if (file == null) {
-            newUrl = DEFAULT_PFP;
-            deleteObject(key);
-        } else {
-            newUrl = putObjectWithKey(file, key);
+        try {
+            User user = UserMapper.toEntity(userService.getUserById(userId));
+            String urlString = user.getProfilePictureUrlString();
+            String key = extractObjectKey(urlString);
+            String newUrl;
+            if (file == null) {
+                newUrl = DEFAULT_PFP;
+                deleteObject(key);
+            } else {
+                newUrl = putObjectWithKey(file, key);
+            }
+            user.setProfilePictureUrlString(newUrl);
+            user = userService.saveEntity(user);
+            return userService.getUserById(user.getId()); // because converting user -> dto is hard
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
-        user.setProfilePictureUrlString(newUrl);
-        user = userService.saveEntity(user);
-        return userService.getUserById(user.getId()); // because converting user -> dto is hard
     }
 
     /**
@@ -110,12 +126,21 @@ public class S3Service implements IS3Service {
      */
     @Override
     public void deleteObjectByUserId(UUID userId) {
-        User user = UserMapper.toEntity(userService.getUserById(userId));
-        String urlString = user.getProfilePictureUrlString();
-        String key = extractObjectKey(urlString);
-        deleteObject(key);
-        user.setProfilePictureUrlString(null);
-        userService.saveEntity(user);
+        try {
+            User user = UserMapper.toEntity(userService.getUserById(userId));
+            String urlString = user.getProfilePictureUrlString();
+            String key = extractObjectKey(urlString);
+            deleteObject(key);
+            user.setProfilePictureUrlString(null);
+            userService.saveEntity(user);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    public String getDefaultProfilePicture() {
+        return DEFAULT_PFP;
     }
 
     /**
