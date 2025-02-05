@@ -225,14 +225,19 @@ public class UserService implements IUserService {
 
     @Override
     public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
-        logger.log(String.format("Entering saveUserWithProfilePicture: {user: %s}", user));
-        if (user.profilePicture() == null) {
-            logger.log("Profile picture is null, user either chose their profile picture or has default");
-            user = s3Service.putProfilePictureWithUser(profilePicture, user);
+        try {
+            logger.log(String.format("Entering saveUserWithProfilePicture: {user: %s}", user));
+            if (user.profilePicture() == null) {
+                logger.log("Profile picture is null, user either chose their profile picture or has default");
+                user = s3Service.putProfilePictureWithUser(profilePicture, user);
+            }
+            user = saveUser(user);
+            logger.log(String.format("Exiting saveUserWithProfilePicture: {user: %s}", user));
+            return user;
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
         }
-        user = saveUser(user);
-        logger.log(String.format("Exiting saveUserWithProfilePicture: {user: %s}", user));
-        return user;
     }
 
     @Override
