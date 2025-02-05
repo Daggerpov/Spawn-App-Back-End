@@ -44,12 +44,17 @@ public class OAuthService implements IOAuthService {
 
     @Override
     public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
-        // TODO: temporary solution
         try {
-            if (userExistsByExternalIdOrEmail(externalUserId, userDTO.email())) {
-                logger.log(String.format("Existing user detected in makeUser: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
-                return userService.getFullUserByEmail(externalUserId);
+            // TODO: temporary solution
+            if (mappingExistsByExternalId(externalUserId)) {
+                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
+                return userService.getFullUserByEmail(userDTO.email());
             }
+            if (userService.existsByEmail(userDTO.email())) {
+                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.email(), userDTO.email()));
+                return userService.getFullUserByEmail(userDTO.email());
+            }
+
             // user dto -> entity & save user
             logger.log(String.format("Making user: {userDTO: %s}", userDTO));
             userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
