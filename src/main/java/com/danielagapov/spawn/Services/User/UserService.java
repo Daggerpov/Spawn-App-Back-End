@@ -278,7 +278,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getUserByEmail(String email) {
+    public FullUserDTO getFullUserByEmail(String email) {
         try {
             User user = repository.findByEmail(email);
             return user == null ? null : getFullUserById(user.getId());
@@ -543,6 +543,11 @@ public class UserService implements IUserService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return repository.existsByEmail(email);
     }
 
     /**

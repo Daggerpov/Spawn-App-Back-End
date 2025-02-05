@@ -44,7 +44,12 @@ public class OAuthService implements IOAuthService {
 
     @Override
     public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
+        // TODO: temporary solution
         try {
+            if (userExistsByExternalIdOrEmail(externalUserId, userDTO.email())) {
+                logger.log(String.format("Existing user detected in makeUser: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
+                return userService.getFullUserByEmail(externalUserId);
+            }
             // user dto -> entity & save user
             logger.log(String.format("Making user: {userDTO: %s}", userDTO));
             userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
@@ -70,7 +75,7 @@ public class OAuthService implements IOAuthService {
     public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email) {
         try {
             UserIdExternalIdMap mapping = getMapping(externalUserId);
-            return mapping == null ? userService.getUserByEmail(email) : getFullUserDTO(mapping);
+            return mapping == null ? userService.getFullUserByEmail(email) : getFullUserDTO(mapping);
         } catch (DataAccessException e) {
             logger.log("Database error while fetching user by external ID: " + e.getMessage());
             throw e;
@@ -78,6 +83,18 @@ public class OAuthService implements IOAuthService {
             logger.log("Unexpected error while fetching user by external ID: " + e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Checks if user exists, first by externalUserId then by email
+     * This is a temporary solution to duplicates occurring in database
+     */
+    private boolean userExistsByExternalIdOrEmail(String externalUserId, String email) {
+        return mappingExistsByExternalId(externalUserId) || userService.existsByEmail(email);
+    }
+
+    private boolean mappingExistsByExternalId(String externalUserId) {
+        return externalIdMapRepository.existsById(externalUserId);
     }
 
     private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
