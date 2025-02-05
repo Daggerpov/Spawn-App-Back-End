@@ -173,6 +173,12 @@ public class UserController {
         }
     }
 
+    // full path: /api/v1/users/{requestingUserId}?query=searchQuery
+    @GetMapping("{requestingUserId}")
+    public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriendsBySearch(@PathVariable UUID requestingUserId, @RequestParam String searchQuery) {
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     // full path: /api/v1/users/{id}/update-pfp
     @PatchMapping("{id}/update-pfp")
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
