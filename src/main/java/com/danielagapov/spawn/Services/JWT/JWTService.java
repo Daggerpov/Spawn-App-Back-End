@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.JWT;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -15,7 +16,14 @@ import java.util.function.Function;
 
 @Service
 public class JWTService implements IJWTService {
-    private static final String SIGNING_SECRET = System.getenv("SIGNING_KEY");
+    private static final String SIGNING_SECRET;
+    static {
+            Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+            SIGNING_SECRET = dotenv.get("SIGNING_KEY");
+//            String getenv = System.getenv("SIGNING_KEY");
+//            System.setProperty("SIGNING_KEY", getenv != null ? getenv : dotenv.get("SIGNING_KEY"));
+
+    }
 
     @Override
     public String extractUsername(String token) {

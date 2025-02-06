@@ -30,6 +30,7 @@ public class UserMapper {
         return new User(
                 dto.id(),
                 dto.username(),
+                null,
                 dto.profilePicture(),
                 dto.firstName(),
                 dto.lastName(),
