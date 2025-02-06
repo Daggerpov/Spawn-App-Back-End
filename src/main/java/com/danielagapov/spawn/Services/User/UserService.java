@@ -545,6 +545,17 @@ public class UserService implements IUserService {
         }
     }
 
+    @Override
+    public FullUserDTO getFullUserByUsername(String username) {
+        try {
+            User user = repository.findByUsername(username);
+            return getFullUserById(user.getId());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
     /**
      * @param requestingUserId the user who's requesting this from the mobile app,
      *                         from either the event creation view or friends view.

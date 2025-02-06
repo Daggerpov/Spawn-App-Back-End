@@ -22,7 +22,6 @@ import java.io.IOException;
 @AllArgsConstructor
 public class JWTFilterChain extends OncePerRequestFilter {
     private final IJWTService jwtService;
-    private final IUserService userService;
     private final ApplicationContext context;
 
     @Override
