@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FullFriendTagDTO;
-import com.danielagapov.spawn.DTOs.FullFriendUserDTO;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.IFriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -163,7 +163,7 @@ public class FriendTagController {
      */
     // full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
     @GetMapping("friendsNotAddedToTag/{friendTagId}}")
-    public ResponseEntity<List<FullFriendUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
+    public ResponseEntity<List<FullUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
         try {
             return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
