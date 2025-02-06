@@ -2,12 +2,16 @@ package com.danielagapov.spawn.Models;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
 import java.util.Collection;
 import java.util.List;
 
-
 public class UserInfo implements UserDetails {
+    public String username;
+
+    public UserInfo(String username) {
+        this.username = username;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
@@ -20,7 +24,7 @@ public class UserInfo implements UserDetails {
 
     @Override
     public String getUsername() {
-        return "";
+        return username;
     }
 
     @Override
