@@ -70,9 +70,9 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/friendTag/{tagId}
-    @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
+    // full path: /api/v1/events/friendTag/{friendTagFilterId}
+    @GetMapping("friendTag/{friendTagFilterId}")
+    public ResponseEntity<List<FullFeedEventDTO>> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
         try {
             return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
