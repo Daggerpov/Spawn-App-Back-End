@@ -7,7 +7,7 @@ import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
@@ -185,7 +185,7 @@ public class EventService implements IEventService {
 
             User creator = userRepository.findById(eventCreationDTO.creatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
-]
+
             Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
 
             event = repository.save(event);
@@ -213,7 +213,8 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
-            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds)
+                    , null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
@@ -501,7 +502,9 @@ public class EventService implements IEventService {
         FriendTagDTO pertainingFriendTag = friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.creatorUserId());
 
         // -> for now, we handle tie-breaks (user has same friend within two friend tags) in whichever way (just choose one)
-
+        if (pertainingFriendTag == null) {
+            return "#000000"; // Default color if no tag exists
+        }
         // using that friend tag, grab its colorHexCode property to return from this method
 
         return pertainingFriendTag.colorHexCode();

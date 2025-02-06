@@ -1,4 +1,4 @@
-package com.danielagapov.spawn;
+package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;

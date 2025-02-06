@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
