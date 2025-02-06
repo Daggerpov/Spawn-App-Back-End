@@ -476,9 +476,9 @@ public class EventService implements IEventService {
     
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
-        UUID ownerId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
-        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(ownerId), ownerId);
-        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), ownerId);
+        UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
+        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
 
         // Combine the lists with eventsCreated first
         List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
