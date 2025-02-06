@@ -517,7 +517,7 @@ public class EventService implements IEventService {
 
         // -> for now, we handle tie-breaks (user has same friend within two friend tags) in whichever way (just choose one)
         if (pertainingFriendTag == null) {
-            return "#000000"; // Default color if no tag exists
+            return "#1D3D3D"; // Default color if no tag exists
         }
         // using that friend tag, grab its colorHexCode property to return from this method
 
