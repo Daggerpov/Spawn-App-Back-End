@@ -79,7 +79,6 @@ public class EventController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    
 
     // full path: /api/v1/events/mock-endpoint
     @GetMapping("mock-endpoint")
