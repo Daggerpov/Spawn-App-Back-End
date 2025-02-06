@@ -33,7 +33,7 @@ public interface IEventService {
     List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId);
     List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId);
     List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId);
-    List<FullFeedEventDTO> getFilteredFeedEvents(UUID requestingUserId, UUID friendTagFilterId);
+    List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId);
 
     // Additional Methods:
     List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
