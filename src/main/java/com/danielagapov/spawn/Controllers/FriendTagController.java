@@ -162,7 +162,7 @@ public class FriendTagController {
      * popup from clicking a tag's add friend button
      */
     // full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
-    @GetMapping("friendsNotAddedToTag/{friendTagId}}")
+    @GetMapping("friendsNotAddedToTag/{friendTagId}")
     public ResponseEntity<List<FullUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
         try {
             return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);
