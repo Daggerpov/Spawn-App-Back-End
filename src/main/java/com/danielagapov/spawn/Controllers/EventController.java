@@ -70,19 +70,13 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/friendTag/{tagId}?full=full&requestingUserId=requestingUserId
-    @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full, @RequestParam UUID requestingUserId) {
+    // full path: /api/v1/events/friendTag/{friendTagFilterId}
+    @GetMapping("friendTag/{friendTagFilterId}")
+    public ResponseEntity<List<FullFeedEventDTO>> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
         try {
-            if (full && requestingUserId != null) {
-                return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByFriendTagId(tagId), requestingUserId), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
-            }
-        } catch (BasesNotFoundException e) {
+            return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -182,15 +176,12 @@ public class EventController {
     }
 
     // this corresponds to the button on the event for invited users
-    // full path: /api/v1/events/{eventId}/toggleStatus?userId={userId}
-    @GetMapping("{eventId}/toggleStatus?userId={userId}")
-    public ResponseEntity<Void> toggleParticipation(@PathVariable UUID eventId, @RequestParam UUID userId) {
+    // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
+    @PutMapping ("{eventId}/toggleStatus/{userId}")
+    public ResponseEntity<FullFeedEventDTO> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
         try {
-            if (eventService.toggleParticipation(eventId, userId)) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
+            FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
+            return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -202,7 +193,7 @@ public class EventController {
     @GetMapping("invitedEvents/{userId}")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);

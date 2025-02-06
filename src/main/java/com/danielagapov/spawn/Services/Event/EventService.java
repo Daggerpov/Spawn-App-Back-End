@@ -20,6 +20,7 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -386,13 +387,13 @@ public class EventService implements IEventService {
         return true;
     }
 
-    // return type boolean represents whether the user was already
+    // returns the updated event, with modified participants and invited users
     // invited/participating
     // if true -> change status
     // if false -> return 400 in controller to indicate that the user is not
     // invited/participating
     @Override
-    public boolean toggleParticipation(UUID eventId, UUID userId) {
+    public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
             // throw BaseNotFound for events if eventIf has no eventUsers
@@ -410,7 +411,7 @@ public class EventService implements IEventService {
                 }
             }
         }
-        return false;
+        return getFullEventById(eventId, userId);
     }
 
     @Override
@@ -472,6 +473,19 @@ public class EventService implements IEventService {
         List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
         combinedEvents.addAll(eventsInvitedTo);
 
+        return combinedEvents;
+    }
+    
+    @Override
+    public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
+        UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
+        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
+
+        // Combine the lists with eventsCreated first
+        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+        combinedEvents.addAll(eventsByFriendTagFilter);
+ 
         return combinedEvents;
     }
 

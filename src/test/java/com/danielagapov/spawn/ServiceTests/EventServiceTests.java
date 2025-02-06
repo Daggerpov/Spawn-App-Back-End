@@ -658,9 +658,9 @@ public class EventServiceTests {
         eu.setStatus(ParticipationStatus.invited);
         when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu));
 
-        boolean toggleResult = eventService.toggleParticipation(eventId, userId);
+        FullFeedEventDTO resultingEventFromToggleAction = eventService.toggleParticipation(eventId, userId);
 
-        assertFalse(toggleResult);
+        assert(resultingEventFromToggleAction.getParticipantUsers().contains(userService.getFullUserById(user.getId())));
         assertEquals(ParticipationStatus.participating, eu.getStatus());
         verify(eventUserRepository, times(1)).save(eu);
     }
