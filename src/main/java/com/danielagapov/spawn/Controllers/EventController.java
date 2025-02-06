@@ -70,13 +70,14 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/friendTag/{tagId}?full=full&requestingUserId=requestingUserId
+    // TODO: path is wrong
+    // full path: /api/v1/events/friendTag/{tagId}
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID requestingUserId, @RequestParam(required=false) UUID friendTagFilterId) {
+    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTag(@PathVariable UUID requestingUserId, @RequestParam(required=false) UUID tagId) {
         try {
-            if (friendTagFilterId != null) {
+            if (tagId != null) {
                 // needs to filter
-                return new ResponseEntity<>(eventService.getFilteredFeedEvents(requestingUserId, friendTagFilterId), HttpStatus.OK);
+                return new ResponseEntity<>(eventService.getFilteredFeedEvents(requestingUserId, tagId), HttpStatus.OK);
             } else {
                 return getFeedEvents(requestingUserId);
             }
