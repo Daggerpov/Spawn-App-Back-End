@@ -38,4 +38,6 @@ public interface IEventService {
     List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
     List<EventDTO> getEventsByOwnerId(UUID creatorUserId);
     String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
+
+    List<FullFeedEventDTO> getFilteredFeedEvents(UUID requestingUserId, UUID friendTagFilterId);
 }

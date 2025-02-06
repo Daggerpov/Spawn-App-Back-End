@@ -72,19 +72,20 @@ public class EventController {
 
     // full path: /api/v1/events/friendTag/{tagId}?full=full&requestingUserId=requestingUserId
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full, @RequestParam UUID requestingUserId) {
+    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID requestingUserId, @RequestParam(required=false) UUID friendTagFilterId) {
         try {
-            if (full && requestingUserId != null) {
-                return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByFriendTagId(tagId), requestingUserId), HttpStatus.OK);
+            if (friendTagFilterId != null) {
+                // needs to filter
+                return new ResponseEntity<>(eventService.getFilteredFeedEvents(requestingUserId, friendTagFilterId), HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
+                return getFeedEvents(requestingUserId);
             }
-        } catch (BasesNotFoundException e) {
+        } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        
     }
+    
 
     // full path: /api/v1/events/mock-endpoint
     @GetMapping("mock-endpoint")
