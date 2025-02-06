@@ -20,6 +20,7 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -470,6 +471,19 @@ public class EventService implements IEventService {
         List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
         combinedEvents.addAll(eventsInvitedTo);
 
+        return combinedEvents;
+    }
+    
+    @Override
+    public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
+        UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
+        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
+
+        // Combine the lists with eventsCreated first
+        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+        combinedEvents.addAll(eventsByFriendTagFilter);
+ 
         return combinedEvents;
     }
 

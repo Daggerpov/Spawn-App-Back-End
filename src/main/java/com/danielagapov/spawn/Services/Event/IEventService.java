@@ -23,7 +23,6 @@ public interface IEventService {
     // returns back the updated event dto, with participants and invited users updated:
     FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId);
     List<EventDTO> getEventsInvitedTo(UUID id);
-   
 
     // Get 'Full' Event Methods:
     List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id);
@@ -33,6 +32,7 @@ public interface IEventService {
     List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId);
     List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId);
     List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId);
+    List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId);
 
     // Additional Methods:
     List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
