@@ -28,6 +28,7 @@ public class User implements Serializable {
         private UUID id;
         @Column(nullable = false, unique = true) // Ensures the username is unique and not null
         private String username;
+        private String password;
         private String profilePictureUrlString;
         private String firstName;
         private String lastName;
