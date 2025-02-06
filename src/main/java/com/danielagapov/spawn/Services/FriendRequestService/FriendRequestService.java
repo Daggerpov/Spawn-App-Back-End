@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
@@ -22,7 +22,7 @@ public class FriendRequestService implements IFriendRequestService {
     private final IUserService userService;
     private final ILogger logger;
 
-    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService,ILogger logger) {
+    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;
@@ -83,6 +83,11 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     public void deleteFriendRequest(UUID id) {
-        repository.deleteById(id);
+        try {
+            repository.deleteById(id);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 }

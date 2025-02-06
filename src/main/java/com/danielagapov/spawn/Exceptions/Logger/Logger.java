@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Helpers.Logger;
+package com.danielagapov.spawn.Exceptions.Logger;
 
 import org.springframework.stereotype.Service;
 
