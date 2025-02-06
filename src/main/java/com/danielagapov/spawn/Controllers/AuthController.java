@@ -20,7 +20,6 @@ import java.util.Map;
 @RequestMapping("api/v1/auth")
 @AllArgsConstructor
 public class AuthController {
-    private final IJWTService jwtService;
     private final IAuthService authService;
 
     // full path: /api/v1/auth/register

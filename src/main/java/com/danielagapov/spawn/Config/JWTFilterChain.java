@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Config;
 
 import com.danielagapov.spawn.Services.JWT.IJWTService;
-import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
