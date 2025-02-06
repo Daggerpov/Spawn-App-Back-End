@@ -1,20 +1,12 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 public interface IOAuthService {
 
-    /**
-     * Verifies whether user has an existing account or must create on
-     * @param user user to be verified
-     * @return either TempUserDTO or UserDTO
-     */
-    AbstractUserDTO verifyUser(OAuth2User user);
 
     /**
      * Given a new user dto, creates a new account which means saving the user info and their external id mapping

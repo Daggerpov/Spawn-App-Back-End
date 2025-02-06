@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -11,7 +10,6 @@ import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -30,6 +28,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
+<<<<<<< HEAD
     public AbstractUserDTO verifyUser(OAuth2User oauthUser) {
         try {
             TempUserDTO tempUser = unpackOAuthUser(oauthUser);
@@ -63,6 +62,8 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
+=======
+>>>>>>> 8e8bba6 (remove unneeded methods + endpoint)
     public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
             // TODO: temporary solution
@@ -148,6 +149,7 @@ public class OAuthService implements IOAuthService {
         return externalIdMapRepository.existsById(externalUserId);
     }
 
+<<<<<<< HEAD
     private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
         try {
             String given_name = oauthUser.getAttribute("given_name");
@@ -162,6 +164,22 @@ public class OAuthService implements IOAuthService {
             throw e;
         }
     }
+=======
+//    private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
+//        try {
+//            String given_name = oauthUser.getAttribute("given_name");
+//            String family_name = oauthUser.getAttribute("family_name");
+//            String picture = oauthUser.getAttribute("picture"); // TODO: may need to change once S3 is set
+//            String email = oauthUser.getAttribute("email"); // to be used as username
+//            String externalUserId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
+//            if (externalUserId == null) throw new ApplicationException("Subject was null");
+//            return new TempUserDTO(externalUserId, given_name, family_name, email, picture);
+//        } catch (Exception e) {
+//            logger.log("Error unpacking OAuth user: " + e.getMessage());
+//            throw e;
+//        }
+//    }
+>>>>>>> 8e8bba6 (remove unneeded methods + endpoint)
 
     private UserIdExternalIdMap getMapping(TempUserDTO tempUser) {
         try {
