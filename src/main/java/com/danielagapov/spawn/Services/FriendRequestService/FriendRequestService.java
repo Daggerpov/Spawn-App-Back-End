@@ -22,7 +22,7 @@ public class FriendRequestService implements IFriendRequestService {
     private final IUserService userService;
     private final ILogger logger;
 
-    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService,ILogger logger) {
+    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;
@@ -83,6 +83,11 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     public void deleteFriendRequest(UUID id) {
-        repository.deleteById(id);
+        try {
+            repository.deleteById(id);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 }
