@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.Exceptions.Models.FriendRequest;
-import com.danielagapov.spawn.Exceptions.Models.User;
+import com.danielagapov.spawn.Models.FriendRequest;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.stream.Collectors;

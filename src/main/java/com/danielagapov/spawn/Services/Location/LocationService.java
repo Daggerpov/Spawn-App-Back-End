@@ -7,7 +7,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.LocationMapper;
-import com.danielagapov.spawn.Exceptions.Models.Location;
+import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;

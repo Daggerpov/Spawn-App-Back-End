@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Repositories;
 
-import com.danielagapov.spawn.Exceptions.Models.EventUser;
+import com.danielagapov.spawn.Models.EventUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

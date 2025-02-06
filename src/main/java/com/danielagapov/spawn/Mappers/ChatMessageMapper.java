@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.ChatMessageDTO;
-import com.danielagapov.spawn.Exceptions.Models.ChatMessage;
-import com.danielagapov.spawn.Exceptions.Models.Event;
-import com.danielagapov.spawn.Exceptions.Models.User;
+import com.danielagapov.spawn.Models.ChatMessage;
+import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.Map;

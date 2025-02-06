@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Exceptions.Models;
+package com.danielagapov.spawn.Models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

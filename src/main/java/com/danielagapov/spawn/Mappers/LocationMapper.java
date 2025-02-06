@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.LocationDTO;
-import com.danielagapov.spawn.Exceptions.Models.Location;
+import com.danielagapov.spawn.Models.Location;
 
 import java.util.List;
 import java.util.stream.Collectors;

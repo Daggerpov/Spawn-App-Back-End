@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.Exceptions.Models.FriendTag;
+import com.danielagapov.spawn.Models.FriendTag;
 
 import java.util.List;
 import java.util.Map;

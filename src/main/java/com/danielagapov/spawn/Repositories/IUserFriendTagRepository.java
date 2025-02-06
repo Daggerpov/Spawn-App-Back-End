@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Repositories;
 
-import com.danielagapov.spawn.Exceptions.Models.UserFriendTag;
+import com.danielagapov.spawn.Models.UserFriendTag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

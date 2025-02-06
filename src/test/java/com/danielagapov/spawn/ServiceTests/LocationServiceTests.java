@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.LocationDTO;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.Models.Location;
+import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Services.Location.LocationService;
 import org.junit.jupiter.api.BeforeEach;

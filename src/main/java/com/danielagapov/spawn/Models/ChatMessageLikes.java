@@ -1,6 +1,6 @@
-package com.danielagapov.spawn.Exceptions.Models;
+package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Exceptions.Models.CompositeKeys.ChatMessageLikesId;
+import com.danielagapov.spawn.Models.CompositeKeys.ChatMessageLikesId;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
