@@ -472,6 +472,18 @@ public class EventService implements IEventService {
 
         return combinedEvents;
     }
+    
+    @Override
+    public List<FullFeedEventDTO> getFilteredFeedEvents(UUID requestingUserId, UUID friendTagFilterId) {
+        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
+
+        // Combine the lists with eventsCreated first
+        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+        combinedEvents.addAll(eventsByFriendTagFilter);
+ 
+        return combinedEvents;
+    }
 
     @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
@@ -527,23 +539,5 @@ public class EventService implements IEventService {
             fullEvents.add(fullFeedEvent);
         }
         return fullEvents;
-    }
-
-
-    /**
-     * @param requestingUserId
-     * @return This method returns the feed events for a user, with their created ones
-     * first in the `universalAccentColor`, followed by events they're invited to
-     */
-    @Override
-    public List<FullFeedEventDTO> getFilteredFeedEvents(UUID requestingUserId, UUID friendTagFilterId) {
-        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
-
-        // Combine the lists with eventsCreated first
-        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-        combinedEvents.addAll(eventsByFriendTagFilter);
- 
-        return combinedEvents;
     }
 }

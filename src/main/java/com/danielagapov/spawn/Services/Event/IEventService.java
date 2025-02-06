@@ -33,11 +33,10 @@ public interface IEventService {
     List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId);
     List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId);
     List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId);
+    List<FullFeedEventDTO> getFilteredFeedEvents(UUID requestingUserId, UUID friendTagFilterId);
 
     // Additional Methods:
     List<EventDTO> getEventsByFriendTagId(UUID friendTagId);
     List<EventDTO> getEventsByOwnerId(UUID creatorUserId);
     String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
-
-    List<FullFeedEventDTO> getFilteredFeedEvents(UUID requestingUserId, UUID friendTagFilterId);
 }
