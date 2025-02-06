@@ -11,7 +11,6 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -191,25 +190,6 @@ public class UserController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @Deprecated(since = "For testing purposes")
-    @RequestMapping("test-google")
-    public OAuth2User testGoogle(@AuthenticationPrincipal OAuth2User principal) {
-        return principal;
-    }
-
-    @Deprecated(since = "For testing purposes")
-    @RequestMapping("test-google-2")
-    public String testGoogle2(@AuthenticationPrincipal OAuth2User principal) {
-        return (String) principal.getAttribute("given_name") + principal.getAttribute("family_name")
-                + principal.getAttribute("email") + principal.getAttribute("picture");
-    }
-
-    @Deprecated(since = "For testing purposes")
-    @RequestMapping("test-google-3")
-    public String testGoogle3(@AuthenticationPrincipal OAuth2User principal) {
-        return principal.getAttribute("sub");
     }
 
     @Deprecated(since = "For testing purposes")
