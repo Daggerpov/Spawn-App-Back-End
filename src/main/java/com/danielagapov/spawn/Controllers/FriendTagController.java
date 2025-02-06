@@ -172,4 +172,18 @@ public class FriendTagController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // full path: /api/v1/friendTags/bulkAddFriendsToTag
+    @PostMapping("bulkAddFriendsToTag")
+    public ResponseEntity<Void> bulkAddFriendsToTag(@RequestBody List<FullUserDTO> friends, @RequestParam UUID friendTagId) {
+        try {
+            friendTagService.saveUsersToFriendTag(friendTagId, friends);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
