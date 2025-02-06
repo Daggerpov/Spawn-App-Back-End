@@ -11,5 +11,4 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     // The JpaRepository interface already includes methods like save() and findById()
     User findByEmail(String email);
     boolean existsByEmail(String email);
-    User findByUsername(String username);
 }
