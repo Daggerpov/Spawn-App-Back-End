@@ -7,8 +7,6 @@ import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -24,23 +22,6 @@ public class OAuthController {
         this.logger = logger;
     }
 
-    /**
-     * 
-     * @param principal the google oauth response
-     * @return either a `UserDTO` if they're verified to already have been a Spawn user, or
-     * a newly-created user if they weren't previously a Spawn user
-     */
-    // full path: /api/v1/oauth/google/sign-in
-    @RequestMapping("google/sign-in")
-    @Deprecated(since = "We no longer use this to sign in, since our authentication is done through mobile")
-    public ResponseEntity<AbstractUserDTO> googleSignIn(@AuthenticationPrincipal OAuth2User principal) {
-        try {
-            AbstractUserDTO verifiedUserDTO = oauthService.verifyUser(principal);
-            return verifiedUserDTO instanceof UserDTO ? ResponseEntity.ok().body(verifiedUserDTO) : ResponseEntity.created(URI.create("api/v1/users")).body(verifiedUserDTO);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(null);
-        }
-    }
 
     /**
      * This method is meant to check whether an externally signed-in user through either Google or Apple
