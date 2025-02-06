@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Models;
+package com.danielagapov.spawn.Exceptions.Models;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

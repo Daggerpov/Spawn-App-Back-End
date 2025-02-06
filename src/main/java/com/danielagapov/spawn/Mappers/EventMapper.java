@@ -3,9 +3,9 @@ package com.danielagapov.spawn.Mappers;
 import com.danielagapov.spawn.DTOs.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.EventDTO;
 import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
-import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.Location;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Exceptions.Models.Event;
+import com.danielagapov.spawn.Exceptions.Models.Location;
+import com.danielagapov.spawn.Exceptions.Models.User;
 
 import java.util.List;
 import java.util.Map;

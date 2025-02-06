@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Repositories;
 
-import com.danielagapov.spawn.Models.EventTag;
+import com.danielagapov.spawn.Exceptions.Models.EventTag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

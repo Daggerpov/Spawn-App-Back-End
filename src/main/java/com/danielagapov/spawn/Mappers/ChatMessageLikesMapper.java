@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.Models.ChatMessage;
-import com.danielagapov.spawn.Models.ChatMessageLikes;
-import com.danielagapov.spawn.Models.CompositeKeys.ChatMessageLikesId;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Exceptions.Models.ChatMessage;
+import com.danielagapov.spawn.Exceptions.Models.ChatMessageLikes;
+import com.danielagapov.spawn.Exceptions.Models.CompositeKeys.ChatMessageLikesId;
+import com.danielagapov.spawn.Exceptions.Models.User;
 
 public class ChatMessageLikesMapper {
 

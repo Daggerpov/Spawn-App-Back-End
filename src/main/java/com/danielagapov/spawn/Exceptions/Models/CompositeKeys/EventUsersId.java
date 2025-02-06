@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Models.CompositeKeys;
+package com.danielagapov.spawn.Exceptions.Models.CompositeKeys;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -1,7 +1,6 @@
-package com.danielagapov.spawn.Models;
+package com.danielagapov.spawn.Exceptions.Models;
 
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.danielagapov.spawn.Enums.ParticipationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

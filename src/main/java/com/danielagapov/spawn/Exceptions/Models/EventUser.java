@@ -1,7 +1,7 @@
-package com.danielagapov.spawn.Models;
+package com.danielagapov.spawn.Exceptions.Models;
 
 import com.danielagapov.spawn.Enums.ParticipationStatus;
-import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
+import com.danielagapov.spawn.Exceptions.Models.CompositeKeys.EventUsersId;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
