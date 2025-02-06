@@ -166,7 +166,7 @@ public class FriendTagService implements IFriendTagService {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
         }
-        if (!repository.existsById(userId)) {
+        if (!userRepository.existsById(userId)) {
             throw new BaseNotFoundException(EntityType.User, userId);
         }
         // TODO consider adding a more descriptive error

@@ -14,6 +14,7 @@ import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -42,6 +43,9 @@ public class FriendTagServiceTests {
     @Mock
     private UserService userService;
 
+    @Mock
+    private ILogger logger;
+
     @InjectMocks
     private FriendTagService friendTagService;
 
@@ -57,7 +61,7 @@ public class FriendTagServiceTests {
         BasesNotFoundException exception = assertThrows(BasesNotFoundException.class,
                 () -> friendTagService.getAllFriendTags());
 
-        assertTrue(exception.getMessage().contains("Error fetching friendTags"));
+        assertEquals("FriendTag's not found.", exception.getMessage());
         verify(friendTagRepository, times(1)).findAll();
     }
 
@@ -65,11 +69,9 @@ public class FriendTagServiceTests {
     void getFriendTagById_ShouldReturnFriendTag_WhenFriendTagExists() {
         UUID friendTagId = UUID.randomUUID();
         FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
-        UserDTO owner = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
 
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag));
-        when(userService.getUserById(friendTag.getOwnerId())).thenReturn(owner);
-        when(userService.getFriendsByFriendTagId(friendTagId)).thenReturn(List.of());
+        when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of());
 
         FriendTagDTO result = friendTagService.getFriendTagById(friendTagId);
 
@@ -85,7 +87,7 @@ public class FriendTagServiceTests {
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
                 () -> friendTagService.getFriendTagById(friendTagId));
 
-        assertEquals("Entity not found with ID: " + friendTagId, exception.getMessage());
+        assertEquals("FriendTag entity not found with ID: " + friendTagId, exception.getMessage());
         verify(friendTagRepository, times(1)).findById(friendTagId);
     }
 
@@ -105,7 +107,7 @@ public class FriendTagServiceTests {
     @Test
     void saveFriendTag_ShouldThrowException_WhenDatabaseErrorOccurs() {
         UUID ownerId = UUID.randomUUID();
-        FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", ownerId, List.of(), true);
+        FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", ownerId, List.of(), false);
 
         when(friendTagRepository.save(any(FriendTag.class))).thenThrow(new DataAccessException("Database error") {});
 
@@ -162,6 +164,48 @@ public class FriendTagServiceTests {
     }
 
     @Test
+    void deleteFriendTagById_ShouldThrowException_WhenFriendTagDoesNotExist() {
+        UUID friendTagId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(false);
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+                () -> friendTagService.deleteFriendTagById(friendTagId));
+
+        assertEquals("FriendTag entity not found with ID: " + friendTagId, exception.getMessage());
+        verify(friendTagRepository, never()).deleteById(friendTagId);
+    }
+
+    @Test
+    void saveUserToFriendTag_ShouldThrowException_WhenFriendTagNotFound() {
+        UUID friendTagId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(false);
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+                () -> friendTagService.saveUserToFriendTag(friendTagId, userId));
+
+        assertEquals("FriendTag entity not found with ID: " + friendTagId, exception.getMessage());
+        verify(userFriendTagRepository, never()).save(any(UserFriendTag.class));
+    }
+
+    @Test
+    void saveUserToFriendTag_ShouldThrowException_WhenUserNotFound() {
+        UUID friendTagId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(userRepository.existsById(userId)).thenReturn(false);
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+                () -> friendTagService.saveUserToFriendTag(friendTagId, userId));
+
+        assertEquals("User entity not found with ID: " + userId, exception.getMessage());
+        verify(userFriendTagRepository, never()).save(any(UserFriendTag.class));
+    }
+
+    @Test
     void saveUserToFriendTag_ShouldThrowException_WhenDatabaseErrorOccurs() {
         UUID friendTagId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
@@ -172,8 +216,62 @@ public class FriendTagServiceTests {
         when(userRepository.existsById(userId)).thenReturn(true);
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
         doThrow(new DataAccessException("Database error") {}).when(userFriendTagRepository).save(any(UserFriendTag.class));
 
+        assertThrows(BaseSaveException.class, () -> friendTagService.saveUserToFriendTag(friendTagId, userId));
+
         verify(userFriendTagRepository, times(1)).save(any(UserFriendTag.class));
+    }
+
+    @Test
+    void saveFriendTag_ShouldThrowException_WhenUnexpectedErrorOccurs() {
+        UUID ownerId = UUID.randomUUID();
+        FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", ownerId, List.of(), false);
+
+        when(friendTagRepository.save(any(FriendTag.class))).thenThrow(new RuntimeException("Unexpected error"));
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> friendTagService.saveFriendTag(friendTagDTO));
+
+        assertEquals("Unexpected error", exception.getMessage());
+        verify(logger, times(1)).log("Unexpected error");
+    }
+
+    @Test
+    void deleteFriendTagById_ShouldDeleteAssociatedUserFriendTags() {
+        UUID friendTagId = UUID.randomUUID();
+        UserFriendTag userFriendTag = new UserFriendTag();
+        userFriendTag.setId(UUID.randomUUID());
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(userFriendTagRepository.findAllById(List.of(friendTagId))).thenReturn(List.of(userFriendTag));
+
+        assertDoesNotThrow(() -> friendTagService.deleteFriendTagById(friendTagId));
+
+        verify(userFriendTagRepository, times(1)).deleteById(userFriendTag.getId());
+        verify(friendTagRepository, times(1)).deleteById(friendTagId);
+    }
+
+    @Test
+    void getAllFriendTags_ShouldReturnEmptyList_WhenNoTagsExist() {
+        when(friendTagRepository.findAll()).thenReturn(List.of());
+
+        List<FriendTagDTO> result = friendTagService.getAllFriendTags();
+
+        assertTrue(result.isEmpty());
+        verify(friendTagRepository, times(1)).findAll();
+    }
+
+    @Test
+    void getFriendTagsByOwnerId_ShouldReturnEmptyList_WhenOwnerHasNoTags() {
+        UUID ownerId = UUID.randomUUID();
+
+        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(List.of());
+
+        List<FriendTagDTO> result = friendTagService.getFriendTagsByOwnerId(ownerId);
+
+        assertTrue(result.isEmpty());
+        verify(friendTagRepository, times(1)).findByOwnerId(ownerId);
     }
 }
