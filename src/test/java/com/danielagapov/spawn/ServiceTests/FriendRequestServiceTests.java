@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -94,7 +95,7 @@ class FriendRequestServiceTests {
     void getIncomingFriendRequestsByUserId_ShouldReturnRequests_WhenRequestsExist() {
         when(repository.findByReceiverId(receiverId)).thenReturn(List.of(friendRequest));
 
-        List<FriendRequestDTO> requests = friendRequestService.getIncomingFriendRequestsByUserId(receiverId);
+        List<FullFriendRequestDTO> requests = friendRequestService.getIncomingFriendRequestsByUserId(receiverId);
 
         assertFalse(requests.isEmpty());
         assertEquals(1, requests.size());
@@ -174,7 +175,7 @@ class FriendRequestServiceTests {
 
         when(repository.findByReceiverId(receiverId)).thenReturn(List.of(friendRequest, anotherFriendRequest));
 
-        List<FriendRequestDTO> requests = friendRequestService.getIncomingFriendRequestsByUserId(receiverId);
+        List<FullFriendRequestDTO> requests = friendRequestService.getIncomingFriendRequestsByUserId(receiverId);
 
         assertEquals(2, requests.size());
         verify(repository, times(1)).findByReceiverId(receiverId);
