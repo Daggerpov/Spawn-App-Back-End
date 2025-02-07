@@ -449,8 +449,8 @@ public class UserService implements IUserService {
                 // maximally return 3 friends
                 if (recommendedFriends.size() >= 3) break;
 
-                // if they aren't already friends with this potential user, add that as a
-                // recommended friend.
+                // if they aren't already friends with this potential friend
+                // , add that as a recommended friend.
                 boolean isAlreadyFriend = requestingUserFriendIds.contains(potentialFriend.id());
                 boolean hasAlreadySentFriendRequest = false;
 
