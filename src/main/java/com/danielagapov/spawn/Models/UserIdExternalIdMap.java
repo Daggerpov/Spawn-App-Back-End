@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.danielagapov.spawn.Enums.ParticipationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
