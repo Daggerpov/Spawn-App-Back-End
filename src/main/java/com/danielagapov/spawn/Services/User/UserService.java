@@ -458,7 +458,11 @@ public class UserService implements IUserService {
                     List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
 
                     for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                        if (friendRequestDTO.senderUserId() == userId && friendRequestDTO.receiverUserId() == potentialFriend.id()) {
+                        if ((friendRequestDTO.senderUserId() == userId && friendRequestDTO.receiverUserId() == potentialFriend.id()) ||
+                                // bi-directional case, since we want these to show up in the incoming friend requests section, not
+                                // as options for friend requests to send out
+                                (friendRequestDTO.senderUserId() == potentialFriend.id() && friendRequestDTO.receiverUserId() == userId)
+                        ) {
                             hasAlreadySentFriendRequest = true;
                             break;
                         }
