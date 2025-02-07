@@ -2,6 +2,10 @@ name: Spring Boot Syntax Check and Test Reporting
 
 on: [push, pull_request]
 
+permissions:
+  checks: write
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
