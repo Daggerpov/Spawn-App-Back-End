@@ -435,6 +435,37 @@ public class UserService implements IUserService {
                     .limit(3)
                     .collect(Collectors.toList());
 
+            if (recommendedFriends.size() >= 3) return recommendedFriends;
+
+            // otherwise, let's just recommend the user random users to add,
+            // or fill the `recommendedFriends` up to 3 with random ones
+
+            List<UserDTO> allUsers = getAllUsers();
+
+            for (UserDTO user : allUsers) {
+                // maximally return 3 friends
+                if (recommendedFriends.size() >= 3) break;
+
+                // if they aren't already friends with this user, add that as a
+                // recommended friend.
+                if (!requestingUserFriendIds.contains(user.id())) {
+                    FullUserDTO fullUserDTO = getFullUserById(user.id());
+
+                    recommendedFriends.add(new RecommendedFriendUserDTO(
+                            fullUserDTO.id(),
+                            fullUserDTO.friends(),
+                            fullUserDTO.username(),
+                            fullUserDTO.profilePicture(),
+                            fullUserDTO.firstName(),
+                            fullUserDTO.lastName(),
+                            fullUserDTO.bio(),
+                            fullUserDTO.friendTags(),
+                            fullUserDTO.email(),
+                            0 // no mutual friends
+                    ));
+                }
+            }
+
             return recommendedFriends;
         } catch (Exception e) {
             logger.log(e.getMessage());
