@@ -25,3 +25,9 @@ jobs:
 
       - name: Compile the project (syntax check)
         run: mvn clean compile -DskipTests
+
+      - name: Compile tests (syntax check for test files)
+        run: mvn test-compile -DskipTests
+
+      - name: Run test suite (but allow failures)
+        run: mvn test || true
