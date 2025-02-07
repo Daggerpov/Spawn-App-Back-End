@@ -454,13 +454,21 @@ public class UserService implements IUserService {
                 boolean isAlreadyFriend = requestingUserFriendIds.contains(potentialFriend.id());
                 boolean hasAlreadySentFriendRequest = false;
 
-                List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
+                try {
+                    List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
 
-                for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                    if (friendRequestDTO.senderUserId() == userId) {
-                        hasAlreadySentFriendRequest = true;
-                        break;
+                    for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
+                        if (friendRequestDTO.senderUserId() == userId) {
+                            hasAlreadySentFriendRequest = true;
+                            break;
+                        }
                     }
+                } catch (BaseNotFoundException e) {
+                    // this is fine, since it just means that the friend
+                    // has no incoming friend requests, per `FriendRequestService::getIncomingFriendRequestsByUserId()`
+                } catch (Exception e) {
+                    logger.log(e.getMessage());
+                    throw e;
                 }
 
                 if (!isAlreadyFriend && !hasAlreadySentFriendRequest){
