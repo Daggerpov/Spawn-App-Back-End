@@ -21,9 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -219,7 +217,7 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId) {
         // Fetch all friend tags for the owner
-        List<FriendTagDTO> friendTags = new java.util.ArrayList<>(getFriendTagsByOwnerId(ownerUserId).stream()
+        ArrayList<FriendTagDTO> friendTags = new ArrayList<>(getFriendTagsByOwnerId(ownerUserId).stream()
                 // Filter to include only friend tags where friendUserId exists in friendUserIds
                 .filter(friendTag -> friendTag.friendUserIds().contains(friendUserId))
                 .toList());
@@ -228,7 +226,17 @@ public class FriendTagService implements IFriendTagService {
         if (friendTags.size() > 1) friendTags.removeIf(FriendTagDTO::isEveryone);
 
         // arbitrarily grab the first tag that isn't the 'everyone' tag
-        return friendTags.getFirst();
+        try {
+            Optional<FriendTagDTO> friendTag = friendTags.stream().findFirst();
+            if (friendTag.isPresent()) { // just null-checking
+                return friendTag.get();
+            } else {
+                throw new BaseNotFoundException(EntityType.FriendTag, friendUserId);
+            }
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
     @Override
