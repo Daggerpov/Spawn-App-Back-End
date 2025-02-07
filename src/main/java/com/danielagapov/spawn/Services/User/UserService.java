@@ -455,13 +455,13 @@ public class UserService implements IUserService {
                 boolean hasAlreadySentFriendRequest = false;
 
                 try {
-                    List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
+                    List<FullFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
 
-                    for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                        if ((friendRequestDTO.senderUserId() == userId && friendRequestDTO.receiverUserId() == potentialFriend.id()) ||
-                                // bi-directional case, since we want these to show up in the incoming friend requests section, not
+                    for (FullFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
+                        if ((friendRequestDTO.getSenderUser().id() == userId && friendRequestDTO.getReceiverUser().id() == potentialFriend.id()) ||
+                                // bidirectional case, since we want these to show up in the incoming friend requests section, not
                                 // as options for friend requests to send out
-                                (friendRequestDTO.senderUserId() == potentialFriend.id() && friendRequestDTO.receiverUserId() == userId)
+                                (friendRequestDTO.getSenderUser().id() == potentialFriend.id() && friendRequestDTO.getReceiverUser().id() == userId)
                         ) {
                             hasAlreadySentFriendRequest = true;
                             break;
