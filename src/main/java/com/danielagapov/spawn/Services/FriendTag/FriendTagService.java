@@ -219,12 +219,16 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId) {
         // Fetch all friend tags for the owner
-        return getFriendTagsByOwnerId(ownerUserId).stream()
+        List<FriendTagDTO> friendTags = new java.util.ArrayList<>(getFriendTagsByOwnerId(ownerUserId).stream()
                 // Filter to include only friend tags where friendUserId exists in friendUserIds
                 .filter(friendTag -> friendTag.friendUserIds().contains(friendUserId))
-                // Return the first matching friend tag, or throw an exception if none is found
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No friend tag found containing the specified friendUserId."));
+                .toList());
+
+        // if there's more than just the 'everyone' tag, don't use that one
+        if (friendTags.size() > 1) friendTags.removeIf(FriendTagDTO::isEveryone);
+
+        // arbitrarily grab the first tag that isn't the 'everyone' tag
+        return friendTags.getFirst();
     }
 
     @Override
