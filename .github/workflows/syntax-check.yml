@@ -31,3 +31,4 @@ jobs:
 
       - name: Run test suite (but allow failures)
         run: mvn test || true
+        #comment test for PR
