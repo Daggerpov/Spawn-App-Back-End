@@ -458,7 +458,7 @@ public class UserService implements IUserService {
                     List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
 
                     for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                        if (friendRequestDTO.senderUserId() == userId) {
+                        if (friendRequestDTO.senderUserId() == userId && friendRequestDTO.receiverUserId() == potentialFriend.id()) {
                             hasAlreadySentFriendRequest = true;
                             break;
                         }
@@ -471,7 +471,9 @@ public class UserService implements IUserService {
                     throw e;
                 }
 
-                if (!isAlreadyFriend && !hasAlreadySentFriendRequest){
+                boolean isSelf = userId == potentialFriend.id();
+
+                if (!isAlreadyFriend && !hasAlreadySentFriendRequest && !isSelf){
                     FullUserDTO fullUserDTO = getFullUserById(potentialFriend.id());
 
                     recommendedFriends.add(new RecommendedFriendUserDTO(
