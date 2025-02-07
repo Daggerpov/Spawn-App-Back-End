@@ -17,6 +17,7 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,18 +37,20 @@ public class UserService implements IUserService {
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
+    private final IFriendRequestService friendRequestService;
     private final ILogger logger;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, ILogger logger) {
+                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, ILogger logger) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
+        this.friendRequestService = friendRequestService;
         this.logger = logger;
     }
 
@@ -442,14 +445,26 @@ public class UserService implements IUserService {
 
             List<UserDTO> allUsers = getAllUsers();
 
-            for (UserDTO user : allUsers) {
+            for (UserDTO potentialFriend : allUsers) {
                 // maximally return 3 friends
                 if (recommendedFriends.size() >= 3) break;
 
-                // if they aren't already friends with this user, add that as a
+                // if they aren't already friends with this potential user, add that as a
                 // recommended friend.
-                if (!requestingUserFriendIds.contains(user.id())) {
-                    FullUserDTO fullUserDTO = getFullUserById(user.id());
+                boolean isAlreadyFriend = requestingUserFriendIds.contains(potentialFriend.id());
+                boolean hasAlreadySentFriendRequest = false;
+
+                List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
+
+                for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
+                    if (friendRequestDTO.senderUserId() == userId) {
+                        hasAlreadySentFriendRequest = true;
+                        break;
+                    }
+                }
+
+                if (!isAlreadyFriend && !hasAlreadySentFriendRequest){
+                    FullUserDTO fullUserDTO = getFullUserById(potentialFriend.id());
 
                     recommendedFriends.add(new RecommendedFriendUserDTO(
                             fullUserDTO.id(),
