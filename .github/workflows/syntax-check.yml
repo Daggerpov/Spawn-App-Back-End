@@ -1,4 +1,4 @@
-name: Spring Boot Syntax Check (Maven)
+name: Spring Boot Syntax Check and Test Reporting
 
 on: [push, pull_request]
 
@@ -29,6 +29,20 @@ jobs:
       - name: Compile tests (syntax check for test files)
         run: mvn test-compile -DskipTests
 
-      - name: Run test suite (but allow failures)
-        run: mvn test || true
-        #comment test for PR
+      - name: Run test suite
+        run: mvn test
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: JUnit Tests
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: target/surefire-reports/
+
