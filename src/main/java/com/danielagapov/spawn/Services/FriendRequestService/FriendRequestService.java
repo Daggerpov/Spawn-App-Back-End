@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.FriendRequestService;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -13,6 +14,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +58,7 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
+    public List<FullFriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
@@ -64,7 +66,7 @@ public class FriendRequestService implements IFriendRequestService {
                 throw new BaseNotFoundException(EntityType.FriendRequest, id);
             }
 
-            return FriendRequestMapper.toDTOList(friendRequests);
+            return convertFriendRequestsToFullFriendRequests(FriendRequestMapper.toDTOList(friendRequests));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseNotFoundException(EntityType.FriendRequest, id);
@@ -89,5 +91,18 @@ public class FriendRequestService implements IFriendRequestService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public List<FullFriendRequestDTO> convertFriendRequestsToFullFriendRequests (List<FriendRequestDTO> friendRequests) {
+        List<FullFriendRequestDTO> fullFriendRequests = new ArrayList<>();
+        for (FriendRequestDTO friendRequest : friendRequests) {
+            fullFriendRequests.add(new FullFriendRequestDTO(
+                    friendRequest.id(),
+                    userService.getFullUserById(friendRequest.senderUserId()),
+                    userService.getFullUserById(friendRequest.receiverUserId())
+            ));
+        }
+        return fullFriendRequests;
     }
 }

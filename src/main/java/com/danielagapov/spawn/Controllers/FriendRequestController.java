@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,7 @@ public class FriendRequestController {
 
     // full path: /api/v1/users/{id}/friend-requests
     @GetMapping("{id}/friend-requests")
-    public ResponseEntity<List<FriendRequestDTO>> getIncomingFriendRequests(@PathVariable UUID id) {
+    public ResponseEntity<List<FullFriendRequestDTO>> getIncomingFriendRequests(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
