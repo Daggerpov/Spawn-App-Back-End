@@ -3,6 +3,8 @@ package com.danielagapov.spawn.Services.UserDetails;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserInfo;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,6 +23,6 @@ public class UserInfoService implements UserDetailsService {
         User user = repository.findByUsername(username);
         if (user == null) { throw new UsernameNotFoundException(username); }
 
-        return new UserInfo(username);
+        return new UserInfo(user.getUsername(), user.getPassword());
     }
 }

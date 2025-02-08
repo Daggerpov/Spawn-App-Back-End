@@ -3,10 +3,12 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,17 +34,21 @@ public class AuthController {
             UserDTO newUserDTO = (UserDTO) response.get("user");
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
     // full path: /api/v1/auth/login
     @PostMapping("login")
-    public ResponseEntity<FullUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+    public ResponseEntity<UserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
-            FullUserDTO fullUserDTO = authService.loginUser(authUserDTO);
-            return ResponseEntity.ok().body(fullUserDTO);
+            Map<String, Object> response = authService.loginUser(authUserDTO);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Authorization", "Bearer " + response.get("token"));
+            UserDTO existingUserDTO = (UserDTO) response.get("user");
+            return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

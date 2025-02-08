@@ -201,7 +201,7 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
-            throw new BaseSaveException("Failed to save user: " + e.getMessage());
+            throw new BaseSaveException("Failed to save user: " + e.getMessage()); // TODO: fix throwing
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
