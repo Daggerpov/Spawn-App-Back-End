@@ -2,7 +2,9 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
@@ -23,33 +25,38 @@ import java.util.Map;
 @AllArgsConstructor
 public class AuthController {
     private final IAuthService authService;
+    private final ILogger logger;
 
     // full path: /api/v1/auth/register
     @PostMapping("register")
-    public ResponseEntity<UserDTO> register(@RequestBody AuthUserDTO authUserDTO) {
+    public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
         try {
+            logger.log(String.format("Account registration request received: {user: %s}", authUserDTO));
             Map<String, Object> response = authService.registerUser(authUserDTO);
             HttpHeaders headers = new HttpHeaders();
             headers.add("Authorization", "Bearer " + response.get("token"));
             UserDTO newUserDTO = (UserDTO) response.get("user");
+            logger.log(String.format("User successfully registered: {user: %s}", newUserDTO));
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log("Error registering in user: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
     // full path: /api/v1/auth/login
     @PostMapping("login")
-    public ResponseEntity<UserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+    public ResponseEntity<IOnboardedUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
+            logger.log(String.format("Login request received: {user: %s}", authUserDTO));
             Map<String, Object> response = authService.loginUser(authUserDTO);
             HttpHeaders headers = new HttpHeaders();
             headers.add("Authorization", "Bearer " + response.get("token"));
-            UserDTO existingUserDTO = (UserDTO) response.get("user");
+            FullUserDTO existingUserDTO = (FullUserDTO) response.get("user");
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
+            logger.log(String.format("Error logging in user: {user: %s}. Error: %s", authUserDTO, e.getMessage()));
             return ResponseEntity.internalServerError().build();
         }
     }

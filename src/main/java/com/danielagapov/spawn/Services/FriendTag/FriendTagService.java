@@ -97,9 +97,11 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
+        logger.log("Getting friend tags by owner id");
         try {
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
             Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
+            logger.log("Returning friend tag dto list");
             return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
@@ -198,6 +200,7 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags) {
+        logger.log("Converting friend tags to full friend tags: " + friendTags.toString());
         return friendTags.stream()
                 .map(this::getFullFriendTagByFriendTag)
                 .collect(Collectors.toList());
