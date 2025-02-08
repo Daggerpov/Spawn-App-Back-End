@@ -34,21 +34,18 @@ jobs:
       - name: Compile tests (syntax check for test files)
         run: mvn test-compile -DskipTests
 
-      # Run Tests
       - name: Run test suite
         run: mvn test
 
-      # Publish Test Results (doesn't fail the workflow even if tests fail)
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
-        if: always()  # Ensures this runs even if tests fail
+        if: always()
         with:
           name: JUnit Tests
           path: target/surefire-reports/*.xml
           reporter: java-junit
-          fail-on-error: false  # Prevents the workflow from failing on test errors
+          fail-on-error: false
 
-      # Upload Test Reports as Artifacts
       - name: Upload Test Reports
         uses: actions/upload-artifact@v4
         with:
