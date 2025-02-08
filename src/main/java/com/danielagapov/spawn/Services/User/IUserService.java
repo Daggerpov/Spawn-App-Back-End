@@ -23,7 +23,7 @@ public interface IUserService {
     boolean deleteUserById(UUID id);
     User saveEntity(User user);
     UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
-    FullUserDTO getUserByEmail(String email);
+    FullUserDTO getFullUserByEmail(String email);
 
     // For Friends:
 
@@ -52,5 +52,6 @@ public interface IUserService {
     // Helper
     FullUserDTO getFullUserByUser(UserDTO user);
     List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users);
+    boolean existsByEmail(String email);
     FullUserDTO getFullUserByUsername(String username);
 }

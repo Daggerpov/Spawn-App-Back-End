@@ -70,19 +70,13 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/friendTag/{tagId}?full=full&requestingUserId=requestingUserId
-    @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsByFriendTagId(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full, @RequestParam UUID requestingUserId) {
+    // full path: /api/v1/events/friendTag/{friendTagFilterId}
+    @GetMapping("friendTag/{friendTagFilterId}")
+    public ResponseEntity<List<FullFeedEventDTO>> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
         try {
-            if (full && requestingUserId != null) {
-                return new ResponseEntity<>(eventService.convertEventsToFullFeedEvents(eventService.getEventsByFriendTagId(tagId), requestingUserId), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(eventService.getEventsByFriendTagId(tagId), HttpStatus.OK);
-            }
-        } catch (BasesNotFoundException e) {
+            return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

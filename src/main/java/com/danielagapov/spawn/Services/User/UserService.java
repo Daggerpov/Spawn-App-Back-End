@@ -8,7 +8,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.DatabaseException;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.FriendTag;
@@ -17,6 +17,7 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,18 +37,20 @@ public class UserService implements IUserService {
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
+    private final IFriendRequestService friendRequestService;
     private final ILogger logger;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, ILogger logger) {
+                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, ILogger logger) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
+        this.friendRequestService = friendRequestService;
         this.logger = logger;
     }
 
@@ -286,7 +289,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getUserByEmail(String email) {
+    public FullUserDTO getFullUserByEmail(String email) {
         try {
             User user = repository.findByEmail(email);
             return user == null ? null : getFullUserById(user.getId());
@@ -444,6 +447,63 @@ public class UserService implements IUserService {
                     .limit(3)
                     .collect(Collectors.toList());
 
+            if (recommendedFriends.size() >= 3) return recommendedFriends;
+
+            // otherwise, let's just recommend the user random users to add,
+            // or fill the `recommendedFriends` up to 3 with random ones
+
+            List<UserDTO> allUsers = getAllUsers();
+
+            for (UserDTO potentialFriend : allUsers) {
+                // maximally return 3 friends
+                if (recommendedFriends.size() >= 3) break;
+
+                // if they aren't already friends with this potential friend
+                // , add that as a recommended friend.
+                boolean isAlreadyFriend = requestingUserFriendIds.contains(potentialFriend.id());
+                boolean hasAlreadySentFriendRequest = false;
+
+                try {
+                    List<FullFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriend.id());
+
+                    for (FullFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
+                        if ((friendRequestDTO.getSenderUser().id() == userId && friendRequestDTO.getReceiverUser().id() == potentialFriend.id()) ||
+                                // bidirectional case, since we want these to show up in the incoming friend requests section, not
+                                // as options for friend requests to send out
+                                (friendRequestDTO.getSenderUser().id() == potentialFriend.id() && friendRequestDTO.getReceiverUser().id() == userId)
+                        ) {
+                            hasAlreadySentFriendRequest = true;
+                            break;
+                        }
+                    }
+                } catch (BaseNotFoundException e) {
+                    // this is fine, since it just means that the friend
+                    // has no incoming friend requests, per `FriendRequestService::getIncomingFriendRequestsByUserId()`
+                } catch (Exception e) {
+                    logger.log(e.getMessage());
+                    throw e;
+                }
+
+                boolean isSelf = userId == potentialFriend.id();
+
+                if (!isAlreadyFriend && !hasAlreadySentFriendRequest && !isSelf){
+                    FullUserDTO fullUserDTO = getFullUserById(potentialFriend.id());
+
+                    recommendedFriends.add(new RecommendedFriendUserDTO(
+                            fullUserDTO.id(),
+                            fullUserDTO.friends(),
+                            fullUserDTO.username(),
+                            fullUserDTO.profilePicture(),
+                            fullUserDTO.firstName(),
+                            fullUserDTO.lastName(),
+                            fullUserDTO.bio(),
+                            fullUserDTO.friendTags(),
+                            fullUserDTO.email(),
+                            0 // no mutual friends
+                    ));
+                }
+            }
+
             return recommendedFriends;
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -572,6 +632,11 @@ public class UserService implements IUserService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return repository.existsByEmail(email);
     }
 
     /**

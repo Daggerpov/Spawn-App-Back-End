@@ -1,10 +1,11 @@
 package com.danielagapov.spawn.Services.FriendRequestService;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
@@ -13,6 +14,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,7 +24,7 @@ public class FriendRequestService implements IFriendRequestService {
     private final IUserService userService;
     private final ILogger logger;
 
-    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService,ILogger logger) {
+    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;
@@ -56,7 +58,7 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
+    public List<FullFriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
@@ -64,7 +66,7 @@ public class FriendRequestService implements IFriendRequestService {
                 throw new BaseNotFoundException(EntityType.FriendRequest, id);
             }
 
-            return FriendRequestMapper.toDTOList(friendRequests);
+            return convertFriendRequestsToFullFriendRequests(FriendRequestMapper.toDTOList(friendRequests));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseNotFoundException(EntityType.FriendRequest, id);
@@ -83,6 +85,24 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     public void deleteFriendRequest(UUID id) {
-        repository.deleteById(id);
+        try {
+            repository.deleteById(id);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<FullFriendRequestDTO> convertFriendRequestsToFullFriendRequests (List<FriendRequestDTO> friendRequests) {
+        List<FullFriendRequestDTO> fullFriendRequests = new ArrayList<>();
+        for (FriendRequestDTO friendRequest : friendRequests) {
+            fullFriendRequests.add(new FullFriendRequestDTO(
+                    friendRequest.id(),
+                    userService.getFullUserById(friendRequest.senderUserId()),
+                    userService.getFullUserById(friendRequest.receiverUserId())
+            ));
+        }
+        return fullFriendRequests;
     }
 }

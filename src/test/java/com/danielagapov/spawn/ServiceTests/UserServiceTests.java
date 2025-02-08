@@ -1,7 +1,11 @@
-package com.danielagapov.spawn;
+package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
@@ -34,6 +38,8 @@ public class UserServiceTests {
     @Mock
     private IFriendTagRepository friendTagRepository;
 
+    @Mock
+    private ILogger logger;
     @Mock
     private IFriendTagService friendTagService;
 
@@ -74,16 +80,19 @@ public class UserServiceTests {
 
     @Test
     void saveUser_ShouldThrowException_WhenDatabaseErrorOccurs() {
+        // Arrange
         UserDTO userDTO = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
-
         when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {});
 
+        // Act & Assert
         BaseSaveException exception = assertThrows(BaseSaveException.class,
                 () -> userService.saveUser(userDTO));
 
         assertTrue(exception.getMessage().contains("Failed to save user"));
         verify(userRepository, times(1)).save(any(User.class));
+        verify(logger, times(1)).log("Database error");  // Verify that logging happened
     }
+
 
     @Test
     void replaceUser_ShouldUpdateUser_WhenUserExists() {
@@ -139,7 +148,112 @@ public class UserServiceTests {
 
         assertFalse(result);
         verify(userRepository, times(1)).deleteById(userId);
+        verify(logger, times(1)).log("Database error");  // Ensure logger is called
     }
 
+    @Test
+    void getAllUsers_ShouldThrowException_WhenDatabaseErrorOccurs() {
+        when(userRepository.findAll()).thenThrow(new DataAccessException("Database error") {});
 
+        BasesNotFoundException exception = assertThrows(BasesNotFoundException.class, () -> userService.getAllUsers());
+
+        assertTrue(exception.getMessage().contains("User"));
+        verify(logger, atLeastOnce()).log("Database error");
+    }
+
+    @Test
+    void getUserById_ShouldThrowException_WhenUserDoesNotExist() {
+        UUID userId = UUID.randomUUID();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.getUserById(userId));
+
+        assertTrue(exception.getMessage().contains("User"));
+        verify(userRepository, times(1)).findById(userId);
+    }
+
+    @Test
+    void deleteUserById_ShouldThrowException_WhenUserDoesNotExist() {
+        UUID userId = UUID.randomUUID();
+
+        when(userRepository.existsById(userId)).thenReturn(false);
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
+
+        assertTrue(exception.getMessage().contains("User"));
+        verify(userRepository, times(1)).existsById(userId);
+    }
+
+    @Test
+    void saveUser_ShouldLogException_WhenUnexpectedErrorOccurs() {
+        UserDTO userDTO = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        when(userRepository.save(any(User.class))).thenThrow(new RuntimeException("Unexpected error"));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.saveUser(userDTO));
+
+        assertTrue(exception.getMessage().contains("Unexpected error"));
+        verify(logger, times(1)).log("Unexpected error");
+    }
+
+    @Test
+    void replaceUser_ShouldLogException_WhenUnexpectedErrorOccurs() {
+        UUID userId = UUID.randomUUID();
+        UserDTO newUserDTO = new UserDTO(userId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+
+        when(userRepository.findById(userId)).thenThrow(new RuntimeException("Unexpected error"));
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.replaceUser(newUserDTO, userId));
+
+        assertTrue(exception.getMessage().contains("Unexpected error"));
+        verify(logger, times(1)).log("Unexpected error");
+    }
+
+    @Test
+    void deleteUserById_ShouldLogException_WhenUnexpectedErrorOccurs() {
+        UUID userId = UUID.randomUUID();
+
+        when(userRepository.existsById(userId)).thenReturn(true);
+        doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
+
+        boolean result = userService.deleteUserById(userId);
+
+        assertFalse(result);
+        verify(logger, times(1)).log("Unexpected error");
+    }
+
+    @Test
+    void replaceUser_ShouldThrowException_WhenDatabaseErrorOccurs() {
+        UUID userId = UUID.randomUUID();
+        UserDTO newUserDTO = new UserDTO(userId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        User existingUser = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {});
+
+        DataAccessException exception = assertThrows(DataAccessException.class, () -> userService.replaceUser(newUserDTO, userId));
+
+        assertTrue(exception.getMessage().contains("Database error"));
+        verify(logger, atLeastOnce()).log("Database error");
+    }
+
+    @Test
+    void deleteUserById_ShouldNotCallDelete_WhenUserDoesNotExist() {
+        UUID userId = UUID.randomUUID();
+
+        when(userRepository.existsById(userId)).thenReturn(false);
+
+        assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
+        verify(userRepository, never()).deleteById(userId);
+    }
+
+    @Test
+    void getAllUsers_ShouldReturnEmptyList_WhenNoUsersExist() {
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        List<UserDTO> result = userService.getAllUsers();
+
+        assertTrue(result.isEmpty());
+        verify(userRepository, times(1)).findAll();
+    }
 }

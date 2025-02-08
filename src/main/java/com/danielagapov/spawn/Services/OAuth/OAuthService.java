@@ -2,14 +2,16 @@ package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,8 +27,34 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
+    public AbstractUserDTO verifyUser(OAuth2User oauthUser) {
+        try {
+            TempUserDTO tempUser = unpackOAuthUser(oauthUser);
+            UserIdExternalIdMap mapping = getMapping(tempUser);
+
+            return mapping == null ? tempUser : getUserDTO(mapping);
+        } catch (DataAccessException e) {
+            logger.log("Database error while verifying OAuth user: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.log("Unexpected error while verifying OAuth user: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
+            // TODO: temporary solution
+            if (mappingExistsByExternalId(externalUserId)) {
+                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
+                return userService.getFullUserByEmail(userDTO.email());
+            }
+            if (userService.existsByEmail(userDTO.email())) {
+                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.email(), userDTO.email()));
+                return userService.getFullUserByEmail(userDTO.email());
+            }
+
             // user dto -> entity & save user
             logger.log(String.format("Making user: {userDTO: %s}", userDTO));
             userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
@@ -52,7 +80,7 @@ public class OAuthService implements IOAuthService {
     public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email) {
         try {
             UserIdExternalIdMap mapping = getMapping(externalUserId);
-            return mapping == null ? userService.getUserByEmail(email) : getFullUserDTO(mapping);
+            return mapping == null ? userService.getFullUserByEmail(email) : getFullUserDTO(mapping);
         } catch (DataAccessException e) {
             logger.log("Database error while fetching user by external ID: " + e.getMessage());
             throw e;
@@ -62,20 +90,32 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-//    private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
-//        try {
-//            String given_name = oauthUser.getAttribute("given_name");
-//            String family_name = oauthUser.getAttribute("family_name");
-//            String picture = oauthUser.getAttribute("picture"); // TODO: may need to change once S3 is set
-//            String email = oauthUser.getAttribute("email"); // to be used as username
-//            String externalUserId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
-//            if (externalUserId == null) throw new ApplicationException("Subject was null");
-//            return new TempUserDTO(externalUserId, given_name, family_name, email, picture);
-//        } catch (Exception e) {
-//            logger.log("Error unpacking OAuth user: " + e.getMessage());
-//            throw e;
-//        }
-//    }
+    /**
+     * Checks if user exists, first by externalUserId then by email
+     * This is a temporary solution to duplicates occurring in database
+     */
+    private boolean userExistsByExternalIdOrEmail(String externalUserId, String email) {
+        return mappingExistsByExternalId(externalUserId) || userService.existsByEmail(email);
+    }
+
+    private boolean mappingExistsByExternalId(String externalUserId) {
+        return externalIdMapRepository.existsById(externalUserId);
+    }
+
+    private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
+        try {
+            String given_name = oauthUser.getAttribute("given_name");
+            String family_name = oauthUser.getAttribute("family_name");
+            String picture = oauthUser.getAttribute("picture"); // TODO: may need to change once S3 is set
+            String email = oauthUser.getAttribute("email"); // to be used as username
+            String externalUserId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
+            if (externalUserId == null) throw new ApplicationException("Subject was null");
+            return new TempUserDTO(externalUserId, given_name, family_name, email, picture);
+        } catch (Exception e) {
+            logger.log("Error unpacking OAuth user: " + e.getMessage());
+            throw e;
+        }
+    }
 
     private UserIdExternalIdMap getMapping(TempUserDTO tempUser) {
         try {

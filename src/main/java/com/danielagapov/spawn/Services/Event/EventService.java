@@ -7,7 +7,7 @@ import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.EventMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
@@ -185,6 +185,7 @@ public class EventService implements IEventService {
 
             User creator = userRepository.findById(eventCreationDTO.creatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
+
             Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
 
             event = repository.save(event);
@@ -212,7 +213,8 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
-            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds)
+                    , null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
@@ -472,6 +474,19 @@ public class EventService implements IEventService {
 
         return combinedEvents;
     }
+    
+    @Override
+    public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
+        UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
+        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
+
+        // Combine the lists with eventsCreated first
+        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+        combinedEvents.addAll(eventsByFriendTagFilter);
+ 
+        return combinedEvents;
+    }
 
     @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
@@ -500,7 +515,9 @@ public class EventService implements IEventService {
         FriendTagDTO pertainingFriendTag = friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.creatorUserId());
 
         // -> for now, we handle tie-breaks (user has same friend within two friend tags) in whichever way (just choose one)
-
+        if (pertainingFriendTag == null) {
+            return "#1D3D3D"; // Default color if no tag exists
+        }
         // using that friend tag, grab its colorHexCode property to return from this method
 
         return pertainingFriendTag.colorHexCode();
