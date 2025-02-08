@@ -197,7 +197,7 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTO.id()));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
-            throw new BaseSaveException("Failed to save user: " + e.getMessage());
+            throw new BaseSaveException("Failed to save user: " + e.getMessage()); // TODO: fix throwing
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -518,13 +518,13 @@ public class UserService implements IUserService {
         try {
             return new FullUserDTO(
                     user.id(),
-                    convertUsersToFullUsers(getFriendsByUserId(user.id())),
+                    user.friendIds() == null ? null : convertUsersToFullUsers(getFriendsByUserId(user.id())),
                     user.username(),
                     user.profilePicture(),
                     user.firstName(),
                     user.lastName(),
                     user.bio(),
-                    friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(user.id())),
+                    user.friendTagIds() == null ? null : friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(user.id())),
                     user.email()
             );
         } catch (Exception e) {
@@ -549,6 +549,7 @@ public class UserService implements IUserService {
     public FullUserDTO getFullUserByUsername(String username) {
         try {
             User user = repository.findByUsername(username);
+            System.out.println("LOGGING IN USER:" + user.getUsername());
             return getFullUserById(user.getId());
         } catch (Exception e) {
             logger.log(e.getMessage());

@@ -19,16 +19,18 @@ import java.io.IOException;
 
 @Component
 @AllArgsConstructor
-public class JWTFilterChain extends OncePerRequestFilter {
+public class JWTFilter extends OncePerRequestFilter {
     private final IJWTService jwtService;
     private final ApplicationContext context;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+//        System.out.println("DOING FILTER");
         String authHeader = request.getHeader("Authorization");
 
         // if no token is sent then skip jwt validation
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//            System.out.println("AUTH HEADER NOT FOUND");
             filterChain.doFilter(request, response);
             return;
         }
@@ -38,8 +40,9 @@ public class JWTFilterChain extends OncePerRequestFilter {
         // check if the user is not authenticated yet
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = context.getBean(UserInfoService.class).loadUserByUsername(username);
-
+//            System.out.println(userDetails.getUsername() + " NOT AUTHENTICATED YET");
             if (jwtService.isValidToken(jwt, userDetails)) {
+//                System.out.println("JWT VALID");
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
