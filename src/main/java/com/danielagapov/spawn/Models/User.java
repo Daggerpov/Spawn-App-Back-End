@@ -32,4 +32,15 @@ public class User implements Serializable {
         private String lastName;
         private String bio;
         private String email;
+
+        // Constructor without password
+        public User(UUID id, String username, String profilePictureUrlString, String firstName, String lastName, String bio, String email) {
+                this.id = id;
+                this.username = username;
+                this.profilePictureUrlString = profilePictureUrlString;
+                this.firstName = firstName;
+                this.lastName = lastName;
+                this.bio = bio;
+                this.email = email;
+        }
 }
