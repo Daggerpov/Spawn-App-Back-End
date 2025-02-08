@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Config;
 
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
 import jakarta.servlet.FilterChain;
@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,7 +27,7 @@ public class JWTFilter extends OncePerRequestFilter {
     private final ILogger logger;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         logger.log("Executing JWT filter");
         String authHeader = request.getHeader("Authorization");
 

@@ -3,7 +3,7 @@ package com.danielagapov.spawn.Services.Auth;
 import com.danielagapov.spawn.DTOs.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
-import com.danielagapov.spawn.Helpers.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IUserRepository;
@@ -18,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
