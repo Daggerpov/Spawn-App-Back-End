@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Config;
 
+import com.danielagapov.spawn.Helpers.Logger.ILogger;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
 import jakarta.servlet.FilterChain;
@@ -22,30 +23,40 @@ import java.io.IOException;
 public class JWTFilter extends OncePerRequestFilter {
     private final IJWTService jwtService;
     private final ApplicationContext context;
+    private final ILogger logger;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-//        System.out.println("DOING FILTER");
+        logger.log("Executing JWT filter");
         String authHeader = request.getHeader("Authorization");
 
         // if no token is sent then skip jwt validation
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//            System.out.println("AUTH HEADER NOT FOUND");
+            logger.log("Empty Authorization header, skipping JWT filter");
             filterChain.doFilter(request, response);
             return;
         }
+        logger.log("Token found");
         String jwt = authHeader.substring(7);
-        String username = jwtService.extractUsername(jwt);
+        String username;
+        try {
+            username = jwtService.extractUsername(jwt);
+        } catch (Exception e) {
+            logger.log("Failed to extract username. Invalid or expired token");
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         // check if the user is not authenticated yet
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = context.getBean(UserInfoService.class).loadUserByUsername(username);
-//            System.out.println(userDetails.getUsername() + " NOT AUTHENTICATED YET");
             if (jwtService.isValidToken(jwt, userDetails)) {
-//                System.out.println("JWT VALID");
+                logger.log("Token is valid, setting authentication");
                 UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(token);
+            } else {
+                logger.log("Invalid token, user is not authenticated");
             }
         }
         filterChain.doFilter(request, response);

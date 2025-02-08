@@ -71,6 +71,7 @@ public class UserService implements IUserService {
 
     @Override
     public UserDTO getUserById(UUID id) {
+        logger.log("Getting user by id with id " + id);
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
@@ -100,15 +101,18 @@ public class UserService implements IUserService {
 
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
+        logger.log("Getting friend user ids for user with id " + id);
         try {
             // Fetch FriendTag entities related to the given user (for example, by userId)
             List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
 
             // Retrieve the user IDs associated with those FriendTags
-            return friendTags.stream()
+            List<UUID> friendIds = friendTags.stream()
                     .flatMap(friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()).stream())
                     .distinct() // Remove duplicates
-                    .collect(Collectors.toList());
+                    .toList();
+            logger.log("Found friend ids " + friendIds);
+            return friendIds;
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -130,8 +134,10 @@ public class UserService implements IUserService {
 
     @Override
     public Map<FriendTag, UUID> getOwnerUserIdsMap() {
+        logger.log("Getting owner user ids map");
         try {
-            List<FriendTag> friendTags = friendTagRepository.findAll();
+            List<FriendTag> friendTags = friendTagRepository.findAll(); // TODO: don't find by all
+            logger.log("Friend tags found: " + friendTags.size());
             return friendTags.stream()
                     .collect(Collectors.toMap(
                             friendTag -> friendTag,
@@ -145,6 +151,7 @@ public class UserService implements IUserService {
 
     @Override
     public Map<FriendTag, List<UUID>> getFriendUserIdsMap() {
+        logger.log("Getting friend user ids map");
         try {
             // Fetch all FriendTags
             List<FriendTag> friendTags = friendTagRepository.findAll();
@@ -341,6 +348,7 @@ public class UserService implements IUserService {
 
     @Override
     public List<UserDTO> getFriendsByUserId(UUID userId) {
+        logger.log("Getting friends (user entities) by user id " + userId);
         try {
             // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
             FriendTag everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);

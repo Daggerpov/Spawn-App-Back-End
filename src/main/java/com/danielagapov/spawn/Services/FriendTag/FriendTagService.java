@@ -97,6 +97,7 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
+        logger.log("Getting friend tags by owner id");
         try {
             // Fetch the raw data
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
@@ -238,6 +239,7 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags) {
+        logger.log("Converting friend tags to full friend tags: " + friendTags.toString());
         return friendTags.stream()
                 .map(this::getFullFriendTagByFriendTag)
                 .collect(Collectors.toList());
