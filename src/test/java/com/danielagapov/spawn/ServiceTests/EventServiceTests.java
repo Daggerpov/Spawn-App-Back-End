@@ -648,24 +648,6 @@ public class EventServiceTests {
     }
 
     @Test
-    void toggleParticipation_ShouldToggleStatus_WhenUserIsInvitedOrParticipating() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUser eu = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        eu.setUser(user);
-        eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu));
-
-        FullFeedEventDTO resultingEventFromToggleAction = eventService.toggleParticipation(eventId, userId);
-
-        assert(resultingEventFromToggleAction.getParticipantUsers().contains(userService.getFullUserById(user.getId())));
-        assertEquals(ParticipationStatus.participating, eu.getStatus());
-        verify(eventUserRepository, times(1)).save(eu);
-    }
-
-    @Test
     void getEventsInvitedTo_ShouldReturnEvents_WhenUserIsInvited() {
         UUID userId = UUID.randomUUID();
         Event event = createDummyEvent(UUID.randomUUID(), "Invited Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));

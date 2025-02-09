@@ -404,10 +404,11 @@ public class EventService implements IEventService {
                 // if participating -> set status to invited
                 if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
                     eventUser.setStatus(ParticipationStatus.participating);
-                    eventUserRepository.save(eventUser);
                 } else if (eventUser.getStatus().equals(ParticipationStatus.participating)) {
                     eventUser.setStatus(ParticipationStatus.invited);
                 }
+                eventUserRepository.save(eventUser);
+                break;
             }
         }
         return getFullEventById(eventId, userId);
