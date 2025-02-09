@@ -7,5 +7,5 @@ import java.util.Map;
 
 public interface IAuthService {
     Map<String, Object> registerUser(AuthUserDTO authUserDTO);
-    Map<String, Object> loginUser(AuthUserDTO authUserDTO); // TODO: return FullUserDTO
+    Map<String, Object> loginUser(AuthUserDTO authUserDTO);
 }

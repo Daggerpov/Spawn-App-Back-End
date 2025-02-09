@@ -55,4 +55,9 @@ public interface IUserService {
 
     List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers);
     boolean existsByEmail(String email);
+<<<<<<< HEAD
+=======
+    FullUserDTO getFullUserByUsername(String username);
+    boolean existsByUsername(String username);
+>>>>>>> 01e125f (refactor with email + exception handling)
 }
