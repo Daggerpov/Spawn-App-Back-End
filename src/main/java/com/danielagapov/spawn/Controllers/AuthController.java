@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
 import lombok.AllArgsConstructor;
@@ -36,6 +37,9 @@ public class AuthController {
             UserDTO newUserDTO = (UserDTO) response.get("user");
             logger.log(String.format("User successfully registered: {user: %s}", newUserDTO));
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
+        } catch (FieldAlreadyExistsException fae) {
+            logger.log(fae.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (Exception e) {
             logger.log("Error registering in user: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
