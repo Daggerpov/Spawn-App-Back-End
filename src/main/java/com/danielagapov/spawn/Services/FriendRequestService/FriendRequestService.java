@@ -13,6 +13,7 @@ import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,20 +34,24 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
-            // Extract sender and receiver IDs from the FriendRequestDTO
             UUID senderId = friendRequestDTO.senderUserId();
             UUID receiverId = friendRequestDTO.receiverUserId();
+
+            if (repository.existsBySenderIdAndReceiverId(senderId, receiverId) ||
+                    repository.existsBySenderIdAndReceiverId(receiverId, senderId)) {
+                throw new BaseSaveException("A friend request already exists between these users.");
+            }
+
+            if (userService.areUsersFriends(senderId, receiverId)) {
+                throw new BaseSaveException("Users are already friends.");
+            }
 
             User sender = userService.getUserEntityById(senderId);
             User receiver = userService.getUserEntityById(receiverId);
 
-            // Map the DTO to entity
             FriendRequest friendRequest = FriendRequestMapper.toEntity(friendRequestDTO, sender, receiver);
-
-            // Save the friend request
             repository.save(friendRequest);
 
-            // Return the saved friend request DTO with additional details (friends and friend tags)
             return FriendRequestMapper.toDTO(friendRequest);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
@@ -77,8 +82,16 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
+    @Transactional
     public void acceptFriendRequest(UUID id) {
-        FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+        FriendRequest fr = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+
+        // Check if users are already friends
+        if (userService.areUsersFriends(fr.getSender().getId(), fr.getReceiver().getId())) {
+            throw new BaseSaveException("Users are already friends.");
+        }
+
         userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
         deleteFriendRequest(id);
     }
@@ -86,6 +99,9 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public void deleteFriendRequest(UUID id) {
         try {
+            if (!repository.existsById(id)) {
+                throw new BaseNotFoundException(EntityType.FriendRequest, id);
+            }
             repository.deleteById(id);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
@@ -96,6 +112,11 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<FullFriendRequestDTO> convertFriendRequestsToFullFriendRequests (List<FriendRequestDTO> friendRequests) {
         List<FullFriendRequestDTO> fullFriendRequests = new ArrayList<>();
+
+        if (friendRequests == null || friendRequests.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         for (FriendRequestDTO friendRequest : friendRequests) {
             fullFriendRequests.add(new FullFriendRequestDTO(
                     friendRequest.id(),

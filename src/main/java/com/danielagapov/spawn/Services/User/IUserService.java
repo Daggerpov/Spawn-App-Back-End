@@ -53,4 +53,6 @@ public interface IUserService {
     FullUserDTO getFullUserByUser(UserDTO user);
     List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users);
     boolean existsByEmail(String email);
+
+    boolean areUsersFriends(UUID id, UUID id1);
 }

@@ -115,6 +115,7 @@ class FriendRequestServiceTests {
     void acceptFriendRequest_ShouldAddFriendAndDeleteRequest_WhenValidRequest() {
         UUID friendRequestId = friendRequest.getId();
         when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
+        when(repository.existsById(friendRequestId)).thenReturn(true);
 
         friendRequestService.acceptFriendRequest(friendRequestId);
 
@@ -134,11 +135,13 @@ class FriendRequestServiceTests {
     @Test
     void deleteFriendRequest_ShouldDeleteRequest_WhenValidId() {
         UUID friendRequestId = friendRequest.getId();
+        when(repository.existsById(friendRequestId)).thenReturn(true);
 
         friendRequestService.deleteFriendRequest(friendRequestId);
 
         verify(repository, times(1)).deleteById(friendRequestId);
     }
+
     @Test
     void getIncomingFriendRequestsByUserId_ShouldThrowBaseNotFoundException_WhenDataAccessExceptionOccurs() {
         when(repository.findByReceiverId(receiverId)).thenThrow(new DataAccessException("DB read error") {});
@@ -149,8 +152,9 @@ class FriendRequestServiceTests {
     }
 
     @Test
-    void deleteFriendRequest_ShouldThrowException_WhenDataAccessExceptionOccurs() {
+    void deleteFriendRequest_ShouldThrowDataAccessException_WhenDataAccessExceptionOccurs() {
         UUID friendRequestId = friendRequest.getId();
+        when(repository.existsById(friendRequestId)).thenReturn(true);
         doThrow(new DataAccessException("DB delete error") {}).when(repository).deleteById(friendRequestId);
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> friendRequestService.deleteFriendRequest(friendRequestId));
@@ -180,5 +184,4 @@ class FriendRequestServiceTests {
         assertEquals(2, requests.size());
         verify(repository, times(1)).findByReceiverId(receiverId);
     }
-
 }
