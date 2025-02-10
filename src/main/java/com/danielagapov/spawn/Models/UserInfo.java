@@ -1,15 +1,18 @@
 package com.danielagapov.spawn.Models;
 
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
+/**
+ * This class implements the UserDetails interface which is used by Spring Security to authenticate
+ * incoming requests. It is populated with the username and password from a User entity.
+ * For JWTs and in our application, only getPassword and getUsername are needed
+ */
 public class UserInfo implements UserDetails {
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
     public UserInfo(String username, String password) {
         this.username = username;
@@ -18,7 +21,7 @@ public class UserInfo implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
+        return List.of();
     }
 
     @Override
