@@ -62,10 +62,6 @@ public class FriendRequestService implements IFriendRequestService {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
-            if (friendRequests.isEmpty()) {
-                throw new BaseNotFoundException(EntityType.FriendRequest, id);
-            }
-
             return convertFriendRequestsToFullFriendRequests(FriendRequestMapper.toDTOList(friendRequests));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
