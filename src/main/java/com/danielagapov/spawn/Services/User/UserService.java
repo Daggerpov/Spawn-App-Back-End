@@ -476,7 +476,7 @@ public class UserService implements IUserService {
                     throw e;
                 }
 
-                boolean isSelf = userId == potentialFriend.id();
+                boolean isSelf = userId.equals(potentialFriend.id());
 
                 if (!isAlreadyFriend && !hasAlreadySentFriendRequest && !isSelf){
                     FullUserDTO fullUserDTO = getFullUserById(potentialFriend.id());
