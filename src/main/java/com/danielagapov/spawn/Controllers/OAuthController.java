@@ -4,7 +4,9 @@ import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,10 +15,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/v1/oauth")
 public class OAuthController {
     private final IOAuthService oauthService;
+    private final IJWTService jwtService;
     private final ILogger logger;
 
-    public OAuthController(IOAuthService oauthService, ILogger logger) {
+    public OAuthController(IOAuthService oauthService, IJWTService jwtService, ILogger logger) {
         this.oauthService = oauthService;
+        this.jwtService = jwtService;
         this.logger = logger;
     }
 
@@ -33,7 +37,9 @@ public class OAuthController {
     public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email) {
         try {
             logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
-            return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email));
+            FullUserDTO userDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+            HttpHeaders headers = makeHeaders(userDTO.username());
+            return ResponseEntity.ok().headers(headers).body(userDTO);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
@@ -56,10 +62,17 @@ public class OAuthController {
     public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value="profilePicture", required=false) byte[] profilePicture, @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
             logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}", userDTO, externalUserId, provider));
-           FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
-           return ResponseEntity.ok().body(user);
+            FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
+            HttpHeaders headers = makeHeaders(userDTO.username());
+            return ResponseEntity.ok().headers(headers).body(user);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
+    }
+
+    private HttpHeaders makeHeaders(String username) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + jwtService.generateToken(username));
+        return headers;
     }
 }
