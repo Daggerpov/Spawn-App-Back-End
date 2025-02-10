@@ -475,8 +475,8 @@ public class EventService implements IEventService {
         eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
         eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
 
-        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime));
-        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime));
+        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
 
         List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
         combinedEvents.addAll(eventsInvitedTo);
