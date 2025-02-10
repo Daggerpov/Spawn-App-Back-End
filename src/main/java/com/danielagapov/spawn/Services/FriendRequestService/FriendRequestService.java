@@ -105,4 +105,21 @@ public class FriendRequestService implements IFriendRequestService {
         }
         return fullFriendRequests;
     }
+
+    @Override
+    public List<FriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
+        try {
+            // Retrieve friend requests sent by the user
+            List<FriendRequest> sentRequests = repository.findBySenderId(userId);
+
+            // Convert the FriendRequest entities to DTOs before returning
+            return FriendRequestMapper.toDTOList(sentRequests);
+        } catch (DataAccessException e) {
+            logger.log("Database access error while retrieving sent friend requests for userId: " + userId);
+            throw new BaseNotFoundException(EntityType.FriendRequest, userId);
+        } catch (Exception e) {
+            logger.log("Unexpected error while retrieving sent friend requests for userId: " + userId + ", Error: " + e.getMessage());
+            throw e;
+        }
+    }
 }

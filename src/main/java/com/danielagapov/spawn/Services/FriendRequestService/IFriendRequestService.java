@@ -14,4 +14,6 @@ public interface IFriendRequestService {
     void deleteFriendRequest(UUID id);
 
     List<FullFriendRequestDTO> convertFriendRequestsToFullFriendRequests (List<FriendRequestDTO> friendRequests);
+
+    List<FriendRequestDTO> getSentFriendRequestsByUserId(UUID userId);
 }
