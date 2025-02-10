@@ -472,8 +472,8 @@ public class EventService implements IEventService {
 
         OffsetDateTime now = OffsetDateTime.now();
 
-        eventsCreated.removeIf(event -> event.getEndTime().isBefore(now));
-        eventsInvitedTo.removeIf(event -> event.getEndTime().isBefore(now));
+        eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+        eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
 
         eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime));
         eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime));
@@ -483,6 +483,7 @@ public class EventService implements IEventService {
 
         return combinedEvents;
     }
+
     
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
