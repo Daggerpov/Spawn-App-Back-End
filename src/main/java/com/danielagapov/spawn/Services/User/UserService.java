@@ -625,20 +625,4 @@ public class UserService implements IUserService {
             throw e;
         }
     }
-
-    public boolean areUsersFriends(UUID userId1, UUID userId2) {
-        try {
-            List<UserDTO> friendsOfUser1 = getFriendsByUserId(userId1);
-
-            if (friendsOfUser1 == null || friendsOfUser1.isEmpty()) {
-                return false;
-            }
-
-            return friendsOfUser1.stream()
-                    .anyMatch(friend -> friend.id().equals(userId2));
-        } catch (Exception e) {
-            logger.log(String.format("Error checking friendship between %s and %s: %s", userId1, userId2, e.getMessage()));
-            throw new ApplicationException("Error checking friendship status", e);
-        }
-    }
 }
