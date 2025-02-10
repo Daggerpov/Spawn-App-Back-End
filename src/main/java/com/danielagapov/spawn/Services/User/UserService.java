@@ -390,8 +390,6 @@ public class UserService implements IUserService {
 
     // returns top 3 friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
-    // returns top 3 friends with most mutuals with user (with `userId`) as
-    // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
     @Override
     public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
         try {
@@ -404,12 +402,19 @@ public class UserService implements IUserService {
                     .map(FriendRequestDTO::receiverUserId)
                     .collect(Collectors.toList());
 
-            // Create a set of the requesting user's friends and sent requests for quick lookup
+            // Fetch users who have sent a friend request to the user (pending requests)
+            List<UUID> receivedFriendRequestIds = friendRequestService.getIncomingFriendRequestsByUserId(userId)
+                    .stream()
+                    .map(request -> request.getSenderUser().id())
+                    .collect(Collectors.toList());
+
+            // Create a set of the requesting user's friends, sent requests, received requests, and self for quick lookup
             Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
             excludedUserIds.addAll(sentFriendRequestIds);
+            excludedUserIds.addAll(receivedFriendRequestIds);
             excludedUserIds.add(userId); // Exclude self
 
-            // Collect friends of friends (excluding already existing friends, sent requests, and self)
+            // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
             Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
             for (UUID friendId : requestingUserFriendIds) {
                 List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
@@ -447,7 +452,7 @@ public class UserService implements IUserService {
 
             if (recommendedFriends.size() >= 3) return recommendedFriends;
 
-            // Otherwise, recommend random users not already friends, not sent requests, and not self
+            // Otherwise, recommend random users not already friends, not sent/received requests, and not self
             List<UserDTO> allUsers = getAllUsers();
 
             for (UserDTO potentialFriend : allUsers) {
@@ -479,7 +484,6 @@ public class UserService implements IUserService {
             throw e;
         }
     }
-
 
     @Override
     public List<UserDTO> getParticipantsByEventId(UUID eventId) {
