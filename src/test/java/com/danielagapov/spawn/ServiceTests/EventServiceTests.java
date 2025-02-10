@@ -815,4 +815,38 @@ public class EventServiceTests {
         assertEquals(1, fullEvents.size());
         assertEquals("#1D3D3D", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
     }
+
+    @Test
+    void toggleParticipation_ShouldToggleStatus_WhenUserIsInvitedOrParticipating() {
+        UUID eventId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        EventUser invitedEventUser = new EventUser();
+        User user = new User();
+        user.setId(userId);
+        invitedEventUser.setUser(user);
+        invitedEventUser.setStatus(ParticipationStatus.invited);
+
+        Event event = new Event();
+        event.setId(eventId);
+
+        User creator = new User();
+        creator.setId(UUID.randomUUID());
+        event.setCreator(creator);
+
+        invitedEventUser.setEvent(event);
+
+        when(eventUserRepository.existsById(eventId)).thenReturn(true); // Added mock to prevent BaseNotFoundException
+        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(invitedEventUser));
+        when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event)); // Mock event lookup
+
+        FullFeedEventDTO result = eventService.toggleParticipation(eventId, userId);
+        assertNotNull(result);
+        assertEquals(ParticipationStatus.participating, invitedEventUser.getStatus());
+
+        result = eventService.toggleParticipation(eventId, userId);
+        assertNotNull(result);
+        assertEquals(ParticipationStatus.invited, invitedEventUser.getStatus());
+    }
 }
