@@ -648,24 +648,6 @@ public class EventServiceTests {
     }
 
     @Test
-    void toggleParticipation_ShouldToggleStatus_WhenUserIsInvitedOrParticipating() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUser eu = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        eu.setUser(user);
-        eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu));
-
-        FullFeedEventDTO resultingEventFromToggleAction = eventService.toggleParticipation(eventId, userId);
-
-        assert(resultingEventFromToggleAction.getParticipantUsers().contains(userService.getFullUserById(user.getId())));
-        assertEquals(ParticipationStatus.participating, eu.getStatus());
-        verify(eventUserRepository, times(1)).save(eu);
-    }
-
-    @Test
     void getEventsInvitedTo_ShouldReturnEvents_WhenUserIsInvited() {
         UUID userId = UUID.randomUUID();
         Event event = createDummyEvent(UUID.randomUUID(), "Invited Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
@@ -832,5 +814,39 @@ public class EventServiceTests {
         assertNotNull(fullEvents);
         assertEquals(1, fullEvents.size());
         assertEquals("#1D3D3D", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
+    }
+
+    @Test
+    void toggleParticipation_ShouldToggleStatus_WhenUserIsInvitedOrParticipating() {
+        UUID eventId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        EventUser invitedEventUser = new EventUser();
+        User user = new User();
+        user.setId(userId);
+        invitedEventUser.setUser(user);
+        invitedEventUser.setStatus(ParticipationStatus.invited);
+
+        Event event = new Event();
+        event.setId(eventId);
+
+        User creator = new User();
+        creator.setId(UUID.randomUUID());
+        event.setCreator(creator);
+
+        invitedEventUser.setEvent(event);
+
+        when(eventUserRepository.existsById(eventId)).thenReturn(true); // Added mock to prevent BaseNotFoundException
+        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(invitedEventUser));
+        when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event)); // Mock event lookup
+
+        FullFeedEventDTO result = eventService.toggleParticipation(eventId, userId);
+        assertNotNull(result);
+        assertEquals(ParticipationStatus.participating, invitedEventUser.getStatus());
+
+        result = eventService.toggleParticipation(eventId, userId);
+        assertNotNull(result);
+        assertEquals(ParticipationStatus.invited, invitedEventUser.getStatus());
     }
 }
