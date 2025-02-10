@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Service
@@ -465,15 +466,24 @@ public class EventService implements IEventService {
      */
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
-        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsCreated =
+                convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
         List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
-        // Combine the lists with eventsCreated first
+        OffsetDateTime now = OffsetDateTime.now();
+
+        eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+        eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+
+        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+
         List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
         combinedEvents.addAll(eventsInvitedTo);
 
         return combinedEvents;
     }
+
     
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
