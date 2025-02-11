@@ -397,7 +397,7 @@ public class UserService implements IUserService {
             List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
 
             // Fetch users who have already received a friend request from the user
-            List<UUID> sentFriendRequestIds = friendRequestService.getSentFriendRequestsByUserId(userId)
+            List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(userId)
                     .stream()
                     .map(FriendRequestDTO::receiverUserId)
                     .collect(Collectors.toList());
