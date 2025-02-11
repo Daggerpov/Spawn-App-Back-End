@@ -408,7 +408,7 @@ public class UserService implements IUserService {
                     .map(request -> request.getSenderUser().id())
                     .collect(Collectors.toList());
 
-            // Create a set of the requesting user's friends, sent requests, received requests, and self for quick lookup
+            // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
             Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
             excludedUserIds.addAll(sentFriendRequestIds);
             excludedUserIds.addAll(receivedFriendRequestIds);
