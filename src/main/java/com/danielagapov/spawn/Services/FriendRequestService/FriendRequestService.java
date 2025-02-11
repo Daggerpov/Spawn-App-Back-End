@@ -86,14 +86,9 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public void deleteFriendRequest(UUID id) {
         try {
-            FriendRequest fr = repository.findById(id)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
-            repository.delete(fr);
+            repository.deleteById(id);
         } catch (DataAccessException e) {
-            logger.log("Database error while deleting friend request with id: " + id + " - " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.log("Unexpected error while deleting friend request with id: " + id + " - " + e.getMessage());
+            logger.log(e.getMessage());
             throw e;
         }
     }
