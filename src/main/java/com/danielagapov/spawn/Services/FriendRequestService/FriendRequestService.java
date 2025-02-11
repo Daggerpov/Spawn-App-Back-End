@@ -62,50 +62,38 @@ public class FriendRequestService implements IFriendRequestService {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
-            // Return an empty list if no incoming friend requests are found
             if (friendRequests.isEmpty()) {
-                return new ArrayList<>();
+                throw new BaseNotFoundException(EntityType.FriendRequest, id);
             }
 
-            // Convert to FullFriendRequestDTO and return
             return convertFriendRequestsToFullFriendRequests(FriendRequestMapper.toDTOList(friendRequests));
         } catch (DataAccessException e) {
-            logger.log("Database access error while retrieving incoming friend requests for userId: " + id);
-            throw e; // Only throw for actual database access issues
+            logger.log(e.getMessage());
+            throw new BaseNotFoundException(EntityType.FriendRequest, id);
         } catch (Exception e) {
-            logger.log("Unexpected error while retrieving incoming friend requests for userId: " + id + ", Error: " + e.getMessage());
+            logger.log(e.getMessage());
             throw e;
         }
     }
 
     @Override
     public void acceptFriendRequest(UUID id) {
-        try {
-            FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
-            userService.saveFriendToUser(fr.getReceiver().getId(), fr.getSender().getId());
-            repository.deleteById(id);
-        } catch (DataAccessException e) {
-            logger.log(e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.log("Error accepting friend request: " + e.getMessage());
-            throw e;
-        }
+        FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+        userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
+        deleteFriendRequest(id);
     }
-
 
     @Override
     public void deleteFriendRequest(UUID id) {
         try {
-            if (!repository.existsById(id)) {
-                throw new BaseNotFoundException(EntityType.FriendRequest, id);
-            }
-            repository.deleteById(id);
+            FriendRequest fr = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+            repository.delete(fr);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.log("Database error while deleting friend request with id: " + id + " - " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.log("Error rejecting friend request: " + e.getMessage());
+            logger.log("Unexpected error while deleting friend request with id: " + id + " - " + e.getMessage());
             throw e;
         }
     }
@@ -129,20 +117,14 @@ public class FriendRequestService implements IFriendRequestService {
             // Retrieve friend requests sent by the user
             List<FriendRequest> sentRequests = repository.findBySenderId(userId);
 
-            // Return an empty list if no friend requests are found
-            if (sentRequests.isEmpty()) {
-                return new ArrayList<>();
-            }
-
             // Convert the FriendRequest entities to DTOs before returning
             return FriendRequestMapper.toDTOList(sentRequests);
         } catch (DataAccessException e) {
             logger.log("Database access error while retrieving sent friend requests for userId: " + userId);
-            throw e; // Only throw for database access issues
+            throw new BaseNotFoundException(EntityType.FriendRequest, userId);
         } catch (Exception e) {
             logger.log("Unexpected error while retrieving sent friend requests for userId: " + userId + ", Error: " + e.getMessage());
             throw e;
         }
     }
-
 }
