@@ -403,7 +403,7 @@ public class UserService implements IUserService {
                     .collect(Collectors.toList());
 
             // Fetch users who have sent a friend request to the user (pending requests)
-            List<UUID> receivedFriendRequestIds = friendRequestService.getIncomingFriendRequestsByUserId(userId)
+            List<UUID> receivedFriendRequestSenderUserIds = friendRequestService.getIncomingFriendRequestsByUserId(userId)
                     .stream()
                     .map(request -> request.getSenderUser().id())
                     .collect(Collectors.toList());
