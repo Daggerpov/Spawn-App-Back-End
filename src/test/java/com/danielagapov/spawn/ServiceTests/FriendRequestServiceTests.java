@@ -103,12 +103,15 @@ class FriendRequestServiceTests {
     }
 
     @Test
-    void getIncomingFriendRequestsByUserId_ShouldThrowBaseNotFoundException_WhenNoRequestsFound() {
+    void getIncomingFriendRequestsByUserId_ShouldReturnEmptyList_WhenNoRequestsFound() {
         when(repository.findByReceiverId(receiverId)).thenReturn(List.of());
 
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> friendRequestService.getIncomingFriendRequestsByUserId(receiverId));
-        assertEquals("FriendRequest entity not found with ID: " + receiverId, exception.getMessage());
-        verify(logger, times(1)).log(anyString());
+        List<FullFriendRequestDTO> requests = friendRequestService.getIncomingFriendRequestsByUserId(receiverId);
+
+        assertNotNull(requests);
+        assertTrue(requests.isEmpty(), "Expected an empty list when no friend requests are found.");
+        verify(repository, times(1)).findByReceiverId(receiverId);
+        verify(logger, times(0)).log(anyString()); // No logging since it's not an error anymore
     }
 
     @Test
@@ -140,13 +143,16 @@ class FriendRequestServiceTests {
         verify(repository, times(1)).deleteById(friendRequestId);
     }
     @Test
-    void getIncomingFriendRequestsByUserId_ShouldThrowBaseNotFoundException_WhenDataAccessExceptionOccurs() {
+    void getIncomingFriendRequestsByUserId_ShouldThrowDataAccessException_WhenDataAccessExceptionOccurs() {
         when(repository.findByReceiverId(receiverId)).thenThrow(new DataAccessException("DB read error") {});
 
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> friendRequestService.getIncomingFriendRequestsByUserId(receiverId));
-        assertEquals("FriendRequest entity not found with ID: " + receiverId, exception.getMessage());
-        verify(logger, times(1)).log("DB read error");
+        DataAccessException exception = assertThrows(DataAccessException.class,
+                () -> friendRequestService.getIncomingFriendRequestsByUserId(receiverId));
+
+        assertEquals("DB read error", exception.getMessage());
+        verify(logger, times(1)).log("Database access error while retrieving incoming friend requests for userId: " + receiverId);
     }
+
 
     @Test
     void deleteFriendRequest_ShouldThrowException_WhenDataAccessExceptionOccurs() {
