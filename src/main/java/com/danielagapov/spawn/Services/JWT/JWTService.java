@@ -1,12 +1,17 @@
 package com.danielagapov.spawn.Services.JWT;
 
+import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
+import com.danielagapov.spawn.Services.User.IUserService;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +30,9 @@ public class JWTService implements IJWTService {
             SIGNING_SECRET = dotenv.get("SIGNING_KEY");
 
     }
-    private static final long EXPIRY = 1000 * 60 * 4; // 4 mins
+    private static final long EXPIRY = 1000 * 60 * 60 * 24; //  24 hours
     private final ILogger logger;
+    private final IUserService userService;
 
 
     @Override
@@ -59,6 +65,36 @@ public class JWTService implements IJWTService {
             logger.log("Error generating JWT token: " + e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public String refreshAccessToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new TokenNotFoundException("No refresh token found");
+        }
+        // Extract the JWT token from the Authorization header (removing the "Bearer " prefix)
+        String token = authHeader.substring(7);
+        String username;
+        try {
+            username = extractUsername(token);
+        } catch (Exception e) {
+            logger.log("Failed to extract username. Invalid or expired token");
+            throw e;
+        }
+        if (username == null || !userService.existsByUsername(username) ) {
+            logger.log("Extracted username does not correspond to any user entity");
+            throw new BadTokenException();
+        }
+        if (isTokenNonExpired(token)) {
+            // This is a valid refresh token, grant a new access token to the requester
+            String newAccessToken = generateToken(username);
+            return newAccessToken;
+        } else {
+            logger.log("Expired token found");
+            throw new BadTokenException();
+        }
+
     }
 
 
