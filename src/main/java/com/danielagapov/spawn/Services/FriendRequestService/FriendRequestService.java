@@ -80,17 +80,29 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     public void acceptFriendRequest(UUID id) {
-        FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
-        userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
-        deleteFriendRequest(id);
+        try {
+            FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+            userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
+            repository.delete(fr);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.log("Error accepting friend request: " + e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public void deleteFriendRequest(UUID id) {
         try {
-            repository.deleteById(id);
+            FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+            repository.delete(fr);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.log("Error rejecting friend request: " + e.getMessage());
             throw e;
         }
     }
