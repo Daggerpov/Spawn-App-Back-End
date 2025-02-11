@@ -195,9 +195,10 @@ public class UserService implements IUserService {
             userEntity = repository.save(userEntity);
 
             FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "Everyone",
-                    "#1D3D3D", user.id(), List.of(), true);
-            friendTagService.saveFriendTag(everyoneTagDTO); // id is generated when saving
-            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTO.id()));
+                    "#1D3D3D", userEntity.getId(), List.of(), true);
+            FriendTagDTO everyoneTagDTOAfterPersisting = friendTagService.saveFriendTag(everyoneTagDTO);
+            // id is generated when saving
+            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.id()));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
@@ -408,7 +409,7 @@ public class UserService implements IUserService {
                     .map(request -> request.getSenderUser().id())
                     .collect(Collectors.toList());
 
-            // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
+            // Create a set of excluded user IDs (friends, sent/received requests, and self)
             Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
             excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
             excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
@@ -426,7 +427,7 @@ public class UserService implements IUserService {
                 }
             }
 
-            // Fetch only users in the mutualFriendCounts map
+            // Map mutual friends to RecommendedFriendUserDTO
             List<RecommendedFriendUserDTO> recommendedFriends = mutualFriendCounts.entrySet().stream()
                     .map(entry -> {
                         UUID mutualFriendId = entry.getKey();
@@ -450,7 +451,9 @@ public class UserService implements IUserService {
                     .limit(3)
                     .collect(Collectors.toList());
 
-            if (recommendedFriends.size() >= 3) return recommendedFriends;
+            if (recommendedFriends.size() >= 3) {
+                return recommendedFriends;
+            }
 
             // Otherwise, recommend random users not already friends, not sent/received requests, and not self
             List<UserDTO> allUsers = getAllUsers();
@@ -458,23 +461,48 @@ public class UserService implements IUserService {
             for (UserDTO potentialFriend : allUsers) {
                 if (recommendedFriends.size() >= 3) break;
 
-                boolean isExcluded = excludedUserIds.contains(potentialFriend.id());
+                UUID potentialFriendId = potentialFriend.id();
+                boolean isExcluded = excludedUserIds.contains(potentialFriendId);
 
                 if (!isExcluded) {
-                    FullUserDTO fullUserDTO = getFullUserById(potentialFriend.id());
+                    boolean hasAlreadySentFriendRequest = false;
 
-                    recommendedFriends.add(new RecommendedFriendUserDTO(
-                            fullUserDTO.id(),
-                            fullUserDTO.friends(),
-                            fullUserDTO.username(),
-                            fullUserDTO.profilePicture(),
-                            fullUserDTO.firstName(),
-                            fullUserDTO.lastName(),
-                            fullUserDTO.bio(),
-                            fullUserDTO.friendTags(),
-                            fullUserDTO.email(),
-                            0 // no mutual friends
-                    ));
+                    try {
+                        List<FullFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriendId);
+
+                        for (FullFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
+                            if ((friendRequestDTO.getSenderUser().id().equals(userId) && friendRequestDTO.getReceiverUser().id().equals(potentialFriendId)) ||
+                                    (friendRequestDTO.getSenderUser().id().equals(potentialFriendId) && friendRequestDTO.getReceiverUser().id().equals(userId))) {
+                                hasAlreadySentFriendRequest = true;
+                                break;
+                            }
+                        }
+                    } catch (BaseNotFoundException e) {
+                        // No incoming friend requests, safe to ignore
+                    } catch (Exception e) {
+                        logger.log(e.getMessage());
+                        throw e;
+                    }
+
+                    if (!hasAlreadySentFriendRequest) {
+                        FullUserDTO fullUserDTO = getFullUserById(potentialFriendId);
+
+                        recommendedFriends.add(new RecommendedFriendUserDTO(
+                                fullUserDTO.id(),
+                                fullUserDTO.friends(),
+                                fullUserDTO.username(),
+                                fullUserDTO.profilePicture(),
+                                fullUserDTO.firstName(),
+                                fullUserDTO.lastName(),
+                                fullUserDTO.bio(),
+                                fullUserDTO.friendTags(),
+                                fullUserDTO.email(),
+                                0 // No mutual friends
+                        ));
+
+                        // Add to excluded list to prevent duplicates
+                        excludedUserIds.add(potentialFriendId);
+                    }
                 }
             }
 
