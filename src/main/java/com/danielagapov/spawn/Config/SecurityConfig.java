@@ -39,9 +39,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers("/api/v1/oauth/**").permitAll()
                             .anyRequest()
-                            .authenticated()
+                            .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
             )
-                // Comment out these lines if wanting to unsecure endpoints for development purposes
+                // When authenticating a request fails, status code 401 (unauthorized) is returned
             .exceptionHandling(e -> e
                     .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
