@@ -410,8 +410,8 @@ public class UserService implements IUserService {
 
             // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
             Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
-            excludedUserIds.addAll(sentFriendRequestIds);
-            excludedUserIds.addAll(receivedFriendRequestIds);
+            excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
+            excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
             excludedUserIds.add(userId); // Exclude self
 
             // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
