@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Services.JWT;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public interface IJWTService {
@@ -27,7 +26,9 @@ public interface IJWTService {
     /**
      * Generates a JWT with the given username as the subject claim
      */
-    String generateToken(String username);
+    String generateAccessToken(String username);
 
     String refreshAccessToken(HttpServletRequest request);
+
+    String generateRefreshToken(String username);
 }
