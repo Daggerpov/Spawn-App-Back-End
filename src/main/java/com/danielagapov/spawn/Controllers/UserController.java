@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
@@ -21,12 +20,10 @@ import java.util.UUID;
 @RequestMapping("api/v1/users")
 public class UserController {
     private final IUserService userService;
-    private final IFriendRequestService friendRequestService;
     private final IS3Service s3Service;
 
-    public UserController(IUserService userService, IFriendRequestService friendRequestService, IS3Service s3Service) {
+    public UserController(IUserService userService, IS3Service s3Service) {
         this.userService = userService;
-        this.friendRequestService = friendRequestService;
         this.s3Service = s3Service;
     }
 
