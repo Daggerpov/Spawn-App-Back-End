@@ -361,6 +361,11 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public List<RecommendedFriendUserDTO> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
+        return new ArrayList<>();
+    }
+
+    @Override
     public List<UserDTO> getParticipantsByEventId(UUID eventId) {
         try {
             List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);

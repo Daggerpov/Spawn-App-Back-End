@@ -29,6 +29,7 @@ public interface IUserService {
 
     List<UUID> getFriendUserIdsByUserId(UUID id);
     List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId);
+    List<RecommendedFriendUserDTO> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
 
     // For Friend Tags:
 

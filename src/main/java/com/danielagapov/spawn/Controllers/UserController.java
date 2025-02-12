@@ -173,8 +173,8 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{requestingUserId}?query=searchQuery
-    @GetMapping("{requestingUserId}")
+    // full path: /api/v1/users/filtered/{requestingUserId}?query=searchQuery
+    @GetMapping("filtered/{requestingUserId}")
     public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriendsBySearch(@PathVariable UUID requestingUserId, @RequestParam String searchQuery) {
         return new ResponseEntity<>(HttpStatus.OK);
     }
