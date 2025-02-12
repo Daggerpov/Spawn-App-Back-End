@@ -353,7 +353,14 @@ public class UserService implements IUserService {
             // Retrieve the friends for each FriendTag and return as a flattened list
             List<UserDTO> friends = getFriendsByFriendTagId(everyoneTag.getId());
             System.out.printf("friends: %s%n", friends);
-            return friends;
+
+            // Filter out the friend whose ID matches the userId
+            List<UserDTO> filteredFriends = friends.stream()
+                    .filter(friend -> !friend.id().equals(userId)) // Exclude the user themselves
+                    .collect(Collectors.toList());
+
+            System.out.printf("filtered friends: %s%n", filteredFriends);
+            return filteredFriends;
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
