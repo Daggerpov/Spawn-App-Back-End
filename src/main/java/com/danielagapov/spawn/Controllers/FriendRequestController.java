@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
+import com.danielagapov.spawn.Enums.FriendRequestAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import org.springframework.http.HttpStatus;
@@ -43,24 +44,19 @@ public class FriendRequestController {
         }
     }
 
-    // full path: /api/v1/friend-requests/{friendRequestId}/accept
-    @PutMapping("{friendRequestId}/accept")
-    public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID friendRequestId) {
+    // full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
+    @PutMapping("{friendRequestId}")
+    public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
         try {
-            friendRequestService.acceptFriendRequest(friendRequestId);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+            if (friendRequestAction == FriendRequestAction.accept){
+                friendRequestService.acceptFriendRequest(friendRequestId);
+            } else if (friendRequestAction == FriendRequestAction.reject) {
+                friendRequestService.deleteFriendRequest(friendRequestId);
+            } else {
+                // deal with null/invalid argument for `friendRequestAction`
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
 
-    // full path: /api/v1/friend-requests/{friendRequestId}/reject
-    @PutMapping("{friendRequestId}/reject")
-    public ResponseEntity<Void> rejectFriendRequest(@PathVariable UUID friendRequestId) {
-        try {
-            friendRequestService.deleteFriendRequest(friendRequestId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
