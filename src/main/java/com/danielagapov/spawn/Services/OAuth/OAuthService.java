@@ -13,6 +13,8 @@ import org.springframework.dao.DataAccessException;
 //import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+
 @Service
 public class OAuthService implements IOAuthService {
     private final IUserIdExternalIdMapRepository externalIdMapRepository;
@@ -46,7 +48,7 @@ public class OAuthService implements IOAuthService {
                 logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
                 saveMapping(externalUserId, userDTO, provider);
             }
-            FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO);
+            FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO, new HashSet<>());
             logger.log(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
             return fullUserDTO;
         } catch (DataAccessException e) {

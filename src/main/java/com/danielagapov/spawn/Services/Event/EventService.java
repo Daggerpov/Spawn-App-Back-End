@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Service
@@ -404,10 +405,11 @@ public class EventService implements IEventService {
                 // if participating -> set status to invited
                 if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
                     eventUser.setStatus(ParticipationStatus.participating);
-                    eventUserRepository.save(eventUser);
                 } else if (eventUser.getStatus().equals(ParticipationStatus.participating)) {
                     eventUser.setStatus(ParticipationStatus.invited);
                 }
+                eventUserRepository.save(eventUser);
+                break;
             }
         }
         return getFullEventById(eventId, userId);
@@ -465,15 +467,24 @@ public class EventService implements IEventService {
      */
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
-        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+        List<FullFeedEventDTO> eventsCreated =
+                convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
         List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
-        // Combine the lists with eventsCreated first
+        OffsetDateTime now = OffsetDateTime.now();
+
+        eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+        eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+
+        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+
         List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
         combinedEvents.addAll(eventsInvitedTo);
 
         return combinedEvents;
     }
+
     
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
@@ -498,8 +509,8 @@ public class EventService implements IEventService {
                 locationService.getLocationById(event.locationId()),
                 event.note(),
                 userService.getFullUserById(event.creatorUserId()),
-                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id())),
-                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id())),
+                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
+                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
                 chatMessageService.getFullChatMessagesByEventId(event.id()),
                 requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                 requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null

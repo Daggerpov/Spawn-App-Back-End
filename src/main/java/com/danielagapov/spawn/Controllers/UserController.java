@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +34,7 @@ public class UserController {
     public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers()), HttpStatus.OK);
+                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers(), new HashSet<>()), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
             }
@@ -85,7 +86,7 @@ public class UserController {
     public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId)), HttpStatus.OK);
+                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId), new HashSet<>()), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
             }

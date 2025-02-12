@@ -28,10 +28,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -269,7 +266,7 @@ public class ChatMessageService implements IChatMessageService {
                 chatMessage.timestamp(),
                 userService.getFullUserById(chatMessage.senderUserId()),
                 chatMessage.eventId(),
-                userService.convertUsersToFullUsers(getChatMessageLikes(chatMessage.id()))
+                userService.convertUsersToFullUsers(getChatMessageLikes(chatMessage.id()), new HashSet<>())
         );
     }
 
