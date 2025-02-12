@@ -64,7 +64,7 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> getAllFullEvents() {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
         for (EventDTO e: getAllEvents()) {
-            fullEvents.add(getFullEventByEvent(e, null));
+            fullEvents.add(getFullEventByEvent(e, null, new HashSet<>()));
         }
         return fullEvents;
     }
@@ -98,7 +98,7 @@ public class EventService implements IEventService {
 
     @Override
     public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
-        return getFullEventByEvent(getEventById(id), requestingUserId);
+        return getFullEventByEvent(getEventById(id), requestingUserId, new HashSet<>());
     }
 
     @Override
@@ -456,7 +456,7 @@ public class EventService implements IEventService {
 
         // Transform each EventDTO into a FullFeedEventDTO
         return eventDTOs.stream()
-                .map(eventDTO -> getFullEventByEvent(eventDTO, id))
+                .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
                 .toList();
     }
 
@@ -500,7 +500,12 @@ public class EventService implements IEventService {
     }
 
     @Override
-    public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
+    public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId, Set<UUID> visitedEvents) {
+        if (visitedEvents.contains(event.id())) {
+            return null; // Skip already visited events
+        }
+        visitedEvents.add(event.id());
+
         return new FullFeedEventDTO(
                 event.id(),
                 event.title(),
@@ -509,8 +514,8 @@ public class EventService implements IEventService {
                 locationService.getLocationById(event.locationId()),
                 event.note(),
                 userService.getFullUserById(event.creatorUserId()),
-                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
-                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
+                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()), // Pass visitedUsers
+                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()), // Pass visitedUsers
                 chatMessageService.getFullChatMessagesByEventId(event.id()),
                 requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                 requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
@@ -539,7 +544,7 @@ public class EventService implements IEventService {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
         for(EventDTO eventDTO : events) {
-            fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId));
+            fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>()));
         }
 
         return fullEvents;
@@ -550,7 +555,7 @@ public class EventService implements IEventService {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
         for(EventDTO eventDTO : events) {
-            FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId);
+            FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>());
             fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D"); // from Figma & Mobile
             fullEvents.add(fullFeedEvent);
         }
