@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Services.JWT;
 
-import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
 import com.danielagapov.spawn.Services.User.IUserService;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -11,7 +11,6 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +24,15 @@ import java.util.function.Function;
 @AllArgsConstructor
 public class JWTService implements IJWTService {
     private static final String SIGNING_SECRET;
+
     static {
-            Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-            SIGNING_SECRET = dotenv.get("SIGNING_KEY");
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+        SIGNING_SECRET = dotenv.get("SIGNING_KEY");
 
     }
-    private static final long EXPIRY = 1000 * 60 * 60 * 24; //  24 hours
+
+    private static final long ACCESS_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; //  24 hours
+    private static final long REFRESH_TOKEN_EXPIRY = 1000L * 60 * 60 * 24 * 180; // 180 days or 6 months
     private final ILogger logger;
     private final IUserService userService;
 
@@ -47,24 +49,9 @@ public class JWTService implements IJWTService {
     }
 
     @Override
-    public String generateToken(String username) {
-        logger.log("Generating JWT token for user: " + username);
-        Map<String, Object> claims = new HashMap<>();
-        try {
-            return Jwts.builder()
-                    .claims()
-                    .add(claims)
-                    .subject(username)
-                    .issuedAt(new Date(System.currentTimeMillis()))
-                    .expiration(new Date(System.currentTimeMillis() + EXPIRY))
-                    .and()
-                    .signWith(getKey())
-                    .compact()
-                    ;
-        } catch (Exception e) {
-            logger.log("Error generating JWT token: " + e.getMessage());
-            throw e;
-        }
+    public String generateAccessToken(String username) {
+        logger.log("Generating access token for user: " + username);
+        return generateToken(username, ACCESS_TOKEN_EXPIRY);
     }
 
     @Override
@@ -82,19 +69,43 @@ public class JWTService implements IJWTService {
             logger.log("Failed to extract username. Invalid or expired token");
             throw e;
         }
-        if (username == null || !userService.existsByUsername(username) ) {
+        if (username == null || !userService.existsByUsername(username)) {
             logger.log("Extracted username does not correspond to any user entity");
             throw new BadTokenException();
         }
         if (isTokenNonExpired(token)) {
             // This is a valid refresh token, grant a new access token to the requester
-            String newAccessToken = generateToken(username);
+            String newAccessToken = generateAccessToken(username);
             return newAccessToken;
         } else {
             logger.log("Expired token found");
             throw new BadTokenException();
         }
 
+    }
+
+    @Override
+    public String generateRefreshToken(String username) {
+        logger.log("Generating refresh token for user: " + username);
+        return generateToken(username, REFRESH_TOKEN_EXPIRY);
+    }
+
+    private String generateToken(String username, long expiry) {
+        Map<String, Object> claims = new HashMap<>();
+        try {
+            return Jwts.builder()
+                    .claims()
+                    .add(claims)
+                    .subject(username)
+                    .issuedAt(new Date(System.currentTimeMillis()))
+                    .expiration(new Date(System.currentTimeMillis() + expiry))
+                    .and()
+                    .signWith(getKey())
+                    .compact();
+        } catch (Exception e) {
+            logger.log("Error generating JWT token: " + e.getMessage());
+            throw e;
+        }
     }
 
 
