@@ -33,7 +33,7 @@ public class FriendRequestController {
         }
     }
 
-    // full path: /api/v1/friend-request
+    // full path: /api/v1/friend-requests
     @PostMapping
     public ResponseEntity<FriendRequestDTO> createFriendRequest(@RequestBody FriendRequestDTO friendRequest) {
         try {
