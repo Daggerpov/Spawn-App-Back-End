@@ -362,6 +362,10 @@ public class UserService implements IUserService {
 
     @Override
     public List<RecommendedFriendUserDTO> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
+        List<User> users = repository.findByLastName(searchQuery);
+        users.addAll(repository.findByFirstName(searchQuery));
+        users.addAll(repository.findByUsername(searchQuery));
+        // TODO convert users to RecommendedFriendUserDTO
         return new ArrayList<>();
     }
 
