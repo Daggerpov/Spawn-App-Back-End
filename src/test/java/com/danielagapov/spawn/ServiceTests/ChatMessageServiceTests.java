@@ -257,7 +257,7 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
         FullUserDTO fullUser = new FullUserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
         when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
-        when(userService.convertUsersToFullUsers(any(), new HashSet<>())).thenReturn(new ArrayList<>());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageById(chatMessageId);
         assertNotNull(fullDto);
         assertEquals(chatMessageId, fullDto.id());
@@ -293,7 +293,7 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(chatMessage2)).thenReturn(new ArrayList<>());
         FullUserDTO fullUser = new FullUserDTO(UUID.randomUUID(), List.of(), "user", "avatar.jpg", "First", "Last", "bio", List.of(), "user@example.com");
         when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
-        when(userService.convertUsersToFullUsers(any(), new HashSet<>())).thenReturn(new ArrayList<>());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.getFullChatMessagesByEventId(eventId);
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -517,7 +517,7 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
         FullUserDTO fullUser = new FullUserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
         when(userService.getFullUserById(senderId)).thenReturn(fullUser);
-        when(userService.convertUsersToFullUsers(any(), new HashSet<>())).thenReturn(new ArrayList<>());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
         assertNotNull(fullDto);
         assertEquals(chatMessageId, fullDto.id());
@@ -553,7 +553,7 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
         FullUserDTO fullUser = new FullUserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
         when(userService.getFullUserById(senderId)).thenReturn(fullUser);
-        when(userService.convertUsersToFullUsers(any(), new HashSet<>())).thenReturn(new ArrayList<>());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageDTOs);
         assertNotNull(result);
         assertEquals(1, result.size());
