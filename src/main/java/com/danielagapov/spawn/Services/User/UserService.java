@@ -403,18 +403,21 @@ public class UserService implements IUserService {
             List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(userId)
                     .stream()
                     .map(FriendRequestDTO::receiverUserId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             // Map mutual friends to RecommendedFriendUserDTO
             List<UUID> receivedFriendRequestSenderUserIds = friendRequestService.getIncomingFriendRequestsByUserId(userId)
                     .stream()
                     .map(request -> request.getSenderUser().id())
-                    .collect(Collectors.toList());
+                    .toList();
+
+            List<UUID> existingFriendUserIds = getFriendUserIdsByUserId(userId);
 
             // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
             Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
             excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
             excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
+            excludedUserIds.addAll(existingFriendUserIds);
             excludedUserIds.add(userId); // Exclude self
 
             // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
