@@ -22,7 +22,7 @@ public class FriendRequestController {
     }
 
     // full path: /api/v1/friend-requests/incoming/{userId}
-    @GetMapping("{userId}")
+    @GetMapping("incoming/{userId}")
     public ResponseEntity<List<FullFriendRequestDTO>> getIncomingFriendRequestsByUserId(@PathVariable UUID userId) {
         try {
             return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(userId), HttpStatus.OK);
