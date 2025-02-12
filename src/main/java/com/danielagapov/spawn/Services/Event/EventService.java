@@ -509,8 +509,8 @@ public class EventService implements IEventService {
                 locationService.getLocationById(event.locationId()),
                 event.note(),
                 userService.getFullUserById(event.creatorUserId()),
-                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id())),
-                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id())),
+                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
+                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
                 chatMessageService.getFullChatMessagesByEventId(event.id()),
                 requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                 requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null

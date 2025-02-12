@@ -91,7 +91,7 @@ public class UserService implements IUserService {
     @Override
     public FullUserDTO getFullUserById(UUID id) {
         try {
-            return getFullUserByUser(getUserById(id));
+            return getFullUserByUser(getUserById(id), new HashSet<>());
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -351,7 +351,9 @@ public class UserService implements IUserService {
             }
 
             // Retrieve the friends for each FriendTag and return as a flattened list
-            return getFriendsByFriendTagId(everyoneTag.getId());
+            List<UserDTO> friends = getFriendsByFriendTagId(everyoneTag.getId());
+            System.out.printf("friends: %s%n", friends);
+            return friends;
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -583,13 +585,17 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
-    public FullUserDTO getFullUserByUser(UserDTO user) {
+    public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
         try {
+            if (visitedUsers.contains(user.id())) {
+                return null; // Skip already visited users
+            }
+            visitedUsers.add(user.id());
+
             return new FullUserDTO(
                     user.id(),
-                    convertUsersToFullUsers(getFriendsByUserId(user.id())),
+                    convertUsersToFullUsers(getFriendsByUserId(user.id()), visitedUsers),
                     user.username(),
                     user.profilePicture(),
                     user.firstName(),
@@ -605,10 +611,11 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users) {
+    public List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers) {
         try {
             return users.stream()
-                    .map(this::getFullUserByUser)
+                    .map(user -> getFullUserByUser(user, visitedUsers))
+                    .filter(Objects::nonNull) // Filter out null values (already visited users)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -632,13 +639,13 @@ public class UserService implements IUserService {
     public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
         try {
             List<UserDTO> userFriends = getFriendsByUserId(requestingUserId);
-            List<FullUserDTO> fullUserFriends = convertUsersToFullUsers(userFriends);
+            List<FullUserDTO> fullUserFriends = convertUsersToFullUsers(userFriends, new HashSet<>());
 
             List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<FullFriendUserDTO>();
             for (FullUserDTO user : fullUserFriends) {
                 FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO(
                         user.id(),
-                        convertUsersToFullUsers(getFriendsByUserId(user.id())),
+                        convertUsersToFullUsers(getFriendsByUserId(user.id()), new HashSet<>()),
                         user.username(),
                         user.profilePicture(),
                         user.firstName(),

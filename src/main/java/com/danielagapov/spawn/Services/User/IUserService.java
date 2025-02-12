@@ -9,6 +9,7 @@ import com.danielagapov.spawn.Models.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public interface IUserService {
@@ -50,7 +51,8 @@ public interface IUserService {
     List<UUID> getInvitedUserIdsByEventId(UUID eventId);
 
     // Helper
-    FullUserDTO getFullUserByUser(UserDTO user);
-    List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users);
+    FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers);
+
+    List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers);
     boolean existsByEmail(String email);
 }
