@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/v1/users")
+@RequestMapping("api/v1/friend-requests")
 public class FriendRequestController {
 
     private final IFriendRequestService friendRequestService;
@@ -21,11 +21,11 @@ public class FriendRequestController {
         this.friendRequestService = friendRequestService;
     }
 
-    // full path: /api/v1/users/{id}/friend-requests
-    @GetMapping("{id}/friend-requests")
-    public ResponseEntity<List<FullFriendRequestDTO>> getIncomingFriendRequests(@PathVariable UUID id) {
+    // full path: /api/v1/friend-requests/incoming/{userId}
+    @GetMapping("{userId}")
+    public ResponseEntity<List<FullFriendRequestDTO>> getIncomingFriendRequestsByUserId(@PathVariable UUID userId) {
         try {
-            return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(id), HttpStatus.OK);
+            return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(userId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -33,19 +33,19 @@ public class FriendRequestController {
         }
     }
 
-    // full path: /api/v1/users/friend-request
-    @PostMapping("friend-request")
-    public ResponseEntity<FriendRequestDTO> createFriendRequest(@RequestBody FriendRequestDTO friendReq) {
+    // full path: /api/v1/friend-request
+    @PostMapping
+    public ResponseEntity<FriendRequestDTO> createFriendRequest(@RequestBody FriendRequestDTO friendRequest) {
         try {
-            return new ResponseEntity<>(friendRequestService.saveFriendRequest(friendReq), HttpStatus.CREATED);
+            return new ResponseEntity<>(friendRequestService.saveFriendRequest(friendRequest), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // full path: /api/v1/users/{userId}/friend-requests/{friendRequestId}/accept
-    @PutMapping("{userId}/friend-requests/{friendRequestId}/accept")
-    public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID userId, @PathVariable UUID friendRequestId) {
+    // full path: /api/v1/friend-requests/{friendRequestId}/accept
+    @PutMapping("{friendRequestId}/accept")
+    public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID friendRequestId) {
         try {
             friendRequestService.acceptFriendRequest(friendRequestId);
             return new ResponseEntity<>(HttpStatus.OK);
@@ -56,9 +56,9 @@ public class FriendRequestController {
         }
     }
 
-    // full path: /api/v1/users/{userId}/friend-requests/{friendRequestId}/reject
-    @PutMapping("{userId}/friend-requests/{friendRequestId}/reject")
-    public ResponseEntity<Void> rejectFriendRequest(@PathVariable UUID userId, @PathVariable UUID friendRequestId) {
+    // full path: /api/v1/friend-requests/{friendRequestId}/reject
+    @PutMapping("{friendRequestId}/reject")
+    public ResponseEntity<Void> rejectFriendRequest(@PathVariable UUID friendRequestId) {
         try {
             friendRequestService.deleteFriendRequest(friendRequestId);
             return new ResponseEntity<>(HttpStatus.OK);
