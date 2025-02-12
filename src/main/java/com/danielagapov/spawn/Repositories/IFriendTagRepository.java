@@ -15,6 +15,6 @@ public interface IFriendTagRepository extends JpaRepository<FriendTag, UUID> {
     @Query("SELECT ft FROM FriendTag ft WHERE ft.ownerId = :ownerId")
     List<FriendTag> findByOwnerId(@Param("ownerId") UUID ownerId);
 
-    @Query("Select ft From FriendTag ft WHERE ft.ownerId = :ownerId AND ft.isEveryone = true")
+    @Query("SELECT ft From FriendTag ft WHERE ft.ownerId = :ownerId AND ft.isEveryone = true")
     FriendTag findEveryoneTagByOwnerId(@Param("ownerId") UUID ownerId);
 }
