@@ -644,18 +644,19 @@ public class UserService implements IUserService {
             List<UserDTO> userFriends = getFriendsByUserId(requestingUserId);
             List<FullUserDTO> fullUserFriends = convertUsersToFullUsers(userFriends, new HashSet<>());
 
-            List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<FullFriendUserDTO>();
+            List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<>();
             for (FullUserDTO user : fullUserFriends) {
                 FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO(
                         user.id(),
-                        convertUsersToFullUsers(getFriendsByUserId(user.id()), new HashSet<>()),
+                        user.friends(),
                         user.username(),
                         user.profilePicture(),
                         user.firstName(),
                         user.lastName(),
                         user.bio(),
-                        friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(user.id())),
+                        user.friendTags(),
                         user.email(),
+                        // only added property from `FullUserDTO`:
                         friendTagService.getPertainingFriendTagsForFriend(requestingUserId, user.id())
                 );
                 fullFriendUserDTOList.add(fullFriendUserDTO);
