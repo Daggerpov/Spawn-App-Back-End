@@ -397,7 +397,7 @@ public class EventServiceTests {
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getFullUserById(any(UUID.class))).thenReturn(new FullUserDTO(
                 UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com"));
-        when(userService.convertUsersToFullUsers(any())).thenReturn(List.of());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub friend tag lookup; for events without a requesting user, no friend tag is applied.
         when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(null);
@@ -436,7 +436,7 @@ public class EventServiceTests {
         FullUserDTO fullUser = new FullUserDTO(
                 UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com");
         when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
-        when(userService.convertUsersToFullUsers(any())).thenReturn(List.of());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
         // Stub friend tag lookup
         com.danielagapov.spawn.DTOs.FriendTagDTO friendTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
@@ -690,7 +690,7 @@ public class EventServiceTests {
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getFullUserById(any(UUID.class)))
                 .thenReturn(new FullUserDTO(UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com"));
-        when(userService.convertUsersToFullUsers(any())).thenReturn(List.of());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
         com.danielagapov.spawn.DTOs.FriendTagDTO dummyTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
@@ -722,7 +722,7 @@ public class EventServiceTests {
         when(userService.getFullUserById(eventDTO.creatorUserId())).thenReturn(fullUser);
         when(userService.getParticipantsByEventId(eventDTO.id())).thenReturn(List.of());
         when(userService.getInvitedByEventId(eventDTO.id())).thenReturn(List.of());
-        when(userService.convertUsersToFullUsers(any())).thenReturn(List.of());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(eventDTO.id())).thenReturn(List.of());
 
         FullFeedEventDTO fullEvent = eventService.getFullEventByEvent(eventDTO, null);
@@ -764,7 +764,7 @@ public class EventServiceTests {
                         "first", "last", "bio", List.of(), "email@example.com"));
         when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.convertUsersToFullUsers(any())).thenReturn(List.of());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub participation: existsById true and findByEvent_Id returns a dummy EventUser not matching the requesting user.
         when(eventUserRepository.existsById(any(UUID.class))).thenReturn(true);
@@ -794,7 +794,7 @@ public class EventServiceTests {
                 .thenReturn(new FullUserDTO(UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com"));
         when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.convertUsersToFullUsers(any())).thenReturn(List.of());
+        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
         // Stub friend tag lookup to return null (self-owned accent)
