@@ -456,8 +456,8 @@ public class EventServiceTests {
 
         assertNotNull(fullEvent);
         assertEquals("Detailed Event", fullEvent.getTitle());
-//        assertEquals("#123456", fullEvent.getEventFriendTagColorHexCodeForRequestingUser());
-//        assertEquals(ParticipationStatus.participating, fullEvent.getParticipationStatus());
+        assertEquals("#123456", fullEvent.getEventFriendTagColorHexCodeForRequestingUser());
+        assertEquals(ParticipationStatus.participating, fullEvent.getParticipationStatus());
     }
 
     @Test
