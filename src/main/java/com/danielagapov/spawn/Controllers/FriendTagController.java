@@ -122,7 +122,7 @@ public class FriendTagController {
         }
     }
 
-    // full path: /api/v1/friendTags/{id}?userId=userId
+    // full path: /api/v1/friendTags/{id}?friendTagAction={addFriend/removeFriend}&userId=userId
     @PostMapping("{id}")
     public ResponseEntity<Void> modifyFriendTagFriends(@PathVariable UUID id, @RequestParam FriendTagAction friendTagAction, @RequestParam UUID userId) {
         try {
