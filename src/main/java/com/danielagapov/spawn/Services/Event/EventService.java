@@ -162,7 +162,7 @@ public class EventService implements IEventService {
             if (event instanceof FullFeedEventDTO fullFeedEventDTO) {
                 eventEntity = EventMapper.convertFullFeedEventDTOToEventEntity(fullFeedEventDTO);
             } else if (event instanceof EventDTO eventDTO) {
-                Location location = locationRepository.findById(eventDTO.locationId()).orElse(null);
+                Location location = locationRepository.findById(eventDTO.getLocationId()).orElse(null);
 
                 // Map EventDTO to Event entity with the resolved Location
                 eventEntity = EventMapper.toEntity(eventDTO, location,
@@ -289,13 +289,13 @@ public class EventService implements IEventService {
         System.out.println("Replacing event with ID: " + id + " with new event: " + newEvent);
         return repository.findById(id).map(event -> {
             // Update basic event details
-            event.setTitle(newEvent.title());
-            event.setNote(newEvent.note());
-            event.setEndTime(newEvent.endTime());
-            event.setStartTime(newEvent.startTime());
+            event.setTitle(newEvent.getTitle());
+            event.setNote(newEvent.getNote());
+            event.setEndTime(newEvent.getEndTime());
+            event.setStartTime(newEvent.getStartTime());
 
             // Fetch the location entity by locationId from DTO
-            event.setLocation(locationService.getLocationEntityById(newEvent.locationId()));
+            event.setLocation(locationService.getLocationEntityById(newEvent.getLocationId()));
 
             // Save updated event
             repository.save(event);
@@ -304,7 +304,7 @@ public class EventService implements IEventService {
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
-            Location location = locationService.getLocationEntityById(newEvent.locationId());
+            Location location = locationService.getLocationEntityById(newEvent.getLocationId());
             User creator = userService.getUserEntityById(newEvent.creatorUserId());
 
             // Convert DTO to entity
@@ -566,31 +566,31 @@ public class EventService implements IEventService {
     @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId, Set<UUID> visitedEvents) {
         try {
-            if (visitedEvents.contains(event.id())) {
+            if (visitedEvents.contains(event.getId())) {
                 return null;
             }
-            visitedEvents.add(event.id());
+            visitedEvents.add(event.getId());
 
             // Safely fetch location and creator
-            LocationDTO location = event.locationId() != null
-                    ? locationService.getLocationById(event.locationId())
+            LocationDTO location = event.getLocationId() != null
+                    ? locationService.getLocationById(event.getLocationId())
                     : null;
 
             FullUserDTO creator = userService.getFullUserById(event.creatorUserId());
 
             return new FullFeedEventDTO(
-                    event.id(),
-                    event.title(),
-                    event.startTime(),
-                    event.endTime(),
+                    event.getId(),
+                    event.getTitle(),
+                    event.getStartTime(),
+                    event.getEndTime(),
                     location,
-                    event.note(),
+                    event.getNote(),
                     creator,
-                    userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
-                    userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
-                    chatMessageService.getFullChatMessagesByEventId(event.id()),
+                    userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.getId()), new HashSet<>()),
+                    userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.getId()), new HashSet<>()),
+                    chatMessageService.getFullChatMessagesByEventId(event.getId()),
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
-                    requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
+                    requestingUserId != null ? getParticipationStatus(event.getId(), requestingUserId) : null
             );
         } catch (BaseNotFoundException e) {
             System.err.println("Skipping event due to missing data: " + e.getMessage());
