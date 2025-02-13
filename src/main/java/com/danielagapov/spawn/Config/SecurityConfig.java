@@ -32,19 +32,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable)
                 // Endpoints can be made unsecured by specifying it with requestMatchers() below and permitting
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
-            .authorizeHttpRequests(authorize -> authorize
-                            .requestMatchers("/api/v1/oauth/**").permitAll()
-                            .anyRequest()
-                            .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
-            )
+                .authorizeHttpRequests(authorize -> authorize
+                                //        .requestMatchers("/api/v1/auth/**", "/api/v1/betaAccessSignUp/**").permitAll()
+                                .anyRequest().permitAll()
+                        //.anyRequest()
+                        //.authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
+                )
                 // When authenticating a request fails, status code 401 (unauthorized) is returned
-            .exceptionHandling(e -> e
-                    .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-            )
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                )
                 // 'Stateless' session management means Spring will not create and store any session state on the server
                 // Each request is treated as 'new' and thus requires authentication (a JWT) to access secured endpoints
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -57,7 +58,7 @@ public class SecurityConfig {
 
     /**
      * Provides the default AuthenticationManager bean.
-     *
+     * <p>
      * The AuthenticationManager is responsible for processing authentication requests.
      * It delegates authentication to the configured AuthenticationProvider.
      *
@@ -72,7 +73,7 @@ public class SecurityConfig {
 
     /**
      * Configures the authentication provider for the application.
-     *
+     * <p>
      * DaoAuthenticationProvider is used to authenticate users by retrieving user details
      * from the database and validating their credentials.
      *
@@ -88,7 +89,7 @@ public class SecurityConfig {
 
     /**
      * Provides a password encoder bean.
-     *
+     * <p>
      * BCryptPasswordEncoder is a strong and secure password hashing algorithm
      * that automatically manages salting for added security.
      *
@@ -101,7 +102,7 @@ public class SecurityConfig {
 
     /**
      * Provides a UserDetailsService bean.
-     *
+     * <p>
      * This service is responsible for loading user details from the database
      * based on the username during authentication.
      *
