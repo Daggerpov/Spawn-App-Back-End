@@ -315,20 +315,8 @@ public class UserService implements IUserService {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
 
-        // Create a set of the requesting user's friends for quick lookup
-        Set<UUID> requestingUserFriendSet = new HashSet<>(requestingUserFriendIds);
-
         // Collect friends of friends (excluding already existing friends and the user itself)
-        Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
-        for (UUID friendId : requestingUserFriendIds) {
-            List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
-
-            for (UUID friendOfFriendId : friendOfFriendIds) {
-                if (!friendOfFriendId.equals(userId) && !requestingUserFriendSet.contains(friendOfFriendId)) {
-                    mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
-                }
-            }
-        }
+        Map<UUID, Integer> mutualFriendCounts = getMutualFriendCounts(requestingUserFriendIds, userId);
 
         // Fetch only users in the mutualFriendCounts map
         List<RecommendedFriendUserDTO> recommendedFriends = mutualFriendCounts.entrySet().stream()
