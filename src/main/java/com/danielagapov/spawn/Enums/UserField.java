@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Enums;
 
-public enum Field {
+public enum UserField {
     USERNAME,
     EMAIL
 }

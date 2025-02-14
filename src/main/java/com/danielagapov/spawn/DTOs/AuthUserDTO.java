@@ -1,0 +1,12 @@
+package com.danielagapov.spawn.DTOs;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public class AuthUserDTO implements AbstractUserDTO, IOnboardedUserDTO {
+    private String username;
+    private String password;
+    private String email;
+}

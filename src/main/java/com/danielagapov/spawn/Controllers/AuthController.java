@@ -1,17 +1,22 @@
 package com.danielagapov.spawn.Controllers;
 
+import com.danielagapov.spawn.DTOs.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
+import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -21,11 +26,13 @@ public class AuthController {
     private final IOAuthService oauthService;
     private final IJWTService jwtService;
     private final ILogger logger;
+    private final IAuthService authService;
 
-    public AuthController(IOAuthService oauthService, IJWTService jwtService, ILogger logger) {
+    public AuthController(IOAuthService oauthService, IJWTService jwtService, ILogger logger, IAuthService authService) {
         this.oauthService = oauthService;
         this.jwtService = jwtService;
         this.logger = logger;
+        this.authService = authService;
     }
 
 
@@ -51,7 +58,7 @@ public class AuthController {
             return ResponseEntity.internalServerError().body(null);
         }
     }
-
+    
     /**
      * This method creates a user, given a `UserDTO` from mobile, which can be constructed through the email
      * given through Google, Apple, or email/pass authentication + attributes input either by default through
@@ -65,7 +72,7 @@ public class AuthController {
      */
     // full path: /api/v1/auth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value = "profilePicture", required = false) byte[] profilePicture, @RequestParam(value = "provider", required = false) OAuthProvider provider) {
+    public ResponseEntity<FullUserDTO> makeUserFromOAuth(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value = "profilePicture", required = false) byte[] profilePicture, @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
             logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}", userDTO, externalUserId, provider));
             FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
@@ -92,6 +99,40 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bad or expired token");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
+        }
+    }
+
+    // full path: /api/v1/auth/register
+    @PostMapping("register")
+    public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
+        try {
+            logger.log(String.format("Account registration request received: {user: %s}", authUserDTO));
+            UserDTO newUserDTO = authService.registerUser(authUserDTO);
+            HttpHeaders headers = makeHeadersForTokens(newUserDTO.username());
+            logger.log(String.format("User successfully registered: {user: %s}", newUserDTO));
+            return ResponseEntity.ok().headers(headers).body(newUserDTO);
+        } catch (FieldAlreadyExistsException fae) {
+            logger.log(fae.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (Exception e) {
+            logger.log("Error registering in user: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // full path: /api/v1/auth/login
+    @PostMapping("login")
+    public ResponseEntity<IOnboardedUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+        try {
+            logger.log(String.format("Login request received: {user: %s}", authUserDTO));
+            FullUserDTO existingUserDTO = authService.loginUser(authUserDTO);
+            HttpHeaders headers = makeHeadersForTokens(existingUserDTO.username());
+            return ResponseEntity.ok().headers(headers).body(existingUserDTO);
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (Exception e) {
+            logger.log(String.format("Error logging in user: {user: %s}. Error: %s", authUserDTO, e.getMessage()));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
