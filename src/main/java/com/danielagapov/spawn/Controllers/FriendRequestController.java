@@ -46,7 +46,7 @@ public class FriendRequestController {
 
     // full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
     @PutMapping("{friendRequestId}")
-    public ResponseEntity<Void> acceptFriendRequest(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
+    public ResponseEntity<Void> friendRequestAction(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
         try {
             if (friendRequestAction == FriendRequestAction.accept){
                 friendRequestService.acceptFriendRequest(friendRequestId);
