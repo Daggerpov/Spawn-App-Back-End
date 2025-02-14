@@ -372,9 +372,7 @@ public class UserService implements IUserService {
         users.addAll(repository.findByFirstName(searchQuery));
         users.addAll(repository.findByUsername(searchQuery));
 
-        List<FullUserDTO> fullUsers = users.stream().map((user) ->
-            getFullUserById(user.getId())
-        ).toList();
+        Set<UUID> userIds = new HashSet<>(users.stream().map(User::getId).toList());
 
         // TODO convert users to RecommendedFriendUserDTO
         return new ArrayList<>();
