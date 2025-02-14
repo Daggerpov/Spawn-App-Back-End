@@ -360,11 +360,34 @@ public class UserService implements IUserService {
         return recommendedFriends;
     }
 
+    private Map<UUID, Integer> getMutualFriendCounts(List<UUID> requestingUserFriendIds, UUID requestingUserId) {
+        // Create a set of the requesting user's friends for quick lookup
+        Set<UUID> requestingUserFriendSet = new HashSet<>(requestingUserFriendIds);
+
+        // Collect friends of friends (excluding already existing friends and the user itself)
+        Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
+        for (UUID friendId : requestingUserFriendIds) {
+            List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
+
+            for (UUID friendOfFriendId : friendOfFriendIds) {
+                if (!friendOfFriendId.equals(requestingUserId) && !requestingUserFriendSet.contains(friendOfFriendId)) {
+                    mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
+                }
+            }
+        }
+        return mutualFriendCounts;
+    }
+
     @Override
     public List<RecommendedFriendUserDTO> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
         List<User> users = repository.findByLastName(searchQuery);
         users.addAll(repository.findByFirstName(searchQuery));
         users.addAll(repository.findByUsername(searchQuery));
+
+        List<FullUserDTO> fullUsers = users.stream().map((user) ->
+            getFullUserById(user.getId())
+        ).toList();
+
         // TODO convert users to RecommendedFriendUserDTO
         return new ArrayList<>();
     }
