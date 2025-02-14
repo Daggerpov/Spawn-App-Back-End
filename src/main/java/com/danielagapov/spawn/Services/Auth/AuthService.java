@@ -36,7 +36,6 @@ public class AuthService implements IAuthService {
         try {
             UserDTO userDTO = createAndSaveUser(authUserDTO);
             return userDTO;
-            //String token = jwtService.generateToken(userDTO.username()); // TODO: handle externally
         } catch (Exception e) {
             logger.log("Unexpected error while registering user");
             throw e;
@@ -55,7 +54,6 @@ public class AuthService implements IAuthService {
         if (authentication.isAuthenticated()) {
             logger.log("Authentication successful for user: " + authUserDTO.getUsername());
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-            //String token = jwtService.generateAccessToken(username); // TODO: handle externally
             logger.log("Fetching full user dto");
             FullUserDTO fullUserDTO = userService.getFullUserByUsername(username);
             return fullUserDTO;
