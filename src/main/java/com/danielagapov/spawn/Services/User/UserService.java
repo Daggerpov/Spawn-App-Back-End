@@ -667,6 +667,19 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public void verifyUserByUsername(String username) {
+        try {
+            logger.log("Marking user as verified " + username);
+            User user = repository.findByUsername(username);
+            user.setVerified(true);
+            repository.save(user);
+        } catch (Exception e) {
+            logger.log("Unexpected error while marking user as verified: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
     }

@@ -35,4 +35,15 @@ public class User implements Serializable {
     @Column(nullable = false, unique = true)
     private String email;
     private String password;
+    private boolean verified;
+
+    public User(UUID id, String username, String profilePictureUrlString, String firstName, String lastName, String bio, String email) {
+        this.id = id;
+        this.username = username;
+        this.profilePictureUrlString = profilePictureUrlString;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.bio = bio;
+        this.email = email;
+    }
 }

@@ -10,9 +10,12 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
+import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,18 +25,20 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController()
 @RequestMapping("api/v1/auth")
+@AllArgsConstructor
 public class AuthController {
     private final IOAuthService oauthService;
     private final IJWTService jwtService;
     private final ILogger logger;
     private final IAuthService authService;
+    private final IEmailService emailService;
 
-    public AuthController(IOAuthService oauthService, IJWTService jwtService, ILogger logger, IAuthService authService) {
-        this.oauthService = oauthService;
-        this.jwtService = jwtService;
-        this.logger = logger;
-        this.authService = authService;
-    }
+//    public AuthController(IOAuthService oauthService, IJWTService jwtService, ILogger logger, IAuthService authService) {
+//        this.oauthService = oauthService;
+//        this.jwtService = jwtService;
+//        this.logger = logger;
+//        this.authService = authService;
+//    }
 
 
     /**
@@ -58,7 +63,7 @@ public class AuthController {
             return ResponseEntity.internalServerError().body(null);
         }
     }
-    
+
     /**
      * This method creates a user, given a `UserDTO` from mobile, which can be constructed through the email
      * given through Google, Apple, or email/pass authentication + attributes input either by default through
@@ -133,6 +138,36 @@ public class AuthController {
         } catch (Exception e) {
             logger.log(String.format("Error logging in user: {user: %s}. Error: %s", authUserDTO, e.getMessage()));
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // full path: /api/v1/auth/verify-email?token=<email-token>
+    @GetMapping("verify-email")
+    public ResponseEntity<String> verifyEmail(@RequestParam("token") String emailToken) {
+        try {
+            logger.log("Verify email request received");
+            // TODO: return HTML
+            String message = authService.verifyEmail(emailToken) ? "Account is verified" : "Outdated link!";
+            return ResponseEntity.ok().body(message);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Unexpected error while verifying email: " + e.getMessage());
+        }
+    }
+
+    /* ------------------------------ HELPERS ------------------------------ */
+
+    @Deprecated(since = "For testing purposes")
+    @GetMapping("test-email")
+    public ResponseEntity<String> email() {
+        try {
+            logger.log("Email request received");
+            emailService.sendEmail("spawnappmarketing@gmail.com", "test email", "This is a test email sent programmatically.");
+            return ResponseEntity.ok().body("Email sent");
+        } catch (MessagingException e) {
+            logger.log("Messaging Exception: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Messaging Exception: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Internal Server Error: " + e.getMessage());
         }
     }
 

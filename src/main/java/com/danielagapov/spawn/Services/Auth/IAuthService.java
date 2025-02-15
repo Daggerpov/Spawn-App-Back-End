@@ -8,4 +8,6 @@ public interface IAuthService {
     UserDTO registerUser(AuthUserDTO authUserDTO);
 
     FullUserDTO loginUser(AuthUserDTO authUserDTO);
+
+    boolean verifyEmail(String token);
 }
