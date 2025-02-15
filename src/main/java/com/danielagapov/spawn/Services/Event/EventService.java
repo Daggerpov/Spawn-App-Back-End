@@ -222,15 +222,20 @@ public class EventService implements IEventService {
         }
     }
 
+//    @Override
+//    public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
+//        List<Event> events = repository.findByCreatorId(creatorUserId);
+//
+//        if (events.isEmpty()) {
+//            throw new BasesNotFoundException(EntityType.Event);
+//        }
+//
+//        return getEventDTOS(events);
+//    }
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
         List<Event> events = repository.findByCreatorId(creatorUserId);
-
-        if (events.isEmpty()) {
-            throw new BasesNotFoundException(EntityType.Event);
-        }
-
-        return getEventDTOS(events);
+        return events.isEmpty() ? Collections.emptyList() : getEventDTOS(events);
     }
 
     private List<EventDTO> getEventDTOS(List<Event> events) {
@@ -435,57 +440,113 @@ public class EventService implements IEventService {
         return getEventDTOS(events);
     }
 
+//    @Override
+//    public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
+//        List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
+//
+//        List<Event> events = new ArrayList<>();
+//
+//        if (eventUsers.isEmpty()) {
+//            // throws no user found exception
+//            throw new BaseNotFoundException(EntityType.User, id);
+//        }
+//
+//        for (EventUser eventUser : eventUsers) {
+//            if (eventUser.getUser().getId().equals(id) && eventUser.getStatus() != ParticipationStatus.notInvited) {
+//                events.add(eventUser.getEvent());
+//            }
+//        }
+//
+//        List<EventDTO> eventDTOs = getEventDTOS(events);
+//
+//        // Transform each EventDTO into a FullFeedEventDTO
+//        return eventDTOs.stream()
+//                .map(eventDTO -> getFullEventByEvent(eventDTO, id))
+//                .toList();
+//    }
     @Override
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
-
-        List<Event> events = new ArrayList<>();
+        List<FullFeedEventDTO> fullFeedEvents = new ArrayList<>();
 
         if (eventUsers.isEmpty()) {
-            // throws no user found exception
-            throw new BaseNotFoundException(EntityType.User, id);
+            return fullFeedEvents; // Return an empty list instead of throwing an exception
         }
 
         for (EventUser eventUser : eventUsers) {
             if (eventUser.getUser().getId().equals(id) && eventUser.getStatus() != ParticipationStatus.notInvited) {
-                events.add(eventUser.getEvent());
+                Event event = eventUser.getEvent();
+                EventDTO eventDTO = EventMapper.toDTO(
+                        event,
+                        event.getCreator().getId(),
+                        userService.getParticipantUserIdsByEventId(event.getId()),
+                        userService.getInvitedUserIdsByEventId(event.getId()),
+                        chatMessageService.getChatMessageIdsByEventId(event.getId())
+                );
+
+                FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, id);
+                fullFeedEvents.add(fullFeedEvent);
             }
         }
 
-        List<EventDTO> eventDTOs = getEventDTOS(events);
-
-        // Transform each EventDTO into a FullFeedEventDTO
-        return eventDTOs.stream()
-                .map(eventDTO -> getFullEventByEvent(eventDTO, id))
-                .toList();
+        return fullFeedEvents;
     }
+
 
     /**
      * @param requestingUserId
      * @return This method returns the feed events for a user, with their created ones
      * first in the `universalAccentColor`, followed by events they're invited to
      */
+//    @Override
+//    public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
+//        List<FullFeedEventDTO> eventsCreated =
+//                convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+//        List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+//
+//        OffsetDateTime now = OffsetDateTime.now();
+//
+//        eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+//        eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+//
+//        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+//        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+//
+//        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+//        combinedEvents.addAll(eventsInvitedTo);
+//
+//        return combinedEvents;
+//    }
+
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
-        List<FullFeedEventDTO> eventsCreated =
-                convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-        List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+        try {
+            List<FullFeedEventDTO> eventsCreated =
+                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+            System.out.println("Created events size: " + eventsCreated.size());
 
-        OffsetDateTime now = OffsetDateTime.now();
+            List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+            System.out.println("Invited events size: " + eventsInvitedTo.size());
 
-        eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
-        eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+            OffsetDateTime now = OffsetDateTime.now();
 
-        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+            eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
 
-        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-        combinedEvents.addAll(eventsInvitedTo);
+            System.out.println("After filtering, created events: " + eventsCreated.size());
+            System.out.println("After filtering, invited events: " + eventsInvitedTo.size());
 
-        return combinedEvents;
+            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+            combinedEvents.addAll(eventsInvitedTo);
+
+            return combinedEvents;
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
-    
+
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
         UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
