@@ -46,9 +46,9 @@ public class EventService implements IEventService {
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
-            IEventUserRepository eventUserRepository, IUserRepository userRepository,
-            IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-            ILogger logger, ILocationService locationService) {
+                        IEventUserRepository eventUserRepository, IUserRepository userRepository,
+                        IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
+                        ILogger logger, ILocationService locationService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
@@ -63,7 +63,7 @@ public class EventService implements IEventService {
     @Override
     public List<FullFeedEventDTO> getAllFullEvents() {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
-        for (EventDTO e: getAllEvents()) {
+        for (EventDTO e : getAllEvents()) {
             fullEvents.add(getFullEventByEvent(e, null, new HashSet<>()));
         }
         return fullEvents;
@@ -148,7 +148,7 @@ public class EventService implements IEventService {
             Event eventEntity;
 
             if (event instanceof FullFeedEventDTO fullFeedEventDTO) {
-                eventEntity = EventMapper.convertFullFeedEventDTOToEventEntity( fullFeedEventDTO);
+                eventEntity = EventMapper.convertFullFeedEventDTOToEventEntity(fullFeedEventDTO);
             } else if (event instanceof EventDTO eventDTO) {
                 Location location = locationRepository.findById(eventDTO.locationId()).orElse(null);
 
@@ -342,7 +342,7 @@ public class EventService implements IEventService {
             throw new BaseNotFoundException(EntityType.Event, eventId);
         }
 
-        for (EventUser eventUser: eventUsers) {
+        for (EventUser eventUser : eventUsers) {
             if (eventUser.getUser().getId().equals(userId)) {
                 return eventUser.getStatus();
             }
@@ -467,36 +467,46 @@ public class EventService implements IEventService {
      */
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
-        List<FullFeedEventDTO> eventsCreated =
-                convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-        List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+        try {
+            List<FullFeedEventDTO> eventsCreated =
+                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+            List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
-        OffsetDateTime now = OffsetDateTime.now();
+            OffsetDateTime now = OffsetDateTime.now();
 
-        eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
-        eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+            eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+            eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
 
-        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
 
-        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-        combinedEvents.addAll(eventsInvitedTo);
+            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+            combinedEvents.addAll(eventsInvitedTo);
 
-        return combinedEvents;
+            return combinedEvents;
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
-    
+
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
-        UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
-        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
+        try {
+            UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
+            List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+            List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
 
-        // Combine the lists with eventsCreated first
-        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-        combinedEvents.addAll(eventsByFriendTagFilter);
- 
-        return combinedEvents;
+            // Combine the lists with eventsCreated first
+            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+            combinedEvents.addAll(eventsByFriendTagFilter);
+
+            return combinedEvents;
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
     @Override
@@ -543,7 +553,7 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId) {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
-        for(EventDTO eventDTO : events) {
+        for (EventDTO eventDTO : events) {
             fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>()));
         }
 
@@ -554,7 +564,7 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId) {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
-        for(EventDTO eventDTO : events) {
+        for (EventDTO eventDTO : events) {
             FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>());
             fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D"); // from Figma & Mobile
             fullEvents.add(fullFeedEvent);
