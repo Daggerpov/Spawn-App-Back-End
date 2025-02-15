@@ -433,22 +433,27 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
         try {
             // Retrieve events created by the user.
-            List<FullFeedEventDTO> eventsCreated = new ArrayList<>(
-                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId)
-            );
+            List<FullFeedEventDTO> eventsCreated =
+                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+            List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+
+            OffsetDateTime now = OffsetDateTime.now();
+
+            eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+            eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+
+            eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+
+            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+            combinedEvents.addAll(eventsInvitedTo);
+
+            return combinedEvents;
 
             // Retrieve events where the user is invited.
             List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
                     getFullEventsInvitedTo(requestingUserId)
             );
-
-            // Remove expired events
-            removeExpiredEvents(eventsCreated);
-            removeExpiredEvents(eventsInvitedTo);
-
-            // Sort events
-            sortEventsByStartTime(eventsCreated);
-            sortEventsByStartTime(eventsInvitedTo);
 
             // Combine the two lists into one.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
@@ -561,7 +566,6 @@ public class EventService implements IEventService {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
         for (EventDTO eventDTO : events) {
-
             fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>()));
         }
 
