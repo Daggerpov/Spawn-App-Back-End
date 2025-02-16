@@ -93,8 +93,7 @@ public class EventService implements IEventService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(id);
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
 
-        EventDTO eventDTO = EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
-        return eventDTO;
+        return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
     @Override
@@ -115,7 +114,7 @@ public class EventService implements IEventService {
             List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
 
             // Step 3: Map filtered events to detailed DTOs
-            List<EventDTO> eventDTOs = filteredEvents.stream()
+            return filteredEvents.stream()
                     .map(event -> EventMapper.toDTO(
                             event,
                             event.getCreator().getId(),
@@ -123,7 +122,6 @@ public class EventService implements IEventService {
                             userService.getInvitedUserIdsByEventId(event.getId()),
                             chatMessageService.getChatMessageIdsByEventId(event.getId())))
                     .toList();
-            return eventDTOs;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving events by friend tag ID", e);
@@ -167,7 +165,6 @@ public class EventService implements IEventService {
                     userService.getInvitedUserIdsByEventId(eventEntity.getId()), // invitedUserIds
                     chatMessageService.getChatMessageIdsByEventId(eventEntity.getId()) // chatMessageIds
             );
-            return eventDTO;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
@@ -310,11 +307,10 @@ public class EventService implements IEventService {
                 throw new BaseNotFoundException(EntityType.Event, eventId);
             }
 
-            List<UserDTO> userDTOs = eventUsers.stream()
+            return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus().equals(ParticipationStatus.participating))
                     .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
                     .toList();
-            return userDTOs;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseNotFoundException(EntityType.Event, eventId);
@@ -404,8 +400,7 @@ public class EventService implements IEventService {
             }
         }
 
-        List<EventDTO> eventDTOs = getEventDTOS(events);
-        return eventDTOs;
+        return getEventDTOS(events);
     }
 
     @Override
@@ -422,10 +417,9 @@ public class EventService implements IEventService {
 
         List<EventDTO> eventDTOs = getEventDTOS(events);
 
-        List<FullFeedEventDTO> fullFeedEventDTOs = eventDTOs.stream()
+        return eventDTOs.stream()
                 .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
                 .toList();
-        return fullFeedEventDTOs;
     }
 
     /**
