@@ -488,6 +488,7 @@ public class EventService implements IEventService {
 
             OffsetDateTime now = OffsetDateTime.now();
 
+            // Safe to modify now
             eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
             eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
 
