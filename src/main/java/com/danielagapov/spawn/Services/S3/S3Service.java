@@ -167,7 +167,7 @@ public class S3Service implements IS3Service {
      * Deletes an object given the key (where it's stored)
      */
     private void deleteObject(String key) {
-        if (key.equals(extractObjectKey(DEFAULT_PFP)))
+        if (key == null || key.equals(extractObjectKey(DEFAULT_PFP)))
             return; // Don't delete the default pfp! It is shared among many users
 
         DeleteObjectRequest request = DeleteObjectRequest.builder()
