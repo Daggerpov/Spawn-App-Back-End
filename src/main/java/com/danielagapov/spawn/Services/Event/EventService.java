@@ -527,8 +527,8 @@ public class EventService implements IEventService {
                 userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()), // Pass visitedUsers
                 userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()), // Pass visitedUsers
                 null, // chatMessageService.getFullChatMessagesByEventId(event.id()),
-                null, //requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
-                null //requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
+                "#ffffff", //requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
+                ParticipationStatus.invited//requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
         );
     }
 
