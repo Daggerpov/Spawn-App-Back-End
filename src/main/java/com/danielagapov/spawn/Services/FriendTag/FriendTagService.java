@@ -186,6 +186,29 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    public void removeUserFromFriendTag(UUID id, UUID userId) {
+        // Check if the FriendTag exists
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
+        }
+        // Check if the User exists
+        if (!userRepository.existsById(userId)) {
+            throw new BaseNotFoundException(EntityType.User, userId);
+        }
+
+        try {
+            // Remove the UserFriendTag entity
+            uftRepository.deleteByFriendTagIdAndUserId(id, userId);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BaseSaveException("Failed to remove UserFriendTag (friend from friend tag)");
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends) {
         for (FullUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.id());

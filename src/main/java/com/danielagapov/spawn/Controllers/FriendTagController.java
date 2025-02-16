@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.IFriendTagDTO;
+import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
@@ -121,11 +122,17 @@ public class FriendTagController {
         }
     }
 
-    // full path: /api/v1/friendTags/{id}?userId=userId
+    // full path: /api/v1/friendTags/{id}?friendTagAction={addFriend/removeFriend}&userId=userId
     @PostMapping("{id}")
-    public ResponseEntity<Void> addUserToFriendTag(@PathVariable UUID id, @RequestParam UUID userId) {
+    public ResponseEntity<Void> modifyFriendTagFriends(@PathVariable UUID id, @RequestParam FriendTagAction friendTagAction, @RequestParam UUID userId) {
         try {
-            friendTagService.saveUserToFriendTag(id, userId);
+            if (friendTagAction == FriendTagAction.addFriend) {
+                friendTagService.saveUserToFriendTag(id, userId);
+            } else if (friendTagAction == FriendTagAction.removeFriend) {
+                friendTagService.removeUserFromFriendTag(id, userId);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // this will handle null/invalid cases
+            }
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

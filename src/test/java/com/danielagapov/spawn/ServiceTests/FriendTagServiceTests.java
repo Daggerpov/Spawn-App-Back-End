@@ -273,4 +273,62 @@ public class FriendTagServiceTests {
         assertTrue(result.isEmpty());
         verify(friendTagRepository, times(1)).findByOwnerId(ownerId);
     }
+
+    @Test
+    void removeUserFromFriendTag_ShouldRemoveUser_WhenFriendTagAndUserExist() {
+        UUID friendTagId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(userRepository.existsById(userId)).thenReturn(true);
+
+        assertDoesNotThrow(() -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
+
+        verify(userFriendTagRepository, times(1)).deleteByFriendTagIdAndUserId(friendTagId, userId);
+    }
+
+    @Test
+    void removeUserFromFriendTag_ShouldThrowException_WhenFriendTagNotFound() {
+        UUID friendTagId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(false);
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+                () -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
+
+        assertEquals("FriendTag entity not found with ID: " + friendTagId, exception.getMessage());
+        verify(userFriendTagRepository, never()).deleteByFriendTagIdAndUserId(any(), any());
+    }
+
+    @Test
+    void removeUserFromFriendTag_ShouldThrowException_WhenUserNotFound() {
+        UUID friendTagId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(userRepository.existsById(userId)).thenReturn(false);
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+                () -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
+
+        assertEquals("User entity not found with ID: " + userId, exception.getMessage());
+        verify(userFriendTagRepository, never()).deleteByFriendTagIdAndUserId(any(), any());
+    }
+
+    @Test
+    void removeUserFromFriendTag_ShouldThrowException_WhenDatabaseErrorOccurs() {
+        UUID friendTagId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(userRepository.existsById(userId)).thenReturn(true);
+        doThrow(new DataAccessException("Database error") {}).when(userFriendTagRepository).deleteByFriendTagIdAndUserId(friendTagId, userId);
+
+        BaseSaveException exception = assertThrows(BaseSaveException.class,
+                () -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
+
+        assertTrue(exception.getMessage().contains("Failed to remove UserFriendTag (friend from friend tag)"));
+        verify(userFriendTagRepository, times(1)).deleteByFriendTagIdAndUserId(friendTagId, userId);
+    }
 }

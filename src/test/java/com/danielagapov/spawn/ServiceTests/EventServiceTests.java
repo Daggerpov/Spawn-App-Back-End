@@ -456,8 +456,8 @@ public class EventServiceTests {
 
         assertNotNull(fullEvent);
         assertEquals("Detailed Event", fullEvent.getTitle());
-//        assertEquals("#123456", fullEvent.getEventFriendTagColorHexCodeForRequestingUser());
-//        assertEquals(ParticipationStatus.participating, fullEvent.getParticipationStatus());
+        assertEquals("#123456", fullEvent.getEventFriendTagColorHexCodeForRequestingUser());
+        assertEquals(ParticipationStatus.participating, fullEvent.getParticipationStatus());
     }
 
     @Test
@@ -725,7 +725,7 @@ public class EventServiceTests {
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(eventDTO.id())).thenReturn(List.of());
 
-        FullFeedEventDTO fullEvent = eventService.getFullEventByEvent(eventDTO, null, new HashSet<>());
+        FullFeedEventDTO fullEvent = eventService.getFullEventByEvent(eventDTO, null);
 
         assertNotNull(fullEvent);
         // For EventDTO record, use eventDTO.title() accessor.
