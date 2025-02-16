@@ -241,12 +241,10 @@ public class UserService implements IUserService {
 
     @Override
     public boolean deleteUserById(UUID id) {
-        if (!repository.existsById(id)) {
-            throw new BaseNotFoundException(EntityType.User, id);
-        }
-
+        User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
         try {
             repository.deleteById(id);
+            s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
             return true;
         } catch (Exception e) {
             logger.log(e.getMessage());
