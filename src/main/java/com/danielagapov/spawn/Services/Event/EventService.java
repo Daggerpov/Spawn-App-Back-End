@@ -514,12 +514,18 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
         try {
             System.out.println("Fetching feed events for user ID: " + requestingUserId);
-            List<FullFeedEventDTO> eventsCreated =
-                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-            List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+
+            // Convert to mutable lists
+            List<FullFeedEventDTO> eventsCreated = new ArrayList<>(
+                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId)
+            );
+            List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
+                    getFullEventsInvitedTo(requestingUserId)
+            );
 
             OffsetDateTime now = OffsetDateTime.now();
 
+            // Safe to modify now
             eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
             eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
 
