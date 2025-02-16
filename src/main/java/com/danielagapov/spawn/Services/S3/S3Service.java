@@ -129,8 +129,7 @@ public class S3Service implements IS3Service {
         try {
             User user = UserMapper.toEntity(userService.getUserById(userId));
             String urlString = user.getProfilePictureUrlString();
-            String key = extractObjectKey(urlString);
-            deleteObject(key);
+            deleteObjectByURL(urlString);
             user.setProfilePictureUrlString(null);
             userService.saveEntity(user);
         } catch (Exception e) {
@@ -143,15 +142,29 @@ public class S3Service implements IS3Service {
         return DEFAULT_PFP;
     }
 
+
+    @Override
+    public void deleteObjectByURL(String urlString) {
+        try {
+            String key = extractObjectKey(urlString);
+            deleteObject(key);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
     /**
      * Deletes an object given the key (where it's stored)
      */
     private void deleteObject(String key) {
+        if (key.equals(extractObjectKey(DEFAULT_PFP)))
+            return; // Don't delete the default pfp! It is shared among many users
+
         DeleteObjectRequest request = DeleteObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(key)
                 .build();
-
         try {
             s3.deleteObject(request);
         } catch (Exception e) {
