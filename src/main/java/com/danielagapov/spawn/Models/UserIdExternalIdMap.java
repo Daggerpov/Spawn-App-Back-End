@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @NoArgsConstructor
@@ -14,9 +16,10 @@ public class UserIdExternalIdMap {
     @Id
     private String id; // the id (or sub) from external provider like Google OAuth
 
-    // many to one because of the duplicate case, may want to revisit
-    @ManyToOne // TODO: may need to revisit relationship type if google/apple calendars is a feature later
+    // TODO: may need to revisit relationship type if google/apple calendars is a feature later
+    @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @Enumerated(EnumType.STRING)

@@ -2,12 +2,13 @@ package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
 
@@ -29,6 +30,7 @@ public class EventUser implements Serializable {
     @ManyToOne
     @MapsId("userId")
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @Enumerated(EnumType.STRING)
