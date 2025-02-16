@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
 
@@ -22,10 +24,12 @@ public class ChatMessageLikes implements Serializable {
     @ManyToOne
     @MapsId("chatMessageId")
     @JoinColumn(name = "chat_message_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private ChatMessage chatMessage;
 
     @ManyToOne
     @MapsId("userId")
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 }

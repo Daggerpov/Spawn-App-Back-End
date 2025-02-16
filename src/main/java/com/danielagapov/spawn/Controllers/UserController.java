@@ -29,7 +29,7 @@ public class UserController {
 
     // full path: /api/v1/users?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers(), new HashSet<>()), HttpStatus.OK);
@@ -43,7 +43,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
@@ -59,7 +59,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}/friends
     @GetMapping("{id}/friends")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id){
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -81,7 +81,7 @@ public class UserController {
 
     // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId), new HashSet<>()), HttpStatus.OK);
@@ -121,7 +121,6 @@ public class UserController {
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         try {
-            s3Service.deleteObjectByUserId(id);
             boolean isDeleted = userService.deleteUserById(id);
             if (isDeleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
