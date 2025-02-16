@@ -401,6 +401,7 @@ public class EventServiceTests {
 
         // To ensure getParticipationStatus does not throw, stub existsById and findByEvent_Id.
         when(eventUserRepository.existsById(any(EventUsersId.class))).thenReturn(true);
+
         // Return a list containing an EventUser with a dummy user (not matching any requesting user)
         EventUser dummyEU = new EventUser();
         User dummyUser = new User();
