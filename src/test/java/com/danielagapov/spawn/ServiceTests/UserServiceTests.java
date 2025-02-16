@@ -183,13 +183,13 @@ public class UserServiceTests {
     @Test
     void deleteUserById_ShouldThrowException_WhenUserDoesNotExist() {
         UUID userId = UUID.randomUUID();
-
-        when(userRepository.existsById(userId)).thenReturn(false);
+        when(userRepository.findById(userId)).
+                thenReturn(Optional.empty());
 
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
 
         assertTrue(exception.getMessage().contains("User"));
-        verify(userRepository, times(1)).existsById(userId);
+        verify(userRepository, times(1)).findById(userId);
     }
 
     @Test
