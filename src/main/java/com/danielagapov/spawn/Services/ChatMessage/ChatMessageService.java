@@ -22,7 +22,6 @@ import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
 import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
@@ -36,19 +35,17 @@ public class ChatMessageService implements IChatMessageService {
     private final IChatMessageRepository chatMessageRepository;
     private final IUserService userService;
     private final IEventRepository eventRepository;
-    private final IEventService eventService;
     private final IFriendTagService ftService;
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
-                              IEventRepository eventRepository, IEventService eventService, IChatMessageLikesRepository chatMessageLikesRepository,
+                              IEventRepository eventRepository,IChatMessageLikesRepository chatMessageLikesRepository,
                               IFriendTagService ftService, IUserRepository userRepository, ILogger logger) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.eventRepository = eventRepository;
-        this.eventService = eventService;
         this.chatMessageLikesRepository = chatMessageLikesRepository;
         this.ftService = ftService;
         this.userRepository = userRepository;
