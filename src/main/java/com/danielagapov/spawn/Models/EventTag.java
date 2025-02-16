@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -25,9 +27,11 @@ public class EventTag implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "event_id", referencedColumnName = "id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Event event;
 
     @ManyToOne
     @JoinColumn(name = "tag_id", referencedColumnName = "id", nullable = false)
+    // TODO: what happens when an event tag is deleted
     private FriendTag tag;
 }

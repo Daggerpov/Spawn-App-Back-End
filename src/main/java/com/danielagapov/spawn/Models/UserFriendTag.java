@@ -44,5 +44,6 @@ public class UserFriendTag implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "friend_tag_id", referencedColumnName = "id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private FriendTag friendTag;
 }

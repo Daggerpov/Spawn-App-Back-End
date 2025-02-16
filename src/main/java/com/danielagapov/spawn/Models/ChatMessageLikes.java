@@ -24,6 +24,7 @@ public class ChatMessageLikes implements Serializable {
     @ManyToOne
     @MapsId("chatMessageId")
     @JoinColumn(name = "chat_message_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private ChatMessage chatMessage;
 
     @ManyToOne
