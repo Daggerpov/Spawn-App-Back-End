@@ -93,8 +93,7 @@ public class EventService implements IEventService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(id);
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
 
-        EventDTO eventDTO = EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
-        return eventDTO;
+        return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
     @Override
@@ -115,7 +114,7 @@ public class EventService implements IEventService {
             List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
 
             // Step 3: Map filtered events to detailed DTOs
-            List<EventDTO> eventDTOs = filteredEvents.stream()
+            return filteredEvents.stream()
                     .map(event -> EventMapper.toDTO(
                             event,
                             event.getCreator().getId(),
@@ -123,7 +122,6 @@ public class EventService implements IEventService {
                             userService.getInvitedUserIdsByEventId(event.getId()),
                             chatMessageService.getChatMessageIdsByEventId(event.getId())))
                     .toList();
-            return eventDTOs;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving events by friend tag ID", e);
@@ -157,14 +155,17 @@ public class EventService implements IEventService {
             eventEntity = repository.save(eventEntity);
 
             // Map saved Event entity back to EventDTO with all necessary fields
-            IEventDTO eventDTO = EventMapper.toDTO(
+            // creatorUserId
+            // participantUserIds
+            // invitedUserIds
+            // chatMessageIds
+            return EventMapper.toDTO(
                     eventEntity,
                     eventEntity.getCreator().getId(), // creatorUserId
                     userService.getParticipantUserIdsByEventId(eventEntity.getId()), // participantUserIds
                     userService.getInvitedUserIdsByEventId(eventEntity.getId()), // invitedUserIds
                     chatMessageService.getChatMessageIdsByEventId(eventEntity.getId()) // chatMessageIds
             );
-            return eventDTO;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
@@ -210,8 +211,7 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
-            IEventDTO eventDTO = EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
-            return eventDTO;
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
@@ -222,8 +222,7 @@ public class EventService implements IEventService {
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
         List<Event> events = repository.findByCreatorId(creatorUserId);
 
-        List<EventDTO> eventDTOs = getEventDTOS(events);
-        return eventDTOs;
+        return getEventDTOS(events);
     }
 
     private List<EventDTO> getEventDTOS(List<Event> events) {
@@ -283,8 +282,7 @@ public class EventService implements IEventService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
 
-        EventDTO eventDTO = EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
-        return eventDTO;
+        return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
     @Override
@@ -311,11 +309,10 @@ public class EventService implements IEventService {
                 throw new BaseNotFoundException(EntityType.Event, eventId);
             }
 
-            List<UserDTO> userDTOs = eventUsers.stream()
+            return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus().equals(ParticipationStatus.participating))
                     .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
                     .toList();
-            return userDTOs;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseNotFoundException(EntityType.Event, eventId);
@@ -420,8 +417,7 @@ public class EventService implements IEventService {
             }
         }
 
-        List<EventDTO> eventDTOs = getEventDTOS(events);
-        return eventDTOs;
+        return getEventDTOS(events);
     }
 
     @Override
@@ -438,14 +434,13 @@ public class EventService implements IEventService {
 
         List<EventDTO> eventDTOs = getEventDTOS(events);
 
-        List<FullFeedEventDTO> fullFeedEventDTOs = eventDTOs.stream()
+        return eventDTOs.stream()
                 .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
                 .toList();
-        return fullFeedEventDTOs;
     }
 
     /**
-     * @param requestingUserId
+     * @param requestingUserId this is the user whose feed is being loaded
      * @return This method returns the feed events for a user, with their created ones
      * first in the `universalAccentColor`, followed by events they're invited to
      */
