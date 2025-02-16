@@ -588,9 +588,9 @@ public class EventService implements IEventService {
                     creator,
                     userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
                     userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
-                    null, // chatMessageService.getFullChatMessagesByEventId(event.id()),
-                    "#ffffff", //requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
-                    ParticipationStatus.invited//requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
+                    chatMessageService.getFullChatMessagesByEventId(event.id()),
+                    requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
+                    requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
             );
         } catch (BaseNotFoundException e) {
             System.err.println("Skipping event due to missing data: " + e.getMessage());
