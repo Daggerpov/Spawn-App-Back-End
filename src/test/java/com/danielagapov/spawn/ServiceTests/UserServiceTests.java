@@ -13,7 +13,6 @@ import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -142,7 +141,6 @@ public class UserServiceTests {
     }
 
     @Test
-    @Disabled
     void deleteUserById_ShouldReturnFalse_WhenDatabaseErrorOccurs() {
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).
@@ -219,11 +217,12 @@ public class UserServiceTests {
     }
 
     @Test
-    @Disabled
     void deleteUserById_ShouldLogException_WhenUnexpectedErrorOccurs() {
         UUID userId = UUID.randomUUID();
-
-        when(userRepository.existsById(userId)).thenReturn(true);
+        when(userRepository.findById(userId)).
+                thenReturn(
+                        Optional.of(
+                                new User(userId, "JohnDoe123", null, "John", "Doe", null, "johndoe@anon.com")));
         doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
 
         boolean result = userService.deleteUserById(userId);
