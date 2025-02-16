@@ -147,7 +147,6 @@ public class EventService implements IEventService {
             throw e; // Rethrow if it's a custom not-found exception
         } catch (Exception e) {
             logger.log(e.getMessage());
-            throw new RuntimeException("Unexpected error", e);
         }
     }
 
@@ -467,7 +466,6 @@ public class EventService implements IEventService {
 
         List<EventDTO> eventDTOs = getEventDTOS(events);
 
-        // Transform each EventDTO into a FullFeedEventDTO
         List<FullFeedEventDTO> fullFeedEventDTOs = eventDTOs.stream()
                 .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
                 .toList();
