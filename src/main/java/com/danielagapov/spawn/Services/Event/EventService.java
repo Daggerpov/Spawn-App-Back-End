@@ -62,48 +62,60 @@ public class EventService implements IEventService {
 
     @Override
     public List<FullFeedEventDTO> getAllFullEvents() {
+        System.out.println("Fetching all full events");
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
         for (EventDTO e : getAllEvents()) {
             fullEvents.add(getFullEventByEvent(e, null, new HashSet<>()));
         }
+        System.out.println("Full events fetched: " + fullEvents);
         return fullEvents;
     }
 
     @Override
     public List<EventDTO> getAllEvents() {
         try {
+            System.out.println("Fetching all events");
             List<Event> events = repository.findAll();
+            System.out.println("Events fetched: " + events);
             return getEventDTOS(events);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
+            System.err.println("Data access error: " + e.getMessage());
             throw new BasesNotFoundException(EntityType.Event);
         } catch (Exception e) {
             logger.log(e.getMessage());
+            System.err.println("Error: " + e.getMessage());
             throw e;
         }
     }
 
     @Override
     public EventDTO getEventById(UUID id) {
+        System.out.println("Fetching event by ID: " + id);
         Event event = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
+        System.out.println("Event found: " + event);
 
         UUID creatorUserId = event.getCreator().getId();
         List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(id);
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(id);
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
 
-        return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+        EventDTO eventDTO = EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+        System.out.println("Event DTO created: " + eventDTO);
+        return eventDTO;
     }
 
     @Override
     public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
+        System.out.println("Fetching full event by ID: " + id + " for user: " + requestingUserId);
         return getFullEventByEvent(getEventById(id), requestingUserId, new HashSet<>());
     }
 
     @Override
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
+            System.out.println("Fetching events by friend tag ID: " + tagId);
             // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
             FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
             List<UUID> friendIds = friendTag.getFriendUserIds();
@@ -112,9 +124,10 @@ public class EventService implements IEventService {
             // Step 3: Filter events based on whether their owner is in the list of friend
             // IDs
             List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
+            System.out.println("Filtered events: " + filteredEvents);
 
             // Step 3: Map filtered events to detailed DTOs
-            return filteredEvents.stream()
+            List<EventDTO> eventDTOs = filteredEvents.stream()
                     .map(event -> EventMapper.toDTO(
                             event,
                             event.getCreator().getId(),
@@ -122,11 +135,15 @@ public class EventService implements IEventService {
                             userService.getInvitedUserIdsByEventId(event.getId()),
                             chatMessageService.getChatMessageIdsByEventId(event.getId())))
                     .toList();
+            System.out.println("Event DTOs created: " + eventDTOs);
+            return eventDTOs;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
+            System.err.println("Data access error: " + e.getMessage());
             throw new RuntimeException("Error retrieving events by friend tag ID", e);
         } catch (BaseNotFoundException e) {
             logger.log(e.getMessage());
+            System.err.println("Base not found error: " + e.getMessage());
             throw e; // Rethrow if it's a custom not-found exception
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -137,6 +154,7 @@ public class EventService implements IEventService {
     @Override
     public IEventDTO saveEvent(IEventDTO event) {
         try {
+            System.out.println("Saving event: " + event);
             Event eventEntity;
 
             if (event instanceof FullFeedEventDTO fullFeedEventDTO) {
@@ -153,6 +171,7 @@ public class EventService implements IEventService {
 
             // Save the Event entity
             eventEntity = repository.save(eventEntity);
+            System.out.println("Event entity saved: " + eventEntity);
 
             // Map saved Event entity back to EventDTO with all necessary fields
             // creatorUserId
@@ -166,11 +185,15 @@ public class EventService implements IEventService {
                     userService.getInvitedUserIdsByEventId(eventEntity.getId()), // invitedUserIds
                     chatMessageService.getChatMessageIdsByEventId(eventEntity.getId()) // chatMessageIds
             );
+            System.out.println("Event DTO created: " + eventDTO);
+            return eventDTO;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
+            System.err.println("Data access error: " + e.getMessage());
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
         } catch (Exception e) {
             logger.log(e.getMessage());
+            System.err.println("Error: " + e.getMessage());
             throw e;
         }
     }
@@ -178,21 +201,23 @@ public class EventService implements IEventService {
     @Override
     public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
-
             Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.getLocation()));
 
             User creator = userRepository.findById(eventCreationDTO.getCreatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.getCreatorUserId()));
 
             Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
+            System.out.println("Event mapped from DTO: " + event);
 
             event = repository.save(event);
+            System.out.println("Event saved: " + event);
 
             Set<UUID> allInvitedUserIds = new HashSet<>();
             if (eventCreationDTO.getInvitedFriendTagIds() != null) {
                 for (UUID friendTagId : eventCreationDTO.getInvitedFriendTagIds()) {
                     List<UUID> friendIdsForTag = userService.getFriendUserIdsByFriendTagId(friendTagId);
                     allInvitedUserIds.addAll(friendIdsForTag);
+                    System.out.println("Friend IDs for tag " + friendTagId + ": " + friendIdsForTag);
                 }
             }
             if (eventCreationDTO.getInvitedFriendUserIds() != null) {
@@ -209,23 +234,28 @@ public class EventService implements IEventService {
                 eventUser.setUser(invitedUser);
                 eventUser.setStatus(ParticipationStatus.invited);
                 eventUserRepository.save(eventUser);
+                System.out.println("Event user saved: " + eventUser);
             }
 
             return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
+            System.err.println("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
         }
     }
 
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
+        System.out.println("Fetching events by owner ID: " + creatorUserId);
         List<Event> events = repository.findByCreatorId(creatorUserId);
+        System.out.println("Events found: " + events);
 
         return getEventDTOS(events);
     }
 
     private List<EventDTO> getEventDTOS(List<Event> events) {
+        System.out.println("Converting events to DTOs: " + events);
         List<EventDTO> eventDTOs = new ArrayList<>();
 
         for (Event event : events) {
@@ -243,11 +273,13 @@ public class EventService implements IEventService {
             eventDTOs.add(eventDTO);
         }
 
+        System.out.println("Event DTOs: " + eventDTOs);
         return eventDTOs;
     }
 
     @Override
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
+        System.out.println("Replacing event with ID: " + id + " with new event: " + newEvent);
         return repository.findById(id).map(event -> {
             // Update basic event details
             event.setTitle(newEvent.getTitle());
@@ -260,6 +292,7 @@ public class EventService implements IEventService {
 
             // Save updated event
             repository.save(event);
+            System.out.println("Event updated: " + event);
 
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
@@ -270,6 +303,7 @@ public class EventService implements IEventService {
             // Convert DTO to entity
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
             repository.save(eventEntity);
+            System.out.println("New event saved: " + eventEntity);
 
             return constructDTOFromEntity(eventEntity);
         });
@@ -287,21 +321,25 @@ public class EventService implements IEventService {
 
     @Override
     public boolean deleteEventById(UUID id) {
+        System.out.println("Deleting event by ID: " + id);
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.Event, id);
         }
 
         try {
             repository.deleteById(id);
+            System.out.println("Event deleted successfully");
             return true;
         } catch (Exception e) {
             logger.log(e.getMessage());
+            System.err.println("Error deleting event: " + e.getMessage());
             return false;
         }
     }
 
     @Override
     public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
+        System.out.println("Fetching participating users by event ID: " + eventId);
         try {
             List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
 
@@ -309,15 +347,19 @@ public class EventService implements IEventService {
                 throw new BaseNotFoundException(EntityType.Event, eventId);
             }
 
-            return eventUsers.stream()
+            List<UserDTO> userDTOs = eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus().equals(ParticipationStatus.participating))
                     .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
                     .toList();
+            System.out.println("Participating users: " + userDTOs);
+            return userDTOs;
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
+            System.err.println("Data access error: " + e.getMessage());
             throw new BaseNotFoundException(EntityType.Event, eventId);
         } catch (Exception e) {
             logger.log(e.getMessage());
+            System.err.println("Error: " + e.getMessage());
             throw e;
         }
     }
@@ -369,6 +411,7 @@ public class EventService implements IEventService {
     // invited/participating
     @Override
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
+        System.out.println("Toggling participation for event ID: " + eventId + " and user ID: " + userId);
         List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
         if (eventUsers.isEmpty()) {
             // throw BaseNotFound for events if eventIf has no eventUsers
@@ -384,6 +427,7 @@ public class EventService implements IEventService {
                     eventUser.setStatus(ParticipationStatus.invited);
                 }
                 eventUserRepository.save(eventUser);
+                System.out.println("Participation status toggled: " + eventUser.getStatus());
                 break;
             }
         }
@@ -392,6 +436,7 @@ public class EventService implements IEventService {
 
     @Override
     public List<EventDTO> getEventsInvitedTo(UUID id) {
+        System.out.println("Fetching events invited to for user ID: " + id);
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
         List<Event> events = new ArrayList<>();
@@ -402,11 +447,14 @@ public class EventService implements IEventService {
             }
         }
 
-        return getEventDTOS(events);
+        List<EventDTO> eventDTOs = getEventDTOS(events);
+        System.out.println("Events invited to: " + eventDTOs);
+        return eventDTOs;
     }
 
     @Override
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
+        System.out.println("Fetching full events invited to for user ID: " + id);
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
         List<Event> events = new ArrayList<>();
@@ -419,9 +467,12 @@ public class EventService implements IEventService {
 
         List<EventDTO> eventDTOs = getEventDTOS(events);
 
-        return eventDTOs.stream()
+        // Transform each EventDTO into a FullFeedEventDTO
+        List<FullFeedEventDTO> fullFeedEventDTOs = eventDTOs.stream()
                 .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
                 .toList();
+        System.out.println("Full events invited to: " + fullFeedEventDTOs);
+        return fullFeedEventDTOs;
     }
 
     /**
@@ -506,6 +557,7 @@ public class EventService implements IEventService {
             return combinedEvents;
         } catch (Exception e) {
             logger.log(e.getMessage());
+            System.err.println("Error: " + e.getMessage());
             throw e;
         }
     }
