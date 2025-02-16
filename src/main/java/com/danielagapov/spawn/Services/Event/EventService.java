@@ -559,25 +559,37 @@ public class EventService implements IEventService {
 
     @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId, Set<UUID> visitedEvents) {
-        if (visitedEvents.contains(event.id())) {
-            return null; // Skip already visited events
-        }
-        visitedEvents.add(event.id());
+        try {
+            if (visitedEvents.contains(event.id())) {
+                return null;
+            }
+            visitedEvents.add(event.id());
 
-        return new FullFeedEventDTO(
-                event.id(),
-                event.title(),
-                event.startTime(),
-                event.endTime(),
-                locationService.getLocationById(event.locationId()),
-                event.note(),
-                userService.getFullUserById(event.creatorUserId()),
-                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()), // Pass visitedUsers
-                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()), // Pass visitedUsers
-                null, // chatMessageService.getFullChatMessagesByEventId(event.id()),
-                "#ffffff", //requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
-                ParticipationStatus.invited//requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
-        );
+            // Safely fetch location and creator
+            LocationDTO location = event.locationId() != null
+                    ? locationService.getLocationById(event.locationId())
+                    : null;
+
+            FullUserDTO creator = userService.getFullUserById(event.creatorUserId());
+
+            return new FullFeedEventDTO(
+                    event.id(),
+                    event.title(),
+                    event.startTime(),
+                    event.endTime(),
+                    location,
+                    event.note(),
+                    creator,
+                    userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
+                    userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
+                    null, // chatMessageService.getFullChatMessagesByEventId(event.id()),
+                    "#ffffff", //requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
+                    ParticipationStatus.invited//requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
+            );
+        } catch (BaseNotFoundException e) {
+            System.err.println("Skipping event due to missing data: " + e.getMessage());
+            return null;
+        }
     }
 
     @Override
