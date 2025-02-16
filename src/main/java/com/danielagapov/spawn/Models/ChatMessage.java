@@ -34,5 +34,6 @@ public class ChatMessage implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "event_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Event event;
 }

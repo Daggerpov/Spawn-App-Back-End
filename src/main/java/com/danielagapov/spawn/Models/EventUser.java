@@ -25,6 +25,7 @@ public class EventUser implements Serializable {
     @ManyToOne
     @MapsId("eventId")
     @JoinColumn(name = "event_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Event event;
 
     @ManyToOne
