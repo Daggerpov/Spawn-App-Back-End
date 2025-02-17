@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.FriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -13,7 +14,6 @@ import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -266,7 +267,7 @@ public class FriendTagServiceTests {
     void getFriendTagsByOwnerId_ShouldReturnEmptyList_WhenOwnerHasNoTags() {
         UUID ownerId = UUID.randomUUID();
 
-        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(List.of());
+        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(new ArrayList<>());
 
         List<FriendTagDTO> result = friendTagService.getFriendTagsByOwnerId(ownerId);
 
