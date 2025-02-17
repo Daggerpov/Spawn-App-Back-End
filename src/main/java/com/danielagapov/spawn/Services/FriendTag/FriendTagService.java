@@ -98,9 +98,20 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
+            // Fetch the raw data
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
             Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
-            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerUserIdsMap, friendUserIdsMap);
+            List<FriendTag> friendTags = repository.findByOwnerId(ownerId);
+
+            // Sort the list with "Everyone" tag first
+            friendTags.sort((tag1, tag2) -> {
+                if (tag1.isEveryone()) return -1; // "Everyone" comes first
+                if (tag2.isEveryone()) return 1;
+                return 0; // Maintain order for other tags
+            });
+
+            // Convert to DTOs
+            return FriendTagMapper.toDTOList(friendTags, ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving friendTags", e);
@@ -179,6 +190,29 @@ public class FriendTagService implements IFriendTagService {
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save new UserFriendTag");
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void removeUserFromFriendTag(UUID id, UUID userId) {
+        // Check if the FriendTag exists
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
+        }
+        // Check if the User exists
+        if (!userRepository.existsById(userId)) {
+            throw new BaseNotFoundException(EntityType.User, userId);
+        }
+
+        try {
+            // Remove the UserFriendTag entity
+            uftRepository.deleteByFriendTagIdAndUserId(id, userId);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BaseSaveException("Failed to remove UserFriendTag (friend from friend tag)");
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;

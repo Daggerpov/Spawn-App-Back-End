@@ -23,6 +23,7 @@ public interface IFriendTagService {
     // friend-related:
     FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId);
     void saveUserToFriendTag(UUID id, UUID userId);
+    void removeUserFromFriendTag(UUID id, UUID userId);
     List<FullFriendTagDTO> getPertainingFriendTagsForFriend(UUID ownerUserId, UUID friendUserId);
     List<FullUserDTO> getFriendsNotAddedToTag(UUID friendTagId);
     void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends);
