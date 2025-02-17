@@ -6,6 +6,7 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Services.User.UserService;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -18,8 +19,16 @@ import java.util.UUID;
 @Service
 public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
-    private static final String CDN_BASE = System.getenv("CDN_BASE");
-    private static final String DEFAULT_PFP = System.getenv("DEFAULT_PFP");
+    private static final String CDN_BASE;
+    private static final String DEFAULT_PFP;
+
+    static {
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+        DEFAULT_PFP = dotenv.get("DEFAULT_PFP");
+        CDN_BASE = dotenv.get("CDN_BASE");
+
+    }
+
     private final S3Client s3;
     private final ILogger logger;
     private final UserService userService;
@@ -129,8 +138,7 @@ public class S3Service implements IS3Service {
         try {
             User user = UserMapper.toEntity(userService.getUserById(userId));
             String urlString = user.getProfilePictureUrlString();
-            String key = extractObjectKey(urlString);
-            deleteObject(key);
+            deleteObjectByURL(urlString);
             user.setProfilePictureUrlString(null);
             userService.saveEntity(user);
         } catch (Exception e) {
@@ -143,15 +151,29 @@ public class S3Service implements IS3Service {
         return DEFAULT_PFP;
     }
 
+
+    @Override
+    public void deleteObjectByURL(String urlString) {
+        try {
+            String key = extractObjectKey(urlString);
+            deleteObject(key);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
     /**
      * Deletes an object given the key (where it's stored)
      */
     private void deleteObject(String key) {
+        if (key == null || key.equals(extractObjectKey(DEFAULT_PFP)))
+            return; // Don't delete the default pfp! It is shared among many users
+
         DeleteObjectRequest request = DeleteObjectRequest.builder()
                 .bucket(BUCKET)
                 .key(key)
                 .build();
-
         try {
             s3.deleteObject(request);
         } catch (Exception e) {
