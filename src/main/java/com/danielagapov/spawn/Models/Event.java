@@ -12,6 +12,13 @@ import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * An event is the primary function of our app.
+ * Upon creation, the creating user can invite many
+ * friends directly, or by friend tags, that they've placed
+ * friends into. Then, those invited users can choose to
+ * participate in that event.
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor

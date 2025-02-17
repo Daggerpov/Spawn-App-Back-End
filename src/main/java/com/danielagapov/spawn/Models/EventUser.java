@@ -12,6 +12,13 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
 
+/**
+ * An `EventUser` represents either a participant or
+ * invited user to an event. Upon creation, the event's
+ * creator can invite another user to an event, during which
+ * they're added into this table with a status = ParticipationStatus.invited.
+ * Once they've chosen to participate, their status is flipped to .participating.
+ */
 @Entity
 @Table(name = "event_users")
 @NoArgsConstructor

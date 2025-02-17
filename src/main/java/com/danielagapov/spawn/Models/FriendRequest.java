@@ -11,6 +11,15 @@ import org.hibernate.annotations.OnDeleteAction;
 import java.io.Serializable;
 import java.util.UUID;
 
+/**
+ * A friend request is a one-way entity from a
+ * sender user to a receiver user, to which the
+ * receiver user can accept on their mobile client.
+ * Once they've accepted the friend request, it's
+ * deleted from this entity, and they're made into
+ * friends by being added as each other's friends (
+ * through the "Everyone" tag).
+ */
 @Entity
 @Table(
         name = "friend_requests",

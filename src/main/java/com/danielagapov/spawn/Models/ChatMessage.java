@@ -12,6 +12,13 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * A Chat Message is left under a specific event, and there may be
+ * many chat messages left by one person under the same event, to
+ * allow for a conversation or group chat of sorts to happen.
+ * We track the timestamp to display the delta time from when
+ * it was sent (e.g. 3 sec ago).
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
