@@ -98,9 +98,20 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
+            // Fetch the raw data
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
             Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
-            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerUserIdsMap, friendUserIdsMap);
+            List<FriendTag> friendTags = repository.findByOwnerId(ownerId);
+
+            // Sort the list with "Everyone" tag first
+            friendTags.sort((tag1, tag2) -> {
+                if (tag1.isEveryone()) return -1; // "Everyone" comes first
+                if (tag2.isEveryone()) return 1;
+                return 0; // Maintain order for other tags
+            });
+
+            // Convert to DTOs
+            return FriendTagMapper.toDTOList(friendTags, ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving friendTags", e);
