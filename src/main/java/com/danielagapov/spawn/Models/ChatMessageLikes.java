@@ -11,6 +11,15 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
 
+/**
+ * A chat message like is left by someone onto a
+ * chat message (see documentation in `ChatMessage.java`).
+ * These should behave like toggles, to where one user
+ * can either like a message or not, so it's a 1-to-1 relationship.
+ * Also, it seems most apps like Instagram, Slack, discord allow you
+ * to react to/like your own message, so we'll leave that open
+ * for our own users as well.
+ */
 @Entity
 @Table(name = "chat_message_likes")
 @NoArgsConstructor

@@ -8,6 +8,14 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+/**
+ * This maps an external user id (from Apple or Google)
+ * to a spawn's user id, so we can keep track.
+ * For now, we're limiting spawn accounts to just one
+ * external mapping. So, if you create an account through
+ * Google and make a corresponding Spawn user, your Apple
+ * account must link to a new Spawn user. 
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
