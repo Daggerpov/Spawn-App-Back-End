@@ -324,22 +324,14 @@ public class EventService implements IEventService {
 
     @Override
     public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
-        if (!eventUserRepository.existsById(eventId)) {
-            throw new BaseNotFoundException(EntityType.Event, eventId);
-        }
+        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        Optional<EventUser> eventUser = eventUserRepository.findById(compositeId);
 
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
-            throw new BaseNotFoundException(EntityType.Event, eventId);
+        if (eventUser.isPresent()) {
+            return eventUser.get().getStatus();
+        } else {
+            return ParticipationStatus.notInvited;
         }
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(userId)) {
-                return eventUser.getStatus();
-            }
-        }
-
-        return ParticipationStatus.notInvited;
     }
 
     // return type boolean represents whether the user was already invited or not
@@ -348,33 +340,27 @@ public class EventService implements IEventService {
     // been invited, or it is a bad request.
     @Override
     public boolean inviteUser(UUID eventId, UUID userId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
-            // throw BaseNotFound for events if eventId has no EventUsers
-            throw new BaseNotFoundException(EntityType.Event, eventId);
+        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        Optional<EventUser> existingEventUser = eventUserRepository.findById(compositeId);
+
+        if (existingEventUser.isPresent()) {
+            // User is already invited
+            return existingEventUser.get().getStatus().equals(ParticipationStatus.invited);
+        } else {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+            Event event = repository.findById(eventId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
+
+            EventUser newEventUser = new EventUser();
+            newEventUser.setId(compositeId);
+            newEventUser.setEvent(event);
+            newEventUser.setUser(user);
+            newEventUser.setStatus(ParticipationStatus.invited);
+
+            eventUserRepository.save(newEventUser);
+            return false;
         }
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(userId)) {
-                // user is already in list
-                return eventUser.getStatus().equals(ParticipationStatus.invited);
-            } else {
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
-                Event event = repository.findById(eventId)
-                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-
-                EventUser newEventUser = new EventUser();
-                eventUser.setEvent(event);
-                eventUser.setUser(user);
-                eventUser.setStatus(ParticipationStatus.invited);
-
-                eventUserRepository.save(newEventUser);
-                return false;
-            }
-        }
-        // if the loop doesn't return, it's a bad request
-        return true;
     }
 
     // returns the updated event, with modified participants and invited users
