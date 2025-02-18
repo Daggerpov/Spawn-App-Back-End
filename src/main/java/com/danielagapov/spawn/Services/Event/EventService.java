@@ -432,33 +432,47 @@ public class EventService implements IEventService {
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
         try {
+            logger.log("Fetching feed events for user: " + requestingUserId);
 
-            // Convert to mutable lists
+            // STEP 1: Retrieve events created by the user.
             List<FullFeedEventDTO> eventsCreated = new ArrayList<>(
                     convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId)
             );
+            logger.log("Retrieved " + eventsCreated.size() + " created events for user: " + requestingUserId);
+
+            // STEP 2: Retrieve events where the user is invited.
             List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
                     getFullEventsInvitedTo(requestingUserId)
             );
+            logger.log("Retrieved " + eventsInvitedTo.size() + " invited events for user: " + requestingUserId);
 
+            // STEP 3: Get the current time.
             OffsetDateTime now = OffsetDateTime.now();
+            logger.log("Current time captured: " + now);
 
-            // Safe to modify now
+            // STEP 4: Remove past events from both lists.
             eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
             eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+            logger.log("Removed expired events. Remaining - Created: " + eventsCreated.size() + ", Invited: " + eventsInvitedTo.size());
 
+            // STEP 5: Sort the events by their start time.
             eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
             eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            logger.log("Sorted events by start time.");
 
+            // STEP 6: Combine the two lists into one.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
             combinedEvents.addAll(eventsInvitedTo);
+            logger.log("Final combined events list size: " + combinedEvents.size());
 
+            // STEP 7: Return the final combined list.
             return combinedEvents;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.log("Error fetching feed events for user: " + requestingUserId + " - " + e.getMessage());
             throw e;
         }
     }
+
 
 
     @Override
@@ -543,14 +557,29 @@ public class EventService implements IEventService {
 
     @Override
     public List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId) {
+        logger.log("Converting " + events.size() + " events to full feed self-owned events for user: " + requestingUserId);
+
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
         for (EventDTO eventDTO : events) {
+            logger.log("Processing event: " + eventDTO.id());
+
             FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>());
-            if (fullFeedEvent == null) continue;
-            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D"); // from Figma & Mobile
+
+            if (fullFeedEvent == null) {
+                logger.log("Skipping event " + eventDTO.id() + " as conversion returned null.");
+                continue;
+            }
+
+            // Apply universal accent color
+            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D");
+            logger.log("Applied universal accent color to event: " + eventDTO.id());
+
             fullEvents.add(fullFeedEvent);
         }
+
+        logger.log("Converted " + fullEvents.size() + " full feed self-owned events for user: " + requestingUserId);
         return fullEvents;
     }
+
 }
