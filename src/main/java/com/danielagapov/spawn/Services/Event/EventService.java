@@ -177,73 +177,46 @@ public class EventService implements IEventService {
 
     @Override
     public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
-        logger.log("Event creation request received for event: " + eventCreationDTO);
-
-        logger.log("Participants invited (from DTO):");
-        for (UUID invitedFriendId : eventCreationDTO.invitedFriendUserIds()) {
-            logger.log(" - User id: " + invitedFriendId);
-        }
         try {
-            logger.log("Mapping location and saving to database.");
-            Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.location()));
-            logger.log("Location saved successfully with id: " + location.getId());
 
-            logger.log("Fetching creator user with id: " + eventCreationDTO.creatorUserId());
+            Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.location()));
+
             User creator = userRepository.findById(eventCreationDTO.creatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
-            logger.log("Creator fetched successfully: " + creator.getId());
 
-            logger.log("Mapping event from creation DTO.");
             Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
 
-            logger.log("Saving event to database.");
             event = repository.save(event);
-            logger.log("Event saved successfully with id: " + event.getId());
 
             Set<UUID> allInvitedUserIds = new HashSet<>();
             if (eventCreationDTO.invitedFriendTagIds() != null) {
-                logger.log("Processing invited friend tags.");
                 for (UUID friendTagId : eventCreationDTO.invitedFriendTagIds()) {
-                    logger.log("Fetching friend ids for friend tag: " + friendTagId);
                     List<UUID> friendIdsForTag = userService.getFriendUserIdsByFriendTagId(friendTagId);
-                    logger.log("Friend ids found for tag " + friendTagId + ": " + friendIdsForTag);
                     allInvitedUserIds.addAll(friendIdsForTag);
                 }
             }
             if (eventCreationDTO.invitedFriendUserIds() != null) {
-                logger.log("Adding directly invited friend user ids: " + eventCreationDTO.invitedFriendUserIds());
                 allInvitedUserIds.addAll(eventCreationDTO.invitedFriendUserIds());
             }
-            logger.log("Total number of unique invited user ids: " + allInvitedUserIds.size());
 
             for (UUID userId : allInvitedUserIds) {
-                logger.log("Processing invitation for user id: " + userId);
                 User invitedUser = userRepository.findById(userId)
                         .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-                logger.log("Invited user fetched successfully: " + invitedUser.getId());
-
                 EventUsersId compositeId = new EventUsersId(event.getId(), userId);
                 EventUser eventUser = new EventUser();
                 eventUser.setId(compositeId);
                 eventUser.setEvent(event);
                 eventUser.setUser(invitedUser);
                 eventUser.setStatus(ParticipationStatus.invited);
-
-                logger.log("Saving invitation for user id: " + userId + " for event id: " + event.getId());
                 eventUserRepository.save(eventUser);
-                logger.log("Invitation saved successfully for user id: " + userId);
             }
 
-            logger.log("Converting event to DTO.");
-            IEventDTO eventDTO = EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
-            logger.log("Event creation successful. Returning event DTO for event id: " + event.getId());
-            return eventDTO;
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
         }
     }
-
 
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
