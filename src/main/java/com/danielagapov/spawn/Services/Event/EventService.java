@@ -325,14 +325,11 @@ public class EventService implements IEventService {
     @Override
     public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
         EventUsersId compositeId = new EventUsersId(eventId, userId);
-        Optional<EventUser> eventUser = eventUserRepository.findById(compositeId);
-
-        if (eventUser.isPresent()) {
-            return eventUser.get().getStatus();
-        } else {
-            return ParticipationStatus.notInvited;
-        }
+        return eventUserRepository.findById(compositeId)
+                .map(EventUser::getStatus)
+                .orElse(ParticipationStatus.notInvited);
     }
+
 
     // return type boolean represents whether the user was already invited or not
     // if false -> invites them
@@ -347,6 +344,7 @@ public class EventService implements IEventService {
             // User is already invited
             return existingEventUser.get().getStatus().equals(ParticipationStatus.invited);
         } else {
+            // Create a new invitation.
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
             Event event = repository.findById(eventId)
@@ -362,6 +360,7 @@ public class EventService implements IEventService {
             return false;
         }
     }
+
 
     // returns the updated event, with modified participants and invited users
     // invited/participating
