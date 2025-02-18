@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 
 @RestController()
@@ -143,14 +144,21 @@ public class AuthController {
 
     // full path: /api/v1/auth/verify-email?token=<email-token>
     @GetMapping("verify-email")
-    public ResponseEntity<String> verifyEmail(@RequestParam("token") String emailToken) {
+    public ModelAndView verifyEmail(@RequestParam("token") String emailToken) {
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("verifyAccountPage");
         try {
             logger.log("Verify email request received");
-            // TODO: return HTML
-            String message = authService.verifyEmail(emailToken) ? "Account is verified" : "Outdated link!";
-            return ResponseEntity.ok().body(message);
+            boolean isVerified = authService.verifyEmail(emailToken);
+            String status = isVerified ? "success" : "expired";
+            modelAndView.addObject("status", status);
+            modelAndView.setStatus(HttpStatus.OK);
+            return modelAndView;
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Unexpected error while verifying email: " + e.getMessage());
+            logger.log("Unexpected error while verifying email: " + e.getMessage());
+            modelAndView.addObject("status", "error");
+            modelAndView.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            return modelAndView;
         }
     }
 
@@ -161,12 +169,13 @@ public class AuthController {
     public ResponseEntity<String> email() {
         try {
             logger.log("Email request received");
-            emailService.sendEmail("spawnappmarketing@gmail.com", "test email", "This is a test email sent programmatically.");
+            emailService.sendEmail("spawnappmarketing@gmail.com", "Test Email", "This is a test email sent programmatically.");
             return ResponseEntity.ok().body("Email sent");
         } catch (MessagingException e) {
             logger.log("Messaging Exception: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Messaging Exception: " + e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body("Internal Server Error: " + e.getMessage());
         }
     }

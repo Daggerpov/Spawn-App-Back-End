@@ -106,10 +106,11 @@ public class AuthService implements IAuthService {
     private void createEmailTokenAndSendEmail(AuthUserDTO authUserDTO) {
         try {
             String emailToken = jwtService.generateEmailToken(authUserDTO.getUsername());
-            String linkToVerification = "http://localhost:8080/api/v1/auth/verify-email?token=" + emailToken; // TODO: change to deployment url
-            emailService.sendEmail(authUserDTO.getEmail(), "Verify Email", linkToVerification);
+            //String linkToVerification = "http://localhost:8080/api/v1/auth/verify-email?token=" + emailToken; // TODO: change to deployment url
+            emailService.sendVerifyAccountEmail(authUserDTO.getEmail(), emailToken);
+            //emailService.sendEmail(authUserDTO.getEmail(), "Verify Email", linkToVerification);
         } catch (Exception e) {
-            logger.log("Unexpected error while sending email");
+            logger.log("Unexpected error while sending email: " + e.getMessage());
         }
     }
 

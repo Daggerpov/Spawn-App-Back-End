@@ -150,7 +150,8 @@ public class JWTService implements IJWTService {
 
     private TokenType extractTokenType(String token) {
         Claims claims = extractAllClaims(token);
-        return (TokenType) claims.get("type");
+        String typeAsString = (String) claims.get("type");
+        return TokenType.valueOf(typeAsString); // returns "type" claim as TokenType
 
     }
 
@@ -166,12 +167,12 @@ public class JWTService implements IJWTService {
      * into a cryptographic key using HMAC-SHA
      */
     private SecretKey getKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
+        final byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private Map<String, Object> makeClaims(TokenType type) {
-        Map<String, Object> claims = new HashMap<>();
+        final Map<String, Object> claims = new HashMap<>();
         claims.put("type", type);
         return claims;
     }
