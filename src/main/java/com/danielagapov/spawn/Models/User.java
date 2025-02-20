@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.UUID;
 
 /*
@@ -36,6 +37,7 @@ public class User implements Serializable {
     private String email;
     private String password;
     private boolean verified;
+    private Date dateCreated;
 
     public User(UUID id, String username, String profilePictureUrlString, String firstName, String lastName, String bio, String email) {
         this.id = id;

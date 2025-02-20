@@ -5,6 +5,9 @@ import com.danielagapov.spawn.DTOs.FullUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 
 public interface IAuthService {
+    /**
+     * Registers the user by creating
+     */
     UserDTO registerUser(AuthUserDTO authUserDTO);
 
     FullUserDTO loginUser(AuthUserDTO authUserDTO);

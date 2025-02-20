@@ -7,6 +7,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * This class is used for retrieving HTML email templates from resources/templates
+ */
 public class EmailTemplates {
     private static String VERIFY_EMAIL_BODY = null;
 

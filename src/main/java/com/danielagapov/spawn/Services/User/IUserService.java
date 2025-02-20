@@ -34,6 +34,8 @@ public interface IUserService {
 
     FullUserDTO getFullUserByEmail(String email);
 
+    UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO user, byte[] profilePicture);
+
     // For Friends:
 
     List<UUID> getFriendUserIdsByUserId(UUID id);

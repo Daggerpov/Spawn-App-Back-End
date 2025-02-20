@@ -298,6 +298,19 @@ public class UserService implements IUserService {
         }
     }
 
+    @Override
+    public UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO userDTO, byte[] profilePicture) {
+        if (userDTO.profilePicture() == null) {
+            logger.log("Profile picture is null, user either chose their profile picture or has default");
+            userDTO = s3Service.putProfilePictureWithUser(profilePicture, userDTO);
+        }
+        User userEntity = UserMapper.toEntity(userDTO);
+        userEntity.setVerified(true);
+        userEntity.setDateCreated(new Date()); // current Date
+        userEntity = repository.save(userEntity);
+        return getUserById(userEntity.getId());
+    }
+
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
             return uftRepository.findFriendIdsByTagId(friendTagId)
