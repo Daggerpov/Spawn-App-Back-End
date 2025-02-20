@@ -47,11 +47,14 @@ public class OAuthController {
      * already has an existing `User` created within spawn, given their external user id, which we check
      * against our mappings of internal ids to external ones.
      * <p>
+     * already has an existing `User` created within spawn, given their external user id, which we check
+     * against our mappings of internal ids to external ones.
+     * <p>
      * If the user is already saved within Spawn -> we return its `FullUserDTO`. Otherwise, null.
      */
     // full path: /api/v1/oauth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email) {
+    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
             logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
             return ResponseEntity.ok().body(oauthService.getUserIfExistsbyExternalId(externalUserId, email));
@@ -70,6 +73,11 @@ public class OAuthController {
      * <p>
      * Another argument is the `externalUserId`, which should be optional, since a user could be created
      * without the use of an external provider (i.e. Google or Apple), through our own email/pass authentication.
+     * <p>
+     * For profile pictures specifically, there's an optional argument, `profilePicture`, which will take a raw
+     * byte file to overwrite/write the profile picture to the user, by saving it to the S3Service
+     * <p>
+     * Another argument is the `externalUserId`, which is a unique identifier for a user used by the external provider chosen
      */
     // full path: /api/v1/oauth/make-user
     @PostMapping("make-user")
