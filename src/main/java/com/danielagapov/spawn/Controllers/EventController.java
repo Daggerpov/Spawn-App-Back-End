@@ -145,7 +145,6 @@ public class EventController {
     }
 
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
-    @GetMapping("{eventId}/participating?userId={userid}")
     @GetMapping("{eventId}/participating")
     public ResponseEntity<Boolean> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
         try {
