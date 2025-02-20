@@ -2,10 +2,11 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.BetaAccessSignUpDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Services.BetaAccessSignUp.IBetaAccessSignUpService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.danielagapov.spawn.Services.BetaAccessSignUp.IBetaAccessSignUpService;
 
 import java.util.List;
 
@@ -13,9 +14,11 @@ import java.util.List;
 @RequestMapping("api/v1/betaAccessSignUp")
 public class BetaAccessSignUpController {
     private final IBetaAccessSignUpService service;
+    private final ILogger logger;
 
-    public BetaAccessSignUpController(IBetaAccessSignUpService service) {
+    public BetaAccessSignUpController(IBetaAccessSignUpService service, ILogger logger) {
         this.service = service;
+        this.logger = logger;
     }
 
     // full path: /api/v1/betaAccessSignUp/emails
@@ -61,8 +64,11 @@ public class BetaAccessSignUpController {
      */
     @PostMapping
     public ResponseEntity<BetaAccessSignUpDTO> signUp(@RequestBody BetaAccessSignUpDTO dto) {
+        logger.log("New beta access sign up for this email: " + dto.getEmail());
         try {
             return new ResponseEntity<>(service.signUp(dto), HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT); // 409 status code
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
