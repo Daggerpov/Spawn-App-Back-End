@@ -91,19 +91,7 @@ public class OAuthService implements IOAuthService {
             logger.log("Unexpected error while fetching user by externalUserId (" + externalUserId + ") : " + e.getMessage());
             throw e;
         }
-
-        if (mapping == null) {
-            // if not (signed in through external provider, but no external id <> user id mapping -> try finding by email
-            try {
-                return userService.getFullUserByEmail(email);
-            } catch (DataAccessException e) {
-                logger.log("Database error while fetching user by email(" + email + "): " + e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                logger.log("Unexpected error while fetching user by email(" + email + "): " + e.getMessage());
-                throw e;
-            }
-        } else {
+        if (mapping != null) {
             // if there is already a mapping (Spawn account exists, given externalUserId) -> get the associated `FullUserDTO`
             try {
                 return getFullUserDTO(mapping.getUser().getId());
@@ -115,6 +103,20 @@ public class OAuthService implements IOAuthService {
                 throw e;
             }
         }
+        if (email != null) {
+            // if not (signed in through external provider, but no external id <> user id mapping -> try finding by email
+            try {
+                return userService.getFullUserByEmail(email);
+            } catch (DataAccessException e) {
+                logger.log("Database error while fetching user by email(" + email + "): " + e.getMessage());
+                throw e;
+            } catch (Exception e) {
+                logger.log("Unexpected error while fetching user by email(" + email + "): " + e.getMessage());
+                throw e;
+            }
+        }
+        // No existing user was found
+        return null;
     }
 
     /**
