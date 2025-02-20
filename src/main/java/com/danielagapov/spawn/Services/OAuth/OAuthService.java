@@ -46,6 +46,23 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
+    public FullUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
+        UserDTO newUser = new UserDTO(
+                userCreationDTO.getId(),
+                null,
+                userCreationDTO.getUsername(),
+                null, // going to set within `makeUser()`
+                userCreationDTO.getFirstName(),
+                userCreationDTO.getLastName(),
+                userCreationDTO.getBio(),
+                null,
+                userCreationDTO.getEmail()
+        );
+
+        return makeUser(newUser, externalUserId, userCreationDTO.getProfilePictureData(), provider);
+    }
+
+    @Override
     public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
             // TODO: temporary solution
