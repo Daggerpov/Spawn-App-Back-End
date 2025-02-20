@@ -437,24 +437,17 @@ public class EventService implements IEventService {
 
             // STEP 3: Get the current time.
             OffsetDateTime now = OffsetDateTime.now();
-            logger.log("Current time captured: " + now);
-
             // STEP 4: Remove past events from both lists.
-            eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
-            eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
-            logger.log("Removed expired events. Remaining - Created: " + eventsCreated.size() + ", Invited: " + eventsInvitedTo.size());
+            removeExpiredEvents(eventsCreated, now);
+            removeExpiredEvents(eventsInvitedTo, now);
 
             // STEP 5: Sort the events by their start time.
             eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
             eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-            logger.log("Sorted events by start time.");
 
             // STEP 6: Combine the two lists into one.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
             combinedEvents.addAll(eventsInvitedTo);
-            logger.log("Final combined events list size: " + combinedEvents.size());
-
-            // STEP 7: Return the final combined list.
             return combinedEvents;
 
             // Retrieve events where the user is invited.
