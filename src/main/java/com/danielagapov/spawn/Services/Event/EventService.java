@@ -432,40 +432,27 @@ public class EventService implements IEventService {
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
         try {
-            logger.log("Fetching feed events for user: " + requestingUserId);
-
-            // STEP 1: Retrieve events created by the user.
+            // Retrieve events created by the user.
             List<FullFeedEventDTO> eventsCreated = new ArrayList<>(
                     convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId)
             );
-            logger.log("Retrieved " + eventsCreated.size() + " created events for user: " + requestingUserId);
 
-            // STEP 2: Retrieve events where the user is invited.
+            // Retrieve events where the user is invited.
             List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
                     getFullEventsInvitedTo(requestingUserId)
             );
-            logger.log("Retrieved " + eventsInvitedTo.size() + " invited events for user: " + requestingUserId);
 
-            // STEP 3: Get the current time.
-            OffsetDateTime now = OffsetDateTime.now();
-            logger.log("Current time captured: " + now);
+            // Remove expired events
+            removeExpiredEvents(eventsCreated);
+            removeExpiredEvents(eventsInvitedTo);
 
-            // STEP 4: Remove past events from both lists.
-            eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
-            eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
-            logger.log("Removed expired events. Remaining - Created: " + eventsCreated.size() + ", Invited: " + eventsInvitedTo.size());
+            // Sort events
+            sortEventsByStartTime(eventsCreated);
+            sortEventsByStartTime(eventsInvitedTo);
 
-            // STEP 5: Sort the events by their start time.
-            eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-            eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-            logger.log("Sorted events by start time.");
-
-            // STEP 6: Combine the two lists into one.
+            // Combine the two lists into one.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
             combinedEvents.addAll(eventsInvitedTo);
-            logger.log("Final combined events list size: " + combinedEvents.size());
-
-            // STEP 7: Return the final combined list.
             return combinedEvents;
         } catch (Exception e) {
             logger.log("Error fetching feed events for user: " + requestingUserId + " - " + e.getMessage());
@@ -473,7 +460,25 @@ public class EventService implements IEventService {
         }
     }
 
+    /**
+     * Removes expired events from the provided list.
+     * An event is considered expired if its end time is set and is before the current time.
+     *
+     * @param events the list of events to filter
+     */
+    private void removeExpiredEvents(List<FullFeedEventDTO> events) {
+        OffsetDateTime now = OffsetDateTime.now();
+        events.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+    }
 
+    /**
+     * Sorts a list of events by their start time, keeping null values at the end.
+     *
+     * @param events the list of events to sort
+     */
+    private void sortEventsByStartTime(List<FullFeedEventDTO> events) {
+        events.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+    }
 
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
@@ -482,10 +487,17 @@ public class EventService implements IEventService {
             List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
             List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
 
-            // Combine the lists with eventsCreated first
+            // Remove expired events
+            removeExpiredEvents(eventsCreated);
+            removeExpiredEvents(eventsByFriendTagFilter);
+
+            // Sort events
+            sortEventsByStartTime(eventsCreated);
+            sortEventsByStartTime(eventsByFriendTagFilter);
+
+            // Combine the lists with eventsCreated first.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
             combinedEvents.addAll(eventsByFriendTagFilter);
-
             return combinedEvents;
         } catch (Exception e) {
             logger.log(e.getMessage());
