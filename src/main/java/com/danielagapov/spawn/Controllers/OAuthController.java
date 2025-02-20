@@ -25,7 +25,6 @@ public class OAuthController {
     }
 
     /**
-     * 
      * @param principal the google oauth response
      * @return either a `UserDTO` if they're verified to already have been a Spawn user, or
      * a newly-created user if they weren't previously a Spawn user
@@ -44,9 +43,9 @@ public class OAuthController {
 
     /**
      * This method is meant to check whether an externally signed-in user through either Google or Apple
-     * already has an existing `User` created within spawn, given their external user id, which we check 
-     * against our mappings of internal ids to external ones. 
-     * 
+     * already has an existing `User` created within spawn, given their external user id, which we check
+     * against our mappings of internal ids to external ones.
+     * <p>
      * If the user is already saved within Spawn -> we return its `FullUserDTO`. Otherwise, null.
      */
     // full path: /api/v1/oauth/sign-in?externalUserId=externalUserId&email=email
@@ -61,24 +60,23 @@ public class OAuthController {
     }
 
     /**
-     * This method creates a user, given a `UserDTO` from mobile, which can be constructed through the email 
-     * given through Google, Apple, or email/pass authentication + attributes input either by default through 
+     * This method creates a user, given a `UserDTO` from mobile, which can be constructed through the email
+     * given through Google, Apple, or email/pass authentication + attributes input either by default through
      * these providers, such as full name & pfp, or supplied by the user (i.e. overwritten by provider, or new).
-     * 
-     * For profile pictures specifically, there's an optional argument, `profilePicture`, which will take a raw 
+     * <p>
+     * For profile pictures specifically, there's an optional argument, `profilePicture`, which will take a raw
      * byte file to overwrite/write the profile picture to the user, by saving it to the S3Service
-     * 
-     * Another argument is the `externalUserId`, which should be optional, since a user could be created 
+     * <p>
+     * Another argument is the `externalUserId`, which should be optional, since a user could be created
      * without the use of an external provider (i.e. Google or Apple), through our own email/pass authentication.
-     * 
      */
     // full path: /api/v1/oauth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value="profilePicture", required=false) byte[] profilePicture, @RequestParam(value = "provider", required = false) OAuthProvider provider) {
+    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam(value = "externalUserId") String externalUserId, @RequestParam(value = "profilePicture", required = false) byte[] profilePicture, @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}", userDTO, externalUserId, provider));
-           FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
-           return ResponseEntity.ok().body(user);
+            FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
+            return ResponseEntity.ok().body(user);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
