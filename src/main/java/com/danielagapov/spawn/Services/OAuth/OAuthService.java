@@ -61,11 +61,11 @@ public class OAuthService implements IOAuthService {
             // user dto -> entity & save user
             logger.log(String.format("Making user: {userDTO: %s}", userDTO));
             userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
-            if (externalUserId != null) {
-                // create and save mapping, if the user was created externally through Google or Apple
-                logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
-                saveMapping(externalUserId, userDTO, provider);
-            }
+
+            // create and save mapping
+            logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
+            createAndSaveMapping(externalUserId, userDTO, provider);
+
             FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO, new HashSet<>());
             logger.log(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
             return fullUserDTO;
@@ -198,7 +198,7 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private void saveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
+    private void createAndSaveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
         try {
             User user;
             if (userDTO instanceof FullUserDTO) {
