@@ -61,14 +61,13 @@ public class OAuthController {
 
     /**
      * This method creates a user, given a `UserDTO` from mobile, which can be constructed through the email
-     * given through Google, Apple, or email/pass authentication + attributes input either by default through
+     * given through Google, Apple, or by default through
      * these providers, such as full name & pfp, or supplied by the user (i.e. overwritten by provider, or new).
      * <p>
      * For profile pictures specifically, there's an optional argument, `profilePicture`, which will take a raw
      * byte file to overwrite/write the profile picture to the user, by saving it to the S3Service
      * <p>
-     * Another argument is the `externalUserId`, which should be optional, since a user could be created
-     * without the use of an external provider (i.e. Google or Apple), through our own email/pass authentication.
+     * Another argument is the `externalUserId`, which is a unique identifier for a user used by the external provider chosen
      */
     // full path: /api/v1/oauth/make-user
     @PostMapping("make-user")
