@@ -1,17 +1,14 @@
 package com.danielagapov.spawn.Config;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.web.cors.CorsConfiguration;
 
-import java.io.IOException;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -20,24 +17,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(authorize -> authorize
-                            .anyRequest().permitAll()
-                //.anyRequest().authenticated()
-            )
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration configuration = new CorsConfiguration();
+                    configuration.setAllowedOrigins(Arrays.asList("https://spawn-app.vercel.app")); // our site front-end
+                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    configuration.setAllowedHeaders(Arrays.asList("*"));
+                    configuration.setAllowCredentials(true);
+                    return configuration;
+                }))
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().permitAll()
+                )
                 .csrf(AbstractHttpConfigurer::disable)
-//            .exceptionHandling(e -> e
-//                    .authenticationEntryPoint(new HttpStatusEntryPoint(UNAUTHORIZED))
-//            )
-            .oauth2Login(oauth2 -> {
-                oauth2.successHandler(new AuthenticationSuccessHandler() {
-                    @Override
-                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-                        response.sendRedirect("/api/v1/oauth/google/sign-in");
-                    }
+                .oauth2Login(oauth2 -> {
+                    oauth2.successHandler((request, response, authentication) -> response.sendRedirect("/api/v1/oauth/google/sign-in"));
                 });
-            })
-        ;
         return http.build();
     }
-
 }
