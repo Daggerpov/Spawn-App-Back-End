@@ -145,7 +145,7 @@ public class EventController {
     }
 
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
-    @GetMapping("{eventId}/participating?userId={userid}")
+    @GetMapping("{eventId}/participating")
     public ResponseEntity<Boolean> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
@@ -161,7 +161,7 @@ public class EventController {
     }
 
     // full path: /api/v1/events/{eventId}/invited?userId={userid}
-    @GetMapping("{eventId}/invited?userId={userid}")
+    @GetMapping("{eventId}/invited")
     public ResponseEntity<Boolean> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
@@ -212,7 +212,7 @@ public class EventController {
     @GetMapping("feedEvents/{requestingUserId}")
     // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends IEventDTO>>getFeedEvents(@PathVariable UUID requestingUserId) {
+    public ResponseEntity<List<FullFeedEventDTO>>getFeedEvents(@PathVariable UUID requestingUserId) {
         try {
             return new ResponseEntity<>(eventService.getFeedEvents(requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
