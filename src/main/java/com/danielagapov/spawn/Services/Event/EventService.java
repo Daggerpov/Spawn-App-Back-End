@@ -432,27 +432,25 @@ public class EventService implements IEventService {
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
         try {
-            // STEP 1: Retrieve events created by the user.
+            // Retrieve events created by the user.
             List<FullFeedEventDTO> eventsCreated = new ArrayList<>(
                     convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId)
             );
 
-            // STEP 2: Retrieve events where the user is invited.
+            // Retrieve events where the user is invited.
             List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
                     getFullEventsInvitedTo(requestingUserId)
             );
 
-            // STEP 3: Get the current time.
-            OffsetDateTime now = OffsetDateTime.now();
-            // STEP 4: Remove past events from both lists.
-            removeExpiredEvents(eventsCreated, now);
-            removeExpiredEvents(eventsInvitedTo, now);
+            // Remove expired events
+            removeExpiredEvents(eventsCreated);
+            removeExpiredEvents(eventsInvitedTo);
 
-            // STEP 5: Sort the events by their start time.
-            eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-            eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            // Sort events
+            sortEventsByStartTime(eventsCreated);
+            sortEventsByStartTime(eventsInvitedTo);
 
-            // STEP 6: Combine the two lists into one.
+            // Combine the two lists into one.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
             combinedEvents.addAll(eventsInvitedTo);
             return combinedEvents;
@@ -467,10 +465,19 @@ public class EventService implements IEventService {
      * An event is considered expired if its end time is set and is before the current time.
      *
      * @param events the list of events to filter
-     * @param now the current time against which event expiry is evaluated
      */
-    private void removeExpiredEvents(List<FullFeedEventDTO> events, OffsetDateTime now) {
+    private void removeExpiredEvents(List<FullFeedEventDTO> events) {
+        OffsetDateTime now = OffsetDateTime.now();
         events.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+    }
+
+    /**
+     * Sorts a list of events by their start time, keeping null values at the end.
+     *
+     * @param events the list of events to sort
+     */
+    private void sortEventsByStartTime(List<FullFeedEventDTO> events) {
+        events.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
     }
 
     @Override
@@ -480,10 +487,13 @@ public class EventService implements IEventService {
             List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
             List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
 
-            // Remove expired events from both lists.
-            OffsetDateTime now = OffsetDateTime.now();
-            removeExpiredEvents(eventsCreated, now);
-            removeExpiredEvents(eventsByFriendTagFilter, now);
+            // Remove expired events
+            removeExpiredEvents(eventsCreated);
+            removeExpiredEvents(eventsByFriendTagFilter);
+
+            // Sort events
+            sortEventsByStartTime(eventsCreated);
+            sortEventsByStartTime(eventsByFriendTagFilter);
 
             // Combine the lists with eventsCreated first.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
