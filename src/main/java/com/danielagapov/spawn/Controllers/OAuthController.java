@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -77,6 +78,7 @@ public class OAuthController {
             FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
             return ResponseEntity.ok().body(user);
         } catch (Exception e) {
+            logger.log("Error creating user" + e.getMessage());
             return ResponseEntity.internalServerError().body(null);
         }
     }
