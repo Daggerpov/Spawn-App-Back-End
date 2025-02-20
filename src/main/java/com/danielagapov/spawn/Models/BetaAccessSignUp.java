@@ -25,6 +25,7 @@ public class BetaAccessSignUp implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+    @Column(nullable = false, unique = true)
     private String email;
     private OffsetDateTime signedUpAt;
     private Boolean hasSubscribedToNewsletter;
