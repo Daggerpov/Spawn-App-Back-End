@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -25,6 +26,15 @@ public interface IOAuthService {
      */
     // TODO: refactor to return UserDTO instead of Full since the new user won't have friends/events anyway
     FullUserDTO makeUser(UserDTO user, String externalUserId, byte[] profilePicture, OAuthProvider provider);
+
+
+    /**
+     * @param userCreationDTO given from mobile, containing the profile picture data within it
+     * @param externalUserId externalUserId, from Google or Apple
+     * @param provider provider indicating Google or Apple
+     * @return returns back the fully-created user, after it goes through the `makeUser()` method
+     */
+    FullUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider);
 
     /**
      * Given an external user id from an oauth provider, check whether it belongs it a user account.
