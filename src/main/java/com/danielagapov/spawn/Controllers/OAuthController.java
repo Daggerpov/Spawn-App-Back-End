@@ -84,7 +84,7 @@ public class OAuthController {
     public ResponseEntity<FullUserDTO> makeUser(
             @RequestBody UserCreationDTO userCreationDTO,
             @RequestParam("externalUserId") String externalUserId,
-            @RequestParam(value = "provider", required = false) OAuthProvider provider) {
+            @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
                     userCreationDTO, externalUserId, provider));
