@@ -435,17 +435,15 @@ public class EventService implements IEventService {
                     convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
             List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
-            // STEP 3: Get the current time.
-            OffsetDateTime now = OffsetDateTime.now();
-            // STEP 4: Remove past events from both lists.
-            removeExpiredEvents(eventsCreated, now);
-            removeExpiredEvents(eventsInvitedTo, now);
+            // Remove expired events
+            removeExpiredEvents(eventsCreated);
+            removeExpiredEvents(eventsInvitedTo);
 
-            // STEP 5: Sort the events by their start time.
-            eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-            eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            // Sort events
+            sortEventsByStartTime(eventsCreated);
+            sortEventsByStartTime(eventsInvitedTo);
 
-            // STEP 6: Combine the two lists into one.
+            // Combine the two lists into one.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
             combinedEvents.addAll(eventsInvitedTo);
             return combinedEvents;
@@ -484,7 +482,6 @@ public class EventService implements IEventService {
     private void sortEventsByStartTime(List<FullFeedEventDTO> events) {
         events.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
     }
-
 
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
