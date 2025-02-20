@@ -67,6 +67,8 @@ public class BetaAccessSignUpController {
         logger.log("New beta access sign up for this email: " + dto.getEmail());
         try {
             return new ResponseEntity<>(service.signUp(dto), HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT); // 409 status code
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

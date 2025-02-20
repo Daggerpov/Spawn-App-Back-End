@@ -66,13 +66,18 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
     @Override
     public BetaAccessSignUpDTO signUp(BetaAccessSignUpDTO dto) {
         try {
+            // First check if email already exists
+            if (repository.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("Email already registered");
+            }
+
             BetaAccessSignUp entity = BetaAccessSignUpMapper.toEntity(dto);
             entity = repository.save(entity);
             return BetaAccessSignUpMapper.toDTO(entity);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save beta access sign up record: " + e.getMessage());
-        } catch (Exception e) {
+        } catch (Exception e) { // also catches IllegalArgumentException for duplicate emails
             logger.log(e.getMessage());
             throw e;
         }
