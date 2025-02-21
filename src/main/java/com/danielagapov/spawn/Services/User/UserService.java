@@ -71,6 +71,7 @@ public class UserService implements IUserService {
 
     @Override
     public UserDTO getUserById(UUID id) {
+        logger.log("Getting user by id with id " + id);
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
@@ -91,6 +92,7 @@ public class UserService implements IUserService {
     @Override
     public FullUserDTO getFullUserById(UUID id) {
         try {
+            logger.log("Getting full user by id for user with id " + id);
             return getFullUserByUser(getUserById(id), new HashSet<>());
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -100,15 +102,18 @@ public class UserService implements IUserService {
 
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
+        logger.log("Getting friend user ids for user with id " + id);
         try {
             // Fetch FriendTag entities related to the given user (for example, by userId)
             List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
 
             // Retrieve the user IDs associated with those FriendTags
-            return friendTags.stream()
+            List<UUID> friendIds = friendTags.stream()
                     .flatMap(friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()).stream())
                     .distinct() // Remove duplicates
-                    .collect(Collectors.toList());
+                    .toList();
+            logger.log("Found friend ids " + friendIds);
+            return friendIds;
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -130,8 +135,10 @@ public class UserService implements IUserService {
 
     @Override
     public Map<FriendTag, UUID> getOwnerUserIdsMap() {
+        logger.log("Getting owner user ids map");
         try {
-            List<FriendTag> friendTags = friendTagRepository.findAll();
+            List<FriendTag> friendTags = friendTagRepository.findAll(); // TODO: don't find by all
+            logger.log("Friend tags found: " + friendTags.size());
             return friendTags.stream()
                     .collect(Collectors.toMap(
                             friendTag -> friendTag,
@@ -145,6 +152,7 @@ public class UserService implements IUserService {
 
     @Override
     public Map<FriendTag, List<UUID>> getFriendUserIdsMap() {
+        logger.log("Getting friend user ids map");
         try {
             // Fetch all FriendTags
             List<FriendTag> friendTags = friendTagRepository.findAll();
@@ -201,7 +209,7 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.id()));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
-            throw new BaseSaveException("Failed to save user: " + e.getMessage());
+            throw new BaseSaveException("Failed to save user: " + e.getMessage()); // TODO: fix throwing
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -341,6 +349,7 @@ public class UserService implements IUserService {
 
     @Override
     public List<UserDTO> getFriendsByUserId(UUID userId) {
+        logger.log("Getting friends (user entities) by user id " + userId);
         try {
             // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
             FriendTag everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
@@ -591,8 +600,10 @@ public class UserService implements IUserService {
         }
     }
 
+
     @Override
     public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
+        logger.log("Getting full user by user: " + user.toString());
         try {
             if (visitedUsers.contains(user.id())) {
                 return null; // Skip already visited users
@@ -618,6 +629,7 @@ public class UserService implements IUserService {
 
     @Override
     public List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers) {
+        logger.log("Converting users to full users: " + users.toString());
         try {
             return users.stream()
                     .map(user -> getFullUserByUser(user, visitedUsers))
@@ -627,6 +639,29 @@ public class UserService implements IUserService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public FullUserDTO getFullUserByUsername(String username) {
+        try {
+            logger.log("Getting full user for " + username);
+            User user = repository.findByUsername(username);
+            if (user == null) {
+                logger.log("Could not find user " + username);
+                throw new BaseNotFoundException(EntityType.User, username);
+            } else {
+                logger.log("Found user " + username);
+            }
+            return getFullUserById(user.getId());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean existsByUsername(String username) {
+        return repository.existsByUsername(username);
     }
 
     @Override
