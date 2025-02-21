@@ -12,7 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class UserCreationDTO implements Serializable, AbstractUserDTO {
+public class UserCreationDTO extends AbstractUserDTO implements Serializable {
     private UUID id;
     private String username;
     private byte[] profilePictureData; // Changed from String to byte[]

@@ -130,6 +130,7 @@ public class EventService implements IEventService {
             throw e; // Rethrow if it's a custom not-found exception
         } catch (Exception e) {
             logger.log(e.getMessage());
+            throw e;
         }
     }
 
@@ -178,6 +179,7 @@ public class EventService implements IEventService {
     public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
             Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.getLocation()));
+            logger.log("Location saved successfully with id: " + location.getId());
 
             User creator = userRepository.findById(eventCreationDTO.getCreatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.getCreatorUserId()));
@@ -442,16 +444,6 @@ public class EventService implements IEventService {
             // Sort events
             sortEventsByStartTime(eventsCreated);
             sortEventsByStartTime(eventsInvitedTo);
-
-            // Combine the two lists into one.
-            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-            combinedEvents.addAll(eventsInvitedTo);
-            return combinedEvents;
-
-            // Retrieve events where the user is invited.
-            List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
-                    getFullEventsInvitedTo(requestingUserId)
-            );
 
             // Combine the two lists into one.
             List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
