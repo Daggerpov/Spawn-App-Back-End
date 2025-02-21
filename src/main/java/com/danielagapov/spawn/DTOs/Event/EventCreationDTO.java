@@ -1,5 +1,6 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.Event;
 
+import com.danielagapov.spawn.DTOs.LocationDTO;
 import lombok.Getter;
 import lombok.Setter;
 

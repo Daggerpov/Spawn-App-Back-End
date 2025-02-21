@@ -1,6 +1,12 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -443,7 +449,7 @@ public class EventServiceTests {
         when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
 
         // Stub friend tag lookup
-        com.danielagapov.spawn.DTOs.FriendTagDTO friendTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
+        FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#123456");
         when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, event.getCreator().getId()))
                 .thenReturn(friendTag);
@@ -474,7 +480,7 @@ public class EventServiceTests {
     @Test
     void getEventsByFriendTagId_ShouldReturnEvents_WhenFriendsExist() {
         UUID tagId = UUID.randomUUID();
-        com.danielagapov.spawn.DTOs.FriendTagDTO friendTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
+        FriendTagDTO friendTag = mock(FriendTagDTO.class);
         List<UUID> friendIds = List.of(UUID.randomUUID());
         when(friendTag.getFriendUserIds()).thenReturn(friendIds);
         when(friendTagService.getFriendTagById(tagId)).thenReturn(friendTag);
@@ -570,11 +576,11 @@ public class EventServiceTests {
         eu2.setStatus(ParticipationStatus.invited);
 
         when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu1, eu2));
-        com.danielagapov.spawn.DTOs.UserDTO userDTO1 = new com.danielagapov.spawn.DTOs.UserDTO(
+        UserDTO userDTO1 = new UserDTO(
                 user1.getId(), List.of(), "user1", "pic.jpg", "First", "Last", "bio", List.of(), "email1@example.com");
         when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
 
-        List<com.danielagapov.spawn.DTOs.UserDTO> participants = eventService.getParticipatingUsersByEventId(eventId);
+        List<UserDTO> participants = eventService.getParticipatingUsersByEventId(eventId);
 
         assertNotNull(participants);
         assertEquals(1, participants.size());
@@ -728,7 +734,7 @@ public class EventServiceTests {
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
-        com.danielagapov.spawn.DTOs.FriendTagDTO dummyTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
+        FriendTagDTO dummyTag = mock(FriendTagDTO.class);
         when(dummyTag.getColorHexCode()).thenReturn("#DUMMY");
         when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(dummyTag);
 
@@ -776,7 +782,7 @@ public class EventServiceTests {
                 UUID.randomUUID(), "Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
                 UUID.randomUUID(), "Note", creatorId, List.of(), List.of(), List.of());
         UUID requestingUserId = UUID.randomUUID();
-        com.danielagapov.spawn.DTOs.FriendTagDTO friendTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
+        FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
         when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, creatorId)).thenReturn(friendTag);
 

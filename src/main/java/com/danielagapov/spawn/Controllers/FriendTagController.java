@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.AbstractFriendTagDTO;
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.FullFriendTagDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;

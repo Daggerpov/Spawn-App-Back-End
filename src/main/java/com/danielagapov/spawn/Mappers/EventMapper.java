@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.EventCreationDTO;
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User;

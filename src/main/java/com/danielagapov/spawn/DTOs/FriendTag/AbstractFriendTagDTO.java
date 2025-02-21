@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.FriendTag;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

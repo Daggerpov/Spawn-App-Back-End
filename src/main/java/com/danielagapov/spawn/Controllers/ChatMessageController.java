@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.ChatMessage.AbstractChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;

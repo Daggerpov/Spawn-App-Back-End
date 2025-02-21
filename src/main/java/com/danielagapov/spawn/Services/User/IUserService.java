@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.DTOs.FullFriendUserDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
 

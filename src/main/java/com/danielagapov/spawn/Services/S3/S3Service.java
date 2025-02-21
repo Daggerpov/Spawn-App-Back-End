@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Services.S3;
 
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;

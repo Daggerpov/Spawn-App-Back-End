@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.Enums.FriendRequestAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;

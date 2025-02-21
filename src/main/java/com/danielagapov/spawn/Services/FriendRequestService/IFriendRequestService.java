@@ -1,9 +1,8 @@
 package com.danielagapov.spawn.Services.FriendRequestService;
 
-import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 

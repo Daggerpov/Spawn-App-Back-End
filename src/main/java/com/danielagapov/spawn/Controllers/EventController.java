@@ -1,6 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
