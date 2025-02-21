@@ -8,7 +8,6 @@ import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
@@ -179,7 +178,7 @@ public class UserController {
     }
 
     @Deprecated(since = "For testing purposes")
-    @PostMapping(value = "test-s3")
+    @PostMapping("s3/test-s3")
     public String testPostS3(@RequestBody byte[] file) {
         try {
             return s3Service.putObject(file);
