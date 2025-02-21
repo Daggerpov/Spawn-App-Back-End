@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.TempUserDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.danielagapov.spawn.Exceptions.ApplicationException;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Models.UserIdExternalIdMap;
@@ -16,11 +16,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,9 +34,6 @@ public class OAuthServiceTests {
 
     @Mock
     private ILogger logger;
-
-    @Mock
-    private OAuth2User oauth2User;
 
     @InjectMocks
     private OAuthService oauthService;
@@ -129,7 +124,8 @@ public class OAuthServiceTests {
         UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
 
-        when(externalIdMapRepository.existsById("externalId123")).thenThrow(new DataAccessException("DB error") {});
+        when(externalIdMapRepository.existsById("externalId123")).thenThrow(new DataAccessException("DB error") {
+        });
 
         assertThrows(DataAccessException.class, () -> oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google));
         verify(logger).log(contains("Database error while creating user"));
@@ -203,7 +199,8 @@ public class OAuthServiceTests {
         UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
 
-        when(externalIdMapRepository.existsById("externalId456")).thenThrow(new DataAccessException("DB error") {});
+        when(externalIdMapRepository.existsById("externalId456")).thenThrow(new DataAccessException("DB error") {
+        });
 
         assertThrows(DataAccessException.class, () -> oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple));
         verify(logger).log(contains("Database error while creating user"));
