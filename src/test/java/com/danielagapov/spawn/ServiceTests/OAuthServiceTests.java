@@ -51,7 +51,7 @@ public class OAuthServiceTests {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        tempUserDTO = new TempUserDTO("externalId123", "John", "Doe", "john.doe@example.com", "picture_url");
+        tempUserDTO = new TempUserDTO(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"), "John", "Doe", "john.doe@example.com", "picture_url");
         testUser = new User();
         testUser.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
 
