@@ -16,4 +16,6 @@ public abstract class AbstractUserDTO implements Serializable {
     String firstName;
     String lastName;
     String email;
+    String username;
+    String bio;
 }

@@ -85,7 +85,7 @@ public class S3Service implements IS3Service {
         try {
             return new UserDTO(
                     user.getId(),
-                    user.getFriendIds(),
+                    user.getFriendUserIds(),
                     user.getUsername(),
                     file == null ? DEFAULT_PFP : putObject(file), // this line could throw
                     user.getFirstName(),

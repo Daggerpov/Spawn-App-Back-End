@@ -11,7 +11,8 @@ import java.util.UUID;
 @Getter
 @Setter
 public class RecommendedFriendUserDTO extends FullUserDTO implements Serializable {
-    int mutualFriendCount;
+    int mutualFriendCount; // only added property from `FullUserDTO`
+
     public RecommendedFriendUserDTO(UUID id, List<FullUserDTO> friends, String username, String picture, String firstName, String lastName, String bio, List<FullFriendTagDTO> friendTags, String email, int mutualFriendCount) {
         super(id, friends, username, picture, firstName, lastName, bio, friendTags, email);
         this.mutualFriendCount = mutualFriendCount;
