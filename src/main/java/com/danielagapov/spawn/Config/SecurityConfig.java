@@ -31,7 +31,7 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
     private final UserInfoService userInfoService;
-    private final JWTFilter jwtFilter;
+    private final JWTFilterConfig jwtFilterConfig;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -62,7 +62,7 @@ public class SecurityConfig {
                 // Each request is treated as 'new' and thus requires authentication (a JWT) to access secured endpoints
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtFilterConfig, UsernamePasswordAuthenticationFilter.class)
         ;
         return http.build();
     }
