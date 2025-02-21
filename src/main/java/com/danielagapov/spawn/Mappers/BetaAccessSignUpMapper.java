@@ -12,11 +12,8 @@ public class BetaAccessSignUpMapper {
         return new BetaAccessSignUpDTO(
                 entity.getId(),
                 entity.getEmail(),
-                entity.getFirstName(),
-                entity.getLastName(),
                 entity.getSignedUpAt(),
-                entity.getAdditionalComments(),
-                entity.getInstagramUsername()
+                entity.getHasSubscribedToNewsletter()
         );
     }
 
@@ -24,11 +21,8 @@ public class BetaAccessSignUpMapper {
         return new BetaAccessSignUp(
                 dto.getId(),
                 dto.getEmail(),
-                dto.getFirstName(),
-                dto.getLastName(),
                 dto.getSignedUpAt(),
-                dto.getAdditionalComments(),
-                dto.getInstagramUsername()
+                dto.getHasSubscribedToNewsletter()
         );
     }
 

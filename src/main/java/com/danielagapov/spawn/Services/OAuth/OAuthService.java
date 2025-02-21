@@ -37,19 +37,19 @@ public class OAuthService implements IOAuthService {
                 logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
                 return userService.getFullUserByEmail(userDTO.email());
             }
-            if (userService.existsByEmail(userDTO.email())) {
+            if (userDTO.email() != null && userService.existsByEmail(userDTO.email())) {
                 logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.email(), userDTO.email()));
                 return userService.getFullUserByEmail(userDTO.email());
             }
 
             // user dto -> entity & save user
             logger.log(String.format("Making user: {userDTO: %s}", userDTO));
-            userDTO = userService.saveNewVerifiedUserWithProfilePicture(userDTO, profilePicture);
-            if (externalUserId != null) {
-                // create and save mapping, if the user was created externally through Google or Apple
-                logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
-                saveMapping(externalUserId, userDTO, provider);
-            }
+            userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
+
+            // create and save mapping
+            logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
+            createAndSaveMapping(externalUserId, userDTO, provider);
+
             FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO, new HashSet<>());
             logger.log(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
             return fullUserDTO;
@@ -75,19 +75,7 @@ public class OAuthService implements IOAuthService {
             logger.log("Unexpected error while fetching user by externalUserId (" + externalUserId + ") : " + e.getMessage());
             throw e;
         }
-
-        if (mapping == null) {
-            // if not (signed in through external provider, but no external id <> user id mapping -> try finding by email
-            try {
-                return userService.getFullUserByEmail(email);
-            } catch (DataAccessException e) {
-                logger.log("Database error while fetching user by email(" + email + "): " + e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                logger.log("Unexpected error while fetching user by email(" + email + "): " + e.getMessage());
-                throw e;
-            }
-        } else {
+        if (mapping != null) {
             // if there is already a mapping (Spawn account exists, given externalUserId) -> get the associated `FullUserDTO`
             try {
                 return getFullUserDTO(mapping.getUser().getId());
@@ -99,6 +87,20 @@ public class OAuthService implements IOAuthService {
                 throw e;
             }
         }
+        if (email != null) {
+            // if not (signed in through external provider, but no external id <> user id mapping -> try finding by email
+            try {
+                return userService.getFullUserByEmail(email);
+            } catch (DataAccessException e) {
+                logger.log("Database error while fetching user by email(" + email + "): " + e.getMessage());
+                throw e;
+            } catch (Exception e) {
+                logger.log("Unexpected error while fetching user by email(" + email + "): " + e.getMessage());
+                throw e;
+            }
+        }
+        // No existing user was found
+        return null;
     }
 
     private boolean mappingExistsByExternalId(String externalUserId) {
@@ -132,7 +134,7 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private void saveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
+    private void createAndSaveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
         try {
             User user;
             if (userDTO instanceof FullUserDTO) {

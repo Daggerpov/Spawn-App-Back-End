@@ -25,12 +25,10 @@ public class BetaAccessSignUp implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+    @Column(nullable = false, unique = true)
     private String email;
-    private String firstName;
-    private String lastName;
     private OffsetDateTime signedUpAt;
-    private String additionalComments;
-    private String instagramUsername;
+    private Boolean hasSubscribedToNewsletter;
 
     @PrePersist
     public void prePersist() {

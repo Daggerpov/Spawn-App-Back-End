@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-public interface IBetaAccessSignUpRepository extends JpaRepository<BetaAccessSignUp, UUID>{ }
+public interface IBetaAccessSignUpRepository extends JpaRepository<BetaAccessSignUp, UUID>{
+    boolean existsByEmail(String email);
+}

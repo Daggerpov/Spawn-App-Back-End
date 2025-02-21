@@ -51,7 +51,7 @@ public class AuthController {
      */
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam("email") String email) {
+    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
             logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
             FullUserDTO userDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
@@ -64,6 +64,7 @@ public class AuthController {
             return ResponseEntity.internalServerError().body(null);
         }
     }
+
 
     /**
      * This method creates a user, given a `UserDTO` from mobile, which can be constructed through the email
@@ -78,7 +79,7 @@ public class AuthController {
      */
     // full path: /api/v1/auth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<FullUserDTO> makeUserFromOAuth(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value = "profilePicture", required = false) byte[] profilePicture, @RequestParam(value = "provider", required = false) OAuthProvider provider) {
+    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value = "profilePicture", required = false) byte[] profilePicture, @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}", userDTO, externalUserId, provider));
             FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
