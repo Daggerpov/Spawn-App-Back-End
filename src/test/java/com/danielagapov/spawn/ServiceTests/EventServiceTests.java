@@ -567,7 +567,7 @@ public class EventServiceTests {
 
         assertNotNull(participants);
         assertEquals(1, participants.size());
-        assertEquals(user1.getId(), participants.get(0).id());
+        assertEquals(user1.getId(), participants.get(0).getId());
     }
 
     @Test

@@ -28,13 +28,13 @@ public class UserMapper {
 
     public static User toEntity(UserDTO dto) {
         return new User(
-                dto.id(),
-                dto.username(),
-                dto.profilePicture(),
-                dto.firstName(),
-                dto.lastName(),
-                dto.bio(),
-                dto.email()
+                dto.getId(),
+                dto.getUsername(),
+                dto.getProfilePicture(),
+                dto.getFirstName(),
+                dto.getLastName(),
+                dto.getBio(),
+                dto.getEmail()
         );
     }
 
@@ -56,13 +56,13 @@ public class UserMapper {
 
     public static User convertFullUserToUserEntity(FullUserDTO dto) {
         User user = new User();
-        user.setId(dto.id()); // Set the UUID
-        user.setUsername(dto.username()); // Set the username
-        user.setProfilePictureUrlString(dto.profilePicture()); // Set the profile picture URL
-        user.setFirstName(dto.firstName()); // Set the first name
-        user.setLastName(dto.lastName()); // Set the last name
-        user.setBio(dto.bio()); // Set the bio
-        user.setEmail(dto.email()); // Set the email
+        user.setId(dto.getId()); // Set the UUID
+        user.setUsername(dto.getUsername()); // Set the username
+        user.setProfilePictureUrlString(dto.getProfilePicture()); // Set the profile picture URL
+        user.setFirstName(dto.getFirstName()); // Set the first name
+        user.setLastName(dto.getLastName()); // Set the last name
+        user.setBio(dto.getBio()); // Set the bio
+        user.setEmail(dto.getEmail()); // Set the email
         return user;
     }
 }

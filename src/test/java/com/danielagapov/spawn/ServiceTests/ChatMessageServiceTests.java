@@ -124,13 +124,13 @@ public class ChatMessageServiceTests {
                 UUID.randomUUID(),
                 "Hello!",
                 Instant.now(),
-                userDTO.id(),
+                userDTO.getId(),
                 eventId,
                 List.of()
         );
         // Stub user exists but event is missing
-        User dummyUser = createDummyUser(userDTO.id());
-        when(userRepository.findById(userDTO.id())).thenReturn(Optional.of(dummyUser));
+        User dummyUser = createDummyUser(userDTO.getId());
+        when(userRepository.findById(userDTO.getId())).thenReturn(Optional.of(dummyUser));
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
                 () -> chatMessageService.saveChatMessage(chatMessageDTO));
@@ -421,7 +421,7 @@ public class ChatMessageServiceTests {
         List<UserDTO> result = chatMessageService.getChatMessageLikes(chatMessageId);
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(dummyUser.getId(), result.get(0).id());
+        assertEquals(dummyUser.getId(), result.get(0).getId());
     }
 
     @Test

@@ -76,17 +76,17 @@ public class OAuthServiceTests {
     public void testMakeUser_NewUser_Google() {
         UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
-        when(userService.existsByEmail(userDTO.email())).thenReturn(false);
+        when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
         when(userService.getFullUserByUser(userDTO, new HashSet<>())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Making user"));
         verify(logger).log(contains("Returning FullUserDTO of newly made user"));
     }
@@ -95,15 +95,15 @@ public class OAuthServiceTests {
     public void testMakeUser_ExistingUserByExternalId_Google() {
         UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(true);
-        when(userService.getFullUserByEmail(userDTO.email())).thenReturn(fullUserDTO);
+        when(userService.getFullUserByEmail(userDTO.getEmail())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Existing user detected in makeUser, mapping already exists"));
     }
 
@@ -111,16 +111,16 @@ public class OAuthServiceTests {
     public void testMakeUser_ExistingUserByEmail_Google() {
         UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
-        when(userService.existsByEmail(userDTO.email())).thenReturn(true);
-        when(userService.getFullUserByEmail(userDTO.email())).thenReturn(fullUserDTO);
+        when(userService.existsByEmail(userDTO.getEmail())).thenReturn(true);
+        when(userService.getFullUserByEmail(userDTO.getEmail())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Existing user detected in makeUser, email already exists"));
     }
 
@@ -150,17 +150,17 @@ public class OAuthServiceTests {
     public void testMakeUser_NewUser_Apple() {
         UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
         when(externalIdMapRepository.existsById("externalId456")).thenReturn(false);
-        when(userService.existsByEmail(userDTO.email())).thenReturn(false);
+        when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
         when(userService.getFullUserByUser(userDTO, new HashSet<>())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Making user"));
         verify(logger).log(contains("Returning FullUserDTO of newly made user"));
     }
@@ -169,15 +169,15 @@ public class OAuthServiceTests {
     public void testMakeUser_ExistingUserByExternalId_Apple() {
         UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
         when(externalIdMapRepository.existsById("externalId456")).thenReturn(true);
-        when(userService.getFullUserByEmail(userDTO.email())).thenReturn(fullUserDTO);
+        when(userService.getFullUserByEmail(userDTO.getEmail())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Existing user detected in makeUser, mapping already exists"));
     }
 
@@ -185,16 +185,16 @@ public class OAuthServiceTests {
     public void testMakeUser_ExistingUserByEmail_Apple() {
         UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
         when(externalIdMapRepository.existsById("externalId456")).thenReturn(false);
-        when(userService.existsByEmail(userDTO.email())).thenReturn(true);
-        when(userService.getFullUserByEmail(userDTO.email())).thenReturn(fullUserDTO);
+        when(userService.existsByEmail(userDTO.getEmail())).thenReturn(true);
+        when(userService.getFullUserByEmail(userDTO.getEmail())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Existing user detected in makeUser, email already exists"));
     }
 
@@ -224,16 +224,16 @@ public class OAuthServiceTests {
     public void testMakeUser_NullExternalUserId() {
         UserDTO userDTO = new UserDTO(null, null, "john.null", "profile.jpg", "John", "Null", "Bio", null, "john.null@example.com");
         byte[] profilePicture = new byte[0];
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
-        when(userService.existsByEmail(userDTO.email())).thenReturn(false);
+        when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
         when(userService.getFullUserByUser(userDTO, new HashSet<>())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, null, profilePicture, OAuthProvider.google);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Making user"));
         verify(logger).log(contains("Returning FullUserDTO of newly made user"));
     }
@@ -261,7 +261,7 @@ public class OAuthServiceTests {
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
         assertNotNull(result);
-        assertNotEquals(userDTO.email(), result.email());
+        assertNotEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Existing user detected in makeUser, mapping already exists"));
     }
 
@@ -269,17 +269,17 @@ public class OAuthServiceTests {
     public void testMakeUser_LargeProfilePicture() {
         UserDTO userDTO = new UserDTO(null, null, "john.largepic", "profile.jpg", "John", "LargePic", "Bio", null, "john.largepic@example.com");
         byte[] profilePicture = new byte[10 * 1024 * 1024]; // 10 MB profile picture
-        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.email());
+        FullUserDTO fullUserDTO = createFullUserDTO(userDTO.getEmail());
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
-        when(userService.existsByEmail(userDTO.email())).thenReturn(false);
+        when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
         when(userService.getFullUserByUser(userDTO, new HashSet<>())).thenReturn(fullUserDTO);
 
         FullUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
         assertNotNull(result);
-        assertEquals(userDTO.email(), result.email());
+        assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).log(contains("Making user"));
         verify(logger).log(contains("Returning FullUserDTO of newly made user"));
     }

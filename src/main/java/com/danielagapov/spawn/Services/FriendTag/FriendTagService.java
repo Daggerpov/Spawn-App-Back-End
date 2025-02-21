@@ -188,7 +188,7 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends) {
         for (FullUserDTO friend : friends) {
-            saveUserToFriendTag(friendTagId, friend.id());
+            saveUserToFriendTag(friendTagId, friend.getId());
         }
     }
 

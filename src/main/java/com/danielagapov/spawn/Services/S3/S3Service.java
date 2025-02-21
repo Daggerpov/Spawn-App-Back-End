@@ -75,15 +75,15 @@ public class S3Service implements IS3Service {
     public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
         try {
             return new UserDTO(
-                    user.id(),
-                    user.friendIds(),
-                    user.username(),
+                    user.getId(),
+                    user.getFriendIds(),
+                    user.getUsername(),
                     file == null ? DEFAULT_PFP : putObject(file), // this line could throw
-                    user.firstName(),
-                    user.lastName(),
-                    user.bio(),
-                    user.friendTagIds(),
-                    user.email()
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getBio(),
+                    user.getFriendTagIds(),
+                    user.getEmail()
             );
         } catch (Exception e) {
             logger.log(e.getMessage());
