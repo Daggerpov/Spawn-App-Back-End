@@ -10,10 +10,6 @@ import java.util.UUID;
 @Setter
 public class TempUserDTO extends AbstractUserDTO implements Serializable {
     public TempUserDTO(UUID id, String firstName, String lastName, String email, String picture) {
-        super.id = id;
-        super.firstName = firstName;
-        super.lastName = lastName;
-        super.email = email;
-        super.profilePicture = picture;
+        super(id, firstName, lastName, email, picture);
     }
 }

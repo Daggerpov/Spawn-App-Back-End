@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
+import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
@@ -181,7 +181,7 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private void createAndSaveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
+    private void createAndSaveMapping(String externalUserId, AbstractUserDTO userDTO, OAuthProvider provider) {
         try {
             User user;
             if (userDTO instanceof FullUserDTO) {

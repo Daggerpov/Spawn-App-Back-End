@@ -1,27 +1,19 @@
 package com.danielagapov.spawn.DTOs;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
-public class FullFriendUserDTO implements Serializable, IOnboardedUserDTO {
-    private UUID id;
-    private List<FullUserDTO> friends;
-    private String username;
-    private String profilePicture;
-    private String firstName;
-    private String lastName;
-    private String bio;
-    private List<FullFriendTagDTO> friendTags;
-    private String email;
+public class FullFriendUserDTO extends FullUserDTO implements Serializable {
     private List<FullFriendTagDTO> associatedFriendTagsToOwner; // only added property from `FullUserDTO`
+    public FullFriendUserDTO(UUID id, List<FullUserDTO> friends, String username, String profilePicture, String firstName,
+                             String lastName, String bio, List<FullFriendTagDTO> friendTags, String email, List<FullFriendTagDTO> associatedFriendTagsToOwner) {
+        super(id, friends, username, profilePicture, firstName, lastName, bio, friendTags, email);
+        this.associatedFriendTagsToOwner = associatedFriendTagsToOwner;
+    }
 }

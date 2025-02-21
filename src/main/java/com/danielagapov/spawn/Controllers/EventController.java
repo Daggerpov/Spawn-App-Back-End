@@ -130,7 +130,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(eventService.getParticipatingUsersByEventId(id), new HashSet<>()), HttpStatus.OK);
