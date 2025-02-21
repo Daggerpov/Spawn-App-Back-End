@@ -1,11 +1,16 @@
 package com.danielagapov.spawn.DTOs;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
+@Setter
 public class EventDTO extends AbstractEventDTO implements Serializable, IEventDTO{
     UUID locationId;
     List<UUID> participantUserIds;

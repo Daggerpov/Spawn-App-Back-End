@@ -198,7 +198,7 @@ public class UserService implements IUserService {
                     "#1D3D3D", userEntity.getId(), List.of(), true);
             FriendTagDTO everyoneTagDTOAfterPersisting = friendTagService.saveFriendTag(everyoneTagDTO);
             // id is generated when saving
-            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.id()));
+            return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save user: " + e.getMessage());
@@ -405,7 +405,7 @@ public class UserService implements IUserService {
             // Fetch users who have already received a friend request from the user
             List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(userId)
                     .stream()
-                    .map(FriendRequestDTO::receiverUserId)
+                    .map(FriendRequestDTO::getReceiverUserId)
                     .toList();
 
             // Map mutual friends to RecommendedFriendUserDTO

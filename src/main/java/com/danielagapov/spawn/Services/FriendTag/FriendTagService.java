@@ -131,7 +131,7 @@ public class FriendTagService implements IFriendTagService {
         try {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
             friendTagEntity = repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, friendTag.ownerUserId(), List.of());
+            return FriendTagMapper.toDTO(friendTagEntity, friendTag.getOwnerUserId(), List.of());
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
@@ -144,14 +144,14 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
         return repository.findById(id).map(friendTag -> {
-            friendTag.setColorHexCode(newFriendTag.colorHexCode());
-            friendTag.setDisplayName(newFriendTag.displayName());
+            friendTag.setColorHexCode(newFriendTag.getColorHexCode());
+            friendTag.setDisplayName(newFriendTag.getDisplayName());
             repository.save(friendTag);
-            return FriendTagMapper.toDTO(friendTag, newFriendTag.ownerUserId(), List.of());
+            return FriendTagMapper.toDTO(friendTag, newFriendTag.getOwnerUserId(), List.of());
         }).orElseGet(() -> {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag);
             repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, newFriendTag.ownerUserId(), List.of());
+            return FriendTagMapper.toDTO(friendTagEntity, newFriendTag.getOwnerUserId(), List.of());
         });
     }
 
@@ -229,10 +229,10 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag) {
         return new FullFriendTagDTO(
-                friendTag.id(),
-                friendTag.displayName(),
-                friendTag.colorHexCode(),
-                friendTag.friendUserIds().stream().map(userService::getUserById).collect(Collectors.toList()),
+                friendTag.getId(),
+                friendTag.getDisplayName(),
+                friendTag.getColorHexCode(),
+                friendTag.getFriendUserIds().stream().map(userService::getUserById).collect(Collectors.toList()),
                 friendTag.isEveryone());
     }
 
@@ -252,7 +252,7 @@ public class FriendTagService implements IFriendTagService {
         // Fetch all friend tags for the owner
         ArrayList<FriendTagDTO> friendTags = new ArrayList<>(getFriendTagsByOwnerId(ownerUserId).stream()
                 // Filter to include only friend tags where friendUserId exists in friendUserIds
-                .filter(friendTag -> friendTag.friendUserIds().contains(friendUserId))
+                .filter(friendTag -> friendTag.getFriendUserIds().contains(friendUserId))
                 .toList());
 
         // if there's more than just the 'everyone' tag, don't use that one
@@ -277,7 +277,7 @@ public class FriendTagService implements IFriendTagService {
         // Fetch all friend tags for the owner
         List<FriendTagDTO> friendTags = getFriendTagsByOwnerId(ownerUserId).stream()
                 // Filter to include only friend tags where friendUserId exists in friendUserIds
-                .filter(friendTag -> friendTag.friendUserIds().contains(friendUserId))
+                .filter(friendTag -> friendTag.getFriendUserIds().contains(friendUserId))
                 .collect(Collectors.toList());
         return convertFriendTagsToFullFriendTags(friendTags);
     }
@@ -285,7 +285,7 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public List<FullUserDTO> getFriendsNotAddedToTag(UUID friendTagId) {
         FriendTagDTO friendTagDTO = getFriendTagById(friendTagId);
-        UUID requestingUserId = friendTagDTO.ownerUserId();
+        UUID requestingUserId = friendTagDTO.getOwnerUserId();
 
         List<UserDTO> friends = userService.getFriendsByUserId(requestingUserId);
 

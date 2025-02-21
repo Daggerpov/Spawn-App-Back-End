@@ -25,9 +25,9 @@ public class ChatMessageMapper {
 
     public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Event event) {
         return new ChatMessage(
-                dto.id(),
-                dto.content(),
-                dto.timestamp(),
+                dto.getId(),
+                dto.getContent(),
+                dto.getTimestamp(),
                 userSender,
                 event
         );
@@ -49,11 +49,11 @@ public class ChatMessageMapper {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
-                            .filter(user -> user.getId().equals(dto.senderUserId()))
+                            .filter(user -> user.getId().equals(dto.getSenderUserId()))
                             .findFirst()
                             .orElse(null);
                     Event event = events.stream()
-                            .filter(ev -> ev.getId().equals(dto.eventId()))
+                            .filter(ev -> ev.getId().equals(dto.getEventId()))
                             .findFirst()
                             .orElse(null);
                     return toEntity(dto, userSender, event);
