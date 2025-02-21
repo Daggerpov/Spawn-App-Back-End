@@ -35,15 +35,6 @@ Table Event {
     creatorId UUID [unique, ref: > User.id]
 }
 
-// Junction table for Event Tags (Many-to-Many)
-Table EventTag {
-    eventId UUID [ref: > Event.id]
-    tagId UUID [ref: > FriendTag.id]
-    indexes {
-        (eventId, tagId) [pk]
-    }
-}
-
 Table ChatMessage {
     id UUID [pk]
     timestamp Timestamp

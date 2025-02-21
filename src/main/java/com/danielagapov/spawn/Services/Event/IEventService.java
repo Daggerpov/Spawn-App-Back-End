@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public interface IEventService {
@@ -26,7 +27,7 @@ public interface IEventService {
 
     // Get 'Full' Event Methods:
     List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id);
-    FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId);
+    FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId, Set<UUID> visitedEvents);
     List<FullFeedEventDTO> getAllFullEvents();
     FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId);
     List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId);

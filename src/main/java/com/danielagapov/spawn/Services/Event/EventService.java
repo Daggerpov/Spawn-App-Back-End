@@ -46,9 +46,9 @@ public class EventService implements IEventService {
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
-            IEventUserRepository eventUserRepository, IUserRepository userRepository,
-            IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-            ILogger logger, ILocationService locationService) {
+                        IEventUserRepository eventUserRepository, IUserRepository userRepository,
+                        IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
+                        ILogger logger, ILocationService locationService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
@@ -63,8 +63,8 @@ public class EventService implements IEventService {
     @Override
     public List<FullFeedEventDTO> getAllFullEvents() {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
-        for (EventDTO e: getAllEvents()) {
-            fullEvents.add(getFullEventByEvent(e, null));
+        for (EventDTO e : getAllEvents()) {
+            fullEvents.add(getFullEventByEvent(e, null, new HashSet<>()));
         }
         return fullEvents;
     }
@@ -98,7 +98,7 @@ public class EventService implements IEventService {
 
     @Override
     public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
-        return getFullEventByEvent(getEventById(id), requestingUserId);
+        return getFullEventByEvent(getEventById(id), requestingUserId, new HashSet<>());
     }
 
     @Override
@@ -106,20 +106,12 @@ public class EventService implements IEventService {
         try {
             // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
             FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
-            List<UUID> friendIds = friendTag.friendUserIds(); // Use friendUserIds instead of friends
-
-            if (friendIds.isEmpty()) {
-                return List.of(); // Return an empty list if there are no friends
-            }
+            List<UUID> friendIds = friendTag.friendUserIds();
 
             // Step 2: Retrieve events created by any of the friends
             // Step 3: Filter events based on whether their owner is in the list of friend
             // IDs
             List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
-
-            if (filteredEvents.isEmpty()) {
-                throw new BasesNotFoundException(EntityType.Event);
-            }
 
             // Step 3: Map filtered events to detailed DTOs
             return filteredEvents.stream()
@@ -138,7 +130,7 @@ public class EventService implements IEventService {
             throw e; // Rethrow if it's a custom not-found exception
         } catch (Exception e) {
             logger.log(e.getMessage());
-            throw new RuntimeException("Unexpected error", e); // Generic error handling
+            throw new RuntimeException("Unexpected error", e);
         }
     }
 
@@ -148,7 +140,7 @@ public class EventService implements IEventService {
             Event eventEntity;
 
             if (event instanceof FullFeedEventDTO fullFeedEventDTO) {
-                eventEntity = EventMapper.convertFullFeedEventDTOToEventEntity( fullFeedEventDTO);
+                eventEntity = EventMapper.convertFullFeedEventDTOToEventEntity(fullFeedEventDTO);
             } else if (event instanceof EventDTO eventDTO) {
                 Location location = locationRepository.findById(eventDTO.locationId()).orElse(null);
 
@@ -163,6 +155,10 @@ public class EventService implements IEventService {
             eventEntity = repository.save(eventEntity);
 
             // Map saved Event entity back to EventDTO with all necessary fields
+            // creatorUserId
+            // participantUserIds
+            // invitedUserIds
+            // chatMessageIds
             return EventMapper.toDTO(
                     eventEntity,
                     eventEntity.getCreator().getId(), // creatorUserId
@@ -182,6 +178,7 @@ public class EventService implements IEventService {
     @Override
     public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
+
             Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.location()));
 
             User creator = userRepository.findById(eventCreationDTO.creatorUserId())
@@ -214,8 +211,7 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
-            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds)
-                    , null);
+            return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.log("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
@@ -225,10 +221,6 @@ public class EventService implements IEventService {
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
         List<Event> events = repository.findByCreatorId(creatorUserId);
-
-        if (events.isEmpty()) {
-            throw new BasesNotFoundException(EntityType.Event);
-        }
 
         return getEventDTOS(events);
     }
@@ -290,7 +282,6 @@ public class EventService implements IEventService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
 
-        // Return DTO after entity creation
         return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
@@ -333,24 +324,12 @@ public class EventService implements IEventService {
 
     @Override
     public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
-        if (!eventUserRepository.existsById(eventId)) {
-            throw new BaseNotFoundException(EntityType.Event, eventId);
-        }
-
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
-            throw new BaseNotFoundException(EntityType.Event, eventId);
-        }
-
-        for (EventUser eventUser: eventUsers) {
-            if (eventUser.getUser().getId().equals(userId)) {
-                return eventUser.getStatus();
-            }
-        }
-
-        // if for loop doesn't find it, return notInvited
-        return ParticipationStatus.notInvited;
+        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        return eventUserRepository.findById(compositeId)
+                .map(EventUser::getStatus)
+                .orElse(ParticipationStatus.notInvited);
     }
+
 
     // return type boolean represents whether the user was already invited or not
     // if false -> invites them
@@ -358,34 +337,30 @@ public class EventService implements IEventService {
     // been invited, or it is a bad request.
     @Override
     public boolean inviteUser(UUID eventId, UUID userId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
-            // throw BaseNotFound for events if eventId has no EventUsers
-            throw new BaseNotFoundException(EntityType.Event, eventId);
+        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        Optional<EventUser> existingEventUser = eventUserRepository.findById(compositeId);
+
+        if (existingEventUser.isPresent()) {
+            // User is already invited
+            return existingEventUser.get().getStatus().equals(ParticipationStatus.invited);
+        } else {
+            // Create a new invitation.
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+            Event event = repository.findById(eventId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
+
+            EventUser newEventUser = new EventUser();
+            newEventUser.setId(compositeId);
+            newEventUser.setEvent(event);
+            newEventUser.setUser(user);
+            newEventUser.setStatus(ParticipationStatus.invited);
+
+            eventUserRepository.save(newEventUser);
+            return false;
         }
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(userId)) {
-                // user is already in list
-                return eventUser.getStatus().equals(ParticipationStatus.invited);
-            } else {
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
-                Event event = repository.findById(eventId)
-                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-
-                EventUser newEventUser = new EventUser();
-                eventUser.setEvent(event);
-                eventUser.setUser(user);
-                eventUser.setStatus(ParticipationStatus.invited);
-
-                eventUserRepository.save(newEventUser);
-                return false;
-            }
-        }
-        // if the loop doesn't return, it's a bad request
-        return true;
     }
+
 
     // returns the updated event, with modified participants and invited users
     // invited/participating
@@ -421,11 +396,6 @@ public class EventService implements IEventService {
 
         List<Event> events = new ArrayList<>();
 
-        if (eventUsers.isEmpty()) {
-            // throws no user found exception
-            throw new BaseNotFoundException(EntityType.User, id);
-        }
-
         for (EventUser eventUser : eventUsers) {
             if (eventUser.getUser().getId().equals(id)) {
                 events.add(eventUser.getEvent());
@@ -441,11 +411,6 @@ public class EventService implements IEventService {
 
         List<Event> events = new ArrayList<>();
 
-        if (eventUsers.isEmpty()) {
-            // throws no user found exception
-            throw new BaseNotFoundException(EntityType.User, id);
-        }
-
         for (EventUser eventUser : eventUsers) {
             if (eventUser.getUser().getId().equals(id) && eventUser.getStatus() != ParticipationStatus.notInvited) {
                 events.add(eventUser.getEvent());
@@ -454,67 +419,124 @@ public class EventService implements IEventService {
 
         List<EventDTO> eventDTOs = getEventDTOS(events);
 
-        // Transform each EventDTO into a FullFeedEventDTO
         return eventDTOs.stream()
-                .map(eventDTO -> getFullEventByEvent(eventDTO, id))
+                .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
                 .toList();
     }
 
     /**
-     * @param requestingUserId
+     * @param requestingUserId this is the user whose feed is being loaded
      * @return This method returns the feed events for a user, with their created ones
      * first in the `universalAccentColor`, followed by events they're invited to
      */
     @Override
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
-        List<FullFeedEventDTO> eventsCreated =
-                convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-        List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
+        try {
+            // Retrieve events created by the user.
+            List<FullFeedEventDTO> eventsCreated = new ArrayList<>(
+                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId)
+            );
 
-        OffsetDateTime now = OffsetDateTime.now();
+            // Retrieve events where the user is invited.
+            List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
+                    getFullEventsInvitedTo(requestingUserId)
+            );
 
-        eventsCreated.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
-        eventsInvitedTo.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+            // Remove expired events
+            removeExpiredEvents(eventsCreated);
+            removeExpiredEvents(eventsInvitedTo);
 
-        eventsCreated.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
-        eventsInvitedTo.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+            // Sort events
+            sortEventsByStartTime(eventsCreated);
+            sortEventsByStartTime(eventsInvitedTo);
 
-        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-        combinedEvents.addAll(eventsInvitedTo);
-
-        return combinedEvents;
+            // Combine the two lists into one.
+            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+            combinedEvents.addAll(eventsInvitedTo);
+            return combinedEvents;
+        } catch (Exception e) {
+            logger.log("Error fetching feed events for user: " + requestingUserId + " - " + e.getMessage());
+            throw e;
+        }
     }
 
-    
+    /**
+     * Removes expired events from the provided list.
+     * An event is considered expired if its end time is set and is before the current time.
+     *
+     * @param events the list of events to filter
+     */
+    private void removeExpiredEvents(List<FullFeedEventDTO> events) {
+        OffsetDateTime now = OffsetDateTime.now();
+        events.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+    }
+
+    /**
+     * Sorts a list of events by their start time, keeping null values at the end.
+     *
+     * @param events the list of events to sort
+     */
+    private void sortEventsByStartTime(List<FullFeedEventDTO> events) {
+        events.sort(Comparator.comparing(FullFeedEventDTO::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())));
+    }
+
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
-        UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
-        List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-        List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
+        try {
+            UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
+            List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+            List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
 
-        // Combine the lists with eventsCreated first
-        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-        combinedEvents.addAll(eventsByFriendTagFilter);
- 
-        return combinedEvents;
+            // Remove expired events
+            removeExpiredEvents(eventsCreated);
+            removeExpiredEvents(eventsByFriendTagFilter);
+
+            // Sort events
+            sortEventsByStartTime(eventsCreated);
+            sortEventsByStartTime(eventsByFriendTagFilter);
+
+            // Combine the lists with eventsCreated first.
+            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+            combinedEvents.addAll(eventsByFriendTagFilter);
+            return combinedEvents;
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
     @Override
-    public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId) {
-        return new FullFeedEventDTO(
-                event.id(),
-                event.title(),
-                event.startTime(),
-                event.endTime(),
-                locationService.getLocationById(event.locationId()),
-                event.note(),
-                userService.getFullUserById(event.creatorUserId()),
-                userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
-                userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
-                chatMessageService.getFullChatMessagesByEventId(event.id()),
-                requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
-                requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
-        );
+    public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId, Set<UUID> visitedEvents) {
+        try {
+            if (visitedEvents.contains(event.id())) {
+                return null;
+            }
+            visitedEvents.add(event.id());
+
+            // Safely fetch location and creator
+            LocationDTO location = event.locationId() != null
+                    ? locationService.getLocationById(event.locationId())
+                    : null;
+
+            FullUserDTO creator = userService.getFullUserById(event.creatorUserId());
+
+            return new FullFeedEventDTO(
+                    event.id(),
+                    event.title(),
+                    event.startTime(),
+                    event.endTime(),
+                    location,
+                    event.note(),
+                    creator,
+                    userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
+                    userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
+                    chatMessageService.getFullChatMessagesByEventId(event.id()),
+                    requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
+                    requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
+            );
+        } catch (BaseNotFoundException e) {
+            return null;
+        }
     }
 
     @Override
@@ -538,8 +560,8 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId) {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
-        for(EventDTO eventDTO : events) {
-            fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId));
+        for (EventDTO eventDTO : events) {
+            fullEvents.add(getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>()));
         }
 
         return fullEvents;
@@ -547,13 +569,29 @@ public class EventService implements IEventService {
 
     @Override
     public List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId) {
+        logger.log("Converting " + events.size() + " events to full feed self-owned events for user: " + requestingUserId);
+
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
-        for(EventDTO eventDTO : events) {
-            FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId);
-            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D"); // from Figma & Mobile
+        for (EventDTO eventDTO : events) {
+            logger.log("Processing event: " + eventDTO.id());
+
+            FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>());
+
+            if (fullFeedEvent == null) {
+                logger.log("Skipping event " + eventDTO.id() + " as conversion returned null.");
+                continue;
+            }
+
+            // Apply universal accent color
+            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D");
+            logger.log("Applied universal accent color to event: " + eventDTO.id());
+
             fullEvents.add(fullFeedEvent);
         }
+
+        logger.log("Converted " + fullEvents.size() + " full feed self-owned events for user: " + requestingUserId);
         return fullEvents;
     }
+
 }

@@ -5,7 +5,17 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
+/**
+ * This maps an external user id (from Apple or Google)
+ * to a spawn's user id, so we can keep track.
+ * For now, we're limiting spawn accounts to just one
+ * external mapping. So, if you create an account through
+ * Google and make a corresponding Spawn user, your Apple
+ * account must link to a new Spawn user. 
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,9 +24,10 @@ public class UserIdExternalIdMap {
     @Id
     private String id; // the id (or sub) from external provider like Google OAuth
 
-    // many to one because of the duplicate case, may want to revisit
-    @ManyToOne // TODO: may need to revisit relationship type if google/apple calendars is a feature later
+    // TODO: may need to revisit relationship type if google/apple calendars is a feature later
+    @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @Enumerated(EnumType.STRING)

@@ -10,6 +10,12 @@ import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * This entity represents what we'll store from our
+ * beta access sign up site. Namely, the `email` field
+ * will be most useful, since that's how we'll be sending
+ * out our beta through Apple TestFlight for installation.
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,12 +25,10 @@ public class BetaAccessSignUp implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+    @Column(nullable = false, unique = true)
     private String email;
-    private String firstName;
-    private String lastName;
     private OffsetDateTime signedUpAt;
-    private String additionalComments;
-    private String instagramUsername;
+    private Boolean hasSubscribedToNewsletter;
 
     @PrePersist
     public void prePersist() {

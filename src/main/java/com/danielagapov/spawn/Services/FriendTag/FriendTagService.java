@@ -97,12 +97,21 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
-        logger.log("Getting friend tags by owner id");
         try {
+            // Fetch the raw data
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
             Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
-            logger.log("Returning friend tag dto list");
-            return FriendTagMapper.toDTOList(repository.findByOwnerId(ownerId), ownerUserIdsMap, friendUserIdsMap);
+            List<FriendTag> friendTags = repository.findByOwnerId(ownerId);
+
+            // Sort the list with "Everyone" tag first
+            friendTags.sort((tag1, tag2) -> {
+                if (tag1.isEveryone()) return -1; // "Everyone" comes first
+                if (tag2.isEveryone()) return 1;
+                return 0; // Maintain order for other tags
+            });
+
+            // Convert to DTOs
+            return FriendTagMapper.toDTOList(friendTags, ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new RuntimeException("Error retrieving friendTags", e);
@@ -188,6 +197,29 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    public void removeUserFromFriendTag(UUID id, UUID userId) {
+        // Check if the FriendTag exists
+        if (!repository.existsById(id)) {
+            throw new BaseNotFoundException(EntityType.FriendTag, id);
+        }
+        // Check if the User exists
+        if (!userRepository.existsById(userId)) {
+            throw new BaseNotFoundException(EntityType.User, userId);
+        }
+
+        try {
+            // Remove the UserFriendTag entity
+            uftRepository.deleteByFriendTagIdAndUserId(id, userId);
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new BaseSaveException("Failed to remove UserFriendTag (friend from friend tag)");
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends) {
         for (FullUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.id());
@@ -206,7 +238,6 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags) {
-        logger.log("Converting friend tags to full friend tags: " + friendTags.toString());
         return friendTags.stream()
                 .map(this::getFullFriendTagByFriendTag)
                 .collect(Collectors.toList());
