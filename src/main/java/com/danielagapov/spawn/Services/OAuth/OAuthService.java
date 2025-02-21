@@ -53,7 +53,7 @@ public class OAuthService implements IOAuthService {
                 logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
                 return userService.getFullUserByEmail(userDTO.getEmail());
             }
-            if (userService.existsByEmail(userDTO.getEmail())) {
+            if (userDTO.getEmail() != null && userService.existsByEmail(userDTO.getEmail())) {
                 logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
                 return userService.getFullUserByEmail(userDTO.getEmail());
             }
