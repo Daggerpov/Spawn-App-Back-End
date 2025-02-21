@@ -26,9 +26,9 @@ public class JWTService implements IJWTService {
     private static final String SIGNING_SECRET;
 
     static {
+        final String secret = System.getenv("SIGNING_SECRET");
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        SIGNING_SECRET = dotenv.get("SIGNING_KEY");
-
+        SIGNING_SECRET = secret == null ? dotenv.get("SIGNING_SECRET") : secret;
     }
 
     private static final long ACCESS_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; //  24 hours
