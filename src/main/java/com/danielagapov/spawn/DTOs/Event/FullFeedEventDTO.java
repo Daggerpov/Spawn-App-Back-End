@@ -1,11 +1,12 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.Event;
 
 
+import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.LocationDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;

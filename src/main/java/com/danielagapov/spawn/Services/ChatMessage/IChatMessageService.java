@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
-import com.danielagapov.spawn.DTOs.ChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.FullEventChatMessageDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 
 import java.util.List;
 import java.util.UUID;

@@ -1,6 +1,10 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
 import java.util.List;

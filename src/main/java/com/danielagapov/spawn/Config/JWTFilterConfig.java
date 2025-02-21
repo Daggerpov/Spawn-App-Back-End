@@ -21,7 +21,7 @@ import java.io.IOException;
 
 @Component
 @AllArgsConstructor
-public class JWTFilter extends OncePerRequestFilter {
+public class JWTFilterConfig extends OncePerRequestFilter {
     private final IJWTService jwtService;
     private final ApplicationContext context;
     private final ILogger logger;

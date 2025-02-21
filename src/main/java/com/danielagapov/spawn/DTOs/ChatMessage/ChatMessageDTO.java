@@ -1,6 +1,5 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.ChatMessage;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 

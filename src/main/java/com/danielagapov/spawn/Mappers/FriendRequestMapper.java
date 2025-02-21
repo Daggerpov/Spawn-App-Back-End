@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 
