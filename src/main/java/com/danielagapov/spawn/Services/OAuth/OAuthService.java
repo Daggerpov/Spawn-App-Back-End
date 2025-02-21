@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
+import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
