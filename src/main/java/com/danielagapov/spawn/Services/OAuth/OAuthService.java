@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
+import com.danielagapov.spawn.DTOs.UserCreationDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -121,18 +124,6 @@ public class OAuthService implements IOAuthService {
 
     private boolean mappingExistsByExternalId(String externalUserId) {
         return externalIdMapRepository.existsById(externalUserId);
-    }
-
-    private UserIdExternalIdMap getMapping(TempUserDTO tempUser) {
-        try {
-            return externalIdMapRepository.findById(String.valueOf(tempUser.getId())).orElse(null);
-        } catch (DataAccessException e) {
-            logger.log("Database error while fetching mapping for temp user: " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.log("Unexpected error while fetching mapping for temp user: " + e.getMessage());
-            throw e;
-        }
     }
 
     private UserIdExternalIdMap getMapping(String externalId) {

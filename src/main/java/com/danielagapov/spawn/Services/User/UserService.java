@@ -92,6 +92,7 @@ public class UserService implements IUserService {
     @Override
     public FullUserDTO getFullUserById(UUID id) {
         try {
+            logger.log("Getting full user by id for user with id " + id);
             return getFullUserByUser(getUserById(id), new HashSet<>());
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -599,8 +600,10 @@ public class UserService implements IUserService {
         }
     }
 
+
     @Override
     public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
+        logger.log("Getting full user by user: " + user.toString());
         try {
             if (visitedUsers.contains(user.getId())) {
                 return null; // Skip already visited users
@@ -626,6 +629,7 @@ public class UserService implements IUserService {
 
     @Override
     public List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers) {
+        logger.log("Converting users to full users: " + users.toString());
         try {
             return users.stream()
                     .map(user -> getFullUserByUser(user, visitedUsers))
