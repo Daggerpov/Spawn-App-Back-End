@@ -137,7 +137,7 @@ public class OAuthService implements IOAuthService {
             String email = oauthUser.getAttribute("email"); // to be used as username
             String externalUserId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
             if (externalUserId == null) throw new ApplicationException("Subject was null");
-            return new TempUserDTO(externalUserId, given_name, family_name, email, picture);
+            return new TempUserDTO(UUID.fromString(externalUserId), given_name, family_name, email, picture);
         } catch (Exception e) {
             logger.log("Error unpacking OAuth user: " + e.getMessage());
             throw e;
