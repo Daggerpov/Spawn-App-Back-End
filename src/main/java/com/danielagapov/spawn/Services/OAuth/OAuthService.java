@@ -50,12 +50,12 @@ public class OAuthService implements IOAuthService {
         try {
             // TODO: temporary solution
             if (mappingExistsByExternalId(externalUserId)) {
-                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
-                return userService.getFullUserByEmail(userDTO.email());
+                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
+                return userService.getFullUserByEmail(userDTO.getEmail());
             }
-            if (userService.existsByEmail(userDTO.email())) {
-                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.email(), userDTO.email()));
-                return userService.getFullUserByEmail(userDTO.email());
+            if (userService.existsByEmail(userDTO.getEmail())) {
+                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
+                return userService.getFullUserByEmail(userDTO.getEmail());
             }
 
             // user dto -> entity & save user
@@ -146,7 +146,7 @@ public class OAuthService implements IOAuthService {
 
     private UserIdExternalIdMap getMapping(TempUserDTO tempUser) {
         try {
-            return externalIdMapRepository.findById(tempUser.id()).orElse(null);
+            return externalIdMapRepository.findById(String.valueOf(tempUser.getId())).orElse(null);
         } catch (DataAccessException e) {
             logger.log("Database error while fetching mapping for temp user: " + e.getMessage());
             throw e;
