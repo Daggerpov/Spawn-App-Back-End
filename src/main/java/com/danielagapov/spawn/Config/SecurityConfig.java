@@ -27,12 +27,10 @@ public class SecurityConfig {
                     return configuration;
                 }))
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/v1/betaAccessSignUp/records", "/api/v1/betaAccessSignUp/emails").authenticated()
                         .anyRequest().permitAll()
                 )
-                .csrf(AbstractHttpConfigurer::disable)
-                .oauth2Login(oauth2 -> {
-                    oauth2.successHandler((request, response, authentication) -> response.sendRedirect("/api/v1/oauth/google/sign-in"));
-                });
+                .csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
 }
