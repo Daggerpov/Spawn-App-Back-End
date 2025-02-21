@@ -124,5 +124,4 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         return userInfoService;
     }
-
 }

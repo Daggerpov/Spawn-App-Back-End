@@ -5,14 +5,16 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
 @Setter
-public class LocationDTO implements Serializable {
+
+public abstract class AbstractChatMessageDTO implements Serializable{
     UUID id;
-    String name;
-    double latitude;
-    double longitude;
+    String content;
+    Instant timestamp;
+    UUID eventId;
 }

@@ -23,10 +23,10 @@ public class FriendTagMapper {
 
     public static FriendTag toEntity(FriendTagDTO dto) {
         return new FriendTag(
-                dto.id(),
-                dto.displayName(),
-                dto.colorHexCode(),
-                dto.ownerUserId(),
+                dto.getId(),
+                dto.getDisplayName(),
+                dto.getColorHexCode(),
+                dto.getOwnerUserId(),
                 dto.isEveryone()
         );
     }

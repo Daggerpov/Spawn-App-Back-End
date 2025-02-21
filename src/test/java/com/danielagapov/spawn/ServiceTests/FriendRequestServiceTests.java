@@ -76,7 +76,7 @@ class FriendRequestServiceTests {
         FriendRequestDTO savedRequest = friendRequestService.saveFriendRequest(friendRequestDTO);
 
         assertNotNull(savedRequest);
-        assertEquals(friendRequest.getId(), savedRequest.id());
+        assertEquals(friendRequest.getId(), savedRequest.getId());
         verify(repository, times(1)).save(any(FriendRequest.class));
     }
 

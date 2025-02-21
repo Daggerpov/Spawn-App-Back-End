@@ -19,7 +19,7 @@ public class FriendRequestMapper {
 
     public static FriendRequest toEntity(FriendRequestDTO friendRequestDTO, User sender, User receiver) {
         FriendRequest friendRequest = new FriendRequest();
-        friendRequest.setId(friendRequestDTO.id());
+        friendRequest.setId(friendRequestDTO.getId());
         friendRequest.setSender(sender);
         friendRequest.setReceiver(receiver);
         return friendRequest;
@@ -36,13 +36,13 @@ public class FriendRequestMapper {
                 .map(dto -> {
                     // Find sender user by matching senderId from userSenders list
                     User sender = userSenders.stream()
-                            .filter(user -> user.getId().equals(dto.senderUserId()))
+                            .filter(user -> user.getId().equals(dto.getSenderUserId()))
                             .findFirst()
                             .orElse(null);
 
                     // Find receiver user by matching receiverId from userReceivers list
                     User receiver = userReceivers.stream()
-                            .filter(user -> user.getId().equals(dto.receiverUserId()))
+                            .filter(user -> user.getId().equals(dto.getReceiverUserId()))
                             .findFirst()
                             .orElse(null);
 

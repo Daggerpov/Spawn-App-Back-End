@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
+import com.danielagapov.spawn.DTOs.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
 import com.danielagapov.spawn.DTOs.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
@@ -52,12 +52,12 @@ public class OAuthService implements IOAuthService {
         try {
             // TODO: temporary solution
             if (mappingExistsByExternalId(externalUserId)) {
-                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
-                return userService.getFullUserByEmail(userDTO.email());
+                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
+                return userService.getFullUserByEmail(userDTO.getEmail());
             }
-            if (userDTO.email() != null && userService.existsByEmail(userDTO.email())) {
-                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.email(), userDTO.email()));
-                return userService.getFullUserByEmail(userDTO.email());
+            if (userDTO.getEmail() != null && userService.existsByEmail(userDTO.getEmail())) {
+                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
+                return userService.getFullUserByEmail(userDTO.getEmail());
             }
 
             // user dto -> entity & save user
@@ -154,7 +154,7 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private void createAndSaveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
+    private void createAndSaveMapping(String externalUserId, AbstractUserDTO userDTO, OAuthProvider provider) {
         try {
             User user;
             if (userDTO instanceof FullUserDTO) {

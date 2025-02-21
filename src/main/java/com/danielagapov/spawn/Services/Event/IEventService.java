@@ -12,8 +12,8 @@ public interface IEventService {
     
     // CRUD operations:
     EventDTO getEventById(UUID id);
-    IEventDTO saveEvent(IEventDTO event);
-    IEventDTO createEvent(EventCreationDTO eventCreationDTO);
+    AbstractEventDTO saveEvent(AbstractEventDTO event);
+    AbstractEventDTO createEvent(EventCreationDTO eventCreationDTO);
     EventDTO replaceEvent(EventDTO event, UUID eventId);
     boolean deleteEventById(UUID id);
 

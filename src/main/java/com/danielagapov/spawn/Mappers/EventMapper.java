@@ -21,7 +21,7 @@ public class EventMapper {
                 entity.getTitle(),
                 entity.getStartTime(),
                 entity.getEndTime(),
-                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).id() : null, // Map Location to LocationDTO
+                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).getId() : null, // Map Location to LocationDTO
                 entity.getNote(),
                 creatorUserId,
                 participantUserIds,
@@ -33,12 +33,12 @@ public class EventMapper {
     // Convert DTO to entity
     public static Event toEntity(EventDTO dto, Location location, User creator) {
         return new Event(
-                dto.id(),
-                dto.title(),
-                dto.startTime(),
-                dto.endTime(),
+                dto.getId(),
+                dto.getTitle(),
+                dto.getStartTime(),
+                dto.getEndTime(),
                 location, // Assign the full Location entity
-                dto.note(),
+                dto.getNote(),
                 creator
         );
     }
@@ -66,13 +66,13 @@ public class EventMapper {
                 .map(dto -> {
                     // Find the Location entity based on the locationId from DTO
                     Location location = locations.stream()
-                            .filter(loc -> loc.getId().equals(dto.locationId())) // Match LocationDTO's UUID with Location entity
+                            .filter(loc -> loc.getId().equals(dto.getLocationId())) // Match LocationDTO's UUID with Location entity
                             .findFirst()
                             .orElse(null);
 
                     // Find the User entity (creator) based on the creatorUserId from DTO
                     User creator = creators.stream()
-                            .filter(user -> user.getId().equals(dto.creatorUserId())) // Match creatorUserId with User entity
+                            .filter(user -> user.getId().equals(dto.getCreatorUserId())) // Match creatorUserId with User entity
                             .findFirst()
                             .orElse(null);
 
@@ -103,11 +103,11 @@ public class EventMapper {
 
     public static Event fromCreationDTO(EventCreationDTO dto, Location location, User creator) {
         Event event = new Event();
-        event.setTitle(dto.title());
-        event.setStartTime(dto.startTime());
-        event.setEndTime(dto.endTime());
+        event.setTitle(dto.getTitle());
+        event.setStartTime(dto.getStartTime());
+        event.setEndTime(dto.getEndTime());
         event.setLocation(location); // Use the saved/persisted location.
-        event.setNote(dto.note());
+        event.setNote(dto.getNote());
         event.setCreator(creator);
         return event;
     }

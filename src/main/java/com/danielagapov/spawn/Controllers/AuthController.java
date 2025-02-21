@@ -43,7 +43,7 @@ public class AuthController {
             logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
             FullUserDTO userDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
             if (userDTO != null) {
-                HttpHeaders headers = makeHeadersForTokens(userDTO.username());
+                HttpHeaders headers = makeHeadersForTokens(userDTO.getUsername());
                 return ResponseEntity.ok().headers(headers).body(userDTO);
             }
             return ResponseEntity.ok().body(null);

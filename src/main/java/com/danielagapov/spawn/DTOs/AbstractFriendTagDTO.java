@@ -10,9 +10,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class LocationDTO implements Serializable {
+public abstract class AbstractFriendTagDTO implements Serializable {
     UUID id;
-    String name;
-    double latitude;
-    double longitude;
+    String displayName;
+    String colorHexCode;
+    boolean isEveryone;
 }

@@ -19,10 +19,10 @@ public class LocationMapper {
 
     public static Location toEntity(LocationDTO dto) {
         return new Location(
-                dto.id(),
-                dto.name(),
-                dto.latitude(),
-                dto.longitude()
+                dto.getId(),
+                dto.getName(),
+                dto.getLatitude(),
+                dto.getLongitude()
         );
     }
 

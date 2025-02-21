@@ -13,17 +13,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
-public class FullFeedEventDTO implements Serializable, IEventDTO {
-    private UUID id;
-    private String title;
-    private OffsetDateTime startTime;
-    private OffsetDateTime endTime;
+public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
     private LocationDTO location;
-    private String note;
     private FullUserDTO creatorUser;
     private List<FullUserDTO> participantUsers;
     private List<FullUserDTO> invitedUsers;
@@ -32,4 +25,26 @@ public class FullFeedEventDTO implements Serializable, IEventDTO {
     private String eventFriendTagColorHexCodeForRequestingUser;
     // ensures string formatting when serialized to JSON; for mobile (client)
     private @JsonFormat(shape = JsonFormat.Shape.STRING) ParticipationStatus participationStatus;
+
+    public FullFeedEventDTO(UUID id,
+                        String title,
+                        OffsetDateTime startTime,
+                        OffsetDateTime endTime,
+                        LocationDTO location,
+                        String note,
+                        FullUserDTO creatorUser,
+                        List<FullUserDTO> participantUsers,
+                        List<FullUserDTO> invitedUsers,
+                        List<FullEventChatMessageDTO> chatMessages,
+                            String eventFriendTagColorHexCodeForRequestingUser,
+                            ParticipationStatus participationStatus) {
+        super(id, title, startTime, endTime, note);
+        this.location = location;
+        this.creatorUser = creatorUser;
+        this.participantUsers = participantUsers;
+        this.invitedUsers = invitedUsers;
+        this.chatMessages = chatMessages;
+        this.eventFriendTagColorHexCodeForRequestingUser = eventFriendTagColorHexCodeForRequestingUser;
+        this.participationStatus = participationStatus;
+    }
 }

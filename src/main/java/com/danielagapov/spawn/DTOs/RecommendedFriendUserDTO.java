@@ -1,19 +1,18 @@
 package com.danielagapov.spawn.DTOs;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-public record RecommendedFriendUserDTO(
-    UUID id,
-    List<FullUserDTO> friends,
-    String username,
-    String profilePicture,
-    String firstName,
-    String lastName,
-    String bio,
-    List<FullFriendTagDTO> friendTags,
-    String email,
-    // Added property from `FullUserDTO`:
-    int mutualFriendCount
-) implements Serializable, IOnboardedUserDTO {}
+@Getter
+@Setter
+public class RecommendedFriendUserDTO extends FullUserDTO implements Serializable {
+    int mutualFriendCount;
+    public RecommendedFriendUserDTO(UUID id, List<FullUserDTO> friends, String username, String picture, String firstName, String lastName, String bio, List<FullFriendTagDTO> friendTags, String email, int mutualFriendCount) {
+        super(id, friends, username, picture, firstName, lastName, bio, friendTags, email);
+        this.mutualFriendCount = mutualFriendCount;
+    }
+}

@@ -34,8 +34,8 @@ public class FriendRequestService implements IFriendRequestService {
     public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
         try {
             // Extract sender and receiver IDs from the FriendRequestDTO
-            UUID senderId = friendRequestDTO.senderUserId();
-            UUID receiverId = friendRequestDTO.receiverUserId();
+            UUID senderId = friendRequestDTO.getSenderUserId();
+            UUID receiverId = friendRequestDTO.getReceiverUserId();
 
             User sender = userService.getUserEntityById(senderId);
             User receiver = userService.getUserEntityById(receiverId);
@@ -105,9 +105,9 @@ public class FriendRequestService implements IFriendRequestService {
         List<FullFriendRequestDTO> fullFriendRequests = new ArrayList<>();
         for (FriendRequestDTO friendRequest : friendRequests) {
             fullFriendRequests.add(new FullFriendRequestDTO(
-                    friendRequest.id(),
-                    userService.getFullUserById(friendRequest.senderUserId()),
-                    userService.getFullUserById(friendRequest.receiverUserId())
+                    friendRequest.getId(),
+                    userService.getFullUserById(friendRequest.getSenderUserId()),
+                    userService.getFullUserById(friendRequest.getReceiverUserId())
             ));
         }
         return fullFriendRequests;
