@@ -1,22 +1,21 @@
 package com.danielagapov.spawn.DTOs;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-@AllArgsConstructor
 @Getter
 @Setter
-public class FullEventChatMessageDTO implements Serializable, IChatMessageDTO{
-    UUID id;
-    String content;
-    Instant timestamp;
+public class FullEventChatMessageDTO extends AbstractChatMessageDTO {
     FullUserDTO senderUser;
-    UUID eventId;
     List<FullUserDTO> likedByUsers;
+
+    public FullEventChatMessageDTO(UUID id, String content, Instant timestamp, FullUserDTO senderUser, UUID eventId, List<FullUserDTO> likedByUsers) {
+        super(id, content, timestamp, eventId);
+        this.senderUser = senderUser;
+        this.likedByUsers = likedByUsers;
+    }
 }
