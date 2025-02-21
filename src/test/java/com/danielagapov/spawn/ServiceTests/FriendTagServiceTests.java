@@ -75,7 +75,7 @@ public class FriendTagServiceTests {
 
         FriendTagDTO result = friendTagService.getFriendTagById(friendTagId);
 
-        assertEquals("Test Tag", result.displayName());
+        assertEquals("Test Tag", result.getDisplayName());
         verify(friendTagRepository, times(1)).findById(friendTagId);
     }
 
@@ -130,7 +130,7 @@ public class FriendTagServiceTests {
 
         FriendTagDTO result = friendTagService.replaceFriendTag(newFriendTagDTO, friendTagId);
 
-        assertEquals("Updated Tag", result.displayName());
+        assertEquals("Updated Tag", result.getDisplayName());
         verify(friendTagRepository, times(1)).findById(friendTagId);
         verify(friendTagRepository, times(1)).save(any(FriendTag.class));
     }
@@ -147,7 +147,7 @@ public class FriendTagServiceTests {
 
         FriendTagDTO result = friendTagService.replaceFriendTag(newFriendTagDTO, friendTagId);
 
-        assertEquals("Test Tag", result.displayName());
+        assertEquals("Test Tag", result.getDisplayName());
         verify(friendTagRepository, times(1)).findById(friendTagId);
         verify(friendTagRepository, times(1)).save(any(FriendTag.class));
     }

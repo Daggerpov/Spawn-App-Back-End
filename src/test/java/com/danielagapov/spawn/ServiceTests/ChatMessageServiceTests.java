@@ -166,8 +166,8 @@ public class ChatMessageServiceTests {
         List<ChatMessageDTO> result = chatMessageService.getAllChatMessages();
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(dto -> dto.id().equals(id1)));
-        assertTrue(result.stream().anyMatch(dto -> dto.id().equals(id2)));
+        assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id1)));
+        assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id2)));
     }
 
     @Test
@@ -226,8 +226,8 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
         ChatMessageDTO dto = chatMessageService.getChatMessageById(chatMessageId);
         assertNotNull(dto);
-        assertEquals(chatMessageId, dto.id());
-        assertEquals("Test message", dto.content());
+        assertEquals(chatMessageId, dto.getId());
+        assertEquals("Test message", dto.getContent());
     }
 
     @Test
@@ -260,9 +260,9 @@ public class ChatMessageServiceTests {
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageById(chatMessageId);
         assertNotNull(fullDto);
-        assertEquals(chatMessageId, fullDto.id());
-        assertEquals("Full message", fullDto.content());
-        assertEquals(fullUser, fullDto.senderUser());
+        assertEquals(chatMessageId, fullDto.getId());
+        assertEquals("Full message", fullDto.getContent());
+        assertEquals(fullUser, fullDto.getSenderUser());
     }
 
     @Test
@@ -297,12 +297,12 @@ public class ChatMessageServiceTests {
         List<FullEventChatMessageDTO> result = chatMessageService.getFullChatMessagesByEventId(eventId);
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(dto -> dto.id().equals(id1)));
-        assertTrue(result.stream().anyMatch(dto -> dto.id().equals(id2)));
+        assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id1)));
+        assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id2)));
     }
 
     @Test
-    void saveChatMessage_ShouldSaveMessage_WhenValid() {
+    void saveChatMessage_ShouldSaveMessage_WhenValgetId() {
         UUID userId = UUID.randomUUID();
         UUID eventId = UUID.randomUUID();
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
@@ -320,16 +320,16 @@ public class ChatMessageServiceTests {
         when(userRepository.findById(userId)).thenReturn(Optional.of(dummyUser));
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(dummyEvent));
         ChatMessage dummyChatMessage = new ChatMessage();
-        dummyChatMessage.setId(chatMessageDTO.id());
-        dummyChatMessage.setContent(chatMessageDTO.content());
+        dummyChatMessage.setId(chatMessageDTO.getId());
+        dummyChatMessage.setContent(chatMessageDTO.getContent());
         // Set sender and event on the saved entity
         dummyChatMessage.setUserSender(dummyUser);
         dummyChatMessage.setEvent(dummyEvent);
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(dummyChatMessage);
         ChatMessageDTO savedDTO = chatMessageService.saveChatMessage(chatMessageDTO);
         assertNotNull(savedDTO);
-        assertEquals(chatMessageDTO.id(), savedDTO.id());
-        assertEquals("Saving message", savedDTO.content());
+        assertEquals(chatMessageDTO.getId(), savedDTO.getId());
+        assertEquals("Saving message", savedDTO.getContent());
     }
 
     @Test
@@ -479,8 +479,8 @@ public class ChatMessageServiceTests {
         List<ChatMessageDTO> result = chatMessageService.getChatMessagesByEventId(eventId);
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(dto -> dto.id().equals(id1)));
-        assertTrue(result.stream().anyMatch(dto -> dto.id().equals(id2)));
+        assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id1)));
+        assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id2)));
     }
 
     @Test
@@ -520,11 +520,11 @@ public class ChatMessageServiceTests {
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
         assertNotNull(fullDto);
-        assertEquals(chatMessageId, fullDto.id());
-        assertEquals("Full chat message", fullDto.content());
-        assertEquals(timestamp, fullDto.timestamp());
-        assertEquals(eventId, fullDto.eventId());
-        assertEquals(fullUser, fullDto.senderUser());
+        assertEquals(chatMessageId, fullDto.getId());
+        assertEquals("Full chat message", fullDto.getContent());
+        assertEquals(timestamp, fullDto.getTimestamp());
+        assertEquals(eventId, fullDto.getEventId());
+        assertEquals(fullUser, fullDto.getSenderUser());
     }
 
     @Test
@@ -558,10 +558,10 @@ public class ChatMessageServiceTests {
         assertNotNull(result);
         assertEquals(1, result.size());
         FullEventChatMessageDTO fullDto = result.get(0);
-        assertEquals(chatMessageId, fullDto.id());
-        assertEquals("Chat message conversion", fullDto.content());
-        assertEquals(timestamp, fullDto.timestamp());
-        assertEquals(eventId, fullDto.eventId());
-        assertEquals(fullUser, fullDto.senderUser());
+        assertEquals(chatMessageId, fullDto.getId());
+        assertEquals("Chat message conversion", fullDto.getContent());
+        assertEquals(timestamp, fullDto.getTimestamp());
+        assertEquals(eventId, fullDto.getEventId());
+        assertEquals(fullUser, fullDto.getSenderUser());
     }
 }
