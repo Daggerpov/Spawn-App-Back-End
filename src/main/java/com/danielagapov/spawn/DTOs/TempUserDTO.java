@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.DTOs;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 
-public record TempUserDTO(
-        String id,
-        String firstName,
-        String lastName,
-        String email,
-        String profilePicture
-) implements Serializable, AbstractUserDTO {}
+@NoArgsConstructor
+@AllArgsConstructor
+public class TempUserDTO extends AbstractUserDTO implements Serializable {
+}
