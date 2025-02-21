@@ -13,8 +13,8 @@ public class S3Config {
 
     @Bean
     public S3Client s3Client() {
-        String accessKey = System.getenv("AWS_ACCESS_KEY_ID");
-        String secretKey = System.getenv("AWS_SECRET_ACCESS_KEY");
+        String accessKey = System.getenv("AWS_ACCESS_KEY_ID_");
+        String secretKey = System.getenv("AWS_SECRET_ACCESS_KEY_");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         if (accessKey == null) accessKey = dotenv.get("AWS_ACCESS_KEY_ID");
