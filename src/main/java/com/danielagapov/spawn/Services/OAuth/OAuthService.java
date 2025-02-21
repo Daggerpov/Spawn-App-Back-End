@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.FullUserDTO;
+import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
+import com.danielagapov.spawn.DTOs.UserCreationDTO;
+import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -25,22 +28,6 @@ public class OAuthService implements IOAuthService {
         this.externalIdMapRepository = externalIdMapRepository;
         this.userService = userService;
         this.logger = logger;
-    }
-
-    @Override
-    public AbstractUserDTO verifyUser(OAuth2User oauthUser) {
-        try {
-            TempUserDTO tempUser = unpackOAuthUser(oauthUser);
-            UserIdExternalIdMap mapping = getMapping(tempUser);
-
-            return mapping == null ? tempUser : getUserDTO(mapping);
-        } catch (DataAccessException e) {
-            logger.log("Database error while verifying OAuth user: " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.log("Unexpected error while verifying OAuth user: " + e.getMessage());
-            throw e;
-        }
     }
 
     @Override
@@ -134,13 +121,6 @@ public class OAuthService implements IOAuthService {
         return null;
     }
 
-    /**
-     * Checks if user exists, first by externalUserId then by email
-     * This is a temporary solution to duplicates occurring in database
-     */
-    private boolean userExistsByExternalIdOrEmail(String externalUserId, String email) {
-        return mappingExistsByExternalId(externalUserId) || userService.existsByEmail(email);
-    }
 
     private boolean mappingExistsByExternalId(String externalUserId) {
         return externalIdMapRepository.existsById(externalUserId);
@@ -185,20 +165,6 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private UserDTO getUserDTO(UserIdExternalIdMap mapping) {
-        try {
-            return userService.getUserById(mapping.getUser().getId());
-        } catch (BaseNotFoundException e) {
-            logger.log("User not found while fetching user DTO: " + e.getMessage());
-            throw e;
-        } catch (DataAccessException e) {
-            logger.log("Database error while fetching user DTO: " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.log("Unexpected error while fetching user DTO: " + e.getMessage());
-            throw e;
-        }
-    }
 
     private FullUserDTO getFullUserDTO(UUID externalUserId) {
         try {
