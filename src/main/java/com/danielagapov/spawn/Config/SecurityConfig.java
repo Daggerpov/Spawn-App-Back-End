@@ -30,21 +30,18 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.setAllowedOrigins(List.of("https://spawn-app.vercel.app")); // our site front-end
+                    configuration.setAllowedOrigins(List.of("https://getspawn.com")); // our site front-end
                     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(List.of("*"));
                     configuration.setAllowCredentials(true);
                     return configuration;
                 }))
-                .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().permitAll()
-                )
                 .csrf(AbstractHttpConfigurer::disable)
                 // Endpoints can be made unsecured by specifying it with requestMatchers() below and permitting
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
-                                //        .requestMatchers("/api/v1/auth/**", "/api/v1/betaAccessSignUp/**").permitAll()
+                                .requestMatchers("/api/v1/betaAccessSignUp/emails").authenticated()
                                 .anyRequest().permitAll()
                         //.anyRequest()
                         //.authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
