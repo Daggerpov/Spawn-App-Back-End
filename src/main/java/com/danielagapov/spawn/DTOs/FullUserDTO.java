@@ -14,11 +14,13 @@ public class FullUserDTO extends AbstractUserDTO implements Serializable {
     String username;
     String bio;
     List<FullFriendTagDTO> friendTags;
+    String profilePicture;
     public FullUserDTO(UUID id, List<FullUserDTO> friends, String username, String picture, String firstName, String lastName, String bio, List<FullFriendTagDTO> friendTags, String email) {
-        super(id, firstName, lastName, email, picture);
+        super(id, firstName, lastName, email);
         this.friends = friends;
         this.username = username;
         this.bio = bio;
         this.friendTags = friendTags;
+        this.profilePicture = picture;
     }
 }
