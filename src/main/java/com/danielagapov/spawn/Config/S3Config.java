@@ -16,7 +16,7 @@ public class S3Config {
         String accessKey = System.getenv("AWS_ACCESS_KEY_ID");
         String secretKey = System.getenv("AWS_SECRET_ACCESS_KEY");
 
-        Dotenv dotenv = Dotenv.load();
+        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         if (accessKey == null) accessKey = dotenv.get("AWS_ACCESS_KEY_ID");
         if (secretKey == null) secretKey = dotenv.get("AWS_SECRET_ACCESS_KEY");
 
