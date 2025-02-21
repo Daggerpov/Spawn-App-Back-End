@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.TempUserDTO;
 import com.danielagapov.spawn.DTOs.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -38,7 +37,6 @@ public class OAuthServiceTests {
     @InjectMocks
     private OAuthService oauthService;
 
-    private TempUserDTO tempUserDTO;
     private UserIdExternalIdMap userIdExternalIdMap;
     private User testUser;
 
@@ -46,7 +44,6 @@ public class OAuthServiceTests {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        tempUserDTO = new TempUserDTO(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"), "John", "Doe", "john.doe@example.com", "picture_url");
         testUser = new User();
         testUser.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
 
