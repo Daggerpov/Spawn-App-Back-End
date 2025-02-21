@@ -9,13 +9,10 @@ import java.util.UUID;
 @Getter
 @Setter
 public class UserCreationDTO extends AbstractUserDTO implements Serializable {
-    private String username;
-    private byte[] profilePictureData; // Changed from String to byte[]
-    private String bio;
-    public UserCreationDTO( UUID id, String username, byte[] profilePictureData, String firstName, String lastName, String bio, String email) {
-        super(id, firstName, lastName, email);
+    private byte[] profilePictureData; // raw image uploaded
+
+    public UserCreationDTO(UUID id, String username, byte[] profilePictureData, String firstName, String lastName, String bio, String email) {
+        super(id, firstName, lastName, email, username, bio);
         this.profilePictureData = profilePictureData;
-        this.username = username;
-        this.bio = bio;
     }
 }
