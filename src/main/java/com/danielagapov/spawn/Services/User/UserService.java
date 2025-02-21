@@ -638,6 +638,29 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public FullUserDTO getFullUserByUsername(String username) {
+        try {
+            logger.log("Getting full user for " + username);
+            User user = repository.findByUsername(username);
+            if (user == null) {
+                logger.log("Could not find user " + username);
+                throw new BaseNotFoundException(EntityType.User, username);
+            } else {
+                logger.log("Found user " + username);
+            }
+            return getFullUserById(user.getId());
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean existsByUsername(String username) {
+        return repository.existsByUsername(username);
+    }
+
+    @Override
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
     }

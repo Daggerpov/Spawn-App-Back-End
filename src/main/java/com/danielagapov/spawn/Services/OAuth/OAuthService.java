@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.AbstractUserDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.UserCreationDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -124,21 +121,6 @@ public class OAuthService implements IOAuthService {
 
     private boolean mappingExistsByExternalId(String externalUserId) {
         return externalIdMapRepository.existsById(externalUserId);
-    }
-
-    private TempUserDTO unpackOAuthUser(OAuth2User oauthUser) {
-        try {
-            String given_name = oauthUser.getAttribute("given_name");
-            String family_name = oauthUser.getAttribute("family_name");
-            String picture = oauthUser.getAttribute("picture"); // TODO: may need to change once S3 is set
-            String email = oauthUser.getAttribute("email"); // to be used as username
-            String externalUserId = oauthUser.getAttribute("sub"); // sub is a unique identifier for google accounts
-            if (externalUserId == null) throw new ApplicationException("Subject was null");
-            return new TempUserDTO(UUID.fromString(externalUserId), given_name, family_name, email, picture);
-        } catch (Exception e) {
-            logger.log("Error unpacking OAuth user: " + e.getMessage());
-            throw e;
-        }
     }
 
     private UserIdExternalIdMap getMapping(TempUserDTO tempUser) {
