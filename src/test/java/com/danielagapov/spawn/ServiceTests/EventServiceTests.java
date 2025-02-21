@@ -803,6 +803,7 @@ public class EventServiceTests {
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub participation: existsById true and findByEvent_Id returns a dummy EventUser not matching the requesting user.
         when(eventUserRepository.existsById(new EventUsersId(eventDTO1.getId(), requestingUserId))).thenReturn(true);
+
         EventUser dummyEU = new EventUser();
         User dummyUser = new User();
         dummyUser.setId(UUID.randomUUID()); // not equal to requestingUserId

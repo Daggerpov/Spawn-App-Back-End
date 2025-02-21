@@ -533,6 +533,7 @@ public class EventService implements IEventService {
                     chatMessageService.getFullChatMessagesByEventId(event.getId()),
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                     requestingUserId != null ? getParticipationStatus(event.getId(), requestingUserId) : null
+
             );
         } catch (BaseNotFoundException e) {
             return null;
