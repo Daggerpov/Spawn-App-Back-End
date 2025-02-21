@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.UserCreationDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
@@ -58,19 +58,21 @@ public class AuthController {
      * given through Google, Apple, or email/pass authentication + attributes input either by default through
      * these providers, such as full name & pfp, or supplied by the user (i.e. overwritten by provider, or new).
      * <p>
-     * For profile pictures specifically, there's an optional argument, `profilePicture`, which will take a raw
-     * byte file to overwrite/write the profile picture to the user, by saving it to the S3Service
+     * For profile pictures specifically, the userCreationDTO.profilePicture attribute will supply it
+     * to overwrite/write the profile picture to the user, by saving it to the S3Service
      * <p>
-     * Another argument is the `externalUserId`, which should be optional, since a user could be created
-     * without the use of an external provider (i.e. Google or Apple), through our own email/pass authentication.
+     * Another argument is the `externalUserId`, which is a unique identifier for a user used by the external provider chosen
      */
     // full path: /api/v1/auth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserDTO userDTO, @RequestParam("externalUserId") String externalUserId, @RequestParam(value = "profilePicture", required = false) byte[] profilePicture, @RequestParam(value = "provider") OAuthProvider provider) {
+    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
+                                                @RequestParam("externalUserId") String externalUserId,
+                                                @RequestParam(value = "provider") OAuthProvider provider) {
         try {
-            logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}", userDTO, externalUserId, provider));
-            FullUserDTO user = oauthService.makeUser(userDTO, externalUserId, profilePicture, provider);
-            HttpHeaders headers = makeHeadersForTokens(userDTO.username());
+            logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
+                    userCreationDTO, externalUserId, provider));
+            FullUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
+            HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
