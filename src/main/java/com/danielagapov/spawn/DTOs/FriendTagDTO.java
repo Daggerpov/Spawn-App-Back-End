@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.DTOs;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,14 +7,17 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
-@AllArgsConstructor
 @Getter
 @Setter
-public class FriendTagDTO implements Serializable, IFriendTagDTO {
-    UUID id;
-    String displayName;
-    String colorHexCode;
+public class FriendTagDTO extends AbstractFriendTagDTO implements Serializable {
     UUID ownerUserId;
     List<UUID> friendUserIds;
-    boolean isEveryone;
+    public FriendTagDTO(UUID id, String displayName, String colorHexCode,
+                            UUID ownerUserId,
+                            List<UUID> friendUserIds,
+                            boolean isEveryone) {
+        super(id, displayName, colorHexCode, isEveryone);
+        this.ownerUserId = ownerUserId;
+        this.friendUserIds = friendUserIds;
+    }
 }

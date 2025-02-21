@@ -5,16 +5,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
 @Setter
-
-public abstract class AbstractChatMessageDTO implements Serializable{
+public abstract class AbstractFriendTagDTO implements Serializable {
     UUID id;
-    String content;
-    Instant timestamp;
-    UUID eventId;
+    String displayName;
+    String colorHexCode;
+    boolean isEveryone;
 }
