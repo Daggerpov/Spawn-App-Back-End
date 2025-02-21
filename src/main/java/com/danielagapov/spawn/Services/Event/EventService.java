@@ -135,7 +135,7 @@ public class EventService implements IEventService {
     }
 
     @Override
-    public IEventDTO saveEvent(IEventDTO event) {
+    public AbstractEventDTO saveEvent(AbstractEventDTO event) {
         try {
             Event eventEntity;
 
@@ -176,7 +176,7 @@ public class EventService implements IEventService {
     }
 
     @Override
-    public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
+    public AbstractEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
             Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.getLocation()));
             logger.log("Location saved successfully with id: " + location.getId());

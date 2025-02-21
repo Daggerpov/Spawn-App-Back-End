@@ -11,8 +11,9 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class EventDTO extends AbstractEventDTO implements Serializable, IEventDTO{
+public class EventDTO extends AbstractEventDTO implements Serializable {
     UUID locationId;
+    UUID creatorUserId;
     List<UUID> participantUserIds;
     List<UUID> invitedUserIds;
     List<UUID> chatMessageIds;
@@ -26,13 +27,9 @@ public class EventDTO extends AbstractEventDTO implements Serializable, IEventDT
                                 List<UUID> participantUserIds,
                                 List<UUID> invitedUserIds,
                                 List<UUID> chatMessageIds) {
-        super.id = id;
-        super.title = title;
-        super.startTime = startTime;
-        super.endTime = endTime;
+        super(id, title, startTime, endTime, note);
+        this.creatorUserId = creatorUserId;
         this.locationId = locationId;
-        super.note = note;
-        super.creatorUserId = creatorUserId;
         this.participantUserIds = participantUserIds;
         this.invitedUserIds = invitedUserIds;
         this.chatMessageIds = chatMessageIds;
