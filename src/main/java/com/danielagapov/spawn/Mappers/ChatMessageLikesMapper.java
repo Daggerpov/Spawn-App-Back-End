@@ -18,7 +18,7 @@ public class ChatMessageLikesMapper {
 
     // Convert DTO to entity
     public static ChatMessageLikes toEntity(ChatMessageLikesDTO dto, ChatMessage chatMessage, User user) {
-        ChatMessageLikesId id = new ChatMessageLikesId(dto.chatMessageId(), dto.userId());
+        ChatMessageLikesId id = new ChatMessageLikesId(dto.getChatMessageId(), dto.getUserId());
 
         return new ChatMessageLikes(
                 id,
