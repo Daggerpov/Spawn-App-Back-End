@@ -559,7 +559,61 @@ public class UserService implements IUserService {
         } else { // If searchQuery is not empty:
             // Step 2. List all recommended friends who match based on searchQuery
             // TODO need to refactor getRecommendedFriendsForUserId() to decouple what its doing so we can filter not just by top 3
-            recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
+            // Fetch the requesting user's friends
+            List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(requestingUserId);
+
+            // Fetch users who have already received a friend request from the user
+            List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(requestingUserId)
+                    .stream()
+                    .map(FriendRequestDTO::getReceiverUserId)
+                    .toList();
+
+            // Map mutual friends to RecommendedFriendUserDTO
+            List<UUID> receivedFriendRequestSenderUserIds = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId)
+                    .stream()
+                    .map(request -> request.getSenderUser().getId())
+                    .toList();
+
+            List<UUID> existingFriendUserIds = getFriendUserIdsByUserId(requestingUserId);
+
+            // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
+            Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
+            excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
+            excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
+            excludedUserIds.addAll(existingFriendUserIds);
+            excludedUserIds.add(requestingUserId); // Exclude self
+
+            // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
+            Map<UUID, Integer> mutualFriendCounts = getMutualFriendCounts(requestingUserFriendIds, excludedUserIds);
+
+            // Map mutual friends to RecommendedFriendUserDTO
+            recommendedFriends = mutualFriendCounts.entrySet().stream()
+                    .map(entry -> {
+                        UUID mutualFriendId = entry.getKey();
+                        int mutualFriendCount = entry.getValue();
+                        FullUserDTO fullUser = getFullUserById(mutualFriendId);
+
+                        return new RecommendedFriendUserDTO(
+                                fullUser.getId(),
+                                fullUser.getFriends(),
+                                fullUser.getUsername(),
+                                fullUser.getProfilePicture(),
+                                fullUser.getFirstName(),
+                                fullUser.getLastName(),
+                                fullUser.getBio(),
+                                fullUser.getFriendTags(),
+                                fullUser.getEmail(),
+                                mutualFriendCount
+                        );
+                    })
+                    .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::getMutualFriendCount).reversed())
+                    .filter(entry -> entry.getFirstName().equals(searchQuery) ||
+                            entry.getLastName().equals( searchQuery) ||
+                            entry.getUsername().equals(searchQuery))
+                    .collect(Collectors.toList());
+            if (recommendedFriends.size() < 3) {
+                recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
+            }
             // Step 3. List all friends who match based on searchQuery
             friends = getFullFriendUsersByUserId(requestingUserId).stream().filter(user -> Objects.equals(user.getUsername(), searchQuery) || Objects.equals(user.getFirstName(), searchQuery) || Objects.equals(user.getLastName(), searchQuery)).collect(Collectors.toList());
         }
