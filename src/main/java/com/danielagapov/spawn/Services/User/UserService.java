@@ -563,37 +563,40 @@ public class UserService implements IUserService {
 
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
+        try {
 
-        // Step 1. Find all incoming friend Requests
-        List<FullFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId);
-        List<RecommendedFriendUserDTO> recommendedFriends;
-        List<FullFriendUserDTO> friends;
+            // Step 1. Find all incoming friend Requests
+            List<FullFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId);
+            List<RecommendedFriendUserDTO> recommendedFriends;
+            List<FullFriendUserDTO> friends;
 
-        // If searchQuery is empty:
-        if (searchQuery.isEmpty()) {
-            // Step 2. Get recommended friends
-            recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
-            // Step 3. Get all friends
-            friends = getFullFriendUsersByUserId(requestingUserId);
-        } else { // If searchQuery is not empty:
-            // Step 2. List all recommended friends who match based on searchQuery
-            // TODO need to refactor getRecommendedFriendsForUserId() to decouple what its doing so we can filter not just by top 3
-            Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
-
-            // Map mutual friends to RecommendedFriendUserDTO
-            recommendedFriends = getRecommendedMutuals(requestingUserId, excludedUserIds).stream()
-                    .filter(entry -> entry.getFirstName().equals(searchQuery) ||
-                            entry.getLastName().equals( searchQuery) ||
-                            entry.getUsername().equals(searchQuery))
-                    .collect(Collectors.toList());
-            if (recommendedFriends.size() < 3) {
+            // If searchQuery is empty:
+            if (searchQuery.isEmpty()) {
+                // Step 2. Get recommended friends
                 recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
-            }
-            // Step 3. List all friends who match based on searchQuery
-            friends = getFullFriendUsersByUserId(requestingUserId).stream().filter(user -> Objects.equals(user.getUsername(), searchQuery) || Objects.equals(user.getFirstName(), searchQuery) || Objects.equals(user.getLastName(), searchQuery)).collect(Collectors.toList());
-        }
+                // Step 3. Get all friends
+                friends = getFullFriendUsersByUserId(requestingUserId);
+            } else { // If searchQuery is not empty:
+                // Step 2. List all recommended friends who match based on searchQuery
+                Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
 
-        return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
+                // Map mutual friends to RecommendedFriendUserDTO
+                recommendedFriends = getRecommendedMutuals(requestingUserId, excludedUserIds).stream()
+                        .filter(entry -> entry.getFirstName().equals(searchQuery) ||
+                                entry.getLastName().equals(searchQuery) ||
+                                entry.getUsername().equals(searchQuery))
+                        .collect(Collectors.toList());
+                if (recommendedFriends.size() < 3) {
+                    recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
+                }
+                // Step 3. List all friends who match based on searchQuery
+                friends = getFullFriendUsersByUserId(requestingUserId).stream().filter(user -> Objects.equals(user.getUsername(), searchQuery) || Objects.equals(user.getFirstName(), searchQuery) || Objects.equals(user.getLastName(), searchQuery)).collect(Collectors.toList());
+            }
+            return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
     }
 
     @Override
