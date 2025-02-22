@@ -545,6 +545,15 @@ public class UserService implements IUserService {
 
         Set<UUID> userIds = new HashSet<>(users.stream().map(User::getId).toList());
 
+        // Step 1. Find all incoming friend Requests
+        // If searchQuery is empty:
+        // Step 2. Get recommended friends
+        // Step 3. Get all friends
+
+        // If searchQuery is not empty:
+        // Step 2. List all recommended friends who match based on searchQuery
+        // Step 3. List all friends who match based on searchQuery
+
         // TODO convert users to RecommendedFriendUserDTO
         return Triple.of(List.of(), List.of(), List.of());
     }
