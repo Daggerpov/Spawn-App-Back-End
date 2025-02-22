@@ -301,4 +301,17 @@ public class FriendTagService implements IFriendTagService {
                 .map(userDTO -> userService.getFullUserById(requestingUserId))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<FullFriendTagDTO> getTagsNotAddedToFriend(UUID ownerUserId, UUID friendUserId) {
+        // TODO: fill in stub
+        return List.of();
+    }
+
+    @Override
+    public void addFriendToFriendTags(List<UUID> friendTagIds, UUID friendUserId) {
+        for (UUID friendTagId : friendTagIds) {
+            saveUserToFriendTag(friendTagId, friendUserId);
+        }
+    }
 }
