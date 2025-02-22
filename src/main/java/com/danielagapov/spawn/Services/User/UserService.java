@@ -440,16 +440,7 @@ public class UserService implements IUserService {
             excludedUserIds.add(userId); // Exclude self
 
             // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
-            Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
-            for (UUID friendId : requestingUserFriendIds) {
-                List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
-
-                for (UUID friendOfFriendId : friendOfFriendIds) {
-                    if (!excludedUserIds.contains(friendOfFriendId)) {
-                        mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
-                    }
-                }
-            }
+            Map<UUID, Integer> mutualFriendCounts = getMutualFriendCounts(requestingUserFriendIds, excludedUserIds);
 
             // Map mutual friends to RecommendedFriendUserDTO
             List<RecommendedFriendUserDTO> recommendedFriends = mutualFriendCounts.entrySet().stream()
@@ -535,6 +526,20 @@ public class UserService implements IUserService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    private Map<UUID, Integer> getMutualFriendCounts(List<UUID> requestingUserFriendIds, Set<UUID> excludedUserIds) {
+        Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
+        for (UUID friendId : requestingUserFriendIds) {
+            List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
+
+            for (UUID friendOfFriendId : friendOfFriendIds) {
+                if (!excludedUserIds.contains(friendOfFriendId)) {
+                    mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
+                }
+            }
+        }
+        return mutualFriendCounts;
     }
 
     @Override
