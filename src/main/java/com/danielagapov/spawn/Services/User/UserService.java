@@ -538,24 +538,28 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>>> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
-        List<User> users = repository.findByLastName(searchQuery);
-        users.addAll(repository.findByFirstName(searchQuery));
-        users.add(repository.findByUsername(searchQuery));
-
-        Set<UUID> userIds = new HashSet<>(users.stream().map(User::getId).toList());
+    public Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
 
         // Step 1. Find all incoming friend Requests
+        List<FullFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId);
+        List<RecommendedFriendUserDTO> recommendedFriends;
+        List<FullFriendUserDTO> friends;
+
         // If searchQuery is empty:
-        // Step 2. Get recommended friends
-        // Step 3. Get all friends
+        if (searchQuery.isEmpty()) {
+            // Step 2. Get recommended friends
+            recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
+            // Step 3. Get all friends
+            friends = getFullFriendUsersByUserId(requestingUserId);
+        } else { // If searchQuery is not empty:
+            // Step 2. List all recommended friends who match based on searchQuery
+            // TODO need to refactor getRecommendedFriendsForUserId() to decouple what its doing so we can filter not just by top 3
+            recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
+            // Step 3. List all friends who match based on searchQuery
+            friends = getFullFriendUsersByUserId(requestingUserId).stream().filter(user -> Objects.equals(user.getUsername(), searchQuery) || Objects.equals(user.getFirstName(), searchQuery) || Objects.equals(user.getLastName(), searchQuery)).collect(Collectors.toList());
+        }
 
-        // If searchQuery is not empty:
-        // Step 2. List all recommended friends who match based on searchQuery
-        // Step 3. List all friends who match based on searchQuery
-
-        // TODO convert users to RecommendedFriendUserDTO
-        return Triple.of(List.of(), List.of(), List.of());
+        return Triple.of(incomingFriendRequests, recommendedFriends, friends);
     }
 
     @Override

@@ -16,7 +16,4 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     // Exist
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
-    // TODO: replace with more effective search methods
-    List<User> findByFirstName(String firstName);
-    List<User> findByLastName(String lastName);
 }

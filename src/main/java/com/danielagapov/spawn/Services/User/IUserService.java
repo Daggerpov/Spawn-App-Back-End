@@ -61,5 +61,5 @@ public interface IUserService {
     boolean existsByUsername(String username);
 
     // TODO figure out which section this goes in
-    List<Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>>> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
+    Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
 }
