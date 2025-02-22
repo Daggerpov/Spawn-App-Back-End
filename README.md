@@ -15,5 +15,4 @@ Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Dagg
 
 # User DTO Relationships
 
-<img width="436" alt="image" src="https://github.com/user-attachments/assets/c713ef3b-e0c6-4616-bc2b-bb61eb94e4bf" />
-
+<img width="595" alt="image" src="https://github.com/user-attachments/assets/7062dbeb-2452-4b1f-b760-0676c30324d1" />
