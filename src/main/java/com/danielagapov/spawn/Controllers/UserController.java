@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Controllers;
 
-import org.apache.commons.lang3.tuple.Triple;
 import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
@@ -9,6 +8,8 @@ import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Utils.SearchedUserResult;
+import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -162,8 +163,8 @@ public class UserController {
 
     // full path: /api/v1/users/filtered/{requestingUserId}?query=searchQuery
     @GetMapping("filtered/{requestingUserId}")
-    public ResponseEntity<Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>>> getRecommendedFriendsBySearch(@PathVariable UUID requestingUserId, @RequestParam String searchQuery) {
-        return new ResponseEntity<>(HttpStatus.OK);
+    public ResponseEntity<SearchedUserResult> getRecommendedFriendsBySearch(@PathVariable UUID requestingUserId, @RequestParam String searchQuery) {
+        return new ResponseEntity<>(userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery), HttpStatus.OK);
     }
 
     // full path: /api/v1/users/{id}/update-pfp

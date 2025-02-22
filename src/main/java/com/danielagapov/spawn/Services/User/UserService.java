@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.User;
 
-import org.apache.commons.lang3.tuple.Triple;
 import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
@@ -27,6 +26,7 @@ import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
+import com.danielagapov.spawn.Utils.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -538,7 +538,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
+    public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
 
         // Step 1. Find all incoming friend Requests
         List<FullFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId);
@@ -559,7 +559,7 @@ public class UserService implements IUserService {
             friends = getFullFriendUsersByUserId(requestingUserId).stream().filter(user -> Objects.equals(user.getUsername(), searchQuery) || Objects.equals(user.getFirstName(), searchQuery) || Objects.equals(user.getLastName(), searchQuery)).collect(Collectors.toList());
         }
 
-        return Triple.of(incomingFriendRequests, recommendedFriends, friends);
+        return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
     }
 
     @Override
