@@ -1,5 +1,7 @@
 package com.danielagapov.spawn.Services.User;
 
+import org.apache.commons.lang3.tuple.Triple;
+import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.RecommendedFriendUserDTO;
@@ -57,4 +59,7 @@ public interface IUserService {
     boolean existsByEmail(String email);
     FullUserDTO getFullUserByUsername(String username);
     boolean existsByUsername(String username);
+
+    // TODO figure out which section this goes in
+    List<Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>>> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
 }

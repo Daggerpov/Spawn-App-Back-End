@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
+import org.apache.commons.lang3.tuple.Triple;
 import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
@@ -534,6 +535,18 @@ public class UserService implements IUserService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public List<Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>>> getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
+        List<User> users = repository.findByLastName(searchQuery);
+        users.addAll(repository.findByFirstName(searchQuery));
+        users.add(repository.findByUsername(searchQuery));
+
+        Set<UUID> userIds = new HashSet<>(users.stream().map(User::getId).toList());
+
+        // TODO convert users to RecommendedFriendUserDTO
+        return Triple.of(List.of(), List.of(), List.of());
     }
 
     @Override

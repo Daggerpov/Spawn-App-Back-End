@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Controllers;
 
+import org.apache.commons.lang3.tuple.Triple;
+import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
+import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -155,6 +158,12 @@ public class UserController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // full path: /api/v1/users/filtered/{requestingUserId}?query=searchQuery
+    @GetMapping("filtered/{requestingUserId}")
+    public ResponseEntity<Triple<List<FullFriendRequestDTO>, List<RecommendedFriendUserDTO>, List<FullFriendUserDTO>>> getRecommendedFriendsBySearch(@PathVariable UUID requestingUserId, @RequestParam String searchQuery) {
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     // full path: /api/v1/users/{id}/update-pfp
