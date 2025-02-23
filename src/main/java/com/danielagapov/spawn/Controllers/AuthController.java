@@ -1,7 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
+import com.danielagapov.spawn.DTOs.AuthUserDTO;
+import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -31,14 +34,6 @@ public class AuthController {
     private final ILogger logger;
     private final IAuthService authService;
     private final IEmailService emailService;
-
-//    public AuthController(IOAuthService oauthService, IJWTService jwtService, ILogger logger, IAuthService authService) {
-//        this.oauthService = oauthService;
-//        this.jwtService = jwtService;
-//        this.logger = logger;
-//        this.authService = authService;
-//    }
-
 
     /**
      * This method is meant to check whether an externally signed-in user through either Google or Apple
@@ -115,7 +110,7 @@ public class AuthController {
         try {
             logger.log(String.format("Account registration request received: {user: %s}", authUserDTO));
             UserDTO newUserDTO = authService.registerUser(authUserDTO);
-            HttpHeaders headers = makeHeadersForTokens(newUserDTO.username());
+            HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
             logger.log(String.format("User successfully registered: {user: %s}", newUserDTO));
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
@@ -129,11 +124,11 @@ public class AuthController {
 
     // full path: /api/v1/auth/login
     @PostMapping("login")
-    public ResponseEntity<IOnboardedUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+    public ResponseEntity<AbstractUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
             logger.log(String.format("Login request received: {user: %s}", authUserDTO));
             FullUserDTO existingUserDTO = authService.loginUser(authUserDTO);
-            HttpHeaders headers = makeHeadersForTokens(existingUserDTO.username());
+            HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
