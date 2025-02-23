@@ -6,6 +6,7 @@ public enum EntityType {
     Event("Event"),
     FriendTag("Friend Tag"),
     User("User"),
+    ReportedContent("Reported Content"),
 
     // Relationships between entities
     ChatMessageLike("Chat Message Like"),

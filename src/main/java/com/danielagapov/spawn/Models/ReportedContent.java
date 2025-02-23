@@ -1,10 +1,13 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Enums.ReportType;
+import com.danielagapov.spawn.Enums.ResolutionStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -13,6 +16,7 @@ import java.util.UUID;
 
 @Entity
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReportedContent {
@@ -20,9 +24,9 @@ public class ReportedContent {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne()
-    @JoinColumn(nullable = false)
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.SET_NULL)
+    // Even if the reporting user deletes their account, they might have filed a valid report
     private User reporter;
 
     @Column(nullable = false)
@@ -35,9 +39,15 @@ public class ReportedContent {
     private Instant timeReported;
 
     @Column(nullable = false)
-    /* TODO: do we want bool isResolved OR we have resolveType which indicates a decision made about this report
-        resolveType would be an enum that might take on values BAN, SUSPEND, FALSE, WARN, etc.
-     */
-    private boolean isResolved;
+    private ResolutionStatus resolution;
 
+    @Column(nullable = false)
+    private ReportType reportType;
+
+    private String description;
+
+    @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(nullable = false)
+    private User contentOwner; // owner of the account/content that has been reported
 }
