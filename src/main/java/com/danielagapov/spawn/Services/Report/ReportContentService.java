@@ -58,11 +58,6 @@ public class ReportContentService implements IReportContentService {
     }
 
     @Override
-    /*
-     - create reported content
-     - find reporting user
-     - save report
-     */
     public ReportedContentDTO fileReport(ReportedContentDTO reportDTO) {
         ReportedContent report = reportDTO.toEntity();
 
@@ -104,9 +99,9 @@ public class ReportContentService implements IReportContentService {
     }
 
     @Override
-    public List<ReportedContentDTO> getReportsByReportedUserId(UUID reportedUserId) {
+    public List<ReportedContentDTO> getReportsByContentOwnerId(UUID contentOwnerId) {
         try {
-            List<ReportedContent> reports = repository.getAllByContentOwnerId(reportedUserId);
+            List<ReportedContent> reports = repository.getAllByContentOwnerId(contentOwnerId);
             return ReportedContentDTO.fromEntityList(reports);
         } catch (Exception e) {
             logger.log("Unexpected error while getting reports by reported user id: " + e.getMessage());
@@ -147,7 +142,10 @@ public class ReportContentService implements IReportContentService {
 
     /* ------------------------------ HELPERS ------------------------------ */
 
-
+    /**
+     * Given the id of the content and contentType (which is one of a chat message, event, or user account), this method
+     * returns the User entity that owns the content
+     */
     private User findContentOwnerByContentId(UUID contentId, EntityType contentType) {
         return switch (contentType) {
             case User -> userService.getUserEntityById(contentId);
@@ -157,11 +155,19 @@ public class ReportContentService implements IReportContentService {
         };
     }
 
-    private User getEventOwnerByContentId(UUID contentId) {
-        return userService.getUserEntityById(eventService.getEventById(contentId).getCreatorUserId());
+    /**
+     * This is a wrapper method to getting the owner (a user) of an event with the given id.
+     * Made a wrapper method for improved readability in the caller method.
+     */
+    private User getEventOwnerByContentId(UUID eventId) {
+        return userService.getUserEntityById(eventService.getEventById(eventId).getCreatorUserId());
     }
 
-    private User getChatMessageOwnerByContentId(UUID contentId) {
-        return userService.getUserEntityById(chatMessageService.getChatMessageById(contentId).getSenderUserId());
+    /**
+     * This is a wrapper method to getting the owner (a user) of a chat message with the given id.
+     * Made a wrapper method for improved readability in the caller method.
+     */
+    private User getChatMessageOwnerByContentId(UUID chatMessageId) {
+        return userService.getUserEntityById(chatMessageService.getChatMessageById(chatMessageId).getSenderUserId());
     }
 }

@@ -19,6 +19,14 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+/*
+ * This entity represents a report that a user has made, against another user's account or content.
+ * "Content" includes chat message, event, and user account.
+ *
+ * ReportType is used to categorize the report with how the reported content violates a policy (e.g. Bullying, Nudity, etc.)
+ * ResolutionStatus is used to indicate whether the report has been investigated by a Spawn Admin and if so,
+ * what decision was made regarding the report.
+ */
 public class ReportedContent {
     @Id
     @GeneratedValue
@@ -26,7 +34,7 @@ public class ReportedContent {
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.SET_NULL)
-    // Even if the reporting user deletes their account, they might have filed a valid report
+    // Even if the reporting user deletes their account, they might have filed a valid report that should be investigated
     private User reporter;
 
     @Column(nullable = false)

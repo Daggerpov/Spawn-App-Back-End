@@ -35,7 +35,7 @@ public interface IReportContentService {
     /**
      * Gets all reports by reported user id
      */
-    List<ReportedContentDTO> getReportsByReportedUserId(UUID reportedUserId);
+    List<ReportedContentDTO> getReportsByContentOwnerId(UUID contentOwnerId);
 
     /**
      * Deletes report with the given report id

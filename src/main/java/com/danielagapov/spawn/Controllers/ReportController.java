@@ -71,11 +71,11 @@ public class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/reported-users/{reported-user-id}
-    @GetMapping("{reportedUserId}")
-    public ResponseEntity<List<ReportedContentDTO>> getReportsByReportedUser(@PathVariable UUID reportedUserId) {
+    // full path: /api/v1/reports/reported-users/{content-owner-id}
+    @GetMapping("{contentOwnerId}")
+    public ResponseEntity<List<ReportedContentDTO>> getReportsByContentOwner(@PathVariable UUID contentOwnerId) {
         try {
-            List<ReportedContentDTO> reports = reportService.getReportsByReportedUserId(reportedUserId);
+            List<ReportedContentDTO> reports = reportService.getReportsByContentOwnerId(contentOwnerId);
             return ResponseEntity.ok(reports);
         } catch (BaseNotFoundException e) {
             return ResponseEntity.notFound().build();
