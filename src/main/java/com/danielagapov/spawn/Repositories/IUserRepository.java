@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Repositories;
 
 import com.danielagapov.spawn.Models.User;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +28,7 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
      * Used by CleanUnverifiedService to remove expired, unverified users
      */
     @Modifying
+    @Transactional
     @Query(value = "DELETE FROM User WHERE verified = false AND dateCreated <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
     int deleteAllExpiredUnverifiedUsers();
 }
