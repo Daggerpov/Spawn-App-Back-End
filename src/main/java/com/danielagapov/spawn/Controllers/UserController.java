@@ -1,15 +1,13 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
-import com.danielagapov.spawn.DTOs.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
@@ -29,7 +27,7 @@ public class UserController {
 
     // full path: /api/v1/users?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<List<? extends AbstractUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers(), new HashSet<>()), HttpStatus.OK);
@@ -43,7 +41,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<IOnboardedUserDTO> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<AbstractUserDTO> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
@@ -59,7 +57,7 @@ public class UserController {
 
     // full path: /api/v1/users/{id}/friends
     @GetMapping("{id}/friends")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUserFriends(@PathVariable UUID id) {
+    public ResponseEntity<List<? extends AbstractUserDTO>> getUserFriends(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -81,7 +79,7 @@ public class UserController {
 
     // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<List<? extends AbstractUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId), new HashSet<>()), HttpStatus.OK);
@@ -180,26 +178,7 @@ public class UserController {
     }
 
     @Deprecated(since = "For testing purposes")
-    @RequestMapping("test-google")
-    public OAuth2User testGoogle(@AuthenticationPrincipal OAuth2User principal) {
-        return principal;
-    }
-
-    @Deprecated(since = "For testing purposes")
-    @RequestMapping("test-google-2")
-    public String testGoogle2(@AuthenticationPrincipal OAuth2User principal) {
-        return (String) principal.getAttribute("given_name") + principal.getAttribute("family_name")
-                + principal.getAttribute("email") + principal.getAttribute("picture");
-    }
-
-    @Deprecated(since = "For testing purposes")
-    @RequestMapping("test-google-3")
-    public String testGoogle3(@AuthenticationPrincipal OAuth2User principal) {
-        return principal.getAttribute("sub");
-    }
-
-    @Deprecated(since = "For testing purposes")
-    @PostMapping(value = "test-s3")
+    @PostMapping("s3/test-s3")
     public String testPostS3(@RequestBody byte[] file) {
         try {
             return s3Service.putObject(file);

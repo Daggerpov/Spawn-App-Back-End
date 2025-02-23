@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FullFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -76,7 +76,7 @@ class FriendRequestServiceTests {
         FriendRequestDTO savedRequest = friendRequestService.saveFriendRequest(friendRequestDTO);
 
         assertNotNull(savedRequest);
-        assertEquals(friendRequest.getId(), savedRequest.id());
+        assertEquals(friendRequest.getId(), savedRequest.getId());
         verify(repository, times(1)).save(any(FriendRequest.class));
     }
 

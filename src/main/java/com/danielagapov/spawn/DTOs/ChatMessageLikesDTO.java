@@ -1,9 +1,16 @@
 package com.danielagapov.spawn.DTOs;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 import java.util.UUID;
 
-public record ChatMessageLikesDTO (
-        UUID chatMessageId,
-        UUID userId
-) implements Serializable{}
+@AllArgsConstructor
+@Getter
+@Setter
+public class ChatMessageLikesDTO implements Serializable{
+    UUID chatMessageId;
+    UUID userId;
+}

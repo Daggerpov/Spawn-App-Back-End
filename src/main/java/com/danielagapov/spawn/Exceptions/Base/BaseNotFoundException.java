@@ -8,4 +8,7 @@ public class BaseNotFoundException extends RuntimeException {
     public BaseNotFoundException(EntityType et, UUID id) {
         super(et +  " entity not found with ID: " + id);
     }
+    public BaseNotFoundException(EntityType et, String username) {
+        super(et +  " entity not found with username: " + username);
+    }
 }

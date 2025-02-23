@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -59,7 +59,7 @@ public class UserServiceTests {
         List<UserDTO> result = userService.getAllUsers();
 
         assertFalse(result.isEmpty());
-        assertEquals("john_doe", result.get(0).username());
+        assertEquals("john_doe", result.get(0).getUsername());
         verify(userRepository, times(1)).findAll();
     }
 
@@ -73,7 +73,7 @@ public class UserServiceTests {
 
         UserDTO result = userService.getUserById(userId);
 
-        assertEquals("john_doe", result.username());
+        assertEquals("john_doe", result.getUsername());
         verify(userRepository, times(1)).findById(userId);
     }
 
@@ -105,7 +105,7 @@ public class UserServiceTests {
 
         UserDTO result = userService.replaceUser(newUserDTO, userId);
 
-        assertEquals("john_doe_updated", result.username());
+        assertEquals("john_doe_updated", result.getUsername());
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, times(1)).save(any(User.class));
     }
@@ -121,7 +121,7 @@ public class UserServiceTests {
 
         UserDTO result = userService.replaceUser(newUserDTO, userId);
 
-        assertEquals("john_doe", result.username());
+        assertEquals("john_doe", result.getUsername());
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, times(1)).save(any(User.class));
     }

@@ -1,6 +1,12 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -131,8 +137,8 @@ public class EventServiceTests {
         List<EventDTO> result = eventService.getAllEvents();
 
         assertFalse(result.isEmpty());
-        // For EventDTO (record), use title() accessor.
-        assertEquals("Test Event", result.get(0).title());
+        // For EventDTO (record), use getTitle() accessor.
+        assertEquals("Test Event", result.get(0).getTitle());
         verify(eventRepository, times(1)).findAll();
     }
 
@@ -153,7 +159,7 @@ public class EventServiceTests {
 
         EventDTO result = eventService.getEventById(eventId);
 
-        assertEquals("Test Event", result.title());
+        assertEquals("Test Event", result.getTitle());
         verify(eventRepository, times(1)).findById(eventId);
     }
 
@@ -186,7 +192,7 @@ public class EventServiceTests {
                 "email");
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
-        when(userService.getUserEntityById(eventDTO.creatorUserId())).thenReturn(creator);
+        when(userService.getUserEntityById(eventDTO.getCreatorUserId())).thenReturn(creator);
         when(eventRepository.save(any(Event.class))).thenReturn(EventMapper.toEntity(eventDTO, location, creator));
 
         assertDoesNotThrow(() -> eventService.saveEvent(eventDTO));
@@ -265,8 +271,8 @@ public class EventServiceTests {
         UUID eventId = UUID.randomUUID();
         savedEvent.setId(eventId);
         savedEvent.setTitle("Test Event");
-        savedEvent.setStartTime(creationDTO.startTime());
-        savedEvent.setEndTime(creationDTO.endTime());
+        savedEvent.setStartTime(creationDTO.getStartTime());
+        savedEvent.setEndTime(creationDTO.getEndTime());
         savedEvent.setLocation(location);
         savedEvent.setNote("Test note");
         savedEvent.setCreator(creator);
@@ -289,8 +295,8 @@ public class EventServiceTests {
         EventDTO eventDTO = (EventDTO) eventService.createEvent(creationDTO);
 
         assertNotNull(eventDTO);
-        assertEquals("Test Event", eventDTO.title());
-        assertEquals(expectedInvited, new HashSet<>(eventDTO.invitedUserIds()));
+        assertEquals("Test Event", eventDTO.getTitle());
+        assertEquals(expectedInvited, new HashSet<>(eventDTO.getInvitedUserIds()));
 
         ArgumentCaptor<EventUser> captor = ArgumentCaptor.forClass(EventUser.class);
         verify(eventUserRepository, times(expectedInvited.size())).save(captor.capture());
@@ -356,8 +362,8 @@ public class EventServiceTests {
         UUID eventId = UUID.randomUUID();
         savedEvent.setId(eventId);
         savedEvent.setTitle("Merged Invites Event");
-        savedEvent.setStartTime(creationDTO.startTime());
-        savedEvent.setEndTime(creationDTO.endTime());
+        savedEvent.setStartTime(creationDTO.getStartTime());
+        savedEvent.setEndTime(creationDTO.getEndTime());
         savedEvent.setLocation(location);
         savedEvent.setNote("Merged invites test");
         savedEvent.setCreator(creator);
@@ -376,9 +382,9 @@ public class EventServiceTests {
         EventDTO eventDTO = (EventDTO) eventService.createEvent(creationDTO);
 
         assertNotNull(eventDTO);
-        assertEquals("Merged Invites Event", eventDTO.title());
-        assertEquals(1, eventDTO.invitedUserIds().size());
-        assertTrue(eventDTO.invitedUserIds().contains(commonUserId));
+        assertEquals("Merged Invites Event", eventDTO.getTitle());
+        assertEquals(1, eventDTO.getInvitedUserIds().size());
+        assertTrue(eventDTO.getInvitedUserIds().contains(commonUserId));
 
         verify(eventUserRepository, times(1)).save(any(EventUser.class));
     }
@@ -443,8 +449,8 @@ public class EventServiceTests {
         when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
 
         // Stub friend tag lookup
-        com.danielagapov.spawn.DTOs.FriendTagDTO friendTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
-        when(friendTag.colorHexCode()).thenReturn("#123456");
+        FriendTagDTO friendTag = mock(FriendTagDTO.class);
+        when(friendTag.getColorHexCode()).thenReturn("#123456");
         when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, event.getCreator().getId()))
                 .thenReturn(friendTag);
 
@@ -474,9 +480,9 @@ public class EventServiceTests {
     @Test
     void getEventsByFriendTagId_ShouldReturnEvents_WhenFriendsExist() {
         UUID tagId = UUID.randomUUID();
-        com.danielagapov.spawn.DTOs.FriendTagDTO friendTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
+        FriendTagDTO friendTag = mock(FriendTagDTO.class);
         List<UUID> friendIds = List.of(UUID.randomUUID());
-        when(friendTag.friendUserIds()).thenReturn(friendIds);
+        when(friendTag.getFriendUserIds()).thenReturn(friendIds);
         when(friendTagService.getFriendTagById(tagId)).thenReturn(friendTag);
 
         Event event = createDummyEvent(UUID.randomUUID(), "Friend Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
@@ -489,7 +495,7 @@ public class EventServiceTests {
 
         assertNotNull(events);
         assertFalse(events.isEmpty());
-        assertEquals("Friend Event", events.get(0).title());
+        assertEquals("Friend Event", events.get(0).getTitle());
     }
 
     @Test
@@ -505,7 +511,7 @@ public class EventServiceTests {
 
         assertNotNull(events);
         assertFalse(events.isEmpty());
-        assertEquals("Owner Event", events.get(0).title());
+        assertEquals("Owner Event", events.get(0).getTitle());
     }
 
     @Test
@@ -516,12 +522,12 @@ public class EventServiceTests {
 
         EventDTO newEventDTO = dummyEventDTO(eventId, "New Title");
         Location dummyLoc = new Location(UUID.randomUUID(), "New Location", 10.0, 20.0);
-        when(locationService.getLocationEntityById(newEventDTO.locationId())).thenReturn(dummyLoc);
+        when(locationService.getLocationEntityById(newEventDTO.getLocationId())).thenReturn(dummyLoc);
         User dummyCreator = new User();
-        dummyCreator.setId(newEventDTO.creatorUserId());
-        when(userService.getUserEntityById(newEventDTO.creatorUserId())).thenReturn(dummyCreator);
+        dummyCreator.setId(newEventDTO.getCreatorUserId());
+        when(userService.getUserEntityById(newEventDTO.getCreatorUserId())).thenReturn(dummyCreator);
 
-        Event updatedEvent = createDummyEvent(eventId, "New Title", newEventDTO.startTime(), newEventDTO.endTime());
+        Event updatedEvent = createDummyEvent(eventId, "New Title", newEventDTO.getStartTime(), newEventDTO.getEndTime());
         updatedEvent.setLocation(dummyLoc);
         updatedEvent.setCreator(dummyCreator);
         when(eventRepository.save(existingEvent)).thenReturn(updatedEvent);
@@ -529,7 +535,7 @@ public class EventServiceTests {
         EventDTO result = eventService.replaceEvent(newEventDTO, eventId);
 
         assertNotNull(result);
-        assertEquals("New Title", result.title());
+        assertEquals("New Title", result.getTitle());
     }
 
     @Test
@@ -539,12 +545,12 @@ public class EventServiceTests {
 
         EventDTO newEventDTO = dummyEventDTO(eventId, "Created Event");
         Location dummyLoc = new Location(UUID.randomUUID(), "Location", 0.0, 0.0);
-        when(locationService.getLocationEntityById(newEventDTO.locationId())).thenReturn(dummyLoc);
+        when(locationService.getLocationEntityById(newEventDTO.getLocationId())).thenReturn(dummyLoc);
         User dummyCreator = new User();
-        dummyCreator.setId(newEventDTO.creatorUserId());
-        when(userService.getUserEntityById(newEventDTO.creatorUserId())).thenReturn(dummyCreator);
+        dummyCreator.setId(newEventDTO.getCreatorUserId());
+        when(userService.getUserEntityById(newEventDTO.getCreatorUserId())).thenReturn(dummyCreator);
 
-        Event newEvent = createDummyEvent(eventId, "Created Event", newEventDTO.startTime(), newEventDTO.endTime());
+        Event newEvent = createDummyEvent(eventId, "Created Event", newEventDTO.getStartTime(), newEventDTO.getEndTime());
         newEvent.setLocation(dummyLoc);
         newEvent.setCreator(dummyCreator);
         when(eventRepository.save(any(Event.class))).thenReturn(newEvent);
@@ -552,7 +558,7 @@ public class EventServiceTests {
         EventDTO result = eventService.replaceEvent(newEventDTO, eventId);
 
         assertNotNull(result);
-        assertEquals("Created Event", result.title());
+        assertEquals("Created Event", result.getTitle());
     }
 
     @Test
@@ -570,15 +576,15 @@ public class EventServiceTests {
         eu2.setStatus(ParticipationStatus.invited);
 
         when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu1, eu2));
-        com.danielagapov.spawn.DTOs.UserDTO userDTO1 = new com.danielagapov.spawn.DTOs.UserDTO(
+        UserDTO userDTO1 = new UserDTO(
                 user1.getId(), List.of(), "user1", "pic.jpg", "First", "Last", "bio", List.of(), "email1@example.com");
         when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
 
-        List<com.danielagapov.spawn.DTOs.UserDTO> participants = eventService.getParticipatingUsersByEventId(eventId);
+        List<UserDTO> participants = eventService.getParticipatingUsersByEventId(eventId);
 
         assertNotNull(participants);
         assertEquals(1, participants.size());
-        assertEquals(user1.getId(), participants.get(0).id());
+        assertEquals(user1.getId(), participants.get(0).getId());
     }
 
     @Test
@@ -728,8 +734,8 @@ public class EventServiceTests {
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
-        com.danielagapov.spawn.DTOs.FriendTagDTO dummyTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
-        when(dummyTag.colorHexCode()).thenReturn("#DUMMY");
+        FriendTagDTO dummyTag = mock(FriendTagDTO.class);
+        when(dummyTag.getColorHexCode()).thenReturn("#DUMMY");
         when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(dummyTag);
 
         List<FullFeedEventDTO> fullEvents = eventService.getFullEventsInvitedTo(userId);
@@ -750,21 +756,21 @@ public class EventServiceTests {
                 "Note",
                 UUID.randomUUID(),
                 List.of(), List.of(), List.of());
-        when(locationService.getLocationById(eventDTO.locationId()))
+        when(locationService.getLocationById(eventDTO.getLocationId()))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         FullUserDTO fullUser = new FullUserDTO(
-                eventDTO.creatorUserId(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com");
-        when(userService.getFullUserById(eventDTO.creatorUserId())).thenReturn(fullUser);
-        when(userService.getParticipantsByEventId(eventDTO.id())).thenReturn(List.of());
-        when(userService.getInvitedByEventId(eventDTO.id())).thenReturn(List.of());
+                eventDTO.getCreatorUserId(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com");
+        when(userService.getFullUserById(eventDTO.getCreatorUserId())).thenReturn(fullUser);
+        when(userService.getParticipantsByEventId(eventDTO.getId())).thenReturn(List.of());
+        when(userService.getInvitedByEventId(eventDTO.getId())).thenReturn(List.of());
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
-        when(chatMessageService.getFullChatMessagesByEventId(eventDTO.id())).thenReturn(List.of());
+        when(chatMessageService.getFullChatMessagesByEventId(eventDTO.getId())).thenReturn(List.of());
 
         FullFeedEventDTO fullEvent = eventService.getFullEventByEvent(eventDTO, null, new HashSet<>());
 
         assertNotNull(fullEvent);
-        // For EventDTO record, use eventDTO.title() accessor.
-        assertEquals(eventDTO.title(), fullEvent.getTitle());
+        // For EventDTO record, use eventDTO.getTitle() accessor.
+        assertEquals(eventDTO.getTitle(), fullEvent.getTitle());
         assertNull(fullEvent.getEventFriendTagColorHexCodeForRequestingUser());
         assertNull(fullEvent.getParticipationStatus());
     }
@@ -776,8 +782,8 @@ public class EventServiceTests {
                 UUID.randomUUID(), "Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
                 UUID.randomUUID(), "Note", creatorId, List.of(), List.of(), List.of());
         UUID requestingUserId = UUID.randomUUID();
-        com.danielagapov.spawn.DTOs.FriendTagDTO friendTag = mock(com.danielagapov.spawn.DTOs.FriendTagDTO.class);
-        when(friendTag.colorHexCode()).thenReturn("#ABCDEF");
+        FriendTagDTO friendTag = mock(FriendTagDTO.class);
+        when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
         when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, creatorId)).thenReturn(friendTag);
 
         String colorHex = eventService.getFriendTagColorHexCodeForRequestingUser(eventDTO, requestingUserId);
@@ -802,7 +808,8 @@ public class EventServiceTests {
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub participation: existsById true and findByEvent_Id returns a dummy EventUser not matching the requesting user.
-        when(eventUserRepository.existsById(new EventUsersId(eventDTO1.id(), requestingUserId))).thenReturn(true);
+        when(eventUserRepository.existsById(new EventUsersId(eventDTO1.getId(), requestingUserId))).thenReturn(true);
+
         EventUser dummyEU = new EventUser();
         User dummyUser = new User();
         dummyUser.setId(UUID.randomUUID()); // not equal to requestingUserId

@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.FullFriendTagDTO;
-import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.IFriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -27,7 +27,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IFriendTagDTO>> getFriendTags(@RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTags(@RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getAllFriendTags()), HttpStatus.OK);
@@ -41,7 +41,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<IFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<AbstractFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.getFullFriendTagById(id), HttpStatus.OK);
@@ -108,7 +108,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/owner/{ownerId}?full=full
     @GetMapping("owner/{ownerId}")
-    public ResponseEntity<List<? extends IFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(ownerId)), HttpStatus.OK);
@@ -176,6 +176,30 @@ public class FriendTagController {
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("addUserToTags/{ownerUserId}")
+    public ResponseEntity<List<FullFriendTagDTO>> getTagsNotAddedToFriend(@PathVariable UUID ownerUserId, @RequestParam UUID friendUserId) {
+        try {
+            return new ResponseEntity<>(friendTagService.getTagsNotAddedToFriend(ownerUserId, friendUserId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("addUserToTags")
+    public ResponseEntity<Void> addUserToTags(@RequestBody List<UUID> friendTagIds, @RequestParam UUID friendUserId) {
+        try {
+            friendTagService.addFriendToFriendTags(friendTagIds, friendUserId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
