@@ -28,5 +28,5 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
      */
     @Modifying
     @Query(value = "DELETE FROM User WHERE verified = false AND dateCreated <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
-    boolean deleteAllExpiredUnverifiedUsers();
+    int deleteAllExpiredUnverifiedUsers();
 }

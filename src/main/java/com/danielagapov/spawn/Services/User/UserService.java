@@ -306,7 +306,7 @@ public class UserService implements IUserService {
 
     @Override
     public UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO userDTO, byte[] profilePicture) {
-        if (userDTO.profilePicture() == null) {
+        if (userDTO.getProfilePicture() == null) {
             logger.log("Profile picture is null, user either chose their profile picture or has default");
             userDTO = s3Service.putProfilePictureWithUser(profilePicture, userDTO);
         }

@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.CleanUnverified;
 
-import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,12 +23,8 @@ public class CleanUnverifiedService {
     public void cleanUnverifiedExpiredUsers() {
         logger.log("Cleaning unverified, expired users");
         try {
-            boolean isDeleted = userRepository.deleteAllExpiredUnverifiedUsers();
-            if (isDeleted) {
-                logger.log("Successfully deleted expired, unverified users");
-            } else {
-                throw new BaseDeleteException("Failed to delete expired, unverified users");
-            }
+            int numDeleted = userRepository.deleteAllExpiredUnverifiedUsers();
+            logger.log(String.format("Successfully deleted %s users from database", numDeleted));
         } catch (Exception e) {
             logger.log("Unexpected error while deleting expired, unverified users: " + e.getMessage());
         }
