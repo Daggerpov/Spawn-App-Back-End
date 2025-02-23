@@ -487,8 +487,10 @@ public class UserService implements IUserService {
                     List<FullFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriendId);
 
                     for (FullFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                        if ((friendRequestDTO.getSenderUser().getId().equals(userId) && friendRequestDTO.getReceiverUser().getId().equals(potentialFriendId)) ||
-                                (friendRequestDTO.getSenderUser().getId().equals(potentialFriendId) && friendRequestDTO.getReceiverUser().getId().equals(userId))) {
+                        // TODO: when 'regular' DTOs are removed it will be cleaner to compare using Object.equals() rather than getting Id then comparing
+                        boolean potentialFriendSentOrReceived = (friendRequestDTO.getSenderUser().getId().equals(userId) && friendRequestDTO.getReceiverUser().getId().equals(potentialFriendId)) ||
+                                (friendRequestDTO.getSenderUser().getId().equals(potentialFriendId) && friendRequestDTO.getReceiverUser().getId().equals(userId));
+                        if (potentialFriendSentOrReceived) {
                             hasAlreadySentFriendRequest = true;
                             break;
                         }
