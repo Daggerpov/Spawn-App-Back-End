@@ -579,7 +579,14 @@ public class UserService implements IUserService {
         try {
 
             // Step 1. Find all incoming friend Requests
-            List<FullFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId);
+            List<FullFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId).stream()
+                    .filter(fr -> {
+                        FullUserDTO entry = fr.getSenderUser();
+                        return entry.getFirstName().equals(searchQuery) ||
+                                entry.getLastName().equals(searchQuery) ||
+                                entry.getUsername().equals(searchQuery);
+                    })
+                    .toList();
             List<RecommendedFriendUserDTO> recommendedFriends;
             List<FullFriendUserDTO> friends;
 
