@@ -266,4 +266,8 @@ public class UserServiceTests {
         assertTrue(result.isEmpty());
         verify(userRepository, times(1)).findAll();
     }
+
+    @Test
+    void getRecommendedFriendsBySearch_ShouldWorkForSimpleCase() {
+    }
 }
