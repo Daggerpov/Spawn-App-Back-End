@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -98,6 +99,7 @@ public class AuthService implements IAuthService {
         user.setEmail(authUserDTO.getEmail());
         user.setPassword(passwordEncoder.encode(authUserDTO.getPassword()));
         user.setVerified(false);
+        user.setDateCreated(new Date());
 
         user = userService.saveEntity(user);
         return UserMapper.toDTO(user, List.of(), List.of());
