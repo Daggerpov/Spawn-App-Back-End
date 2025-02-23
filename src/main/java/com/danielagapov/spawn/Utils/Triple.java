@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 // Represents a tuple of 3 items
-// TODO: overriding equals and hashcode might be useful
 public class Triple<X, Y, Z> {
     public X x;
     public Y y;
@@ -19,5 +18,16 @@ public class Triple<X, Y, Z> {
     }
     public Z third() {
         return this.z;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null)
+            return false;
+        if (!(obj instanceof Triple other))
+            return false;
+        return other.first().equals(this.first()) && other.second().equals(this.second()) && other.third().equals(this.third());
     }
 }

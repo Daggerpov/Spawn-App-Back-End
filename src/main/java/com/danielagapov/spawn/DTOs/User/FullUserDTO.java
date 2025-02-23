@@ -21,4 +21,19 @@ public class FullUserDTO extends AbstractUserDTO implements Serializable {
         this.friendTags = friendTags;
         this.profilePicture = picture;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null)
+            return false;
+        if (!(obj instanceof FullUserDTO other))
+            return false;
+        boolean fullUserTraitsEqual = other.getFriends().equals(this.friends) &&
+                                        other.getFriendTags().equals(this.friendTags) &&
+                                        other.getProfilePicture().equals(this.profilePicture);
+        boolean superEquals = super.equals(other);
+        return fullUserTraitsEqual && superEquals;
+    }
 }
