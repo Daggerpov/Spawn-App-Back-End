@@ -415,16 +415,14 @@ public class UserService implements IUserService {
     @Override
     public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
         try {
-            Set<UUID> excludedUserIds = getExcludedUserIds(userId);
-
-            List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId, excludedUserIds).stream().limit(3).toList();
+            List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId).stream().limit(3).toList();
 
             if (recommendedFriends.size() >= 3) {
                 return recommendedFriends;
             }
 
             // Otherwise fill with random friends
-            recommendedFriends = getRandomNRecommendations(3 - recommendedFriends.size(), excludedUserIds, userId);
+            recommendedFriends = getRandomNRecommendations(3 - recommendedFriends.size(), userId);
             return recommendedFriends;
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -432,9 +430,11 @@ public class UserService implements IUserService {
         }
     }
 
-    private List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId, Set<UUID> excludedUserIds) {
+    private List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId) {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
+
+        Set<UUID> excludedUserIds = getExcludedUserIds(userId);
 
         // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
         Map<UUID, Integer> mutualFriendCounts = getMutualFriendCounts(requestingUserFriendIds, excludedUserIds);
@@ -464,9 +464,10 @@ public class UserService implements IUserService {
     }
 
     // Gets random N users for userId to be friends, if n > number of possible recommended friends, return all possible recommended friends
-    private List<RecommendedFriendUserDTO> getRandomNRecommendations(int n, Set<UUID> excludedUserIds, UUID userId) {
+    private List<RecommendedFriendUserDTO> getRandomNRecommendations(int n, UUID userId) {
         List<RecommendedFriendUserDTO> recommendedFriends = List.of();
         List<UserDTO> allUsers = getAllUsers();
+        Set<UUID> excludedUserIds = getExcludedUserIds(userId);
 
         for (UserDTO potentialFriend : allUsers) {
             if (n < 0) break;
@@ -581,7 +582,7 @@ public class UserService implements IUserService {
                 Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
 
                 // Map mutual friends to RecommendedFriendUserDTO
-                recommendedFriends = getRecommendedMutuals(requestingUserId, excludedUserIds).stream()
+                recommendedFriends = getRecommendedMutuals(requestingUserId).stream()
                         .filter(entry -> entry.getFirstName().equals(searchQuery) ||
                                 entry.getLastName().equals(searchQuery) ||
                                 entry.getUsername().equals(searchQuery))
