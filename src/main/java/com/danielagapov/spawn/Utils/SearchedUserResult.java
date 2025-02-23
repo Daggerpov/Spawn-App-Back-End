@@ -11,4 +11,9 @@ public class SearchedUserResult extends Triple<List<FullFriendRequestDTO>, List<
     public SearchedUserResult(List<FullFriendRequestDTO> friendRequestDTOS, List<RecommendedFriendUserDTO> recommendedFriendUserDTOS, List<FullFriendUserDTO> fullFriendUserDTOS) {
         super(friendRequestDTOS, recommendedFriendUserDTOS, fullFriendUserDTOS);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
 }

@@ -602,12 +602,12 @@ public class UserService implements IUserService {
                         .collect(Collectors.toList());
                 if (recommendedFriends.size() < limit) {
                     // TODO: this operation is rather expensive
-                    recommendedFriends = getRecommendedFriendsForUserId(requestingUserId, Long.MAX_VALUE).stream()
+                    recommendedFriends.addAll(getRecommendedFriendsForUserId(requestingUserId, Long.MAX_VALUE).stream()
                             .filter(entry -> entry.getFirstName().equals(searchQuery) ||
                                     entry.getLastName().equals(searchQuery) ||
                                     entry.getUsername().equals(searchQuery))
                             .limit(limit - recommendedFriends.size())
-                            .toList();
+                            .toList());
                 }
                 // Step 3. List all friends who match based on searchQuery
                 friends = getFullFriendUsersByUserId(requestingUserId).stream().filter(user -> Objects.equals(user.getUsername(), searchQuery) || Objects.equals(user.getFirstName(), searchQuery) || Objects.equals(user.getLastName(), searchQuery)).collect(Collectors.toList());

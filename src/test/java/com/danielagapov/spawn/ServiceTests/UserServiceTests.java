@@ -284,6 +284,7 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(spyUserService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
         when(spyUserService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
-        assertEquals(spyUserService.getRecommendedFriendsBySearch(user1Id, "person"), new SearchedUserResult(List.of(), List.of(user3Full), List.of()));
+        SearchedUserResult res = spyUserService.getRecommendedFriendsBySearch(user1Id, "person");
+        assertEquals(new SearchedUserResult(List.of(), List.of(user3Full), List.of()), res);
     }
 }
