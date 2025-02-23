@@ -589,8 +589,6 @@ public class UserService implements IUserService {
                 friends = getFullFriendUsersByUserId(requestingUserId);
             } else { // If searchQuery is not empty:
                 // Step 2. List all recommended friends who match based on searchQuery
-                Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
-
                 // Map mutual friends to RecommendedFriendUserDTO
                 recommendedFriends = getRecommendedMutuals(requestingUserId).stream()
                         .filter(entry -> entry.getFirstName().equals(searchQuery) ||
