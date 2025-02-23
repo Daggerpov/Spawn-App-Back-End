@@ -276,7 +276,10 @@ public class UserServiceTests {
     void getRecommendedFriendsBySearch_ShouldWorkForSimpleCase() {
         // TODO fill in user info
         UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
         FullUserDTO user1Full = new FullUserDTO(user1Id, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        FullUserDTO user2Full = new FullUserDTO(user2Id, List.of(), "jane_doe", "profile.jpg", "Jane", "Doe", "A bio", List.of(), "jane.doe@example.com");
+        user1Full.setFriends(List.of(user2Full));
         // TODO fill in mocks
         when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(userService.getRecommendedFriendsForUserId(user1Id)).thenReturn(List.of());

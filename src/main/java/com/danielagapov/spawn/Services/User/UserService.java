@@ -436,7 +436,7 @@ public class UserService implements IUserService {
         return getRecommendedFriendsForUserId(userId, recommendedFriendsLimit);
     }
 
-    private List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId) {
+    public List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId) {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
 
@@ -470,7 +470,7 @@ public class UserService implements IUserService {
     }
 
     // Gets random N users for userId to be friends, if n > number of possible recommended friends, return all possible recommended friends
-    private List<RecommendedFriendUserDTO> getRandomNRecommendations(int n, UUID userId) {
+    public List<RecommendedFriendUserDTO> getRandomNRecommendations(int n, UUID userId) {
         List<RecommendedFriendUserDTO> recommendedFriends = List.of();
         List<UserDTO> allUsers = getAllUsers();
         Set<UUID> excludedUserIds = getExcludedUserIds(userId);
@@ -527,7 +527,7 @@ public class UserService implements IUserService {
         return recommendedFriends;
     }
 
-    private Map<UUID, Integer> getMutualFriendCounts(List<UUID> requestingUserFriendIds, Set<UUID> excludedUserIds) {
+    public Map<UUID, Integer> getMutualFriendCounts(List<UUID> requestingUserFriendIds, Set<UUID> excludedUserIds) {
         Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
         for (UUID friendId : requestingUserFriendIds) {
             List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
@@ -542,7 +542,7 @@ public class UserService implements IUserService {
     }
 
     // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
-    private Set<UUID> getExcludedUserIds (UUID userId) {
+    public Set<UUID> getExcludedUserIds (UUID userId) {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
 
@@ -574,7 +574,6 @@ public class UserService implements IUserService {
 
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery, int limit) {
         try {
-
             // Step 1. Find all incoming friend Requests
             List<FullFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(requestingUserId).stream()
                     .filter(fr -> {
