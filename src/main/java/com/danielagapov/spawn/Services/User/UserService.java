@@ -558,13 +558,10 @@ public class UserService implements IUserService {
                 .map(request -> request.getSenderUser().getId())
                 .toList();
 
-        List<UUID> existingFriendUserIds = getFriendUserIdsByUserId(userId);
-
         // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
         Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
         excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
         excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
-        excludedUserIds.addAll(existingFriendUserIds);
         excludedUserIds.add(userId); // Exclude self
 
         return excludedUserIds;

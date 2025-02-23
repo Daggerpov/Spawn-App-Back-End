@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -10,6 +11,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,9 @@ public class UserServiceTests {
 
     @Mock
     private IUserRepository userRepository;
+
+    @Mock
+    private IFriendRequestService friendRequestService;
 
     @Mock
     private IUserFriendTagRepository userFriendTagRepository;
@@ -269,5 +274,16 @@ public class UserServiceTests {
 
     @Test
     void getRecommendedFriendsBySearch_ShouldWorkForSimpleCase() {
+        // TODO fill in user info
+        UUID user1Id = UUID.randomUUID();
+        FullUserDTO user1Full = new FullUserDTO(user1Id, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        // TODO fill in mocks
+        when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(userService.getRecommendedFriendsForUserId(user1Id)).thenReturn(List.of());
+        when(userService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
+        when(userService.getFullUserById(user1Id)).thenReturn(user1Full);
+        when(userService.getFriendUserIdsByUserId(user1Id)).thenReturn(List.of());
+        when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
     }
 }
