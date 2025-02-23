@@ -75,7 +75,7 @@ public class LocationServiceTests {
 
         // Assert
         assertNotNull(result);
-        assertEquals(locationId, result.id());
+        assertEquals(locationId, result.getId());
         verify(locationRepository, times(1)).findById(locationId);
     }
 

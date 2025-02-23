@@ -6,8 +6,14 @@ That way, you can separate the actual models (or entities) from what you send ar
 
 An example:
 
-`
-public record UserDTO (UUID id, String name){}
-`
-
-Using a record, because class functionality isn't needed. Therefore, it's more concise and readable.
+```
+public class UserDTO {
+    private UUID id,
+    private String name,
+} implements Serializable
+```
+`Serializable` means it can be sent via. JSON through network requests. Per Oracle docs:
+"
+Classes that do not implement this interface will not 
+have any of their state serialized or deserialized
+."

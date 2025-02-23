@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -75,7 +75,7 @@ public class FriendTagServiceTests {
 
         FriendTagDTO result = friendTagService.getFriendTagById(friendTagId);
 
-        assertEquals("Test Tag", result.displayName());
+        assertEquals("Test Tag", result.getDisplayName());
         verify(friendTagRepository, times(1)).findById(friendTagId);
     }
 
@@ -130,7 +130,7 @@ public class FriendTagServiceTests {
 
         FriendTagDTO result = friendTagService.replaceFriendTag(newFriendTagDTO, friendTagId);
 
-        assertEquals("Updated Tag", result.displayName());
+        assertEquals("Updated Tag", result.getDisplayName());
         verify(friendTagRepository, times(1)).findById(friendTagId);
         verify(friendTagRepository, times(1)).save(any(FriendTag.class));
     }
@@ -147,7 +147,7 @@ public class FriendTagServiceTests {
 
         FriendTagDTO result = friendTagService.replaceFriendTag(newFriendTagDTO, friendTagId);
 
-        assertEquals("Test Tag", result.displayName());
+        assertEquals("Test Tag", result.getDisplayName());
         verify(friendTagRepository, times(1)).findById(friendTagId);
         verify(friendTagRepository, times(1)).save(any(FriendTag.class));
     }

@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 
 import java.util.List;
@@ -23,10 +23,10 @@ public class FriendTagMapper {
 
     public static FriendTag toEntity(FriendTagDTO dto) {
         return new FriendTag(
-                dto.id(),
-                dto.displayName(),
-                dto.colorHexCode(),
-                dto.ownerUserId(),
+                dto.getId(),
+                dto.getDisplayName(),
+                dto.getColorHexCode(),
+                dto.getOwnerUserId(),
                 dto.isEveryone()
         );
     }

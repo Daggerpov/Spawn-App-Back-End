@@ -1,8 +1,9 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.FullUserDTO;
-import com.danielagapov.spawn.DTOs.IOnboardedUserDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -30,16 +31,33 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
+    public FullUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
+        UserDTO newUser = new UserDTO(
+                userCreationDTO.getId(),
+                null,
+                userCreationDTO.getUsername(),
+                null, // going to set within `makeUser()`
+                userCreationDTO.getFirstName(),
+                userCreationDTO.getLastName(),
+                userCreationDTO.getBio(),
+                null,
+                userCreationDTO.getEmail()
+        );
+
+        return makeUser(newUser, externalUserId, userCreationDTO.getProfilePictureData(), provider);
+    }
+
+    @Override
     public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
             // TODO: temporary solution
             if (mappingExistsByExternalId(externalUserId)) {
-                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.email(), externalUserId));
-                return userService.getFullUserByEmail(userDTO.email());
+                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
+                return userService.getFullUserByEmail(userDTO.getEmail());
             }
-            if (userDTO.email() != null && userService.existsByEmail(userDTO.email())) {
-                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.email(), userDTO.email()));
-                return userService.getFullUserByEmail(userDTO.email());
+            if (userDTO.getEmail() != null && userService.existsByEmail(userDTO.getEmail())) {
+                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
+                return userService.getFullUserByEmail(userDTO.getEmail());
             }
 
             // user dto -> entity & save user
@@ -103,6 +121,7 @@ public class OAuthService implements IOAuthService {
         return null;
     }
 
+
     private boolean mappingExistsByExternalId(String externalUserId) {
         return externalIdMapRepository.existsById(externalUserId);
     }
@@ -119,6 +138,7 @@ public class OAuthService implements IOAuthService {
         }
     }
 
+
     private FullUserDTO getFullUserDTO(UUID externalUserId) {
         try {
             return userService.getFullUserById(externalUserId);
@@ -134,7 +154,7 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private void createAndSaveMapping(String externalUserId, IOnboardedUserDTO userDTO, OAuthProvider provider) {
+    private void createAndSaveMapping(String externalUserId, AbstractUserDTO userDTO, OAuthProvider provider) {
         try {
             User user;
             if (userDTO instanceof FullUserDTO) {

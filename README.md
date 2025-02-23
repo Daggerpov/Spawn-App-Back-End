@@ -12,3 +12,7 @@ Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Dagg
 # Entity Relationship Diagram
 
 ![entity-relationship-diagram-Nov-20-v4-location-db-table](entity-relationship-diagram.png)
+
+# User DTO Relationships
+
+<img width="595" alt="image" src="https://github.com/user-attachments/assets/7062dbeb-2452-4b1f-b760-0676c30324d1" />

@@ -1,6 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -27,7 +31,7 @@ public class EventController {
 
     // full path: /api/v1/events?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IEventDTO>> getEvents(@RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractEventDTO>> getEvents(@RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getAllFullEvents(), HttpStatus.OK);
@@ -41,7 +45,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}?full=full&requestingUserId=requestingUserId
     @GetMapping("{id}")
-    public ResponseEntity<IEventDTO> getEventById(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full, @RequestParam(required=false) UUID requestingUserId) {
+    public ResponseEntity<AbstractEventDTO> getEventById(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full, @RequestParam(required=false) UUID requestingUserId) {
         try {
             if (full && requestingUserId != null) {
                 return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
@@ -57,7 +61,7 @@ public class EventController {
 
     // full path: /api/v1/events/user/{creatorUserId}?full=full
     @GetMapping("user/{creatorUserId}")
-    public ResponseEntity<List<? extends IEventDTO>> getEventsCreatedByUserId(@PathVariable UUID creatorUserId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractEventDTO>> getEventsCreatedByUserId(@PathVariable UUID creatorUserId, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.convertEventsToFullFeedSelfOwnedEvents(eventService.getEventsByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
@@ -90,9 +94,9 @@ public class EventController {
 
     // full path: /api/v1/events
     @PostMapping
-    public ResponseEntity<IEventDTO> createEvent(@RequestBody EventCreationDTO eventCreationDTO) {
+    public ResponseEntity<AbstractEventDTO> createEvent(@RequestBody EventCreationDTO eventCreationDTO) {
         try {
-            IEventDTO createdEvent = eventService.createEvent(eventCreationDTO);
+            AbstractEventDTO createdEvent = eventService.createEvent(eventCreationDTO);
             return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -130,7 +134,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
-    public ResponseEntity<List<? extends IOnboardedUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(eventService.getParticipatingUsersByEventId(id), new HashSet<>()), HttpStatus.OK);
@@ -192,9 +196,9 @@ public class EventController {
 
     // full path: /api/v1/events/invitedEvents/{userId}?full=full
     @GetMapping("invitedEvents/{userId}")
-    // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
+    // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends IEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractEventDTO>>getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
@@ -210,7 +214,7 @@ public class EventController {
     // this method will return the events created by a given user (like in `getEventsCreatedByUserId()`),
     // in the universal accent color, followed by feed events (like in `getEventsInvitedTo()`
     @GetMapping("feedEvents/{requestingUserId}")
-    // need this `? extends IEventDTO` instead of simply `IEventDTO`, because of this error:
+    // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
     public ResponseEntity<List<FullFeedEventDTO>>getFeedEvents(@PathVariable UUID requestingUserId) {
         try {

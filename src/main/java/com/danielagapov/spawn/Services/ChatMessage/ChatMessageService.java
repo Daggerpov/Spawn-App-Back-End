@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
-import com.danielagapov.spawn.DTOs.ChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.FullEventChatMessageDTO;
-import com.danielagapov.spawn.DTOs.UserDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -119,10 +119,10 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
-            User userSender = userRepository.findById(chatMessageDTO.senderUserId())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.senderUserId()));
-            Event event = eventRepository.findById(chatMessageDTO.eventId())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.eventId()));
+            User userSender = userRepository.findById(chatMessageDTO.getSenderUserId())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.getSenderUserId()));
+            Event event = eventRepository.findById(chatMessageDTO.getEventId())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.getEventId()));
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, event);
 
@@ -258,12 +258,12 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public FullEventChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage) {
         return new FullEventChatMessageDTO(
-                chatMessage.id(),
-                chatMessage.content(),
-                chatMessage.timestamp(),
-                userService.getFullUserById(chatMessage.senderUserId()),
-                chatMessage.eventId(),
-                userService.convertUsersToFullUsers(getChatMessageLikes(chatMessage.id()), new HashSet<>())
+                chatMessage.getId(),
+                chatMessage.getContent(),
+                chatMessage.getTimestamp(),
+                userService.getFullUserById(chatMessage.getSenderUserId()),
+                chatMessage.getEventId(),
+                userService.convertUsersToFullUsers(getChatMessageLikes(chatMessage.getId()), new HashSet<>())
         );
     }
 

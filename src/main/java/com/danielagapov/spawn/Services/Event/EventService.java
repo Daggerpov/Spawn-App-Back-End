@@ -1,6 +1,13 @@
 package com.danielagapov.spawn.Services.Event;
 
 import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -106,7 +113,7 @@ public class EventService implements IEventService {
         try {
             // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
             FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
-            List<UUID> friendIds = friendTag.friendUserIds();
+            List<UUID> friendIds = friendTag.getFriendUserIds();
 
             // Step 2: Retrieve events created by any of the friends
             // Step 3: Filter events based on whether their owner is in the list of friend
@@ -130,23 +137,23 @@ public class EventService implements IEventService {
             throw e; // Rethrow if it's a custom not-found exception
         } catch (Exception e) {
             logger.log(e.getMessage());
-            throw new RuntimeException("Unexpected error", e);
+            throw e;
         }
     }
 
     @Override
-    public IEventDTO saveEvent(IEventDTO event) {
+    public AbstractEventDTO saveEvent(AbstractEventDTO event) {
         try {
             Event eventEntity;
 
             if (event instanceof FullFeedEventDTO fullFeedEventDTO) {
                 eventEntity = EventMapper.convertFullFeedEventDTOToEventEntity(fullFeedEventDTO);
             } else if (event instanceof EventDTO eventDTO) {
-                Location location = locationRepository.findById(eventDTO.locationId()).orElse(null);
+                Location location = locationRepository.findById(eventDTO.getLocationId()).orElse(null);
 
                 // Map EventDTO to Event entity with the resolved Location
                 eventEntity = EventMapper.toEntity(eventDTO, location,
-                        userService.getUserEntityById(eventDTO.creatorUserId()));
+                        userService.getUserEntityById(eventDTO.getCreatorUserId()));
             } else {
                 throw new IllegalArgumentException("Unsupported event type");
             }
@@ -176,27 +183,27 @@ public class EventService implements IEventService {
     }
 
     @Override
-    public IEventDTO createEvent(EventCreationDTO eventCreationDTO) {
+    public AbstractEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
+            Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.getLocation()));
+            logger.log("Location saved successfully with id: " + location.getId());
 
-            Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.location()));
-
-            User creator = userRepository.findById(eventCreationDTO.creatorUserId())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.creatorUserId()));
+            User creator = userRepository.findById(eventCreationDTO.getCreatorUserId())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.getCreatorUserId()));
 
             Event event = EventMapper.fromCreationDTO(eventCreationDTO, location, creator);
 
             event = repository.save(event);
 
             Set<UUID> allInvitedUserIds = new HashSet<>();
-            if (eventCreationDTO.invitedFriendTagIds() != null) {
-                for (UUID friendTagId : eventCreationDTO.invitedFriendTagIds()) {
+            if (eventCreationDTO.getInvitedFriendTagIds() != null) {
+                for (UUID friendTagId : eventCreationDTO.getInvitedFriendTagIds()) {
                     List<UUID> friendIdsForTag = userService.getFriendUserIdsByFriendTagId(friendTagId);
                     allInvitedUserIds.addAll(friendIdsForTag);
                 }
             }
-            if (eventCreationDTO.invitedFriendUserIds() != null) {
-                allInvitedUserIds.addAll(eventCreationDTO.invitedFriendUserIds());
+            if (eventCreationDTO.getInvitedFriendUserIds() != null) {
+                allInvitedUserIds.addAll(eventCreationDTO.getInvitedFriendUserIds());
             }
 
             for (UUID userId : allInvitedUserIds) {
@@ -250,13 +257,13 @@ public class EventService implements IEventService {
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
         return repository.findById(id).map(event -> {
             // Update basic event details
-            event.setTitle(newEvent.title());
-            event.setNote(newEvent.note());
-            event.setEndTime(newEvent.endTime());
-            event.setStartTime(newEvent.startTime());
+            event.setTitle(newEvent.getTitle());
+            event.setNote(newEvent.getNote());
+            event.setEndTime(newEvent.getEndTime());
+            event.setStartTime(newEvent.getStartTime());
 
             // Fetch the location entity by locationId from DTO
-            event.setLocation(locationService.getLocationEntityById(newEvent.locationId()));
+            event.setLocation(locationService.getLocationEntityById(newEvent.getLocationId()));
 
             // Save updated event
             repository.save(event);
@@ -264,8 +271,8 @@ public class EventService implements IEventService {
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
-            Location location = locationService.getLocationEntityById(newEvent.locationId());
-            User creator = userService.getUserEntityById(newEvent.creatorUserId());
+            Location location = locationService.getLocationEntityById(newEvent.getLocationId());
+            User creator = userService.getUserEntityById(newEvent.getCreatorUserId());
 
             // Convert DTO to entity
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
@@ -433,14 +440,9 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
         try {
             // Retrieve events created by the user.
-            List<FullFeedEventDTO> eventsCreated = new ArrayList<>(
-                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId)
-            );
-
-            // Retrieve events where the user is invited.
-            List<FullFeedEventDTO> eventsInvitedTo = new ArrayList<>(
-                    getFullEventsInvitedTo(requestingUserId)
-            );
+            List<FullFeedEventDTO> eventsCreated =
+                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+            List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
             // Remove expired events
             removeExpiredEvents(eventsCreated);
@@ -483,7 +485,7 @@ public class EventService implements IEventService {
     @Override
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
         try {
-            UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).ownerUserId();
+            UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).getOwnerUserId();
             List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
             List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
 
@@ -508,31 +510,31 @@ public class EventService implements IEventService {
     @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId, Set<UUID> visitedEvents) {
         try {
-            if (visitedEvents.contains(event.id())) {
+            if (visitedEvents.contains(event.getId())) {
                 return null;
             }
-            visitedEvents.add(event.id());
+            visitedEvents.add(event.getId());
 
             // Safely fetch location and creator
-            LocationDTO location = event.locationId() != null
-                    ? locationService.getLocationById(event.locationId())
+            LocationDTO location = event.getLocationId() != null
+                    ? locationService.getLocationById(event.getLocationId())
                     : null;
 
-            FullUserDTO creator = userService.getFullUserById(event.creatorUserId());
+            FullUserDTO creator = userService.getFullUserById(event.getCreatorUserId());
 
             return new FullFeedEventDTO(
-                    event.id(),
-                    event.title(),
-                    event.startTime(),
-                    event.endTime(),
+                    event.getId(),
+                    event.getTitle(),
+                    event.getStartTime(),
+                    event.getEndTime(),
                     location,
-                    event.note(),
+                    event.getNote(),
                     creator,
-                    userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.id()), new HashSet<>()),
-                    userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.id()), new HashSet<>()),
-                    chatMessageService.getFullChatMessagesByEventId(event.id()),
+                    userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.getId()), new HashSet<>()),
+                    userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.getId()), new HashSet<>()),
+                    chatMessageService.getFullChatMessagesByEventId(event.getId()),
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
-                    requestingUserId != null ? getParticipationStatus(event.id(), requestingUserId) : null
+                    requestingUserId != null ? getParticipationStatus(event.getId(), requestingUserId) : null
             );
         } catch (BaseNotFoundException e) {
             return null;
@@ -545,7 +547,7 @@ public class EventService implements IEventService {
 
         // use creator to get the friend tag that relates the requesting user to see
         // which friend tag they've placed them in
-        FriendTagDTO pertainingFriendTag = friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.creatorUserId());
+        FriendTagDTO pertainingFriendTag = friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.getCreatorUserId());
 
         // -> for now, we handle tie-breaks (user has same friend within two friend tags) in whichever way (just choose one)
         if (pertainingFriendTag == null) {
@@ -553,7 +555,7 @@ public class EventService implements IEventService {
         }
         // using that friend tag, grab its colorHexCode property to return from this method
 
-        return pertainingFriendTag.colorHexCode();
+        return pertainingFriendTag.getColorHexCode();
     }
 
     @Override
@@ -574,18 +576,18 @@ public class EventService implements IEventService {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
         for (EventDTO eventDTO : events) {
-            logger.log("Processing event: " + eventDTO.id());
+            logger.log("Processing event: " + eventDTO.getId());
 
             FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>());
 
             if (fullFeedEvent == null) {
-                logger.log("Skipping event " + eventDTO.id() + " as conversion returned null.");
+                logger.log("Skipping event " + eventDTO.getId() + " as conversion returned null.");
                 continue;
             }
 
             // Apply universal accent color
             fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D");
-            logger.log("Applied universal accent color to event: " + eventDTO.id());
+            logger.log("Applied universal accent color to event: " + eventDTO.getId());
 
             fullEvents.add(fullFeedEvent);
         }

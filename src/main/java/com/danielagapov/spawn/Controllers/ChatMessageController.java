@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.ChatMessage.AbstractChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
@@ -24,7 +27,7 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages?full=full
     @GetMapping
-    public ResponseEntity<List<? extends IChatMessageDTO>> getChatMessages(@RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractChatMessageDTO>> getChatMessages(@RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageService.getAllChatMessages()), HttpStatus.OK);
@@ -38,7 +41,7 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages/{id}?full=full
     @GetMapping("/{id}")
-    public ResponseEntity<IChatMessageDTO> getChatMessage(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<AbstractChatMessageDTO> getChatMessage(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(chatMessageService.getFullChatMessageById(id), HttpStatus.OK);

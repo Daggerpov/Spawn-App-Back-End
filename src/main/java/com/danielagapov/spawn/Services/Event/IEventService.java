@@ -1,6 +1,10 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.*;
+import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
+import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
 import java.util.List;
@@ -12,8 +16,8 @@ public interface IEventService {
     
     // CRUD operations:
     EventDTO getEventById(UUID id);
-    IEventDTO saveEvent(IEventDTO event);
-    IEventDTO createEvent(EventCreationDTO eventCreationDTO);
+    AbstractEventDTO saveEvent(AbstractEventDTO event);
+    AbstractEventDTO createEvent(EventCreationDTO eventCreationDTO);
     EventDTO replaceEvent(EventDTO event, UUID eventId);
     boolean deleteEventById(UUID id);
 
