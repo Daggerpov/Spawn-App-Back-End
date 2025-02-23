@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService implements IUserService {
+    private final int recommendedFriendsLimit = 3;
     private final IUserRepository repository;
 
     private final IEventUserRepository eventUserRepository;
@@ -410,24 +411,29 @@ public class UserService implements IUserService {
         }
     }
 
-    // returns top 3 friends with most mutuals with user (with `userId`) as
+    // returns top x (specified by limit) friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
-    @Override
-    public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
+    public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId, int limit) {
         try {
-            List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId).stream().limit(3).toList();
+            List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId).stream().limit(limit).toList();
 
-            if (recommendedFriends.size() >= 3) {
+            if (recommendedFriends.size() >= limit) {
                 return recommendedFriends;
             }
 
             // Otherwise fill with random friends
-            recommendedFriends = getRandomNRecommendations(3 - recommendedFriends.size(), userId);
+            recommendedFriends = getRandomNRecommendations(limit - recommendedFriends.size(), userId);
             return recommendedFriends;
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    // returns top recommended friends as specified by the class constant (3)
+    @Override
+    public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
+        return getRecommendedFriendsForUserId(userId, recommendedFriendsLimit);
     }
 
     private List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId) {
@@ -564,6 +570,10 @@ public class UserService implements IUserService {
 
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
+        return getRecommendedFriendsBySearch(requestingUserId, searchQuery, recommendedFriendsLimit);
+    }
+
+    public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery, int limit) {
         try {
 
             // Step 1. Find all incoming friend Requests
@@ -587,8 +597,8 @@ public class UserService implements IUserService {
                                 entry.getLastName().equals(searchQuery) ||
                                 entry.getUsername().equals(searchQuery))
                         .collect(Collectors.toList());
-                if (recommendedFriends.size() < 3) {
-                    recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
+                if (recommendedFriends.size() < limit) {
+                    recommendedFriends = getRecommendedFriendsForUserId(requestingUserId, limit - recommendedFriends.size());
                 }
                 // Step 3. List all friends who match based on searchQuery
                 friends = getFullFriendUsersByUserId(requestingUserId).stream().filter(user -> Objects.equals(user.getUsername(), searchQuery) || Objects.equals(user.getFirstName(), searchQuery) || Objects.equals(user.getLastName(), searchQuery)).collect(Collectors.toList());
