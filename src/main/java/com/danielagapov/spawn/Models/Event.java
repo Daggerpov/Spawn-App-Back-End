@@ -32,7 +32,7 @@ public class Event implements Serializable {
     private OffsetDateTime startTime;
     private OffsetDateTime endTime;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "location_id", referencedColumnName = "id", nullable = false)
     private Location location;
 
