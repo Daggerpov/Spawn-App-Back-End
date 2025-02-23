@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -8,12 +9,11 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
+import com.danielagapov.spawn.Utils.SearchedUserResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -35,12 +35,6 @@ public class UserServiceTests {
 
     @Mock
     private IFriendRequestService friendRequestService;
-
-    @Mock
-    private IUserFriendTagRepository userFriendTagRepository;
-
-    @Mock
-    private IFriendTagRepository friendTagRepository;
 
     @Mock
     private ILogger logger;
@@ -273,20 +267,20 @@ public class UserServiceTests {
     }
 
     @Test
-    void getRecommendedFriendsBySearch_ShouldWorkForSimpleCase() {
+    void getRecommendedFriendsBySearch_ShouldWorkWithQueryFullRecommendations() {
         // TODO fill in user info
         UUID user1Id = UUID.randomUUID();
         UUID user2Id = UUID.randomUUID();
+        UUID user3Id = UUID.randomUUID();
+        UUID user4Id = UUID.randomUUID();
         FullUserDTO user1Full = new FullUserDTO(user1Id, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
-        FullUserDTO user2Full = new FullUserDTO(user2Id, List.of(), "jane_doe", "profile.jpg", "Jane", "Doe", "A bio", List.of(), "jane.doe@example.com");
-        user1Full.setFriends(List.of(user2Full));
+        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, List.of(), "jane_doe", "profile.jpg", "Jane", "Doe", "A bio", List.of(), "jane.doe@example.com", 1);
+        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, List.of(), "person", "profile.jpg", "Lorem", "Ipsum", "A bio", List.of(), "email@e.com", 1);
+        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, List.of(), "LaurenIbson", "profile.jpg", "Lauren", "Ibson", "A bio", List.of(), "lauren_ibson@e.ca", 1);
         // TODO fill in mocks
         when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
-        when(userService.getRecommendedFriendsForUserId(user1Id)).thenReturn(List.of());
+        when(userService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
         when(userService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
-        when(userService.getFullUserById(user1Id)).thenReturn(user1Full);
-        when(userService.getFriendUserIdsByUserId(user1Id)).thenReturn(List.of());
-        when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
-        when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        assertEquals(userService.getRecommendedFriendsBySearch(user1Id, "person"), new SearchedUserResult(List.of(), List.of(user3Full), List.of()));
     }
 }
