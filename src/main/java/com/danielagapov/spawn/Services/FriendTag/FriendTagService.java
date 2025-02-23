@@ -301,4 +301,38 @@ public class FriendTagService implements IFriendTagService {
                 .map(userDTO -> userService.getFullUserById(requestingUserId))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<FullFriendTagDTO> getTagsNotAddedToFriend(UUID ownerUserId, UUID friendUserId) {
+        try {
+            // Get all friend tags owned by the owner
+            List<FriendTagDTO> allOwnerTags = getFriendTagsByOwnerId(ownerUserId);
+
+            // Get all friend tags that the friend is currently in
+            List<FriendTagDTO> friendsCurrentTags = allOwnerTags.stream()
+                    .filter(tag -> tag.getFriendUserIds().contains(friendUserId))
+                    .toList();
+
+            // Filter out the tags the friend is already in and convert to FullFriendTagDTO
+            return allOwnerTags.stream()
+                    .filter(tag -> !friendsCurrentTags.contains(tag))
+                    // Don't include the "Everyone" tag as an option
+                    .filter(tag -> !tag.isEveryone())
+                    .map(this::getFullFriendTagByFriendTag)
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            logger.log(e.getMessage());
+            throw new RuntimeException("Error retrieving tags not added to friend", e);
+        } catch (Exception e) {
+            logger.log(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void addFriendToFriendTags(List<UUID> friendTagIds, UUID friendUserId) {
+        for (UUID friendTagId : friendTagIds) {
+            saveUserToFriendTag(friendTagId, friendUserId);
+        }
+    }
 }

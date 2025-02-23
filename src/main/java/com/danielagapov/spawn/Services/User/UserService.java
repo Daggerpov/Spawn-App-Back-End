@@ -209,7 +209,7 @@ public class UserService implements IUserService {
             userEntity = repository.save(userEntity);
 
             FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "Everyone",
-                    "#1D3D3D", userEntity.getId(), List.of(), true);
+                    "#8693FF", userEntity.getId(), List.of(), true);
             FriendTagDTO everyoneTagDTOAfterPersisting = friendTagService.saveFriendTag(everyoneTagDTO);
             // id is generated when saving
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));

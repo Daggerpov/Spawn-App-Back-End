@@ -180,6 +180,30 @@ public class FriendTagController {
         }
     }
 
+    @GetMapping("addUserToTags/{ownerUserId}")
+    public ResponseEntity<List<FullFriendTagDTO>> getTagsNotAddedToFriend(@PathVariable UUID ownerUserId, @RequestParam UUID friendUserId) {
+        try {
+            return new ResponseEntity<>(friendTagService.getTagsNotAddedToFriend(ownerUserId, friendUserId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("addUserToTags")
+    public ResponseEntity<Void> addUserToTags(@RequestBody List<UUID> friendTagIds, @RequestParam UUID friendUserId) {
+        try {
+            friendTagService.addFriendToFriendTags(friendTagIds, friendUserId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // full path: /api/v1/friendTags/bulkAddFriendsToTag
     @PostMapping("bulkAddFriendsToTag")
     public ResponseEntity<Void> bulkAddFriendsToTag(@RequestBody List<FullUserDTO> friends, @RequestParam UUID friendTagId) {

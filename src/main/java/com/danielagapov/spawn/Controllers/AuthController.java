@@ -183,7 +183,7 @@ public class AuthController {
     private HttpHeaders makeHeadersForTokens(String username) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + jwtService.generateAccessToken(username));
-        headers.set("Refresh Token", jwtService.generateRefreshToken(username));
+        headers.set("X-Refresh-Token", jwtService.generateRefreshToken(username));
         return headers;
     }
 }
