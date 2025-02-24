@@ -186,7 +186,6 @@ public class EventService implements IEventService {
     public AbstractEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
             Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.getLocation()));
-            logger.log("Location saved successfully with id: " + location.getId());
 
             User creator = userRepository.findById(eventCreationDTO.getCreatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, eventCreationDTO.getCreatorUserId()));
@@ -571,28 +570,21 @@ public class EventService implements IEventService {
 
     @Override
     public List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId) {
-        logger.log("Converting " + events.size() + " events to full feed self-owned events for user: " + requestingUserId);
-
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 
         for (EventDTO eventDTO : events) {
-            logger.log("Processing event: " + eventDTO.getId());
-
             FullFeedEventDTO fullFeedEvent = getFullEventByEvent(eventDTO, requestingUserId, new HashSet<>());
 
             if (fullFeedEvent == null) {
-                logger.log("Skipping event " + eventDTO.getId() + " as conversion returned null.");
                 continue;
             }
 
             // Apply universal accent color
             fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D");
-            logger.log("Applied universal accent color to event: " + eventDTO.getId());
 
             fullEvents.add(fullFeedEvent);
         }
 
-        logger.log("Converted " + fullEvents.size() + " full feed self-owned events for user: " + requestingUserId);
         return fullEvents;
     }
 
