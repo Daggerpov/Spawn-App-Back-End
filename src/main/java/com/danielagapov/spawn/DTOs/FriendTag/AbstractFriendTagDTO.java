@@ -1,20 +1,18 @@
 package com.danielagapov.spawn.DTOs.FriendTag;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.io.Serializable;
 import java.util.UUID;
 
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
 public abstract class AbstractFriendTagDTO implements Serializable {
     UUID id;
     String displayName;
     String colorHexCode;
-    @Getter(AccessLevel.NONE)
+    @JsonProperty("isEveryone") // Explicitly define JSON property name
     boolean isEveryone;
-
-    public boolean isEveryone() {
-        return isEveryone;
-    }
 }
