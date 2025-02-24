@@ -31,4 +31,11 @@ public interface IJWTService {
     String refreshAccessToken(HttpServletRequest request);
 
     String generateRefreshToken(String username);
+
+    /**
+     * Generates a JWT for email verification
+     */
+    String generateEmailToken(String username);
+
+    boolean isValidEmailToken(String token);
 }
