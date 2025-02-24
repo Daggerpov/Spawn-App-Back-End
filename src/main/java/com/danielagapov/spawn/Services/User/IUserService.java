@@ -1,11 +1,13 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Utils.SearchedUserResult;
 
 import java.util.List;
 import java.util.Map;
@@ -57,4 +59,7 @@ public interface IUserService {
     boolean existsByEmail(String email);
     FullUserDTO getFullUserByUsername(String username);
     boolean existsByUsername(String username);
+
+    // TODO figure out which section this goes in
+    SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
 }
