@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.UUID;
 
 /*
@@ -23,14 +24,27 @@ import java.util.UUID;
 @Getter
 @Setter
 public class User implements Serializable {
-        @Id
-        @GeneratedValue
-        private UUID id;
-        @Column(nullable = false, unique = true) // Ensures the username is unique and not null
-        private String username;
-        private String profilePictureUrlString;
-        private String firstName;
-        private String lastName;
-        private String bio;
-        private String email;
+    @Id
+    @GeneratedValue
+    private UUID id;
+    @Column(nullable = false, unique = true) // Ensures the username is unique and not null
+    private String username;
+    private String profilePictureUrlString;
+    private String firstName;
+    private String lastName;
+    private String bio;
+    private String email;
+    private String password;
+    private boolean verified;
+    private Date dateCreated;
+
+    public User(UUID id, String username, String profilePictureUrlString, String firstName, String lastName, String bio, String email) {
+        this.id = id;
+        this.username = username;
+        this.profilePictureUrlString = profilePictureUrlString;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.bio = bio;
+        this.email = email;
+    }
 }
