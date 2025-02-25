@@ -53,7 +53,7 @@ public class OAuthService implements IOAuthService {
             // TODO: temporary solution
             if (mappingExistsByExternalId(externalUserId)) {
                 logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
-                return userService.getFullUserByEmail(userDTO.getEmail());
+                return userService.getFullUserById(getMapping(externalUserId).getUser().getId());
             }
             if (userDTO.getEmail() != null && userService.existsByEmail(userDTO.getEmail())) {
                 logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
@@ -121,6 +121,7 @@ public class OAuthService implements IOAuthService {
         return null;
     }
 
+    /* ------------------------------ HELPERS ------------------------------ */
 
     private boolean mappingExistsByExternalId(String externalUserId) {
         return externalIdMapRepository.existsById(externalUserId);

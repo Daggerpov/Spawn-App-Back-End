@@ -297,6 +297,19 @@ public class UserService implements IUserService {
         }
     }
 
+    @Override
+    public UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO userDTO, byte[] profilePicture) {
+        if (userDTO.getProfilePicture() == null) {
+            logger.log("Profile picture is null, user either chose their profile picture or has default");
+            userDTO = s3Service.putProfilePictureWithUser(profilePicture, userDTO);
+        }
+        User userEntity = UserMapper.toEntity(userDTO);
+        userEntity.setVerified(true);
+        userEntity.setDateCreated(new Date()); // current Date
+        userEntity = repository.save(userEntity);
+        return getUserById(userEntity.getId());
+    }
+
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
             return uftRepository.findFriendIdsByTagId(friendTagId)
@@ -646,6 +659,19 @@ public class UserService implements IUserService {
     @Override
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
+    }
+
+    @Override
+    public void verifyUserByUsername(String username) {
+        try {
+            logger.log("Marking user as verified " + username);
+            User user = repository.findByUsername(username);
+            user.setVerified(true);
+            repository.save(user);
+        } catch (Exception e) {
+            logger.log("Unexpected error while marking user as verified: " + e.getMessage());
+            throw e;
+        }
     }
 
     @Override

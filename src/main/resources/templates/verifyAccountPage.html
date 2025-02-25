@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Verification</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #8693FF;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px; /* Adjust the distance from the top as needed */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px; /* Adjust the size of the logo as needed */
+            height: auto; /* Maintain aspect ratio */
+            z-index: 2; /* Ensure the logo is above the container */
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8693FF;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #8693FF; /* App's primary color for text */
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .success {
+            color: #28a745; /* Green for success */
+        }
+
+        .error {
+            color: #dc3545; /* Red for error */
+        }
+
+        .footer {
+            font-size: 14px;
+            color: #777777; /* Footer text remains the same */
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header {
+                font-size: 20px;
+            }
+
+            .message {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!--<img src="./../img/spawnapplogo.png" alt="App Logo" class="logo">-->
+<div class="container">
+    <div class="header">Account Verification</div>
+    <div class="message" id="verification-message">
+        <!-- Dynamic message will be inserted here by your backend or other method -->
+        Your account has been successfully verified! You can now log in and start using our app.
+    </div>
+    <div class="footer">
+        Thank you for using Spawn!
+    </div>
+</div>
+</body>
+<script th:inline="javascript">
+    const status = [[${status}]];
+    const messageElement = document.getElementById('verification-message');
+
+    window.onload = () => {
+        if (status === 'success') {
+            messageElement.innerHTML = 'Your account has been successfully verified! You can now log in and start using Spawn.';
+            // messageElement.classList.add('success');
+        } else if (status === 'error') {
+            messageElement.innerHTML = 'There was an issue verifying your account. Please try again or contact support.';
+            messageElement.classList.add('error');
+        } else if (status === 'expired') {
+            messageElement.innerHTML = 'Verification link is expired!';
+            messageElement.classList.add('error');
+        }
+    }
+
+</script>
+</html>

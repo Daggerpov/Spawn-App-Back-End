@@ -155,6 +155,7 @@ public class S3Service implements IS3Service {
     @Override
     public void deleteObjectByURL(String urlString) {
         try {
+            if (urlString == null) return;
             String key = extractObjectKey(urlString);
             deleteObject(key);
         } catch (Exception e) {
