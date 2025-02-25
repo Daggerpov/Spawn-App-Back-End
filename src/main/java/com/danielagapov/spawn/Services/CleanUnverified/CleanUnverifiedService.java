@@ -2,16 +2,23 @@ package com.danielagapov.spawn.Services.CleanUnverified;
 
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Repositories.IUserRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class CleanUnverifiedService {
     private static final long RATE = 1000 * 60 * 60 * 24; // 24 hours
     private final ILogger logger;
     private final IUserRepository userRepository;
+
+    @Autowired
+    @Lazy
+    public CleanUnverifiedService(ILogger logger, IUserRepository userRepository) {
+        this.logger = logger;
+        this.userRepository = userRepository;
+    }
 
     /**
      * This method is scheduled to be invoked every RATE ms (currently RATE = 24 hours).
