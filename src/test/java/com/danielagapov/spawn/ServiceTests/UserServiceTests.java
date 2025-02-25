@@ -1,5 +1,9 @@
 package com.danielagapov.spawn.ServiceTests;
 
+import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -8,10 +12,11 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
+import com.danielagapov.spawn.Utils.SearchedUserResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -32,10 +37,10 @@ public class UserServiceTests {
     private IUserRepository userRepository;
 
     @Mock
-    private IUserFriendTagRepository userFriendTagRepository;
+    private IFriendTagRepository friendTagRepository;
 
     @Mock
-    private IFriendTagRepository friendTagRepository;
+    private IFriendRequestService friendRequestService;
 
     @Mock
     private ILogger logger;
@@ -265,5 +270,45 @@ public class UserServiceTests {
 
         assertTrue(result.isEmpty());
         verify(userRepository, times(1)).findAll();
+    }
+
+    @Test
+    void getRecommendedFriendsBySearch_ShouldWorkWithQueryFullRecommendations() {
+        UserService spyUserService = spy(userService);
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID user3Id = UUID.randomUUID();
+        UUID user4Id = UUID.randomUUID();
+        FullUserDTO user1Full = new FullUserDTO(user1Id, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, List.of(), "jane_doe", "profile.jpg", "Jane", "Doe", "A bio", List.of(), "jane.doe@example.com", 1);
+        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, List.of(), "person", "profile.jpg", "Lorem", "Ipsum", "A bio", List.of(), "email@e.com", 1);
+        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, List.of(), "LaurenIbson", "profile.jpg", "Lauren", "Ibson", "A bio", List.of(), "lauren_ibson@e.ca", 1);
+        when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(spyUserService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
+        when(spyUserService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
+        SearchedUserResult res = spyUserService.getRecommendedFriendsBySearch(user1Id, "person");
+        assertEquals(new SearchedUserResult(List.of(), List.of(user3Full), List.of()), res);
+    }
+    @Test
+    void getRecommendedFriendsBySearch_ShouldWorkWithQueryFullRecommendationsAndFriends() {
+        UserService spyUserService = spy(userService);
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID user3Id = UUID.randomUUID();
+        UUID user4Id = UUID.randomUUID();
+        FullUserDTO user1Full = new FullUserDTO(user1Id, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, List.of(), "jane_doe", "profile.jpg", "Jane", "Doe", "A bio", List.of(), "jane.doe@example.com", 1);
+        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, List.of(), "person", "profile.jpg", "Lorem", "Ipsum", "A bio", List.of(), "email@e.com", 1);
+        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, List.of(), "LaurenIbson", "profile.jpg", "Lauren", "Ibson", "A bio", List.of(), "lauren_ibson@e.ca", 1);
+
+        UUID ftId = UUID.randomUUID();
+        // Very incomplete relationship but it should suffice for a test.
+        FullFriendTagDTO ft = new FullFriendTagDTO(ftId, "Everyone", "#ffffff", List.of(),true);
+        FullFriendUserDTO user5Full = new FullFriendUserDTO(user4Id, List.of(), "thatPerson", "profile.jpg", "person", "yes", "A bio", List.of(), "something@email.org", List.of(ft));
+        when(friendRequestService.getIncomingFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(spyUserService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
+        when(spyUserService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of(user5Full));
+        SearchedUserResult res = spyUserService.getRecommendedFriendsBySearch(user1Id, "person");
+        assertEquals(new SearchedUserResult(List.of(), List.of(user3Full), List.of(user5Full)), res);
     }
 }

@@ -17,4 +17,16 @@ public class RecommendedFriendUserDTO extends FullUserDTO implements Serializabl
         super(id, friends, username, picture, firstName, lastName, bio, friendTags, email);
         this.mutualFriendCount = mutualFriendCount;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null)
+            return false;
+        if (!(obj instanceof RecommendedFriendUserDTO other))
+            return false;
+        boolean superEquals = super.equals(other);
+        return other.getMutualFriendCount() == this.mutualFriendCount && superEquals;
+    }
 }

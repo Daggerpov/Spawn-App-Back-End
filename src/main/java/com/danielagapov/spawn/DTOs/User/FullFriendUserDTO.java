@@ -18,4 +18,16 @@ public class FullFriendUserDTO extends FullUserDTO implements Serializable {
         super(id, friends, username, profilePicture, firstName, lastName, bio, friendTags, email);
         this.associatedFriendTagsToOwner = associatedFriendTagsToOwner;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null)
+            return false;
+        if (!(obj instanceof FullFriendUserDTO other))
+            return false;
+        boolean superEquals = super.equals(other);
+        return other.getAssociatedFriendTagsToOwner().equals(this.associatedFriendTagsToOwner) && superEquals;
+    }
 }
