@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.DTOs;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,5 +18,6 @@ public class BetaAccessSignUpDTO implements Serializable {
     private UUID id;
     private String email;
     private OffsetDateTime signedUpAt;
+    @JsonProperty("hasSubscribedToNewsletter") // Explicitly define JSON property name
     private Boolean hasSubscribedToNewsletter;
 }
