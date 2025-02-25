@@ -444,8 +444,8 @@ public class EventService implements IEventService {
             List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
             // Remove expired events
-            removeExpiredEvents(eventsCreated);
-            removeExpiredEvents(eventsInvitedTo);
+            eventsCreated = removeExpiredEvents(eventsCreated);
+            eventsInvitedTo = removeExpiredEvents(eventsInvitedTo);
 
             // Sort events
             sortEventsByStartTime(eventsCreated);
@@ -462,14 +462,17 @@ public class EventService implements IEventService {
     }
 
     /**
-     * Removes expired events from the provided list.
+     * Removes expired events from the provided list, and returns it modified.
      * An event is considered expired if its end time is set and is before the current time.
      *
      * @param events the list of events to filter
+     * @return the modified list
      */
-    private void removeExpiredEvents(List<FullFeedEventDTO> events) {
+    private List<FullFeedEventDTO> removeExpiredEvents(List<FullFeedEventDTO> events) {
         OffsetDateTime now = OffsetDateTime.now();
-        events.removeIf(event -> event.getEndTime() != null && event.getEndTime().isBefore(now));
+        return events.stream()
+                .filter(event -> event.getEndTime() == null || !event.getEndTime().isBefore(now))
+                .toList();
     }
 
     /**

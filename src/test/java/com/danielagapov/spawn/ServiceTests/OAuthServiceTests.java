@@ -10,7 +10,6 @@ import com.danielagapov.spawn.Repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.OAuth.OAuthService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -86,7 +85,6 @@ public class OAuthServiceTests {
     }
 
     @Test
-    @Disabled
     public void testMakeUser_ExistingUserByExternalId_Google() {
         UUID id = UUID.randomUUID();
         UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
