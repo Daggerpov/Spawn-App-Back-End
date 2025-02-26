@@ -6,7 +6,6 @@ import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.LocationDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -30,7 +29,6 @@ import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -39,7 +37,6 @@ import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-@Slf4j
 @Service
 public class EventService implements IEventService {
     private final IEventRepository repository;
@@ -547,7 +544,7 @@ public class EventService implements IEventService {
                     ? locationService.getLocationById(event.getLocationId())
                     : null;
 
-            FullUserDTO creator = userService.getFullUserById(event.getCreatorUserId());
+            UserDTO creator = userService.getUserById(event.getCreatorUserId());
 
             return new FullFeedEventDTO(
                     event.getId(),
@@ -557,8 +554,8 @@ public class EventService implements IEventService {
                     location,
                     event.getNote(),
                     creator,
-                    userService.convertUsersToFullUsers(userService.getParticipantsByEventId(event.getId()), new HashSet<>()),
-                    userService.convertUsersToFullUsers(userService.getInvitedByEventId(event.getId()), new HashSet<>()),
+                    userService.getParticipantsByEventId(event.getId()),
+                    userService.getInvitedByEventId(event.getId()),
                     chatMessageService.getFullChatMessagesByEventId(event.getId()),
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                     requestingUserId != null ? getParticipationStatus(event.getId(), requestingUserId) : null

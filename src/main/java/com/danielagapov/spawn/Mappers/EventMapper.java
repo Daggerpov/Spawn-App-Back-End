@@ -95,7 +95,7 @@ public class EventMapper {
         event.setNote(dto.getNote()); // Set the note
 
         // Convert FullUserDTO to User entity (assuming a similar method exists)
-        User creator = UserMapper.convertFullUserToUserEntity(dto.getCreatorUser());
+        User creator = UserMapper.toEntity(dto.getCreatorUser());
         event.setCreator(creator); // Set the creator
 
         return event;
