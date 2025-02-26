@@ -4,6 +4,7 @@ package com.danielagapov.spawn.DTOs.Event;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.LocationDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
@@ -19,8 +20,8 @@ import java.util.UUID;
 public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
     private LocationDTO location;
     private FullUserDTO creatorUser;
-    private List<FullUserDTO> participantUsers;
-    private List<FullUserDTO> invitedUsers;
+    private List<UserDTO> participantUsers;
+    private List<UserDTO> invitedUsers;
     private List<FullEventChatMessageDTO> chatMessages;
     /// useful for event retrieval from a user's feed/map view on mobile:
     private String eventFriendTagColorHexCodeForRequestingUser;
@@ -28,15 +29,15 @@ public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
     private @JsonFormat(shape = JsonFormat.Shape.STRING) ParticipationStatus participationStatus;
 
     public FullFeedEventDTO(UUID id,
-                        String title,
-                        OffsetDateTime startTime,
-                        OffsetDateTime endTime,
-                        LocationDTO location,
-                        String note,
-                        FullUserDTO creatorUser,
-                        List<FullUserDTO> participantUsers,
-                        List<FullUserDTO> invitedUsers,
-                        List<FullEventChatMessageDTO> chatMessages,
+                            String title,
+                            OffsetDateTime startTime,
+                            OffsetDateTime endTime,
+                            LocationDTO location,
+                            String note,
+                            FullUserDTO creatorUser,
+                            List<UserDTO> participantUsers,
+                            List<UserDTO> invitedUsers,
+                            List<FullEventChatMessageDTO> chatMessages,
                             String eventFriendTagColorHexCodeForRequestingUser,
                             ParticipationStatus participationStatus) {
         super(id, title, startTime, endTime, note);
