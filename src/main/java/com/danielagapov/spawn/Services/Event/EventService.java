@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
 import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.LocationDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
@@ -37,6 +37,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService implements IEventService {
@@ -476,7 +477,7 @@ public class EventService implements IEventService {
         OffsetDateTime now = OffsetDateTime.now();
         return events.stream()
                 .filter(event -> event.getEndTime() == null || !event.getEndTime().isBefore(now))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
