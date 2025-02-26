@@ -387,8 +387,14 @@ public class UserService implements IUserService {
     @Override
     public void saveFriendToUser(UUID userId, UUID friendId) {
         try {
+            if (userId.equals(friendId)) {
+                logger.log("Attempted to add self to Everyone tag. Skipping.");
+                return;
+            }
+
             UUID userEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
             friendTagService.saveUserToFriendTag(userEveryoneTagId, friendId);
+
             UUID friendEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
             friendTagService.saveUserToFriendTag(friendEveryoneTagId, userId);
         } catch (Exception e) {
