@@ -3,7 +3,6 @@ package com.danielagapov.spawn.DTOs.Event;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.LocationDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -19,7 +18,7 @@ import java.util.UUID;
 @Setter
 public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
     private LocationDTO location;
-    private FullUserDTO creatorUser;
+    private UserDTO creatorUser;
     private List<UserDTO> participantUsers;
     private List<UserDTO> invitedUsers;
     private List<FullEventChatMessageDTO> chatMessages;
@@ -34,7 +33,7 @@ public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
                             OffsetDateTime endTime,
                             LocationDTO location,
                             String note,
-                            FullUserDTO creatorUser,
+                            UserDTO creatorUser,
                             List<UserDTO> participantUsers,
                             List<UserDTO> invitedUsers,
                             List<FullEventChatMessageDTO> chatMessages,
