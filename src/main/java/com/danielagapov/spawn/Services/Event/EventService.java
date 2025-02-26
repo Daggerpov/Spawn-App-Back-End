@@ -443,6 +443,10 @@ public class EventService implements IEventService {
                     convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
             List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
+            // Temp fix to remove null events
+            eventsCreated.removeIf(Objects::isNull);
+            eventsInvitedTo.removeIf(Objects::isNull);
+
             // Remove expired events
             eventsCreated = removeExpiredEvents(eventsCreated);
             eventsInvitedTo = removeExpiredEvents(eventsInvitedTo);
