@@ -416,6 +416,10 @@ public class EventService implements IEventService {
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
+        if (eventUsers == null || eventUsers.isEmpty()) {
+            return Collections.emptyList(); // ✅ Always return an empty list instead of null
+        }
+
         List<Event> events = new ArrayList<>();
 
         for (EventUser eventUser : eventUsers) {
@@ -444,10 +448,6 @@ public class EventService implements IEventService {
                     convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
             List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
-            // Temp fix to remove null events
-            eventsCreated.removeIf(Objects::isNull);
-            eventsInvitedTo.removeIf(Objects::isNull);
-
             // Remove expired events
             eventsCreated = removeExpiredEvents(eventsCreated);
             eventsInvitedTo = removeExpiredEvents(eventsInvitedTo);
@@ -475,10 +475,18 @@ public class EventService implements IEventService {
      */
     private List<FullFeedEventDTO> removeExpiredEvents(List<FullFeedEventDTO> events) {
         OffsetDateTime now = OffsetDateTime.now();
+
+        // If the entire list is null, return an empty list
+        if (events == null) {
+            return Collections.emptyList();
+        }
+
+        // Remove null events & filter out expired ones
         return events.stream()
-                .filter(event -> event.getEndTime() == null || !event.getEndTime().isBefore(now))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .filter(event -> event != null && (event.getEndTime() == null || !event.getEndTime().isBefore(now)))
+                .toList();
     }
+
 
     /**
      * Sorts a list of events by their start time, keeping null values at the end.
@@ -527,7 +535,9 @@ public class EventService implements IEventService {
                     ? locationService.getLocationById(event.getLocationId())
                     : null;
 
-            FullUserDTO creator = userService.getFullUserById(event.getCreatorUserId());
+            FullUserDTO creator = (event.getCreatorUserId() != null)
+                    ? userService.getFullUserById(event.getCreatorUserId())
+                    : null;
 
             return new FullFeedEventDTO(
                     event.getId(),
