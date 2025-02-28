@@ -1,7 +1,7 @@
-package com.danielagapov.spawn.Services.FriendRequestService;
+package com.danielagapov.spawn.Services.FriendRequest;
 
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -58,7 +58,12 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public List<FullFriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
+    public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
+        return convertFriendRequestsToFetchFriendRequests(getIncomingFriendRequestsByUserId(id));
+    }
+
+    @Override
+    public List<FriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
@@ -68,7 +73,7 @@ public class FriendRequestService implements IFriendRequestService {
             }
 
             // Convert to FullFriendRequestDTO and return
-            return convertFriendRequestsToFullFriendRequests(FriendRequestMapper.toDTOList(friendRequests));
+            return FriendRequestMapper.toDTOList(friendRequests);
         } catch (DataAccessException e) {
             logger.log("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues
@@ -101,13 +106,12 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public List<FullFriendRequestDTO> convertFriendRequestsToFullFriendRequests (List<FriendRequestDTO> friendRequests) {
-        List<FullFriendRequestDTO> fullFriendRequests = new ArrayList<>();
+    public List<FetchFriendRequestDTO> convertFriendRequestsToFetchFriendRequests(List<FriendRequestDTO> friendRequests) {
+        List<FetchFriendRequestDTO> fullFriendRequests = new ArrayList<>();
         for (FriendRequestDTO friendRequest : friendRequests) {
-            fullFriendRequests.add(new FullFriendRequestDTO(
+            fullFriendRequests.add(new FetchFriendRequestDTO(
                     friendRequest.getId(),
-                    userService.getFullUserById(friendRequest.getSenderUserId()),
-                    userService.getFullUserById(friendRequest.getReceiverUserId())
+                    userService.getUserById(friendRequest.getSenderUserId())
             ));
         }
         return fullFriendRequests;
