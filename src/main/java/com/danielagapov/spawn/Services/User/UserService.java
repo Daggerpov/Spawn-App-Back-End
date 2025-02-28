@@ -620,13 +620,13 @@ public class UserService implements IUserService {
 
             return new FullUserDTO(
                     user.getId(),
-                    convertUsersToFullUsers(getFriendsByUserId(user.getId()), visitedUsers),
+                    getFriendsByUserId(user.getId()),
                     user.getUsername(),
                     user.getProfilePicture(),
                     user.getFirstName(),
                     user.getLastName(),
                     user.getBio(),
-                    friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(user.getId())),
+                    friendTagService.getFriendTagsByOwnerId(user.getId()),
                     user.getEmail()
             );
         } catch (Exception e) {
