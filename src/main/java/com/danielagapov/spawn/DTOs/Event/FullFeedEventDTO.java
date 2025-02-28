@@ -38,7 +38,8 @@ public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
                             List<UserDTO> invitedUsers,
                             List<FullEventChatMessageDTO> chatMessages,
                             String eventFriendTagColorHexCodeForRequestingUser,
-                            ParticipationStatus participationStatus) {
+                            ParticipationStatus participationStatus,
+                            boolean isSelfOwned) {
         super(id, title, startTime, endTime, note);
         this.location = location;
         this.creatorUser = creatorUser;
