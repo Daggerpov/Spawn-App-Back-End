@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
@@ -23,7 +22,7 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
+import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -435,7 +434,7 @@ public class UserService implements IUserService {
                     .toList();
 
             // Map mutual friends to RecommendedFriendUserDTO
-            List<UUID> receivedFriendRequestSenderUserIds = friendRequestService.getIncomingFriendRequestsByUserId(userId)
+            List<UUID> receivedFriendRequestSenderUserIds = friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)
                     .stream()
                     .map(request -> request.getSenderUser().getId())
                     .toList();
@@ -502,11 +501,10 @@ public class UserService implements IUserService {
                     boolean hasAlreadySentFriendRequest = false;
 
                     try {
-                        List<FullFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriendId);
+                        List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriendId);
 
-                        for (FullFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                            if ((friendRequestDTO.getSenderUser().getId().equals(userId) && friendRequestDTO.getReceiverUser().getId().equals(potentialFriendId)) ||
-                                    (friendRequestDTO.getSenderUser().getId().equals(potentialFriendId) && friendRequestDTO.getReceiverUser().getId().equals(userId))) {
+                        for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
+                            if (friendRequestDTO.getSenderUserId().equals(userId)) {
                                 hasAlreadySentFriendRequest = true;
                                 break;
                             }
