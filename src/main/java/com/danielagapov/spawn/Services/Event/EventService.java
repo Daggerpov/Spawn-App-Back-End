@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService implements IEventService {
@@ -491,7 +492,7 @@ public class EventService implements IEventService {
         OffsetDateTime now = OffsetDateTime.now();
         return events.stream()
                 .filter(event -> event.getEndTime() == null || !event.getEndTime().isBefore(now))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**

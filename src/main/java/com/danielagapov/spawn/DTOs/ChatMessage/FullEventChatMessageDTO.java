@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.DTOs.ChatMessage;
 
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,10 +11,10 @@ import java.util.UUID;
 @Getter
 @Setter
 public class FullEventChatMessageDTO extends AbstractChatMessageDTO {
-    FullUserDTO senderUser;
-    List<FullUserDTO> likedByUsers;
+    UserDTO senderUser;
+    List<UserDTO> likedByUsers;
 
-    public FullEventChatMessageDTO(UUID id, String content, Instant timestamp, FullUserDTO senderUser, UUID eventId, List<FullUserDTO> likedByUsers) {
+    public FullEventChatMessageDTO(UUID id, String content, Instant timestamp, UserDTO senderUser, UUID eventId, List<UserDTO> likedByUsers) {
         super(id, content, timestamp, eventId);
         this.senderUser = senderUser;
         this.likedByUsers = likedByUsers;
