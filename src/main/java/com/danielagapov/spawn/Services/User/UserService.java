@@ -467,18 +467,7 @@ public class UserService implements IUserService {
                         int mutualFriendCount = entry.getValue();
                         FullUserDTO fullUser = getFullUserById(mutualFriendId);
 
-                        return new RecommendedFriendUserDTO(
-                                fullUser.getId(),
-                                fullUser.getFriends(),
-                                fullUser.getUsername(),
-                                fullUser.getProfilePicture(),
-                                fullUser.getFirstName(),
-                                fullUser.getLastName(),
-                                fullUser.getBio(),
-                                fullUser.getFriendTags(),
-                                fullUser.getEmail(),
-                                mutualFriendCount
-                        );
+                        return recommendedFriendUserFromFullUser(fullUser, mutualFriendCount);
                     })
                     .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::getMutualFriendCount).reversed())
                     .limit(3)
@@ -519,18 +508,7 @@ public class UserService implements IUserService {
                     if (!hasAlreadySentFriendRequest) {
                         FullUserDTO fullUserDTO = getFullUserById(potentialFriendId);
 
-                        recommendedFriends.add(new RecommendedFriendUserDTO(
-                                fullUserDTO.getId(),
-                                fullUserDTO.getFriends(),
-                                fullUserDTO.getUsername(),
-                                fullUserDTO.getProfilePicture(),
-                                fullUserDTO.getFirstName(),
-                                fullUserDTO.getLastName(),
-                                fullUserDTO.getBio(),
-                                fullUserDTO.getFriendTags(),
-                                fullUserDTO.getEmail(),
-                                0 // No mutual friends
-                        ));
+                        recommendedFriends.add(recommendedFriendUserFromFullUser(fullUserDTO, 0));
 
                         // Add to excluded list to prevent duplicates
                         excludedUserIds.add(potentialFriendId);
@@ -700,13 +678,11 @@ public class UserService implements IUserService {
             for (FullUserDTO user : fullUserFriends) {
                 FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO(
                         user.getId(),
-                        user.getFriends(),
                         user.getUsername(),
                         user.getProfilePicture(),
                         user.getFirstName(),
                         user.getLastName(),
                         user.getBio(),
-                        user.getFriendTags(),
                         user.getEmail(),
                         // only added property from `FullUserDTO`:
                         friendTagService.getPertainingFriendTagsForFriend(requestingUserId, user.getId())
@@ -719,5 +695,18 @@ public class UserService implements IUserService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    private RecommendedFriendUserDTO recommendedFriendUserFromFullUser(FullUserDTO fullUser, int mutualFriendCount) {
+        return new RecommendedFriendUserDTO(
+                fullUser.getId(),
+                fullUser.getFirstName(),
+                fullUser.getLastName(),
+                fullUser.getEmail(),
+                fullUser.getUsername(),
+                fullUser.getBio(),
+                fullUser.getProfilePicture(),
+                mutualFriendCount
+        );
     }
 }
