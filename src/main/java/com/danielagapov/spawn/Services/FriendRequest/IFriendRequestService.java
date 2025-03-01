@@ -11,7 +11,7 @@ public interface IFriendRequestService {
 
     List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id);
 
-    List<CreateFriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id);
+    List<CreateFriendRequestDTO> getIncomingCreateFriendRequestsByUserId(UUID id);
 
     void acceptFriendRequest(UUID id);
 

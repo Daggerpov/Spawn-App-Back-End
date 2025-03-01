@@ -60,11 +60,17 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
-        return convertFriendRequestsToFetchFriendRequests(getIncomingFriendRequestsByUserId(id));
+        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+        return FetchFriendRequestDTO.fromEntityList(friendRequests);
     }
 
     @Override
-    public List<CreateFriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
+    public List<CreateFriendRequestDTO> getIncomingCreateFriendRequestsByUserId(UUID id) {
+        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+        return FriendRequestMapper.toDTOList(friendRequests);
+    }
+
+    private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
@@ -73,8 +79,7 @@ public class FriendRequestService implements IFriendRequestService {
                 return new ArrayList<>();
             }
 
-            // Convert to FullFriendRequestDTO and return
-            return FriendRequestMapper.toDTOList(friendRequests);
+            return friendRequests;
         } catch (DataAccessException e) {
             logger.log("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues

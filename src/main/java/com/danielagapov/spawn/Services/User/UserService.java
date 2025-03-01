@@ -490,7 +490,7 @@ public class UserService implements IUserService {
                     boolean hasAlreadySentFriendRequest = false;
 
                     try {
-                        List<CreateFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriendId);
+                        List<CreateFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(potentialFriendId);
 
                         for (CreateFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
                             if (friendRequestDTO.getSenderUserId().equals(userId)) {
