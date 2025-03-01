@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
+import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
 import com.danielagapov.spawn.Enums.FriendRequestAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
@@ -36,7 +36,7 @@ public class FriendRequestController {
 
     // full path: /api/v1/friend-requests
     @PostMapping
-    public ResponseEntity<FriendRequestDTO> createFriendRequest(@RequestBody FriendRequestDTO friendRequest) {
+    public ResponseEntity<CreateFriendRequestDTO> createFriendRequest(@RequestBody CreateFriendRequestDTO friendRequest) {
         try {
             return new ResponseEntity<>(friendRequestService.saveFriendRequest(friendRequest), HttpStatus.CREATED);
         } catch (Exception e) {

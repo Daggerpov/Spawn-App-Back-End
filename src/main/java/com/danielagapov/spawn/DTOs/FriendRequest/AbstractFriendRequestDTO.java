@@ -2,16 +2,15 @@ package com.danielagapov.spawn.DTOs.FriendRequest;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.util.UUID;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-public class FriendRequestDTO implements Serializable {
-    UUID id;
-    UUID senderUserId;
-    UUID receiverUserId;
+public abstract class AbstractFriendRequestDTO {
+    private UUID id;
 }
