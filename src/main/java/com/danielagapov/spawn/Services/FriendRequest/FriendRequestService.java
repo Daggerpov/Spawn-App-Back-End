@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.FriendRequest;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.PotentialFriendUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -111,7 +112,7 @@ public class FriendRequestService implements IFriendRequestService {
         for (CreateFriendRequestDTO friendRequest : friendRequests) {
             fullFriendRequests.add(new FetchFriendRequestDTO(
                     friendRequest.getId(),
-                    userService.getUserById(friendRequest.getSenderUserId())
+                    PotentialFriendUserDTO.fromUserEntity(userService.getUserEntityById(friendRequest.getSenderUserId()))
             ));
         }
         return fullFriendRequests;
