@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +25,7 @@ public class ReportedContentDTO implements Serializable {
     private User reporter;
     private UUID contentId;
     private EntityType contentType;
-    private Instant timeReported;
+    private OffsetDateTime timeReported;
     private ResolutionStatus resolution;
     private ReportType reportType;
     private String description;

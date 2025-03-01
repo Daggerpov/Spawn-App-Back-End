@@ -11,7 +11,7 @@ import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -44,7 +44,7 @@ public class ReportedContent {
     private EntityType contentType;
 
     @Column(nullable = false)
-    private Instant timeReported;
+    private OffsetDateTime timeReported;
 
     @Column(nullable = false)
     private ResolutionStatus resolution;

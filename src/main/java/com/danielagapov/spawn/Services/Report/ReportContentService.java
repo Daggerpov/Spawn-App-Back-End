@@ -15,7 +15,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -61,7 +61,7 @@ public class ReportContentService implements IReportContentService {
     public ReportedContentDTO fileReport(ReportedContentDTO reportDTO) {
         ReportedContent report = reportDTO.toEntity();
 
-        report.setTimeReported(Instant.now());
+        report.setTimeReported(OffsetDateTime.now());
         report.setResolution(PENDING);
 
         User contentOwner = findContentOwnerByContentId(reportDTO.getContentId(), reportDTO.getContentType());
