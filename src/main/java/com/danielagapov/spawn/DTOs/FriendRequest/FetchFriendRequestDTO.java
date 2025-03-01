@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.DTOs.FriendRequest;
 
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,8 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class FullFriendRequestDTO implements Serializable {
+public class FetchFriendRequestDTO implements Serializable {
     UUID id;
-    FullUserDTO senderUser;
-    FullUserDTO receiverUser;
+    UserDTO senderUser;
 }
