@@ -20,11 +20,11 @@ import java.util.UUID;
 public class ReportController {
     private final IReportContentService reportService;
 
-    // full path: /api/v1/reports?type=?<ReportType>&content-type=<EntityType>
+    // full path: /api/v1/reports?reportType=?<ReportType>&contentType=<EntityType>
     @GetMapping
     public ResponseEntity<List<ReportedContentDTO>> getReports(
-            @RequestParam(value = "report-type", required = false) ReportType reportType,
-            @RequestParam(value = "content-type", required = false) EntityType contentType
+            @RequestParam(value = "reportType", required = false) ReportType reportType,
+            @RequestParam(value = "contentType", required = false) EntityType contentType
     ) {
         try {
             List<ReportedContentDTO> reports = reportService.getReportsByFilters(reportType, contentType);
@@ -45,9 +45,9 @@ public class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/{report-id}?resolution=<resolution
+    // full path: /api/v1/reports/{reportId}?resolution=<ResolutionStatus>
     @PostMapping("{reportId}")
-    public ResponseEntity<ReportedContentDTO> resolveReport(@PathVariable UUID reportId, @RequestParam("report-id") ResolutionStatus resolution) {
+    public ResponseEntity<ReportedContentDTO> resolveReport(@PathVariable UUID reportId, @RequestParam("resolution") ResolutionStatus resolution) {
         try {
             ReportedContentDTO report = reportService.resolveReport(reportId, resolution);
             return ResponseEntity.ok(report);
@@ -58,7 +58,7 @@ public class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/reporters/{reporter-id}
+    // full path: /api/v1/reports/reporters/{reporterId}
     @GetMapping("reporter/{reporterId}")
     public ResponseEntity<List<ReportedContentDTO>> getReportsByReporter(@PathVariable UUID reporterId) {
         try {
@@ -71,7 +71,7 @@ public class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/reported-users/{content-owner-id}
+    // full path: /api/v1/reports/reported-users/{contentOwnerId}
     @GetMapping("{contentOwnerId}")
     public ResponseEntity<List<ReportedContentDTO>> getReportsByContentOwner(@PathVariable UUID contentOwnerId) {
         try {
@@ -84,7 +84,7 @@ public class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/{report-id}
+    // full path: /api/v1/reports/{reportId}
     @DeleteMapping("{reportId}")
     public ResponseEntity<Void> deleteReport(@PathVariable UUID reportId) {
         try {
@@ -97,7 +97,7 @@ public class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/{report-id}
+    // full path: /api/v1/reports/{reportId}
     @GetMapping("{reportId}")
     public ResponseEntity<ReportedContentDTO> getReportById(@PathVariable UUID reportId) {
         try {
