@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
+import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -44,7 +44,7 @@ class FriendRequestServiceTests {
     private User sender;
     private User receiver;
     private FriendRequest friendRequest;
-    private FriendRequestDTO friendRequestDTO;
+    private CreateFriendRequestDTO friendRequestDTO;
 
     @BeforeEach
     void setUp() {
@@ -64,7 +64,7 @@ class FriendRequestServiceTests {
         friendRequest.setSender(sender);
         friendRequest.setReceiver(receiver);
 
-        friendRequestDTO = new FriendRequestDTO(friendRequest.getId(), senderId, receiverId);
+        friendRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), senderId, receiverId);
     }
 
     @Test
@@ -73,7 +73,7 @@ class FriendRequestServiceTests {
         when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
         when(repository.save(any(FriendRequest.class))).thenReturn(friendRequest);
 
-        FriendRequestDTO savedRequest = friendRequestService.saveFriendRequest(friendRequestDTO);
+        CreateFriendRequestDTO savedRequest = friendRequestService.saveFriendRequest(friendRequestDTO);
 
         assertNotNull(savedRequest);
         assertEquals(friendRequest.getId(), savedRequest.getId());
@@ -170,7 +170,7 @@ class FriendRequestServiceTests {
 
     @Test
     void saveFriendRequest_ShouldThrowException_WhenSenderOrReceiverIsNull() {
-        FriendRequestDTO invalidRequestDTO = new FriendRequestDTO(friendRequest.getId(), null, receiverId);
+        CreateFriendRequestDTO invalidRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), null, receiverId);
 
         Exception exception = assertThrows(NullPointerException.class, () -> friendRequestService.saveFriendRequest(invalidRequestDTO));
         verify(logger, times(1)).log(anyString());
