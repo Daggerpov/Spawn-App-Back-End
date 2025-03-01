@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
@@ -430,7 +430,7 @@ public class UserService implements IUserService {
             // Fetch users who have already received a friend request from the user
             List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(userId)
                     .stream()
-                    .map(FriendRequestDTO::getReceiverUserId)
+                    .map(CreateFriendRequestDTO::getReceiverUserId)
                     .toList();
 
             // Map mutual friends to RecommendedFriendUserDTO
@@ -490,9 +490,9 @@ public class UserService implements IUserService {
                     boolean hasAlreadySentFriendRequest = false;
 
                     try {
-                        List<FriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriendId);
+                        List<CreateFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFriendRequestsByUserId(potentialFriendId);
 
-                        for (FriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
+                        for (CreateFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
                             if (friendRequestDTO.getSenderUserId().equals(userId)) {
                                 hasAlreadySentFriendRequest = true;
                                 break;
