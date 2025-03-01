@@ -12,9 +12,11 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -74,8 +76,14 @@ public class EventController {
                 return new ResponseEntity<>(eventService.getEventsByOwnerId(creatorUserId), HttpStatus.OK);
             }
         } catch (BasesNotFoundException e) {
+            // thrown list of events not found for given user id
+            // return response with empty list and 200 status
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            // user or event for user id not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            // any other exception
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -86,8 +94,15 @@ public class EventController {
         logger.log("Get events by friend tag filter id request received");
         try {
             return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            // list of events not found for tag filter id
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            // friend tag filter not found for friend tag id
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // any other exception
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -219,6 +234,9 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
             }
+        } catch (BasesNotFoundException e) {
+            // list of events for user id not found
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
