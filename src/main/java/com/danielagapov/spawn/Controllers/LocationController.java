@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.LocationDTO;
+import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
