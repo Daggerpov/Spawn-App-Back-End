@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs.FriendRequest;
+package com.danielagapov.spawn.DTOs.Event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,8 +10,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class FriendRequestDTO implements Serializable {
+public class LocationDTO implements Serializable {
     UUID id;
-    UUID senderUserId;
-    UUID receiverUserId;
+    String name;
+    double latitude;
+    double longitude;
 }

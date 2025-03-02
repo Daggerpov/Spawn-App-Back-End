@@ -28,15 +28,12 @@ public class JWTFilterConfig extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        logger.log("Executing JWT filter");
-
         // Retrieve the Authorization header from the HTTP request
         String authHeader = request.getHeader("Authorization");
 
         // Check if the Authorization header is missing or does not start with "Bearer "
         // If so, skip JWT validation and proceed with the next filter in the chain
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.log("Empty Authorization header, skipping JWT filter");
             filterChain.doFilter(request, response);
             return;
         }

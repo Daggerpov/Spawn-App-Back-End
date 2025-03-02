@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -27,7 +27,10 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,7 +44,7 @@ public class ChatMessageService implements IChatMessageService {
     private final ILogger logger;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
-                              IEventRepository eventRepository,IChatMessageLikesRepository chatMessageLikesRepository,
+                              IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
                               IFriendTagService ftService, IUserRepository userRepository, ILogger logger) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
@@ -95,7 +98,7 @@ public class ChatMessageService implements IChatMessageService {
         return chatMessageRepository.findById(id)
                 .map(chatMessage -> {
                     List<UUID> likedByUserIds = getChatMessageLikeUserIds(chatMessage.getId());
-                    return ChatMessageMapper.toDTO(chatMessage, likedByUserIds );
+                    return ChatMessageMapper.toDTO(chatMessage, likedByUserIds);
                 })
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
     }
@@ -108,7 +111,7 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<FullEventChatMessageDTO> getFullChatMessagesByEventId(UUID eventId) {
         ArrayList<FullEventChatMessageDTO> fullChatMessages = new ArrayList<>();
-        for(ChatMessageDTO cm: getChatMessagesByEventId(eventId)) {
+        for (ChatMessageDTO cm : getChatMessagesByEventId(eventId)) {
             fullChatMessages.add(getFullChatMessageByChatMessage(cm));
         }
         return fullChatMessages;
@@ -261,9 +264,9 @@ public class ChatMessageService implements IChatMessageService {
                 chatMessage.getId(),
                 chatMessage.getContent(),
                 chatMessage.getTimestamp(),
-                userService.getFullUserById(chatMessage.getSenderUserId()),
+                userService.getUserById(chatMessage.getSenderUserId()),
                 chatMessage.getEventId(),
-                userService.convertUsersToFullUsers(getChatMessageLikes(chatMessage.getId()), new HashSet<>())
+                getChatMessageLikes(chatMessage.getId())
         );
     }
 
@@ -274,5 +277,5 @@ public class ChatMessageService implements IChatMessageService {
                 .collect(Collectors.toList());
     }
 
-    
+
 }

@@ -282,13 +282,19 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    public List<FullFriendTagDTO> getPertainingFriendTagsForFriend(UUID ownerUserId, UUID friendUserId) {
+    public List<FullFriendTagDTO> getPertainingFullFriendTagsForFriend(UUID ownerUserId, UUID friendUserId) {
         // Fetch all friend tags for the owner
-        List<FriendTagDTO> friendTags = getFriendTagsByOwnerId(ownerUserId).stream()
+        List<FriendTagDTO> friendTags = getPertainingFriendTagsForFriend(ownerUserId, friendUserId);
+        return convertFriendTagsToFullFriendTags(friendTags);
+    }
+
+    @Override
+    public List<FriendTagDTO> getPertainingFriendTagsForFriend(UUID ownerUserId, UUID friendUserId) {
+        // Fetch all friend tags for the owner
+        return getFriendTagsByOwnerId(ownerUserId).stream()
                 // Filter to include only friend tags where friendUserId exists in friendUserIds
                 .filter(friendTag -> friendTag.getFriendUserIds().contains(friendUserId))
                 .collect(Collectors.toList());
-        return convertFriendTagsToFullFriendTags(friendTags);
     }
 
     @Override
@@ -301,8 +307,8 @@ public class FriendTagService implements IFriendTagService {
         List<UserDTO> friendsAddedToTag = userService.getFriendsByFriendTagId(friendTagId);
 
         List<UserDTO> friendsNotAddedToTag = friends.stream()
-                        .filter(friend -> !friendsAddedToTag.contains(friend))
-                        .toList();
+                .filter(friend -> !friendsAddedToTag.contains(friend))
+                .toList();
 
         return friendsNotAddedToTag.stream()
                 .map(userDTO -> userService.getFullUserById(requestingUserId))
