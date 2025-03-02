@@ -6,8 +6,9 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.FetchFriendRequestMapper;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
-import com.danielagapov.spawn.Mappers.FriendUserMapper;
+import com.danielagapov.spawn.Mappers.PotentialFriendUserMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
@@ -61,7 +62,7 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
         List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
-        return FetchFriendRequestDTO.fromEntityList(friendRequests);
+        return FetchFriendRequestMapper.toDTOList(friendRequests);
     }
 
     @Override
@@ -117,7 +118,7 @@ public class FriendRequestService implements IFriendRequestService {
         for (CreateFriendRequestDTO friendRequest : friendRequests) {
             fullFriendRequests.add(new FetchFriendRequestDTO(
                     friendRequest.getId(),
-                    FriendUserMapper.toPotentialFriendUserDTO(userService.getUserEntityById(friendRequest.getSenderUserId()))
+                    PotentialFriendUserMapper.toDTO(userService.getUserEntityById(friendRequest.getSenderUserId()))
             ));
         }
         return fullFriendRequests;

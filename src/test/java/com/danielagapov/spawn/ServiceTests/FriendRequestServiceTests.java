@@ -11,7 +11,6 @@ import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.FriendRequest.FriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -94,7 +93,6 @@ class FriendRequestServiceTests {
     }
 
     @Test
-    @Disabled("getIncomingFetchFriendRequestsByUserId implementation has changed in another PR")
     void getIncomingFetchFriendRequestsByUserId_ShouldReturnRequests_WhenRequestsExist() {
         when(repository.findByReceiverId(receiverId)).thenReturn(List.of(friendRequest));
 
@@ -174,12 +172,11 @@ class FriendRequestServiceTests {
     void saveFriendRequest_ShouldThrowException_WhenSenderOrReceiverIsNull() {
         CreateFriendRequestDTO invalidRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), null, receiverId);
 
-        Exception exception = assertThrows(NullPointerException.class, () -> friendRequestService.saveFriendRequest(invalidRequestDTO));
+        assertThrows(NullPointerException.class, () -> friendRequestService.saveFriendRequest(invalidRequestDTO));
         verify(logger, times(1)).log(anyString());
     }
 
     @Test
-    @Disabled("getIncomingFetchFriendRequestsByUserId implementation has changed in another PR")
     void getIncomingFetchFriendRequestsByUserId_ShouldReturnMultipleRequests_WhenMultipleRequestsExist() {
         FriendRequest anotherFriendRequest = new FriendRequest();
         anotherFriendRequest.setId(UUID.randomUUID());
