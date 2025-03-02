@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.Event;
 
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import lombok.AllArgsConstructor;
