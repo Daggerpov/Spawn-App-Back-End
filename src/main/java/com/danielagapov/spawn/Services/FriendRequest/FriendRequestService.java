@@ -6,7 +6,9 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.FetchFriendRequestMapper;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
+import com.danielagapov.spawn.Mappers.PotentialFriendUserMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
@@ -59,11 +61,17 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
-        return convertFriendRequestsToFetchFriendRequests(getIncomingFriendRequestsByUserId(id));
+        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+        return FetchFriendRequestMapper.toDTOList(friendRequests);
     }
 
     @Override
-    public List<CreateFriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
+    public List<CreateFriendRequestDTO> getIncomingCreateFriendRequestsByUserId(UUID id) {
+        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+        return FriendRequestMapper.toDTOList(friendRequests);
+    }
+
+    private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
@@ -72,8 +80,7 @@ public class FriendRequestService implements IFriendRequestService {
                 return new ArrayList<>();
             }
 
-            // Convert to FullFriendRequestDTO and return
-            return FriendRequestMapper.toDTOList(friendRequests);
+            return friendRequests;
         } catch (DataAccessException e) {
             logger.log("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues
@@ -111,7 +118,7 @@ public class FriendRequestService implements IFriendRequestService {
         for (CreateFriendRequestDTO friendRequest : friendRequests) {
             fullFriendRequests.add(new FetchFriendRequestDTO(
                     friendRequest.getId(),
-                    userService.getUserById(friendRequest.getSenderUserId())
+                    PotentialFriendUserMapper.toDTO(userService.getUserEntityById(friendRequest.getSenderUserId()))
             ));
         }
         return fullFriendRequests;

@@ -172,7 +172,7 @@ class FriendRequestServiceTests {
     void saveFriendRequest_ShouldThrowException_WhenSenderOrReceiverIsNull() {
         CreateFriendRequestDTO invalidRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), null, receiverId);
 
-        Exception exception = assertThrows(NullPointerException.class, () -> friendRequestService.saveFriendRequest(invalidRequestDTO));
+        assertThrows(NullPointerException.class, () -> friendRequestService.saveFriendRequest(invalidRequestDTO));
         verify(logger, times(1)).log(anyString());
     }
 
