@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.User;
 
@@ -10,6 +10,18 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class UserMapper {
+
+    public static BaseUserDTO toDTO(User user) {
+        return new BaseUserDTO(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getBio(),
+                user.getProfilePictureUrlString()
+        );
+    }
 
     public static UserDTO toDTO(User user, List<UUID> friendUserIds, List<UUID> friendTagIds) {
 
@@ -26,7 +38,7 @@ public class UserMapper {
         );
     }
 
-    public static User toEntity(UserDTO dto) {
+    public static User toEntity(BaseUserDTO dto) {
         return new User(
                 dto.getId(),
                 dto.getUsername(),
@@ -48,21 +60,10 @@ public class UserMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<User> toEntityList(List<UserDTO> userDTOs) {
+    public static List<User> toEntityList(List<BaseUserDTO> userDTOs) {
         return userDTOs.stream()
                 .map(UserMapper::toEntity)
                 .collect(Collectors.toList());
     }
 
-    public static User convertFullUserToUserEntity(FullUserDTO dto) {
-        User user = new User();
-        user.setId(dto.getId()); // Set the UUID
-        user.setUsername(dto.getUsername()); // Set the username
-        user.setProfilePictureUrlString(dto.getProfilePicture()); // Set the profile picture URL
-        user.setFirstName(dto.getFirstName()); // Set the first name
-        user.setLastName(dto.getLastName()); // Set the last name
-        user.setBio(dto.getBio()); // Set the bio
-        user.setEmail(dto.getEmail()); // Set the email
-        return user;
-    }
 }
