@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
@@ -67,9 +68,9 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags
     @PostMapping
-    public ResponseEntity<FriendTagDTO> createFriendTag(@RequestBody FriendTagDTO newFriendTag) {
+    public ResponseEntity<FriendTagDTO> createFriendTag(@RequestBody FriendTagCreationDTO newFriendTag) {
         try {
-            return new ResponseEntity<>(friendTagService.saveFriendTag(newFriendTag), HttpStatus.CREATED);
+            return new ResponseEntity<>(friendTagService.createFriendTag(newFriendTag), HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {

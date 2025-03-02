@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
@@ -128,10 +129,22 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public FriendTagDTO saveFriendTag(FriendTagDTO friendTag) {
+        FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
+        friendTagEntity = saveFriendTagEntity(friendTagEntity);
+        return FriendTagMapper.toDTO(friendTagEntity, friendTagEntity.getOwnerId(), List.of());
+    }
+
+    @Override
+    // TODO: use polymorphism to save FriendTagCreationDTO and FriendTagDTO with same method call
+    public FriendTagDTO createFriendTag(FriendTagCreationDTO friendTagDTO) {
+        FriendTag friendTag = FriendTagMapper.toEntity(friendTagDTO);
+        friendTag = saveFriendTagEntity(friendTag);
+        return FriendTagMapper.toDTO(friendTag, friendTag.getOwnerId(), List.of());
+    }
+
+    private FriendTag saveFriendTagEntity(FriendTag friendTag) {
         try {
-            FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
-            friendTagEntity = repository.save(friendTagEntity);
-            return FriendTagMapper.toDTO(friendTagEntity, friendTag.getOwnerUserId(), List.of());
+            return repository.save(friendTag);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
