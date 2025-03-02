@@ -17,4 +17,6 @@ public class FetchFriendRequestDTO extends AbstractFriendRequestDTO implements S
         super(id);
         this.senderUser = senderUser;
     }
+
+
 }
