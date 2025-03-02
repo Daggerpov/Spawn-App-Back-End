@@ -1,10 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.AuthUserDTO;
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
