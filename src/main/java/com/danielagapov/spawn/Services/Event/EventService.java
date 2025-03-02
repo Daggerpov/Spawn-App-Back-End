@@ -476,17 +476,15 @@ public class EventService implements IEventService {
     private List<FullFeedEventDTO> removeExpiredEvents(List<FullFeedEventDTO> events) {
         OffsetDateTime now = OffsetDateTime.now();
 
-        // If the entire list is null, return an empty list
         if (events == null) {
             return Collections.emptyList();
         }
 
-        // Remove null events & filter out expired ones
         return events.stream()
-                .filter(event -> event != null && (event.getEndTime() == null || !event.getEndTime().isBefore(now)))
-                .toList();
+                .filter(Objects::nonNull)
+                .filter(event -> event.getEndTime() == null || !event.getEndTime().isBefore(now))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
-
 
     /**
      * Sorts a list of events by their start time, keeping null values at the end.
