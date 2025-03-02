@@ -3,6 +3,7 @@
 Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI), with a MySQL database, which we interface with through JPA (Java Persistence API).
 
 - [Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)](#architecture-dependency-injection-testing--entities-vs-dtos--mappers)
+
 - [Relationship Diagrams](#relationship-diagrams)
     - [Entity Relationship Diagram](#entity-relationship-diagram)
     - [User DTO Relationships](#user-dto-relationships)
@@ -101,7 +102,7 @@ Note that for the first two, you'll need access to Railway, so only @ShaneMander
 
   </br>
   
-  # **Setting Up the `spawn_db` Database Locally**
+  # Setting Up the `spawn_db` Database Locally
 
 Follow these steps to download, set up the database locally, create `spawn_db`, and populate it with sample data.
 
