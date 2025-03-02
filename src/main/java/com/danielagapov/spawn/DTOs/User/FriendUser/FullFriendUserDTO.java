@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs.User;
+package com.danielagapov.spawn.DTOs.User.FriendUser;
 
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import lombok.Getter;
