@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.FriendTag;
 
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
@@ -14,6 +15,8 @@ public interface IFriendTagService {
     FriendTagDTO getFriendTagById(UUID id);
 
     FriendTagDTO saveFriendTag(FriendTagDTO friendTag);
+
+    FriendTagDTO createFriendTag(FriendTagCreationDTO friendTagCreationDTO);
 
     FriendTagDTO replaceFriendTag(FriendTagDTO friendTag, UUID tagId);
 

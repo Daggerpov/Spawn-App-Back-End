@@ -9,15 +9,13 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class UserDTO extends AbstractUserDTO implements Serializable {
+public class UserDTO extends BaseUserDTO implements Serializable {
     List<UUID> friendUserIds;
     List<UUID> friendTagIds;
-    String profilePicture;
 
     public UserDTO(UUID id, List<UUID> friendUserIds, String username, String picture, String firstName, String lastName, String bio, List<UUID> friendTagIds, String email) {
-        super(id, firstName, lastName, email, username, bio);
+        super(id, firstName, lastName, email, username, bio, picture);
         this.friendUserIds = friendUserIds;
         this.friendTagIds = friendTagIds;
-        this.profilePicture = picture;
     }
 }
