@@ -25,7 +25,6 @@ public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
     private String eventFriendTagColorHexCodeForRequestingUser;
     // ensures string formatting when serialized to JSON; for mobile (client)
     private @JsonFormat(shape = JsonFormat.Shape.STRING) ParticipationStatus participationStatus;
-    private boolean isSelfOwned;
 
     public FullFeedEventDTO(UUID id,
                             String title,
@@ -48,6 +47,5 @@ public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
         this.chatMessages = chatMessages;
         this.eventFriendTagColorHexCodeForRequestingUser = eventFriendTagColorHexCodeForRequestingUser;
         this.participationStatus = participationStatus;
-        this.isSelfOwned = isSelfOwned;
     }
 }
