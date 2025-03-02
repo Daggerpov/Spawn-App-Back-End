@@ -433,6 +433,10 @@ public class EventService implements IEventService {
         logger.log("Getting full events that have invited user with id: " + id);
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
+        if (eventUsers == null || eventUsers.isEmpty()) {
+            return Collections.emptyList(); // ✅ Always return an empty list instead of null
+        }
+
         List<Event> events = new ArrayList<>();
 
         for (EventUser eventUser : eventUsers) {
@@ -493,7 +497,13 @@ public class EventService implements IEventService {
     private List<FullFeedEventDTO> removeExpiredEvents(List<FullFeedEventDTO> events) {
         logger.log("Removing expired events");
         OffsetDateTime now = OffsetDateTime.now();
+
+        if (events == null) {
+            return Collections.emptyList();
+        }
+
         return events.stream()
+                .filter(Objects::nonNull)
                 .filter(event -> event.getEndTime() == null || !event.getEndTime().isBefore(now))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
