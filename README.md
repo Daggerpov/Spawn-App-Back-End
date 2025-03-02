@@ -2,13 +2,16 @@
 
 Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI), with a MySQL database, which we interface with through JPA (Java Persistence API).
 
-- [Diagrams](#diagrams)
-    - [Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)](#architecture-dependency-injection-testing--entities-vs-dtos--mappers)
+- [Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)](#architecture-dependency-injection-testing--entities-vs-dtos--mappers)
+- [Relationship Diagrams](#relationship-diagrams)
     - [Entity Relationship Diagram](#entity-relationship-diagram)
     - [User DTO Relationships](#user-dto-relationships)
 - [Guides](#guides)
+    - [Connecting to Prod (Hosted) DB Through IntelliJ](#connecting-to-prod-hosted-db-through-intellij)
+    - [Exporting DB Data to Excel File](#exporting-db-data-to-excel-file)
+    - [**Setting Up the `spawn_db` Database Locally**](#setting-up-the-spawn_db-database-locally)
 
-# Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)
+## Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)
 
 ![diagrams-architecture-dependency-injection-dtos](diagrams-architecture-dependency-injection-dtos.png)
 
