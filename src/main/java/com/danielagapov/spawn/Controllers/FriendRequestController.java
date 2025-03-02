@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.Enums.FriendRequestAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Services.FriendRequestService.IFriendRequestService;
+import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +24,9 @@ public class FriendRequestController {
 
     // full path: /api/v1/friend-requests/incoming/{userId}
     @GetMapping("incoming/{userId}")
-    public ResponseEntity<List<FullFriendRequestDTO>> getIncomingFriendRequestsByUserId(@PathVariable UUID userId) {
+    public ResponseEntity<List<FetchFriendRequestDTO>> getIncomingFriendRequestsByUserId(@PathVariable UUID userId) {
         try {
-            return new ResponseEntity<>(friendRequestService.getIncomingFriendRequestsByUserId(userId), HttpStatus.OK);
+            return new ResponseEntity<>(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -36,7 +36,7 @@ public class FriendRequestController {
 
     // full path: /api/v1/friend-requests
     @PostMapping
-    public ResponseEntity<FriendRequestDTO> createFriendRequest(@RequestBody FriendRequestDTO friendRequest) {
+    public ResponseEntity<CreateFriendRequestDTO> createFriendRequest(@RequestBody CreateFriendRequestDTO friendRequest) {
         try {
             return new ResponseEntity<>(friendRequestService.saveFriendRequest(friendRequest), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -48,7 +48,7 @@ public class FriendRequestController {
     @PutMapping("{friendRequestId}")
     public ResponseEntity<Void> friendRequestAction(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
         try {
-            if (friendRequestAction == FriendRequestAction.accept){
+            if (friendRequestAction == FriendRequestAction.accept) {
                 friendRequestService.acceptFriendRequest(friendRequestId);
             } else if (friendRequestAction == FriendRequestAction.reject) {
                 friendRequestService.deleteFriendRequest(friendRequestId);

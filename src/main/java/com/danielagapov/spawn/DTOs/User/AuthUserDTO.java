@@ -1,6 +1,5 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.User;
 
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import lombok.Getter;
 
 import java.io.Serializable;

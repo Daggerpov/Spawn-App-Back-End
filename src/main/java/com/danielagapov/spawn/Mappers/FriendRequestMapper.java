@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 
@@ -9,15 +9,15 @@ import java.util.stream.Collectors;
 
 public class FriendRequestMapper {
 
-    public static FriendRequestDTO toDTO(FriendRequest friendRequest) {
-        return new FriendRequestDTO(
+    public static CreateFriendRequestDTO toDTO(FriendRequest friendRequest) {
+        return new CreateFriendRequestDTO(
                 friendRequest.getId(),
                 friendRequest.getSender().getId(),
                 friendRequest.getReceiver().getId()
         );
     }
 
-    public static FriendRequest toEntity(FriendRequestDTO friendRequestDTO, User sender, User receiver) {
+    public static FriendRequest toEntity(CreateFriendRequestDTO friendRequestDTO, User sender, User receiver) {
         FriendRequest friendRequest = new FriendRequest();
         friendRequest.setId(friendRequestDTO.getId());
         friendRequest.setSender(sender);
@@ -25,13 +25,13 @@ public class FriendRequestMapper {
         return friendRequest;
     }
 
-    public static List<FriendRequestDTO> toDTOList(List<FriendRequest> friendRequests) {
+    public static List<CreateFriendRequestDTO> toDTOList(List<FriendRequest> friendRequests) {
         return friendRequests.stream()
                 .map(FriendRequestMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public static List<FriendRequest> toEntityList(List<FriendRequestDTO> friendRequestDTOList, List<User> userSenders, List<User> userReceivers) {
+    public static List<FriendRequest> toEntityList(List<CreateFriendRequestDTO> friendRequestDTOList, List<User> userSenders, List<User> userReceivers) {
         return friendRequestDTOList.stream()
                 .map(dto -> {
                     // Find sender user by matching senderId from userSenders list

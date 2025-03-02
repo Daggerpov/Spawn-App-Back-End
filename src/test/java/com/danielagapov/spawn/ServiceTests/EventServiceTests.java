@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -110,12 +110,13 @@ public class EventServiceTests {
                 OffsetDateTime.now().plusHours(1),
                 new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0),
                 "Note",
-                new FullUserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email"),
+                new UserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email"),
                 List.of(),
                 List.of(),
                 List.of(),
                 null,
-                null
+                null,
+                false
         );
     }
 
@@ -209,7 +210,8 @@ public class EventServiceTests {
                 List.of(), List.of(), List.of());
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
-        when(eventRepository.save(any(Event.class))).thenThrow(new DataAccessException("Database error") {});
+        when(eventRepository.save(any(Event.class))).thenThrow(new DataAccessException("Database error") {
+        });
 
         BaseSaveException exception = assertThrows(BaseSaveException.class,
                 () -> eventService.saveEvent(eventDTO));
@@ -232,7 +234,8 @@ public class EventServiceTests {
     void deleteEventById_ShouldReturnFalse_WhenDatabaseErrorOccurs() {
         UUID eventId = UUID.randomUUID();
         when(eventRepository.existsById(eventId)).thenReturn(true);
-        doThrow(new DataAccessException("Database error") {}).when(eventRepository).deleteById(eventId);
+        doThrow(new DataAccessException("Database error") {
+        }).when(eventRepository).deleteById(eventId);
 
         boolean result = eventService.deleteEventById(eventId);
 
@@ -325,7 +328,8 @@ public class EventServiceTests {
                 List.of()
         );
 
-        when(locationService.save(any(Location.class))).thenThrow(new DataAccessException("Location save error") {});
+        when(locationService.save(any(Location.class))).thenThrow(new DataAccessException("Location save error") {
+        });
 
         ApplicationException ex = assertThrows(ApplicationException.class, () ->
                 eventService.createEvent(creationDTO));

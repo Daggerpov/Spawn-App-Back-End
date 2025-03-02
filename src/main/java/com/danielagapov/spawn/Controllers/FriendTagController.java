@@ -27,7 +27,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags?full=full
     @GetMapping
-    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTags(@RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTags(@RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getAllFriendTags()), HttpStatus.OK);
@@ -41,7 +41,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<AbstractFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<AbstractFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.getFullFriendTagById(id), HttpStatus.OK);
@@ -108,7 +108,7 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/owner/{ownerId}?full=full
     @GetMapping("owner/{ownerId}")
-    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(ownerId)), HttpStatus.OK);
@@ -147,6 +147,7 @@ public class FriendTagController {
     /**
      * The purpose of this endpoint is to show which friend tags a user has placed a friend into
      * on mobile -> in the event creation view when adding friends to an event, or in the friends view
+     *
      * @param ownerUserId
      * @param friendUserId
      * @return friend tags that `owner` has placed `friend` into
@@ -154,7 +155,7 @@ public class FriendTagController {
     @GetMapping("{friendTagsForFriend}")
     public ResponseEntity<List<FullFriendTagDTO>> getFriendTagsForFriend(@RequestParam UUID ownerUserId, @RequestParam UUID friendUserId) {
         try {
-            return new ResponseEntity<>(friendTagService.getPertainingFriendTagsForFriend(ownerUserId, friendUserId), HttpStatus.OK);
+            return new ResponseEntity<>(friendTagService.getPertainingFullFriendTagsForFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.ChatMessage;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,9 +10,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class LocationDTO implements Serializable {
-    UUID id;
-    String name;
-    double latitude;
-    double longitude;
+public class ChatMessageLikesDTO implements Serializable{
+    UUID chatMessageId;
+    UUID userId;
 }

@@ -1,12 +1,14 @@
-package com.danielagapov.spawn.Services.FriendRequestService;
+package com.danielagapov.spawn.Services.FriendRequest;
 
-import com.danielagapov.spawn.DTOs.FriendRequest.FriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FullFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.FetchFriendRequestMapper;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
+import com.danielagapov.spawn.Mappers.PotentialFriendUserMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
@@ -31,7 +33,7 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public FriendRequestDTO saveFriendRequest(FriendRequestDTO friendRequestDTO) {
+    public CreateFriendRequestDTO saveFriendRequest(CreateFriendRequestDTO friendRequestDTO) {
         try {
             // Extract sender and receiver IDs from the FriendRequestDTO
             UUID senderId = friendRequestDTO.getSenderUserId();
@@ -58,7 +60,18 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public List<FullFriendRequestDTO> getIncomingFriendRequestsByUserId(UUID id) {
+    public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
+        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+        return FetchFriendRequestMapper.toDTOList(friendRequests);
+    }
+
+    @Override
+    public List<CreateFriendRequestDTO> getIncomingCreateFriendRequestsByUserId(UUID id) {
+        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+        return FriendRequestMapper.toDTOList(friendRequests);
+    }
+
+    private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
 
@@ -67,8 +80,7 @@ public class FriendRequestService implements IFriendRequestService {
                 return new ArrayList<>();
             }
 
-            // Convert to FullFriendRequestDTO and return
-            return convertFriendRequestsToFullFriendRequests(FriendRequestMapper.toDTOList(friendRequests));
+            return friendRequests;
         } catch (DataAccessException e) {
             logger.log("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues
@@ -101,20 +113,19 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public List<FullFriendRequestDTO> convertFriendRequestsToFullFriendRequests (List<FriendRequestDTO> friendRequests) {
-        List<FullFriendRequestDTO> fullFriendRequests = new ArrayList<>();
-        for (FriendRequestDTO friendRequest : friendRequests) {
-            fullFriendRequests.add(new FullFriendRequestDTO(
+    public List<FetchFriendRequestDTO> convertFriendRequestsToFetchFriendRequests(List<CreateFriendRequestDTO> friendRequests) {
+        List<FetchFriendRequestDTO> fullFriendRequests = new ArrayList<>();
+        for (CreateFriendRequestDTO friendRequest : friendRequests) {
+            fullFriendRequests.add(new FetchFriendRequestDTO(
                     friendRequest.getId(),
-                    userService.getFullUserById(friendRequest.getSenderUserId()),
-                    userService.getFullUserById(friendRequest.getReceiverUserId())
+                    PotentialFriendUserMapper.toDTO(userService.getUserEntityById(friendRequest.getSenderUserId()))
             ));
         }
         return fullFriendRequests;
     }
 
     @Override
-    public List<FriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
+    public List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
         try {
             // Retrieve friend requests sent by the user
             List<FriendRequest> sentRequests = repository.findBySenderId(userId);
