@@ -179,9 +179,18 @@ public class FriendTagService implements IFriendTagService {
         if (!userRepository.existsById(userId)) {
             throw new BaseNotFoundException(EntityType.User, userId);
         }
-        // TODO consider adding a more descriptive error
-        FriendTag friendTag = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
-        User user = userRepository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+
+        FriendTag friendTag = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FriendTag, id));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+
+        boolean exists = uftRepository.existsByFriendTagIdAndFriendId(id, userId);
+        if (exists) {
+            logger.log("User " + userId + " is already in FriendTag " + id);
+            return;
+        }
+
         UserFriendTag uft = new UserFriendTag();
         uft.setFriend(user);
         uft.setFriendTag(friendTag);
