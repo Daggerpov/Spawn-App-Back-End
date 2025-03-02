@@ -2,7 +2,6 @@ package com.danielagapov.spawn.DTOs.Event;
 
 
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
-import com.danielagapov.spawn.DTOs.LocationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
