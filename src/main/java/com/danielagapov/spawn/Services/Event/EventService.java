@@ -82,7 +82,7 @@ public class EventService implements IEventService {
         logger.log("Getting all events");
         try {
             List<Event> events = repository.findAll();
-            return getEventDTOS(events);
+            return getEventDTOs(events);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());
             throw new BasesNotFoundException(EntityType.Event);
@@ -236,10 +236,10 @@ public class EventService implements IEventService {
         logger.log("Getting events owned by user with user id: " + creatorUserId);
         List<Event> events = repository.findByCreatorId(creatorUserId);
 
-        return getEventDTOS(events);
+        return getEventDTOs(events);
     }
 
-    private List<EventDTO> getEventDTOS(List<Event> events) {
+    private List<EventDTO> getEventDTOs(List<Event> events) {
         logger.log("Converting list of events to event dtos. List: " + events.toString());
         List<EventDTO> eventDTOs = new ArrayList<>();
 
@@ -425,7 +425,7 @@ public class EventService implements IEventService {
             }
         }
 
-        return getEventDTOS(events);
+        return getEventDTOs(events);
     }
 
     @Override
@@ -441,7 +441,7 @@ public class EventService implements IEventService {
             }
         }
 
-        List<EventDTO> eventDTOs = getEventDTOS(events);
+        List<EventDTO> eventDTOs = getEventDTOs(events);
 
         return eventDTOs.stream()
                 .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
@@ -458,8 +458,11 @@ public class EventService implements IEventService {
         logger.log("Getting feed events for user with id: " + requestingUserId);
         try {
             // Retrieve events created by the user.
-            List<FullFeedEventDTO> eventsCreated =
-                    convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
+            List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(
+                    getEventsByOwnerId(requestingUserId),
+                    requestingUserId
+            );
+
             List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
             // Remove expired events
