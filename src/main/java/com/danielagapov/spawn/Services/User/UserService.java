@@ -402,23 +402,6 @@ public class UserService implements IUserService {
         }
     }
 
-    // Removes friend bidirectionally
-    @Override
-    public void removeFriend(UUID userId, UUID friendId) {
-        try {
-            // Deletes all entries in UserFriendTag
-            friendTagRepository.findByOwnerId(userId).forEach((friendTag) -> {
-                uftRepository.deleteByFriendTagIdAndUserId(friendTag.getId(), friendId);
-            });
-            friendTagRepository.findByOwnerId(friendId).forEach((friendTag) -> {
-                uftRepository.deleteByFriendTagIdAndUserId(friendTag.getId(), userId);
-            });
-        } catch (Exception e) {
-            logger.log(e.getMessage());
-            throw e;
-        }
-    }
-
     // returns top 3 friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
     @Override

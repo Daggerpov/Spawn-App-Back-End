@@ -132,19 +132,6 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}/removeFriend?friendId=friendId
-    @DeleteMapping("{id}/removeFriend")
-    public ResponseEntity<Void> deleteFriendFromUser(@PathVariable UUID id, @RequestParam UUID friendId) {
-        try {
-            userService.removeFriend(id, friendId);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/recommended-friends/{id}
     @GetMapping("recommended-friends/{id}")
     public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriends(@PathVariable UUID id) {
