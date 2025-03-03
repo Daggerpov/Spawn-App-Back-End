@@ -19,7 +19,7 @@ Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Dagg
 
 ## Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)
 
-![diagrams-architecture-dependency-injection-dtos](diagrams-architecture-dependency-injection-dtos.jpeg)
+![diagrams-architecture-dependency-injection-dtos](diagrams-architecture-dependency-injection-dtos.png)
 
 # Relationship Diagrams
 
