@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -59,6 +60,7 @@ public class EventController {
                 return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
+            // catches user or events
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -75,12 +77,12 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsByOwnerId(creatorUserId), HttpStatus.OK);
             }
-        } catch (BasesNotFoundException e) {
+        } catch (EventsNotFoundException e) {
             // thrown list of events not found for given user id
             // return response with empty list and 200 status
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            // user or event for user id not found
+            // user or event not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             // any other exception
@@ -94,7 +96,7 @@ public class EventController {
         logger.log("Get events by friend tag filter id request received");
         try {
             return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
-        } catch (BasesNotFoundException e) {
+        } catch (EventsNotFoundException e) {
             // list of events not found for tag filter id
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -166,7 +168,11 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
             }
+        } catch (EventsNotFoundException e) {
+            // list of events for user not found
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            // user not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -184,6 +190,7 @@ public class EventController {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
+            // event or user not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -201,6 +208,7 @@ public class EventController {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
+            // event or user not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -216,6 +224,7 @@ public class EventController {
             FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
             return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            // event or user not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -234,11 +243,14 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
             }
-        } catch (BasesNotFoundException e) {
+        } catch (EventsNotFoundException e) {
             // list of events for user id not found
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            // user not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -252,8 +264,14 @@ public class EventController {
         logger.log("Get feed events request received");
         try {
             return new ResponseEntity<>(eventService.getFeedEvents(requestingUserId), HttpStatus.OK);
+        } catch (EventsNotFoundException e) {
+            // list of events for feed not found
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            // user or event not found
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
