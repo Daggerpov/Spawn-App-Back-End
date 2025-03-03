@@ -55,8 +55,8 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}/friends
-    @GetMapping("{id}/friends")
+    // full path: /api/v1/users/friends/{id}
+    @GetMapping("friends/{id}")
     public ResponseEntity<List<? extends AbstractUserDTO>> getUserFriends(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
@@ -145,8 +145,8 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}/recommended-friends
-    @GetMapping("{id}/recommended-friends")
+    // full path: /api/v1/users/recommended-friends/{id}
+    @GetMapping("recommended-friends/{id}")
     public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriends(@PathVariable UUID id) {
         try {
             return new ResponseEntity<>(userService.getRecommendedFriendsForUserId(id), HttpStatus.OK);
@@ -157,8 +157,8 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}/update-pfp
-    @PatchMapping("{id}/update-pfp")
+    // full path: /api/v1/users/update-pfp/{id}
+    @PatchMapping("update-pfp/{id}")
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
         try {
             return new ResponseEntity<>(s3Service.updateProfilePicture(file, id), HttpStatus.OK);
