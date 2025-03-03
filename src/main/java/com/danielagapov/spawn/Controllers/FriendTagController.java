@@ -195,7 +195,9 @@ public class FriendTagController {
     @PostMapping("addUserToTags")
     public ResponseEntity<Void> addUserToTags(@RequestBody List<UUID> friendTagIds, @RequestParam UUID friendUserId) {
         try {
-            friendTagService.addFriendToFriendTags(friendTagIds, friendUserId);
+            if (!friendTagIds.isEmpty()) {
+                friendTagService.addFriendToFriendTags(friendTagIds, friendUserId);
+            }
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
