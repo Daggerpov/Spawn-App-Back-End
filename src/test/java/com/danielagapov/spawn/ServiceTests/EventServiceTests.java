@@ -115,7 +115,8 @@ public class EventServiceTests {
                 List.of(),
                 List.of(),
                 null,
-                null
+                null,
+                false
         );
     }
 

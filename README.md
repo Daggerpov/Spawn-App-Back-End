@@ -15,17 +15,17 @@ MySQL database, which we interface with through JPA (Java Persistence API).
 
 ## Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)
 
-![diagrams-architecture-dependency-injection-dtos](diagrams-architecture-dependency-injection-dtos.png)
+![diagrams-architecture-dependency-injection-dtos](diagrams/diagrams-architecture-dependency-injection-dtos.png)
 
 # Relationship Diagrams
 
 ## Entity Relationship Diagram
 
-![entity-relationship-diagram-Nov-20-v4-location-db-table](entity-relationship-diagram.png)
+![entity-relationship-diagram-Nov-20-v4-location-db-table](diagrams/entity-relationship-diagram.png)
 
 ## User DTO Relationships
 
-![img_1.png](img.png)
+![img_1.png](diagrams/img.png)
 
 # Guides
 
