@@ -394,11 +394,14 @@ public class UserService implements IUserService {
                 return;
             }
 
-            UUID userEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
-            friendTagService.saveUserToFriendTag(userEveryoneTagId, friendId);
+            Optional<FriendTag> userEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+            userEveryoneTag.ifPresent(tag ->
+                friendTagService.saveUserToFriendTag(tag.getId(), friendId));
 
-            UUID friendEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
-            friendTagService.saveUserToFriendTag(friendEveryoneTagId, userId);
+
+            Optional<FriendTag> friendEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(friendId);
+            friendEveryoneTag.ifPresent(tag ->
+                    friendTagService.saveUserToFriendTag(tag.getId(), userId));
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
