@@ -25,6 +25,7 @@ public class FriendRequestController {
     // full path: /api/v1/friend-requests/incoming/{userId}
     @GetMapping("incoming/{userId}")
     public ResponseEntity<List<FetchFriendRequestDTO>> getIncomingFriendRequestsByUserId(@PathVariable UUID userId) {
+        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -47,6 +48,7 @@ public class FriendRequestController {
     // full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
     @PutMapping("{friendRequestId}")
     public ResponseEntity<Void> friendRequestAction(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
+        if (friendRequestId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (friendRequestAction == FriendRequestAction.accept) {
                 friendRequestService.acceptFriendRequest(friendRequestId);

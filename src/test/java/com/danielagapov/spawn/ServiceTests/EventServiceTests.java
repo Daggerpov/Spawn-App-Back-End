@@ -407,7 +407,7 @@ public class EventServiceTests {
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub friend tag lookup; for events without a requesting user, no friend tag is applied.
-        when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(null);
+        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
         // To ensure getParticipationStatus does not throw, stub existsById and findByEvent_Id.
         when(eventUserRepository.existsById(any(EventUsersId.class))).thenReturn(true);
@@ -455,8 +455,8 @@ public class EventServiceTests {
         // Stub friend tag lookup
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#123456");
-        when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, event.getCreator().getId()))
-                .thenReturn(friendTag);
+        when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, event.getCreator().getId()))
+                .thenReturn(Optional.of(friendTag));
 
         // Stub participation status lookups
         when(eventUserRepository.existsById(compositeId)).thenReturn(true);
@@ -740,7 +740,7 @@ public class EventServiceTests {
 
         FriendTagDTO dummyTag = mock(FriendTagDTO.class);
         when(dummyTag.getColorHexCode()).thenReturn("#DUMMY");
-        when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(dummyTag);
+        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(Optional.of(dummyTag));
 
         List<FullFeedEventDTO> fullEvents = eventService.getFullEventsInvitedTo(userId);
 
@@ -788,7 +788,7 @@ public class EventServiceTests {
         UUID requestingUserId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
-        when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, creatorId)).thenReturn(friendTag);
+        when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, creatorId)).thenReturn(Optional.of(friendTag));
 
         String colorHex = eventService.getFriendTagColorHexCodeForRequestingUser(eventDTO, requestingUserId);
 
@@ -821,7 +821,7 @@ public class EventServiceTests {
         dummyEU.setStatus(ParticipationStatus.invited);
         when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
         // Stub friend tag lookup to return null (i.e. no friend tag applies).
-        when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(null);
+        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
         List<FullFeedEventDTO> fullEvents = eventService.convertEventsToFullFeedEvents(events, requestingUserId);
         assertNotNull(fullEvents, "The converted list should not be null");
@@ -846,7 +846,7 @@ public class EventServiceTests {
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
         // Stub friend tag lookup to return null (self-owned accent)
-        when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(null);
+        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
         // Stub participation lookup with a valid EventUser and User
         when(eventUserRepository.existsById(compositeId)).thenReturn(true);
@@ -861,7 +861,7 @@ public class EventServiceTests {
 
         assertNotNull(fullEvents);
         assertEquals(1, fullEvents.size());
-        assertEquals("#1D3D3D", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
+        assertEquals("#8693FF", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface IFriendTagService {
@@ -26,7 +27,7 @@ public interface IFriendTagService {
     List<UUID> getFriendTagIdsByOwnerUserId(UUID id);
 
     // friend-related:
-    FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId);
+    Optional<FriendTagDTO> getPertainingFriendTagBetweenUsers(UUID ownerUserId, UUID friendUserId);
 
     void saveUserToFriendTag(UUID id, UUID userId);
 
