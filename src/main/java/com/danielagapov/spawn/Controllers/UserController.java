@@ -42,6 +42,7 @@ public class UserController {
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
     public ResponseEntity<AbstractUserDTO> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
                 return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
@@ -58,6 +59,7 @@ public class UserController {
     // full path: /api/v1/users/friends/{id}
     @GetMapping("friends/{id}")
     public ResponseEntity<List<? extends AbstractUserDTO>> getUserFriends(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -80,6 +82,7 @@ public class UserController {
     // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
     public ResponseEntity<List<? extends AbstractUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
+        if (tagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId), new HashSet<>()), HttpStatus.OK);
@@ -106,6 +109,7 @@ public class UserController {
     // full path: /api/v1/users/{id}
     @PutMapping("{id}")
     public ResponseEntity<UserDTO> replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(userService.replaceUser(newUser, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -118,6 +122,7 @@ public class UserController {
     // full path: /api/v1/users/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             boolean isDeleted = userService.deleteUserById(id);
             if (isDeleted) {
@@ -135,6 +140,7 @@ public class UserController {
     // full path: /api/v1/users/recommended-friends/{id}
     @GetMapping("recommended-friends/{id}")
     public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriends(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(userService.getRecommendedFriendsForUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -147,6 +153,7 @@ public class UserController {
     // full path: /api/v1/users/update-pfp/{id}
     @PatchMapping("update-pfp/{id}")
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(s3Service.updateProfilePicture(file, id), HttpStatus.OK);
         } catch (Exception e) {
