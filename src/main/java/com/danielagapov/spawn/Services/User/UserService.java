@@ -288,8 +288,8 @@ public class UserService implements IUserService {
     @Override
     public FullUserDTO getFullUserByEmail(String email) {
         try {
-            User user = repository.findByEmail(email);
-            return user == null ? null : getFullUserById(user.getId());
+            User user = repository.findByEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
+            return getFullUserById(user.getId());
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -362,10 +362,13 @@ public class UserService implements IUserService {
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         try {
             // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-            FriendTag everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
-            if (everyoneTag == null) {
+            Optional<FriendTag> optionalEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+
+            if (optionalEveryoneTag.isEmpty()) {
                 return List.of(); // empty list of friends
             }
+
+            FriendTag everyoneTag = optionalEveryoneTag.get();
 
             // Retrieve the friends for each FriendTag and return as a flattened list
             List<UserDTO> friends = getFriendsByFriendTagId(everyoneTag.getId());
@@ -391,11 +394,14 @@ public class UserService implements IUserService {
                 return;
             }
 
-            UUID userEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
-            friendTagService.saveUserToFriendTag(userEveryoneTagId, friendId);
+            Optional<FriendTag> userEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+            userEveryoneTag.ifPresent(tag ->
+                friendTagService.saveUserToFriendTag(tag.getId(), friendId));
 
-            UUID friendEveryoneTagId = friendTagRepository.findEveryoneTagByOwnerId(userId).getId();
-            friendTagService.saveUserToFriendTag(friendEveryoneTagId, userId);
+
+            Optional<FriendTag> friendEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(friendId);
+            friendEveryoneTag.ifPresent(tag ->
+                    friendTagService.saveUserToFriendTag(tag.getId(), userId));
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -610,10 +616,7 @@ public class UserService implements IUserService {
     @Override
     public FullUserDTO getFullUserByUsername(String username) {
         try {
-            User user = repository.findByUsername(username);
-            if (user == null) {
-                throw new BaseNotFoundException(EntityType.User, username);
-            }
+            User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
             return getFullUserById(user.getId());
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -630,7 +633,7 @@ public class UserService implements IUserService {
     public void verifyUserByUsername(String username) {
         try {
             logger.log("Marking user as verified " + username);
-            User user = repository.findByUsername(username);
+            User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
             user.setVerified(true);
             repository.save(user);
         } catch (Exception e) {

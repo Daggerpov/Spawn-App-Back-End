@@ -262,7 +262,7 @@ public class FriendTagService implements IFriendTagService {
     /// friend inside, even if they've placed them in multiple friend tags
     /// -> currently, on the product side, we don't specify a rule for which should take precedence.
     @Override
-    public FriendTagDTO getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId) {
+    public Optional<FriendTagDTO> getPertainingFriendTagBetweenUsers(UUID ownerUserId, UUID friendUserId) {
         // Fetch all friend tags for the owner
         ArrayList<FriendTagDTO> friendTags = new ArrayList<>(getFriendTagsByOwnerId(ownerUserId).stream()
                 // Filter to include only friend tags where friendUserId exists in friendUserIds
@@ -274,12 +274,7 @@ public class FriendTagService implements IFriendTagService {
 
         // arbitrarily grab the first tag that isn't the 'everyone' tag
         try {
-            Optional<FriendTagDTO> friendTag = friendTags.stream().findFirst();
-            if (friendTag.isPresent()) { // just null-checking
-                return friendTag.get();
-            } else {
-                throw new BaseNotFoundException(EntityType.FriendTag, friendUserId);
-            }
+            return friendTags.stream().findFirst();
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
