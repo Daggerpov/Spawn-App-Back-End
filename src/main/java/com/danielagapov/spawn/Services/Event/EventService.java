@@ -564,15 +564,9 @@ public class EventService implements IEventService {
 
         // use creator to get the friend tag that relates the requesting user to see
         // which friend tag they've placed them in
-        FriendTagDTO pertainingFriendTag = friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.getCreatorUserId());
-
-        // -> for now, we handle tie-breaks (user has same friend within two friend tags) in whichever way (just choose one)
-        if (pertainingFriendTag == null) {
-            return "#1D3D3D"; // Default color if no tag exists
-        }
-        // using that friend tag, grab its colorHexCode property to return from this method
-
-        return pertainingFriendTag.getColorHexCode();
+        return friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.getCreatorUserId())
+                .map(FriendTagDTO::getColorHexCode)
+                .orElse("#1D3D3D"); // Default color if no tag exists
     }
 
     @Override

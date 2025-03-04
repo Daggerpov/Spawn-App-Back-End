@@ -456,7 +456,7 @@ public class EventServiceTests {
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#123456");
         when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, event.getCreator().getId()))
-                .thenReturn(friendTag);
+                .thenReturn(Optional.of(friendTag));
 
         // Stub participation status lookups
         when(eventUserRepository.existsById(compositeId)).thenReturn(true);
@@ -740,7 +740,7 @@ public class EventServiceTests {
 
         FriendTagDTO dummyTag = mock(FriendTagDTO.class);
         when(dummyTag.getColorHexCode()).thenReturn("#DUMMY");
-        when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(dummyTag);
+        when(friendTagService.getPertainingFriendTagByUserIds(any(UUID.class), any(UUID.class))).thenReturn(Optional.of(dummyTag));
 
         List<FullFeedEventDTO> fullEvents = eventService.getFullEventsInvitedTo(userId);
 
@@ -788,7 +788,7 @@ public class EventServiceTests {
         UUID requestingUserId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
-        when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, creatorId)).thenReturn(friendTag);
+        when(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, creatorId)).thenReturn(Optional.of(friendTag));
 
         String colorHex = eventService.getFriendTagColorHexCodeForRequestingUser(eventDTO, requestingUserId);
 
