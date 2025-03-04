@@ -25,7 +25,7 @@ MySQL database, which we interface with through JPA (Java Persistence API).
 
 ## User DTO Relationships
 
-![img.png](img.png)
+![img_1.png](img.png)
 
 # Guides
 
