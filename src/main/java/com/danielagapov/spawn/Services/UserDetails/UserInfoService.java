@@ -25,10 +25,6 @@ public class UserInfoService implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = repository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException(username);
-        }
 
         return new UserInfo(user.getUsername(), "user.getPassword()");
     }
