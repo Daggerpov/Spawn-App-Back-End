@@ -48,9 +48,9 @@ public class FriendRequestController {
     @PutMapping("{friendRequestId}")
     public ResponseEntity<Void> friendRequestAction(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
         try {
-            if (friendRequestAction == FriendRequestAction.accept) {
+            if (friendRequestAction == FriendRequestAction.accept && friendRequestId != null) {
                 friendRequestService.acceptFriendRequest(friendRequestId);
-            } else if (friendRequestAction == FriendRequestAction.reject) {
+            } else if (friendRequestAction == FriendRequestAction.reject && friendRequestId != null) {
                 friendRequestService.deleteFriendRequest(friendRequestId);
             } else {
                 // deal with null/invalid argument for `friendRequestAction`
