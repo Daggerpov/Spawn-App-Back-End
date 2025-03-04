@@ -524,7 +524,6 @@ public class EventService implements IEventService {
 
     @Override
     public FullFeedEventDTO getFullEventByEvent(EventDTO event, UUID requestingUserId, Set<UUID> visitedEvents) {
-        logger.log(String.format("Getting full event by event: {eventDTO: %s, requestingUserId: %s, visitedEvents: %s}", event, requestingUserId, visitedEvents));
         try {
             if (visitedEvents.contains(event.getId())) {
                 return null;
@@ -567,7 +566,7 @@ public class EventService implements IEventService {
         return Optional.ofNullable(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, eventDTO.getCreatorUserId()))
                 .flatMap(optional -> optional)  // This will flatten the Optional<Optional<FriendTagDTO>> to Optional<FriendTagDTO>
                 .map(FriendTagDTO::getColorHexCode)
-                .orElse("#1D3D3D"); // Default color if no tag exists or if result is null
+                .orElse("#8693FF"); // Default color if no tag exists or if result is null
     }
 
     @Override
