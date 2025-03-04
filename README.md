@@ -1,6 +1,7 @@
 # Spawn-App-Back-End
 
-Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI), with a MySQL database, which we interface with through JPA (Java Persistence API).
+Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI), with a
+MySQL database, which we interface with through JPA (Java Persistence API).
 
 - [Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)](#architecture-dependency-injection-testing--entities-vs-dtos--mappers)
 
@@ -24,11 +25,12 @@ Back-End Spring Boot REST API for the [Spawn Mobile App](https://github.com/Dagg
 
 ## User DTO Relationships
 
-<img width="595" alt="image" src="https://github.com/user-attachments/assets/7062dbeb-2452-4b1f-b760-0676c30324d1" />
+![img.png](img.png)
 
 # Guides
 
-Note that for the first two, you'll need access to Railway, so only @ShaneMander, @evannawfal, and I (@Daggerpov) will be able to follow them. The last one (setting up local MySQL database) is for everyone.
+Note that for the first two, you'll need access to Railway, so only @ShaneMander, @evannawfal, and I (@Daggerpov) will
+be able to follow them. The last one (setting up local MySQL database) is for everyone.
 
 <details>
 
@@ -37,7 +39,6 @@ Note that for the first two, you'll need access to Railway, so only @ShaneMander
 </br>
 
 # Connecting to Prod (Hosted) DB Through IntelliJ
-
 
 1. Create new data source from URL
 
@@ -65,7 +66,6 @@ Note that for the first two, you'll need access to Railway, so only @ShaneMander
 
 7. It should work now, and show the DB tables within IntelliJ here:
 
-
 ![img_8.png](src/main/resources/Guides/images_connect-to-prod-db/img_8.png)
 
 </details>
@@ -74,10 +74,10 @@ Note that for the first two, you'll need access to Railway, so only @ShaneMander
 <details>
   <summary>Exporting DB Data to Excel File</summary>
   </br>
-  
-  # Exporting DB Data to Excel File
 
-  One use case, that I'll use for this guide: beta access sign up emails, for our marketing team.
+# Exporting DB Data to Excel File
+
+One use case, that I'll use for this guide: beta access sign up emails, for our marketing team.
 
 ## Firstly: read `connect-to-prod-db.md`
 
@@ -101,8 +101,8 @@ Note that for the first two, you'll need access to Railway, so only @ShaneMander
   <summary>Setup Local MySQL Database</summary>
 
   </br>
-  
-  # Setting Up the `spawn_db` Database Locally
+
+# Setting Up the `spawn_db` Database Locally
 
 Follow these steps to download, set up the database locally, create `spawn_db`, and populate it with sample data.
 
@@ -145,13 +145,14 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
       ```
 
 4. **Ensure Environment Variables are Set**
-   - Set the following environment variables, or add to a `.env` file
-     - `MYSQL_URL`
-     - `MYSQL_USER`
-     - `MYSQL_PASSWORD`
+    - Set the following environment variables, or add to a `.env` file
+        - `MYSQL_URL`
+        - `MYSQL_USER`
+        - `MYSQL_PASSWORD`
 
 5. **Populate the Database with Sample Data**:
-    - If you are using the terminal, create a file named `populate_spawn_db.sql` and add the following SQL commands to it:
+    - If you are using the terminal, create a file named `populate_spawn_db.sql` and add the following SQL commands to
+      it:
       ```sql
       -- Use the spawn_db database
       USE spawn_db;
@@ -228,7 +229,8 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
       ```
     - If using MySQL Workbench, paste the script into the query window and run it.
 
-Thats all! You have successfully set up the `spawn_db` database locally and populated it with sample data. You can now use it to test the Spawn application. (hopefully)
-   
+Thats all! You have successfully set up the `spawn_db` database locally and populated it with sample data. You can now
+use it to test the Spawn application. (hopefully)
+
 
 </details>
