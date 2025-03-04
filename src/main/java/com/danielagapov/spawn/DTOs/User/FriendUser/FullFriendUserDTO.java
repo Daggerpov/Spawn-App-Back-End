@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.DTOs.User.FriendUser;
 
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class FullFriendUserDTO extends AbstractFriendUserDTO implements Serializable {
+public class FullFriendUserDTO extends BaseUserDTO implements Serializable {
     private List<FriendTagDTO> associatedFriendTagsToOwner;
 
     public FullFriendUserDTO(UUID id, String username, String profilePicture, String firstName,

@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
@@ -513,13 +514,13 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getParticipantsByEventId(UUID eventId) {
+    public List<BaseUserDTO> getParticipantsByEventId(UUID eventId) {
         try {
             List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
 
             return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.participating)
-                    .map(eventUser -> getUserById(eventUser.getUser().getId()))
+                    .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.log("Error retrieving participants for eventId " + eventId + ": " + e.getMessage());
@@ -527,14 +528,15 @@ public class UserService implements IUserService {
         }
     }
 
+
     @Override
-    public List<UserDTO> getInvitedByEventId(UUID eventId) {
+    public List<BaseUserDTO> getInvitedByEventId(UUID eventId) {
         try {
             List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
 
             return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.invited)
-                    .map(eventUser -> getUserById(eventUser.getUser().getId()))
+                    .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.log("Error retrieving invited users for eventId " + eventId + ": " + e.getMessage());

@@ -2,7 +2,7 @@ package com.danielagapov.spawn.DTOs.Event;
 
 
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
@@ -17,9 +17,9 @@ import java.util.UUID;
 @Setter
 public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
     private LocationDTO location;
-    private UserDTO creatorUser;
-    private List<UserDTO> participantUsers;
-    private List<UserDTO> invitedUsers;
+    private BaseUserDTO creatorUser;
+    private List<BaseUserDTO> participantUsers;
+    private List<BaseUserDTO> invitedUsers;
     private List<FullEventChatMessageDTO> chatMessages;
     /// useful for event retrieval from a user's feed/map view on mobile:
     private String eventFriendTagColorHexCodeForRequestingUser;
@@ -33,13 +33,12 @@ public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
                             OffsetDateTime endTime,
                             LocationDTO location,
                             String note,
-                            UserDTO creatorUser,
-                            List<UserDTO> participantUsers,
-                            List<UserDTO> invitedUsers,
+                            BaseUserDTO creatorUser,
+                            List<BaseUserDTO> participantUsers,
+                            List<BaseUserDTO> invitedUsers,
                             List<FullEventChatMessageDTO> chatMessages,
                             String eventFriendTagColorHexCodeForRequestingUser,
-                            ParticipationStatus participationStatus,
-                            boolean isSelfOwned) {
+                            ParticipationStatus participationStatus, boolean isSelfOwned) {
         super(id, title, startTime, endTime, note);
         this.location = location;
         this.creatorUser = creatorUser;

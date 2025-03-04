@@ -8,7 +8,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FetchFriendRequestMapper;
 import com.danielagapov.spawn.Mappers.FriendRequestMapper;
-import com.danielagapov.spawn.Mappers.PotentialFriendUserMapper;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
@@ -118,7 +118,7 @@ public class FriendRequestService implements IFriendRequestService {
         for (CreateFriendRequestDTO friendRequest : friendRequests) {
             fullFriendRequests.add(new FetchFriendRequestDTO(
                     friendRequest.getId(),
-                    PotentialFriendUserMapper.toDTO(userService.getUserEntityById(friendRequest.getSenderUserId()))
+                    UserMapper.toDTO(userService.getUserEntityById(friendRequest.getSenderUserId()))
             ));
         }
         return fullFriendRequests;

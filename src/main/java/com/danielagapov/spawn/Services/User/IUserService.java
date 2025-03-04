@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
@@ -62,9 +63,9 @@ public interface IUserService {
 
     // For Events:
 
-    List<UserDTO> getParticipantsByEventId(UUID eventId);
+    List<BaseUserDTO> getParticipantsByEventId(UUID eventId);
 
-    List<UserDTO> getInvitedByEventId(UUID eventId);
+    List<BaseUserDTO> getInvitedByEventId(UUID eventId);
 
     List<UUID> getParticipantUserIdsByEventId(UUID eventId);
 

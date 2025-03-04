@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.DTOs.FriendTag;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,14 +11,18 @@ import java.util.UUID;
 @Getter
 @Setter
 public class FriendTagDTO extends AbstractFriendTagDTO implements Serializable {
-    UUID ownerUserId;
-    List<UUID> friendUserIds;
+    private UUID ownerUserId;
+    private List<UUID> friendUserIds;
+    @JsonProperty("isEveryone") // Explicitly define JSON property name
+    private boolean isEveryone;
+
     public FriendTagDTO(UUID id, String displayName, String colorHexCode,
-                            UUID ownerUserId,
-                            List<UUID> friendUserIds,
-                            boolean isEveryone) {
-        super(id, displayName, colorHexCode, isEveryone);
+                        UUID ownerUserId,
+                        List<UUID> friendUserIds,
+                        boolean isEveryone) {
+        super(id, displayName, colorHexCode);
         this.ownerUserId = ownerUserId;
         this.friendUserIds = friendUserIds;
+        this.isEveryone = isEveryone;
     }
 }

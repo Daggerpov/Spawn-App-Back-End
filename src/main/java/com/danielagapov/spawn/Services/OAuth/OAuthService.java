@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -155,14 +154,9 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private void createAndSaveMapping(String externalUserId, AbstractUserDTO userDTO, OAuthProvider provider) {
+    private void createAndSaveMapping(String externalUserId, UserDTO userDTO, OAuthProvider provider) {
         try {
-            User user;
-            if (userDTO instanceof FullUserDTO) {
-                user = UserMapper.convertFullUserToUserEntity((FullUserDTO) userDTO);
-            } else {
-                user = UserMapper.toEntity((UserDTO) userDTO);
-            }
+            User user = UserMapper.toEntity(userDTO);
             UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
             logger.log(String.format("Saving mapping: {mapping: %s}", mapping));
             externalIdMapRepository.save(mapping);
