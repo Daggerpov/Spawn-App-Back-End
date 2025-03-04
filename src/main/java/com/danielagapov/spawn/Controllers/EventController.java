@@ -8,7 +8,6 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
@@ -24,12 +23,10 @@ import java.util.UUID;
 public class EventController {
     private final IEventService eventService;
     private final IUserService userService;
-    private final ILogger logger;
 
-    public EventController(IEventService eventService, IUserService userService, ILogger logger) {
+    public EventController(IEventService eventService, IUserService userService) {
         this.eventService = eventService;
         this.userService = userService;
-        this.logger = logger;
     }
 
     // full path: /api/v1/events?full=full
@@ -41,22 +38,6 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
             }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/events/{id}?full=full&requestingUserId=requestingUserId
-    @GetMapping("{id}")
-    public ResponseEntity<AbstractEventDTO> getEventById(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full, @RequestParam(required = false) UUID requestingUserId) {
-        try {
-            if (full && requestingUserId != null) {
-                return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(eventService.getEventById(id), HttpStatus.OK);
-            }
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -81,6 +62,8 @@ public class EventController {
     // full path: /api/v1/events/friendTag/{friendTagFilterId}
     @GetMapping("friendTag/{friendTagFilterId}")
     public ResponseEntity<List<FullFeedEventDTO>> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
+        if (friendTagFilterId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
         try {
             return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -109,6 +92,7 @@ public class EventController {
     // full path: /api/v1/events/{id}
     @PutMapping("{id}")
     public ResponseEntity<EventDTO> replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(eventService.replaceEvent(newEvent, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -121,6 +105,7 @@ public class EventController {
     // full path: /api/v1/events/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             boolean isDeleted = eventService.deleteEventById(id);
             if (isDeleted) {
@@ -138,6 +123,7 @@ public class EventController {
     // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
     public ResponseEntity<List<? extends AbstractUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(eventService.getParticipatingUsersByEventId(id), new HashSet<>()), HttpStatus.OK);
@@ -154,6 +140,7 @@ public class EventController {
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
     @GetMapping("{eventId}/participating")
     public ResponseEntity<Boolean> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
+        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
                 return new ResponseEntity<>(true, HttpStatus.OK);
@@ -170,6 +157,7 @@ public class EventController {
     // full path: /api/v1/events/{eventId}/invited?userId={userid}
     @GetMapping("{eventId}/invited")
     public ResponseEntity<Boolean> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
+        if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
                 return new ResponseEntity<>(true, HttpStatus.OK);
@@ -187,6 +175,7 @@ public class EventController {
     // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
     @PutMapping("{eventId}/toggleStatus/{userId}")
     public ResponseEntity<FullFeedEventDTO> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
+        if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
             return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
@@ -202,6 +191,7 @@ public class EventController {
     // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
     public ResponseEntity<List<? extends AbstractEventDTO>> getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required = false) boolean full) {
+        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
@@ -220,6 +210,7 @@ public class EventController {
     // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
     public ResponseEntity<List<FullFeedEventDTO>> getFeedEvents(@PathVariable UUID requestingUserId) {
+        if (requestingUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(eventService.getFeedEvents(requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {

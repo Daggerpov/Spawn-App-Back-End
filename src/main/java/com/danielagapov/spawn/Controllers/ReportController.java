@@ -46,8 +46,9 @@ public class ReportController {
     }
 
     // full path: /api/v1/reports/{reportId}?resolution=<ResolutionStatus>
-    @PostMapping("{reportId}")
+    @PutMapping("{reportId}")
     public ResponseEntity<ReportedContentDTO> resolveReport(@PathVariable UUID reportId, @RequestParam("resolution") ResolutionStatus resolution) {
+        if (reportId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             ReportedContentDTO report = reportService.resolveReport(reportId, resolution);
             return ResponseEntity.ok(report);
@@ -61,6 +62,7 @@ public class ReportController {
     // full path: /api/v1/reports/reporters/{reporterId}
     @GetMapping("reporter/{reporterId}")
     public ResponseEntity<List<ReportedContentDTO>> getReportsByReporter(@PathVariable UUID reporterId) {
+        if (reporterId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             List<ReportedContentDTO> reports = reportService.getReportsByReporterId(reporterId);
             return ResponseEntity.ok(reports);
@@ -74,6 +76,7 @@ public class ReportController {
     // full path: /api/v1/reports/reported-users/{contentOwnerId}
     @GetMapping("{contentOwnerId}")
     public ResponseEntity<List<ReportedContentDTO>> getReportsByContentOwner(@PathVariable UUID contentOwnerId) {
+        if (contentOwnerId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             List<ReportedContentDTO> reports = reportService.getReportsByContentOwnerId(contentOwnerId);
             return ResponseEntity.ok(reports);
@@ -87,6 +90,7 @@ public class ReportController {
     // full path: /api/v1/reports/{reportId}
     @DeleteMapping("{reportId}")
     public ResponseEntity<Void> deleteReport(@PathVariable UUID reportId) {
+        if (reportId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             reportService.deleteReportById(reportId);
             return ResponseEntity.noContent().build();
@@ -100,6 +104,7 @@ public class ReportController {
     // full path: /api/v1/reports/{reportId}
     @GetMapping("{reportId}")
     public ResponseEntity<ReportedContentDTO> getReportById(@PathVariable UUID reportId) {
+        if (reportId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             ReportedContentDTO report = reportService.getReportById(reportId);
             return ResponseEntity.ok(report);
