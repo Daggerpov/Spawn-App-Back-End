@@ -89,10 +89,15 @@ public class FriendTagService implements IFriendTagService {
         // Fetch FriendTag entities related to the given user (for example, by userId)
         List<FriendTag> friendTags = repository.findByOwnerId(id);
 
+        if (friendTags == null || friendTags.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         // Extract and return the FriendTag IDs
         return friendTags.stream()
-                .map(FriendTag::getId) // Get the ID of each FriendTag
-                .collect(Collectors.toList());
+            .filter(Objects::nonNull)
+            .map(FriendTag::getId) // Get the ID of each FriendTag
+            .collect(Collectors.toList());
     }
 
     @Override
