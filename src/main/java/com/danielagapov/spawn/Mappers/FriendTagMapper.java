@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.Models.FriendTag;
@@ -20,6 +21,16 @@ public class FriendTagMapper {
                 entity.isEveryone()
 
         );
+    }
+
+    public static FriendTag toEntity(AbstractFriendTagDTO dto) {
+        if (dto instanceof FriendTagDTO) {
+            return toEntity((FriendTagDTO) dto);
+        } else if (dto instanceof FriendTagCreationDTO) {
+            return toEntity((FriendTagCreationDTO) dto);
+        } else {
+            throw new IllegalArgumentException("Unsupported DTO type: " + dto.getClass().getSimpleName());
+        }
     }
 
     public static FriendTag toEntity(FriendTagDTO dto) {
@@ -53,12 +64,6 @@ public class FriendTagMapper {
                         ownerUserIdsMap.getOrDefault(friendTag, null), // Default to null if owner is missing
                         friendUserIdsMap.getOrDefault(friendTag, List.of()) // Default to an empty list if friends are missing
                 ))
-                .collect(Collectors.toList());
-    }
-
-    public static List<FriendTag> toEntityList(List<FriendTagDTO> friendTagDTOs) {
-        return friendTagDTOs.stream()
-                .map(FriendTagMapper::toEntity)
                 .collect(Collectors.toList());
     }
 }
