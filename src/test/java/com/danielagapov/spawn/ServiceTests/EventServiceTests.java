@@ -861,7 +861,7 @@ public class EventServiceTests {
 
         assertNotNull(fullEvents);
         assertEquals(1, fullEvents.size());
-        assertEquals("#1D3D3D", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
+        assertEquals("#8693FF", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
     }
 
     @Test

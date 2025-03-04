@@ -592,7 +592,7 @@ public class EventService implements IEventService {
             }
 
             // Apply universal accent color
-            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#1D3D3D");
+            fullFeedEvent.setEventFriendTagColorHexCodeForRequestingUser("#8693FF");
 
             fullEvents.add(fullFeedEvent);
         }
