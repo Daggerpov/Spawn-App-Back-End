@@ -26,7 +26,7 @@ public interface IFriendTagService {
     List<UUID> getFriendTagIdsByOwnerUserId(UUID id);
 
     // friend-related:
-    Optional<FriendTagDTO> getPertainingFriendTagByUserIds(UUID ownerUserId, UUID friendUserId);
+    Optional<FriendTagDTO> getPertainingFriendTagBetweenUsers(UUID ownerUserId, UUID friendUserId);
 
     void saveUserToFriendTag(UUID id, UUID userId);
 
