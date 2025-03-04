@@ -564,9 +564,10 @@ public class EventService implements IEventService {
 
         // use creator to get the friend tag that relates the requesting user to see
         // which friend tag they've placed them in
-        return friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.getCreatorUserId())
+        return Optional.ofNullable(friendTagService.getPertainingFriendTagByUserIds(requestingUserId, eventDTO.getCreatorUserId()))
+                .flatMap(optional -> optional)  // This will flatten the Optional<Optional<FriendTagDTO>> to Optional<FriendTagDTO>
                 .map(FriendTagDTO::getColorHexCode)
-                .orElse("#1D3D3D"); // Default color if no tag exists
+                .orElse("#1D3D3D"); // Default color if no tag exists or if result is null
     }
 
     @Override
