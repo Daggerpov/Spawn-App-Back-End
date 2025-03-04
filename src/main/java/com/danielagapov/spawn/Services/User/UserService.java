@@ -288,8 +288,8 @@ public class UserService implements IUserService {
     @Override
     public FullUserDTO getFullUserByEmail(String email) {
         try {
-            User user = repository.findByEmail(email);
-            return user == null ? null : getFullUserById(user.getId());
+            User user = repository.findByEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.User, email));
+            return getFullUserById(user.getId());
         } catch (Exception e) {
             logger.log(e.getMessage());
             throw e;
@@ -616,10 +616,7 @@ public class UserService implements IUserService {
     @Override
     public FullUserDTO getFullUserByUsername(String username) {
         try {
-            User user = repository.findByUsername(username);
-            if (user == null) {
-                throw new BaseNotFoundException(EntityType.User, username);
-            }
+            User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username));
             return getFullUserById(user.getId());
         } catch (Exception e) {
             logger.log(e.getMessage());
@@ -636,7 +633,7 @@ public class UserService implements IUserService {
     public void verifyUserByUsername(String username) {
         try {
             logger.log("Marking user as verified " + username);
-            User user = repository.findByUsername(username);
+            User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username));
             user.setVerified(true);
             repository.save(user);
         } catch (Exception e) {
