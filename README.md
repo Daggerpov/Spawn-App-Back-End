@@ -30,7 +30,7 @@ MySQL database, which we interface with through JPA (Java Persistence API).
 
 ## User DTO Relationships
 
-![img_1.png](diagrams/img.png)
+![user-dto-relationships.png](diagrams/user-dto-relationships.png)
 
 # Code Explanations
 
