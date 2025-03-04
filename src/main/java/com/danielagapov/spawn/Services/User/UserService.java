@@ -362,10 +362,13 @@ public class UserService implements IUserService {
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         try {
             // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-            FriendTag everyoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
-            if (everyoneTag == null) {
+            Optional<FriendTag> optionalEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+
+            if (optionalEveryoneTag.isEmpty()) {
                 return List.of(); // empty list of friends
             }
+
+            FriendTag everyoneTag = optionalEveryoneTag.get();
 
             // Retrieve the friends for each FriendTag and return as a flattened list
             List<UserDTO> friends = getFriendsByFriendTagId(everyoneTag.getId());

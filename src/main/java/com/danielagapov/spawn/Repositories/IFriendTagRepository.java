@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -16,5 +17,5 @@ public interface IFriendTagRepository extends JpaRepository<FriendTag, UUID> {
     List<FriendTag> findByOwnerId(@Param("ownerId") UUID ownerId);
 
     @Query("SELECT ft From FriendTag ft WHERE ft.ownerId = :ownerId AND ft.isEveryone = true")
-    FriendTag findEveryoneTagByOwnerId(@Param("ownerId") UUID ownerId);
+    Optional<FriendTag> findEveryoneTagByOwnerId(@Param("ownerId") UUID ownerId);
 }
