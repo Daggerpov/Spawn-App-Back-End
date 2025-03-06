@@ -1,12 +1,9 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
+import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
@@ -14,6 +11,7 @@ import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import com.danielagapov.spawn.Util.ErrorResponse;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -23,6 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.Optional;
 
 
 @RestController()
@@ -44,17 +44,20 @@ public class AuthController {
      */
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
+    public ResponseEntity<?> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
             logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
-            FullUserDTO userDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
-            if (userDTO != null) {
-                HttpHeaders headers = makeHeadersForTokens(userDTO.getUsername());
-                return ResponseEntity.ok().headers(headers).body(userDTO);
+            Optional<FullUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+            if (optionalDTO.isPresent()) {
+                FullUserDTO fullUserDTO = optionalDTO.get();
+                HttpHeaders headers = makeHeadersForTokens(fullUserDTO.getUsername());
+                return ResponseEntity.ok().headers(headers).body(fullUserDTO);
             }
             return ResponseEntity.ok().body(null);
+        } catch (IncorrectProviderException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(null);
+            return ResponseEntity.internalServerError().body(new ErrorResponse(e.getMessage()));
         }
     }
 

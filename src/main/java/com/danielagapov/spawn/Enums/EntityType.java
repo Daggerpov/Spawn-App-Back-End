@@ -7,6 +7,7 @@ public enum EntityType {
     FriendTag("Friend Tag"),
     User("User"),
     ReportedContent("Reported Content"),
+    ExternalIdMap("External Id Map"),
 
     // Relationships between entities
     ChatMessageLike("Chat Message Like"),
