@@ -1,6 +1,8 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.Event.LocationDTO;
+import com.danielagapov.spawn.Exceptions.LocationsNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,22 +24,28 @@ public class LocationController {
         this.locationService = locationService;
     }
 
+    // returns ResponseEntity with list of LocationDTOs (can be empty)
     // full path: /api/v1/locations
     @GetMapping
     public ResponseEntity<List<LocationDTO>> getLocations() {
         try {
             return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
+        } catch (LocationsNotFoundException e) {
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // returns ResponseEntity with LocationDTO or not found entity type (location)
     // full path: /api/v1/locations/{id}
     @GetMapping("{id}")
-    public ResponseEntity<LocationDTO> getLocationById(@PathVariable UUID id) {
+    public ResponseEntity<?> getLocationById(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(locationService.getLocationById(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(e.entityType, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
