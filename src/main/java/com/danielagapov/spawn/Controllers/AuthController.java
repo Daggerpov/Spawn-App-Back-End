@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
+import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
@@ -10,6 +11,7 @@ import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import com.danielagapov.spawn.Util.ErrorResponse;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -19,6 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.Optional;
 
 
 @RestController()
@@ -40,17 +44,20 @@ public class AuthController {
      */
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
+    public ResponseEntity<?> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
             logger.info(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
-            FullUserDTO userDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
-            if (userDTO != null) {
-                HttpHeaders headers = makeHeadersForTokens(userDTO.getUsername());
-                return ResponseEntity.ok().headers(headers).body(userDTO);
+            Optional<BaseUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+            if (optionalDTO.isPresent()) {
+                BaseUserDTO baseUserDTO = optionalDTO.get();
+                HttpHeaders headers = makeHeadersForTokens(baseUserDTO.getUsername());
+                return ResponseEntity.ok().headers(headers).body(baseUserDTO);
             }
             return ResponseEntity.ok().body(null);
+        } catch (IncorrectProviderException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(null);
+            return ResponseEntity.internalServerError().body(new ErrorResponse(e.getMessage()));
         }
     }
 
@@ -67,13 +74,13 @@ public class AuthController {
      */
     // full path: /api/v1/auth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
+    public ResponseEntity<BaseUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
                                                 @RequestParam("externalUserId") String externalUserId,
                                                 @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             logger.info(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
                     userCreationDTO, externalUserId, provider));
-            FullUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
+            BaseUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (Exception e) {

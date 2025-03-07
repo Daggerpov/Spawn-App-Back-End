@@ -1,10 +1,12 @@
 package com.danielagapov.spawn.Services.OAuth;
 
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
@@ -14,8 +16,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.UUID;
+import java.util.Optional;
 
 @Service
 public class OAuthService implements IOAuthService {
@@ -30,7 +31,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public FullUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
+    public BaseUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
         UserDTO newUser = new UserDTO(
                 userCreationDTO.getId(),
                 null,
@@ -47,16 +48,18 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
+    public BaseUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
             // TODO: temporary solution
             if (mappingExistsByExternalId(externalUserId)) {
                 logger.info(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
-                return userService.getFullUserById(getMapping(externalUserId).getUser().getId());
+                User user = getMapping(externalUserId).getUser();
+                return UserMapper.toDTO(user);
             }
             if (userDTO.getEmail() != null && userService.existsByEmail(userDTO.getEmail())) {
-                logger.info(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
-                return userService.getFullUserByEmail(userDTO.getEmail());
+                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
+                User user = getMappingByUserEmail(userDTO.getEmail()).getUser();
+                return UserMapper.toDTO(user);
             }
 
             // user dto -> entity & save user
@@ -67,9 +70,9 @@ public class OAuthService implements IOAuthService {
             logger.info(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
             createAndSaveMapping(externalUserId, userDTO, provider);
 
-            FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO, new HashSet<>());
-            logger.info(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
-            return fullUserDTO;
+            BaseUserDTO baseUserDTO = UserMapper.toBaseDTO(userDTO);
+            logger.log(String.format("Returning BaseUserDTO of newly made user: {baseUserDTO: %s}", baseUserDTO));
+            return baseUserDTO;
         } catch (DataAccessException e) {
             logger.error("Database error while creating user: " + e.getMessage());
             throw e;
@@ -81,43 +84,20 @@ public class OAuthService implements IOAuthService {
 
 
     @Override
-    public FullUserDTO getUserIfExistsbyExternalId(String externalUserId, String email) {
-        UserIdExternalIdMap mapping;
-        try {
-            mapping = getMapping(externalUserId);
-        } catch (DataAccessException e) {
-            logger.log("Database error while fetching external user id <> spawn user id by externalUserId(" + externalUserId + ") :" + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.log("Unexpected error while fetching user by externalUserId (" + externalUserId + ") : " + e.getMessage());
-            throw e;
+    public Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
+        boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
+        boolean existsByEmail = userService.existsByEmail(email);
+
+        if (existsByExternalId) { // A Spawn account exists with this external id, return the associated `FullUserDTO`
+            User user = getMapping(externalUserId).getUser();
+            return Optional.of(UserMapper.toDTO(user));
+        } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id which indicates a sign-in with incorrect provider
+            UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
+            String provider = String.valueOf(externalIdMap.getProvider()).equals("google") ? "Google" : "Apple";
+            throw new IncorrectProviderException("The email: " + email + " is already associated to a " + provider + " account. Please login through " + provider + " instead");
+        } else { // No account exists for this external id or email
+            return Optional.empty();
         }
-        if (mapping != null) {
-            // if there is already a mapping (Spawn account exists, given externalUserId) -> get the associated `FullUserDTO`
-            try {
-                return getFullUserDTO(mapping.getUser().getId());
-            } catch (DataAccessException e) {
-                logger.log("Database error while fetching user by externalUserId(" + externalUserId + "): " + e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                logger.log("Unexpected error while fetching user by externalUserId(" + externalUserId + "): " + e.getMessage());
-                throw e;
-            }
-        }
-        if (email != null) {
-            // if not (signed in through external provider, but no external id <> user id mapping -> try finding by email
-            try {
-                return userService.getFullUserByEmail(email);
-            } catch (DataAccessException e) {
-                logger.log("Database error while fetching user by email(" + email + "): " + e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                logger.log("Unexpected error while fetching user by email(" + email + "): " + e.getMessage());
-                throw e;
-            }
-        }
-        // No existing user was found
-        return null;
     }
 
     /* ------------------------------ HELPERS ------------------------------ */
@@ -130,26 +110,10 @@ public class OAuthService implements IOAuthService {
         try {
             return externalIdMapRepository.findById(externalId).orElse(null);
         } catch (DataAccessException e) {
-            logger.log("Database error while fetching mapping for external ID: " + e.getMessage());
+            logger.log("Database error while fetching mapping for externalUserId( " + externalId + ") : " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.log("Unexpected error while fetching mapping for external ID: " + e.getMessage());
-            throw e;
-        }
-    }
-
-
-    private FullUserDTO getFullUserDTO(UUID externalUserId) {
-        try {
-            return userService.getFullUserById(externalUserId);
-        } catch (BaseNotFoundException e) {
-            logger.log("User not found while fetching full user DTO: " + e.getMessage());
-            throw e;
-        } catch (DataAccessException e) {
-            logger.log("Database error while fetching full user DTO: " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.log("Unexpected error while fetching full user DTO: " + e.getMessage());
+            logger.log("Unexpected error while fetching mapping for externalUserId( " + externalId + ") : " + e.getMessage());
             throw e;
         }
     }
@@ -165,5 +129,9 @@ public class OAuthService implements IOAuthService {
             logger.log(e.getMessage());
             throw e;
         }
+    }
+
+    private UserIdExternalIdMap getMappingByUserEmail(String email) {
+        return externalIdMapRepository.findByUserEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.ExternalIdMap, email, "email"));
     }
 }
