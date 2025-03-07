@@ -65,7 +65,7 @@ public class BetaAccessSignUpController {
      */
     @PostMapping
     public ResponseEntity<BetaAccessSignUpDTO> signUp(@RequestBody BetaAccessSignUpDTO dto) {
-        logger.log("New beta access sign up for this email: " + dto.getEmail());
+        logger.info("New beta access sign up for this email: " + dto.getEmail());
         try {
             return new ResponseEntity<>(service.signUp(dto), HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {

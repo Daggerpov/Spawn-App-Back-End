@@ -1,9 +1,8 @@
 package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -70,10 +69,10 @@ public class ChatMessageService implements IChatMessageService {
             // Return the mapped DTOs including the sender and likedByUserIds
             return ChatMessageMapper.toDTOList(chatMessages, likedByMap);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BasesNotFoundException(EntityType.ChatMessage);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -134,10 +133,10 @@ public class ChatMessageService implements IChatMessageService {
 
             return ChatMessageMapper.toDTO(chatMessageEntity, List.of()); // Empty likedByUserIds list
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -157,10 +156,10 @@ public class ChatMessageService implements IChatMessageService {
                     .map(ChatMessage::getId)
                     .collect(Collectors.toList());
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseNotFoundException(EntityType.ChatMessage, eventId);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -176,7 +175,7 @@ public class ChatMessageService implements IChatMessageService {
             chatMessageRepository.deleteById(id);
             return true;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             return false;
         }
     }
@@ -201,7 +200,7 @@ public class ChatMessageService implements IChatMessageService {
             return ChatMessageLikesMapper.toDTO(chatMessageLikes);
 
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Like: chatMessageId: " + chatMessageId + " userId: "
                     + userId + ". Error: " + e.getMessage());
         }
@@ -233,7 +232,7 @@ public class ChatMessageService implements IChatMessageService {
             }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseDeleteException("An error occurred while deleting the like for chatMessageId: "
                     + chatMessageId + " and userId: " + userId + ". Error: " + e.getMessage(), e);
         }
@@ -251,10 +250,10 @@ public class ChatMessageService implements IChatMessageService {
                     })
                     .collect(Collectors.toList());
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BasesNotFoundException(EntityType.ChatMessage);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }

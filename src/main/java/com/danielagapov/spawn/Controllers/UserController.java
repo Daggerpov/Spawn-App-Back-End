@@ -31,9 +31,6 @@ public class UserController {
     // full path: /api/v1/users?full=full
     @GetMapping
     public ResponseEntity<List<? extends AbstractUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
-        logger.info("I am INFO");
-        logger.warn("I am WARN");
-        logger.error("I am ERROR");
         try {
             if (full) {
                 return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers(), new HashSet<>()), HttpStatus.OK);

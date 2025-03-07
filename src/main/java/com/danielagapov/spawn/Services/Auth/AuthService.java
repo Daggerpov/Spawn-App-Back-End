@@ -43,14 +43,14 @@ public class AuthService implements IAuthService {
             createEmailTokenAndSendEmail(authUserDTO);
             return userDTO;
         } catch (Exception e) {
-            logger.log("Unexpected error while registering user");
+            logger.error("Unexpected error while registering user");
             throw e;
         }
     }
 
     @Override
     public FullUserDTO loginUser(AuthUserDTO authUserDTO) {
-        logger.log(String.format("Attempting to login user: { user: %s }", authUserDTO));
+        logger.info(String.format("Attempting to login user: { user: %s }", authUserDTO));
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         authUserDTO.getUsername(),
@@ -58,9 +58,9 @@ public class AuthService implements IAuthService {
                 )
         );
         if (authentication.isAuthenticated()) {
-            logger.log("Authentication successful for user: " + authUserDTO.getUsername());
+            logger.info("Authentication successful for user: " + authUserDTO.getUsername());
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-            logger.log("Fetching full user dto");
+            logger.info("Fetching full user dto");
             FullUserDTO fullUserDTO = userService.getFullUserByUsername(username);
             return fullUserDTO;
         } else {
@@ -112,7 +112,7 @@ public class AuthService implements IAuthService {
             emailService.sendVerifyAccountEmail(authUserDTO.getEmail(), emailToken);
             //emailService.sendEmail(authUserDTO.getEmail(), "Verify Email", linkToVerification);
         } catch (Exception e) {
-            logger.log("Unexpected error while sending email: " + e.getMessage());
+            logger.error("Unexpected error while sending email: " + e.getMessage());
         }
     }
 

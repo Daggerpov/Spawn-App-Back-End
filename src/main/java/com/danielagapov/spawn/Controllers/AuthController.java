@@ -1,10 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -46,7 +42,7 @@ public class AuthController {
     @GetMapping("sign-in")
     public ResponseEntity<FullUserDTO> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
-            logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
+            logger.info(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
             FullUserDTO userDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
             if (userDTO != null) {
                 HttpHeaders headers = makeHeadersForTokens(userDTO.getUsername());
@@ -75,7 +71,7 @@ public class AuthController {
                                                 @RequestParam("externalUserId") String externalUserId,
                                                 @RequestParam(value = "provider") OAuthProvider provider) {
         try {
-            logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
+            logger.info(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
                     userCreationDTO, externalUserId, provider));
             FullUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
@@ -89,7 +85,7 @@ public class AuthController {
     @PostMapping("refresh-token")
     public ResponseEntity<String> refreshToken(HttpServletRequest request) {
         try {
-            logger.log(String.format("Refresh token request received: {token: %s}",
+            logger.info(String.format("Refresh token request received: {token: %s}",
                     request.getHeader("Authorization")));
             HttpHeaders headers = new HttpHeaders();
             String token = jwtService.refreshAccessToken(request);
@@ -108,16 +104,16 @@ public class AuthController {
     @PostMapping("register")
     public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
         try {
-            logger.log(String.format("Account registration request received: {user: %s}", authUserDTO));
+            logger.info(String.format("Account registration request received: {user: %s}", authUserDTO));
             UserDTO newUserDTO = authService.registerUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
-            logger.log(String.format("User successfully registered: {user: %s}", newUserDTO));
+            logger.info(String.format("User successfully registered: {user: %s}", newUserDTO));
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
-            logger.log(fae.getMessage());
+            logger.warn(fae.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (Exception e) {
-            logger.log("Error registering in user: " + e.getMessage());
+            logger.error("Error registering in user: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -126,14 +122,14 @@ public class AuthController {
     @PostMapping("login")
     public ResponseEntity<AbstractUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
-            logger.log(String.format("Login request received: {user: %s}", authUserDTO));
+            logger.info(String.format("Login request received: {user: %s}", authUserDTO));
             FullUserDTO existingUserDTO = authService.loginUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
-            logger.log(String.format("Error logging in user: {user: %s}. Error: %s", authUserDTO, e.getMessage()));
+            logger.error(String.format("Error logging in user: {user: %s}. Error: %s", authUserDTO, e.getMessage()));
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -144,14 +140,14 @@ public class AuthController {
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("verifyAccountPage");
         try {
-            logger.log("Verify email request received");
+            logger.info("Verify email request received");
             boolean isVerified = authService.verifyEmail(emailToken);
             String status = isVerified ? "success" : "expired";
             modelAndView.addObject("status", status);
             modelAndView.setStatus(HttpStatus.OK);
             return modelAndView;
         } catch (Exception e) {
-            logger.log("Unexpected error while verifying email: " + e.getMessage());
+            logger.info("Unexpected error while verifying email: " + e.getMessage());
             modelAndView.addObject("status", "error");
             modelAndView.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             return modelAndView;
@@ -164,11 +160,11 @@ public class AuthController {
     @GetMapping("test-email")
     public ResponseEntity<String> email() {
         try {
-            logger.log("Email request received");
+            logger.info("Email request received");
             emailService.sendEmail("spawnappmarketing@gmail.com", "Test Email", "This is a test email sent programmatically.");
             return ResponseEntity.ok().body("Email sent");
         } catch (MessagingException e) {
-            logger.log("Messaging Exception: " + e.getMessage());
+            logger.info("Messaging Exception: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Messaging Exception: " + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();

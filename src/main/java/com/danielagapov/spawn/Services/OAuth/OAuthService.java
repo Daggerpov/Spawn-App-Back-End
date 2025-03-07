@@ -51,30 +51,30 @@ public class OAuthService implements IOAuthService {
         try {
             // TODO: temporary solution
             if (mappingExistsByExternalId(externalUserId)) {
-                logger.log(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
+                logger.info(String.format("Existing user detected in makeUser, mapping already exists: {user: %s, externalUserId: %s}", userDTO.getEmail(), externalUserId));
                 return userService.getFullUserById(getMapping(externalUserId).getUser().getId());
             }
             if (userDTO.getEmail() != null && userService.existsByEmail(userDTO.getEmail())) {
-                logger.log(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
+                logger.info(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
                 return userService.getFullUserByEmail(userDTO.getEmail());
             }
 
             // user dto -> entity & save user
-            logger.log(String.format("Making user: {userDTO: %s}", userDTO));
+            logger.info(String.format("Making user: {userDTO: %s}", userDTO));
             userDTO = userService.saveUserWithProfilePicture(userDTO, profilePicture);
 
             // create and save mapping
-            logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
+            logger.info(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
             createAndSaveMapping(externalUserId, userDTO, provider);
 
             FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO, new HashSet<>());
-            logger.log(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
+            logger.info(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
             return fullUserDTO;
         } catch (DataAccessException e) {
-            logger.log("Database error while creating user: " + e.getMessage());
+            logger.error("Database error while creating user: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.log("Unexpected error while creating user: " + e.getMessage());
+            logger.error("Unexpected error while creating user: " + e.getMessage());
             throw e;
         }
     }

@@ -55,7 +55,7 @@ public class JWTService implements IJWTService {
 
     @Override
     public String generateAccessToken(String username) {
-        logger.log("Generating access token for user: " + username);
+        logger.info("Generating access token for user: " + username);
         Map<String, Object> claims = makeClaims(TokenType.ACCESS);
         return generateToken(username, ACCESS_TOKEN_EXPIRY, claims);
     }
@@ -72,11 +72,11 @@ public class JWTService implements IJWTService {
         try {
             username = extractUsername(token);
         } catch (Exception e) {
-            logger.log("Failed to extract username. Invalid or expired token");
+            logger.error("Failed to extract username. Invalid or expired token");
             throw e;
         }
         if (username == null || !userService.existsByUsername(username)) {
-            logger.log("Extracted username does not correspond to any user entity");
+            logger.warn("Extracted username does not correspond to any user entity");
             throw new BadTokenException();
         }
         if (isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.REFRESH)) {
@@ -84,21 +84,21 @@ public class JWTService implements IJWTService {
             String newAccessToken = generateAccessToken(username);
             return newAccessToken;
         } else {
-            logger.log("Expired token found");
+            logger.warn("Expired token found");
             throw new BadTokenException();
         }
     }
 
     @Override
     public String generateRefreshToken(String username) {
-        logger.log("Generating refresh token for user: " + username);
+        logger.info("Generating refresh token for user: " + username);
         Map<String, Object> claims = makeClaims(TokenType.REFRESH);
         return generateToken(username, REFRESH_TOKEN_EXPIRY, claims);
     }
 
     @Override
     public String generateEmailToken(String username) {
-        logger.log("Generating email token for user: " + username);
+        logger.info("Generating email token for user: " + username);
         Map<String, Object> claims = makeClaims(TokenType.EMAIL);
         return generateToken(username, EMAIL_TOKEN_EXPIRY, claims);
     }
@@ -123,7 +123,7 @@ public class JWTService implements IJWTService {
                     .signWith(getKey())
                     .compact();
         } catch (Exception e) {
-            logger.log("Error generating JWT token: " + e.getMessage());
+            logger.error("Error generating JWT token: " + e.getMessage());
             throw e;
         }
     }
