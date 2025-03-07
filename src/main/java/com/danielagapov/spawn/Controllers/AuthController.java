@@ -47,11 +47,11 @@ public class AuthController {
     public ResponseEntity<?> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
             logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
-            Optional<FullUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+            Optional<BaseUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
             if (optionalDTO.isPresent()) {
-                FullUserDTO fullUserDTO = optionalDTO.get();
-                HttpHeaders headers = makeHeadersForTokens(fullUserDTO.getUsername());
-                return ResponseEntity.ok().headers(headers).body(fullUserDTO);
+                BaseUserDTO baseUserDTO = optionalDTO.get();
+                HttpHeaders headers = makeHeadersForTokens(baseUserDTO.getUsername());
+                return ResponseEntity.ok().headers(headers).body(baseUserDTO);
             }
             return ResponseEntity.ok().body(null);
         } catch (IncorrectProviderException e) {

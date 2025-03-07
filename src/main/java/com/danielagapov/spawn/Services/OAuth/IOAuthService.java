@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.OAuth;
 
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -39,5 +40,5 @@ public interface IOAuthService {
      * @param email          user email
      * @return a FullUserDTO if user exists, null otherwise
      */
-    Optional<FullUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email);
+    Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email);
 }

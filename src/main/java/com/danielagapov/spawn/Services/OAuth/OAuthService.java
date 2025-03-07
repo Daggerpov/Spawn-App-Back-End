@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.OAuth;
 
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -84,13 +85,13 @@ public class OAuthService implements IOAuthService {
 
 
     @Override
-    public Optional<FullUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
+    public Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
         boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
         boolean existsByEmail = userService.existsByEmail(email);
 
         if (existsByExternalId) { // A Spawn account exists with this external id, return the associated `FullUserDTO`
             User user = getMapping(externalUserId).getUser();
-            return Optional.of(userService.getFullUserByUserEntity(user));
+            return Optional.of(UserMapper.toDTO(user));
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id which indicates a sign-in with incorrect provider
             UserIdExternalIdMap externalIdMap = externalIdMapRepository.findByUserEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.ExternalIdMap, email, "email"));
             String provider = String.valueOf(externalIdMap.getProvider()).equals("google") ? "Google" : "Apple";
