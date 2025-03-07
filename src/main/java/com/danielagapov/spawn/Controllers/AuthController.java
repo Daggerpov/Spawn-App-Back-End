@@ -47,11 +47,11 @@ public class AuthController {
     public ResponseEntity<?> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
             logger.log(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
-            Optional<FullUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+            Optional<BaseUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
             if (optionalDTO.isPresent()) {
-                FullUserDTO fullUserDTO = optionalDTO.get();
-                HttpHeaders headers = makeHeadersForTokens(fullUserDTO.getUsername());
-                return ResponseEntity.ok().headers(headers).body(fullUserDTO);
+                BaseUserDTO baseUserDTO = optionalDTO.get();
+                HttpHeaders headers = makeHeadersForTokens(baseUserDTO.getUsername());
+                return ResponseEntity.ok().headers(headers).body(baseUserDTO);
             }
             return ResponseEntity.ok().body(null);
         } catch (IncorrectProviderException e) {
@@ -74,13 +74,13 @@ public class AuthController {
      */
     // full path: /api/v1/auth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
+    public ResponseEntity<BaseUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
                                                 @RequestParam("externalUserId") String externalUserId,
                                                 @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
                     userCreationDTO, externalUserId, provider));
-            FullUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
+            BaseUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (Exception e) {
