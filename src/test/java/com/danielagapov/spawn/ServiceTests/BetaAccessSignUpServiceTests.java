@@ -62,7 +62,7 @@ public class BetaAccessSignUpServiceTests {
         when(repository.findAll()).thenThrow(dae);
 
         BasesNotFoundException exception = assertThrows(BasesNotFoundException.class, () -> service.getAllBetaAccessSignUpRecords());
-        verify(logger, times(1)).error(dae.getMessage());
+        verify(logger, times(1)).warn(dae.getMessage());
     }
 
     @Test

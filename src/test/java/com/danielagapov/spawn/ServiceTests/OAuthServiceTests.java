@@ -100,7 +100,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).error(contains("Existing user detected in makeUser, email already exists"));
+        verify(logger).info(contains("Existing user detected in makeUser, email already exists"));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).error(contains("Existing user detected in makeUser, mapping already exists"));
+        verify(logger).info(contains("Existing user detected in makeUser, mapping already exists"));
     }
 
     @Test
@@ -177,7 +177,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).error(contains("Existing user detected in makeUser, email already exists"));
+        verify(logger).info(contains("Existing user detected in makeUser, email already exists"));
     }
 
     @Test
