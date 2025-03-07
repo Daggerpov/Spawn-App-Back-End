@@ -9,9 +9,4 @@ public class UserNotFoundException extends BaseNotFoundException {
     public UserNotFoundException(UUID id) {
         super(EntityType.User, id);
     }
-
-    // not sure if we will use this one
-    public UserNotFoundException(String username) {
-        super(EntityType.User, username);
-    }
 }
