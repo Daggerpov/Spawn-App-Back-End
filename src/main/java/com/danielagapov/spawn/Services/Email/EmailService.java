@@ -31,7 +31,7 @@ public class EmailService implements IEmailService {
     @Override
     // TODO: look into @Async
     public void sendEmail(String to, String subject, String content) throws MessagingException {
-        logger.log("Sending email to " + to);
+        logger.info("Sending email to " + to);
         try {
             // MIME is an internet standard for the format of email messages
             MimeMessage message = mailSender.createMimeMessage();
@@ -45,14 +45,14 @@ public class EmailService implements IEmailService {
             // Send email
             mailSender.send(message);
         } catch (MessagingException e) {
-            logger.log("Failed to send email to " + to);
+            logger.error("Failed to send email to " + to);
             throw e;
         }
     }
 
     @Override
     public void sendVerifyAccountEmail(String to, String token) throws MessagingException {
-        logger.log("Sending verification email to " + to);
+        logger.info("Sending verification email to " + to);
         final String link = BASE_URL + token;
         final String content = buildVerifyEmailBody(link);
         final String subject = "Verify Account";

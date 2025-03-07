@@ -53,10 +53,10 @@ public class FriendTagService implements IFriendTagService {
             // Corrected the argument names to match the method signature
             return FriendTagMapper.toDTOList(repository.findAll(), ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BasesNotFoundException(EntityType.FriendTag);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -96,9 +96,9 @@ public class FriendTagService implements IFriendTagService {
 
         // Extract and return the FriendTag IDs
         return friendTags.stream()
-            .filter(Objects::nonNull)
-            .map(FriendTag::getId) // Get the ID of each FriendTag
-            .collect(Collectors.toList());
+                .filter(Objects::nonNull)
+                .map(FriendTag::getId) // Get the ID of each FriendTag
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -119,10 +119,10 @@ public class FriendTagService implements IFriendTagService {
             // Convert to DTOs
             return FriendTagMapper.toDTOList(friendTags, ownerUserIdsMap, friendUserIdsMap);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new RuntimeException("Error retrieving friendTags", e);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -143,10 +143,10 @@ public class FriendTagService implements IFriendTagService {
         try {
             return repository.save(friendTag);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save friendTag: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -176,7 +176,7 @@ public class FriendTagService implements IFriendTagService {
             repository.deleteById(id);
             return true;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             return false;
         }
     }
@@ -197,7 +197,7 @@ public class FriendTagService implements IFriendTagService {
 
         boolean exists = uftRepository.existsByFriendTagIdAndFriendId(id, userId);
         if (exists) {
-            logger.log("User " + userId + " is already in FriendTag " + id);
+            logger.info("User " + userId + " is already in FriendTag " + id);
             return;
         }
 
@@ -207,10 +207,10 @@ public class FriendTagService implements IFriendTagService {
         try {
             uftRepository.save(uft);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save new UserFriendTag");
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -230,10 +230,10 @@ public class FriendTagService implements IFriendTagService {
             // Remove the UserFriendTag entity
             uftRepository.deleteByFriendTagIdAndUserId(id, userId);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to remove UserFriendTag (friend from friend tag)");
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -281,7 +281,7 @@ public class FriendTagService implements IFriendTagService {
         try {
             return friendTags.stream().findFirst();
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -339,10 +339,10 @@ public class FriendTagService implements IFriendTagService {
                     .map(this::getFullFriendTagByFriendTag)
                     .collect(Collectors.toList());
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new RuntimeException("Error retrieving tags not added to friend", e);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }

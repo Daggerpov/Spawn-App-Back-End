@@ -36,15 +36,15 @@ public class ReportContentService implements IReportContentService {
         try {
             if (reportType != null && contentType != null) {
                 // both filters
-                logger.log("Getting reports by report type and content type");
+                logger.info("Getting reports by report type and content type");
                 reports = repository.getAllByContentTypeAndReportType(contentType, reportType);
             } else if (reportType != null) {
                 // only report type filter
-                logger.log("Getting reports by report type");
+                logger.info("Getting reports by report type");
                 reports = repository.getAllByReportType(reportType);
             } else if (contentType != null) {
                 // only content type filter
-                logger.log("Getting reports by content type");
+                logger.info("Getting reports by content type");
                 reports = repository.getAllByContentType(contentType);
             } else {
                 // no filter
@@ -52,7 +52,7 @@ public class ReportContentService implements IReportContentService {
             }
             return ReportedContentDTO.fromEntityList(reports);
         } catch (Exception e) {
-            logger.log("Unexpected error while getting reports: " + e.getMessage());
+            logger.error("Unexpected error while getting reports: " + e.getMessage());
             throw e;
         }
     }
@@ -81,7 +81,7 @@ public class ReportContentService implements IReportContentService {
             return ReportedContentDTO.fromEntity(report);
         } catch (Exception e) {
             if (!(e instanceof BaseNotFoundException)) {
-                logger.log("Unexpected error while resolving report: " + e.getMessage());
+                logger.error("Unexpected error while resolving report: " + e.getMessage());
             }
             throw e;
         }
@@ -93,7 +93,7 @@ public class ReportContentService implements IReportContentService {
             List<ReportedContent> reports = repository.getAllByReporterId(reporterId);
             return ReportedContentDTO.fromEntityList(reports);
         } catch (Exception e) {
-            logger.log("Unexpected error while getting reports by reporter id: " + e.getMessage());
+            logger.error("Unexpected error while getting reports by reporter id: " + e.getMessage());
             throw e;
         }
     }
@@ -104,7 +104,7 @@ public class ReportContentService implements IReportContentService {
             List<ReportedContent> reports = repository.getAllByContentOwnerId(contentOwnerId);
             return ReportedContentDTO.fromEntityList(reports);
         } catch (Exception e) {
-            logger.log("Unexpected error while getting reports by reported user id: " + e.getMessage());
+            logger.error("Unexpected error while getting reports by reported user id: " + e.getMessage());
             throw e;
         }
     }
@@ -119,7 +119,7 @@ public class ReportContentService implements IReportContentService {
             }
         } catch (Exception e) {
             if (!(e instanceof BaseNotFoundException)) {
-                logger.log("Unexpected error while deleting report by id: " + e.getMessage());
+                logger.error("Unexpected error while deleting report by id: " + e.getMessage());
             }
             throw e;
         }
@@ -133,7 +133,7 @@ public class ReportContentService implements IReportContentService {
             return ReportedContentDTO.fromEntity(report);
         } catch (Exception e) {
             if (!(e instanceof BaseNotFoundException)) {
-                logger.log("Unexpected error while deleting report by id: " + e.getMessage());
+                logger.error("Unexpected error while deleting report by id: " + e.getMessage());
             }
             throw e;
         }

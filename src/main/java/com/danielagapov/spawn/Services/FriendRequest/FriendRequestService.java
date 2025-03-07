@@ -51,10 +51,10 @@ public class FriendRequestService implements IFriendRequestService {
             // Return the saved friend request DTO with additional details (friends and friend tags)
             return FriendRequestMapper.toDTO(friendRequest);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -82,10 +82,10 @@ public class FriendRequestService implements IFriendRequestService {
 
             return friendRequests;
         } catch (DataAccessException e) {
-            logger.log("Database access error while retrieving incoming friend requests for userId: " + id);
+            logger.error("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues
         } catch (Exception e) {
-            logger.log("Unexpected error while retrieving incoming friend requests for userId: " + id + ", Error: " + e.getMessage());
+            logger.error("Unexpected error while retrieving incoming friend requests for userId: " + id + ", Error: " + e.getMessage());
             throw e;
         }
     }
@@ -97,7 +97,7 @@ public class FriendRequestService implements IFriendRequestService {
             userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
             deleteFriendRequest(id);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -107,7 +107,7 @@ public class FriendRequestService implements IFriendRequestService {
         try {
             repository.deleteById(id);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -138,10 +138,10 @@ public class FriendRequestService implements IFriendRequestService {
             // Convert the FriendRequest entities to DTOs before returning
             return FriendRequestMapper.toDTOList(sentRequests);
         } catch (DataAccessException e) {
-            logger.log("Database access error while retrieving sent friend requests for userId: " + userId);
+            logger.error("Database access error while retrieving sent friend requests for userId: " + userId);
             throw e; // Only throw for database access issues
         } catch (Exception e) {
-            logger.log("Unexpected error while retrieving sent friend requests for userId: " + userId + ", Error: " + e.getMessage());
+            logger.error("Unexpected error while retrieving sent friend requests for userId: " + userId + ", Error: " + e.getMessage());
             throw e;
         }
     }
