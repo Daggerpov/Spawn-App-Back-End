@@ -78,10 +78,10 @@ public class EventService implements IEventService {
             List<Event> events = repository.findAll();
             return getEventDTOs(events);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BasesNotFoundException(EntityType.Event);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -126,13 +126,13 @@ public class EventService implements IEventService {
                             chatMessageService.getChatMessageIdsByEventId(event.getId())))
                     .toList();
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new RuntimeException("Error retrieving events by friend tag ID", e);
         } catch (BaseNotFoundException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e; // Rethrow if it's a custom not-found exception
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -170,10 +170,10 @@ public class EventService implements IEventService {
                     chatMessageService.getChatMessageIdsByEventId(eventEntity.getId()) // chatMessageIds
             );
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save event: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -215,7 +215,7 @@ public class EventService implements IEventService {
 
             return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
-            logger.log("Error creating event: " + e.getMessage());
+            logger.error("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
         }
     }
@@ -297,7 +297,7 @@ public class EventService implements IEventService {
             repository.deleteById(id);
             return true;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             return false;
         }
     }
@@ -316,10 +316,10 @@ public class EventService implements IEventService {
                     .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
                     .toList();
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseNotFoundException(EntityType.Event, eventId);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -459,7 +459,7 @@ public class EventService implements IEventService {
             combinedEvents.addAll(eventsInvitedTo);
             return combinedEvents;
         } catch (Exception e) {
-            logger.log("Error fetching feed events for user: " + requestingUserId + " - " + e.getMessage());
+            logger.error("Error fetching feed events for user: " + requestingUserId + " - " + e.getMessage());
             throw e;
         }
     }
@@ -513,7 +513,7 @@ public class EventService implements IEventService {
             combinedEvents.addAll(eventsByFriendTagFilter);
             return combinedEvents;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }

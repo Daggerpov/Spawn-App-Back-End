@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
@@ -19,10 +20,12 @@ import java.util.UUID;
 public class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
+    private final ILogger logger;
 
-    public UserController(IUserService userService, IS3Service s3Service) {
+    public UserController(IUserService userService, IS3Service s3Service, ILogger logger) {
         this.userService = userService;
         this.s3Service = s3Service;
+        this.logger = logger;
     }
 
     // full path: /api/v1/users?full=full

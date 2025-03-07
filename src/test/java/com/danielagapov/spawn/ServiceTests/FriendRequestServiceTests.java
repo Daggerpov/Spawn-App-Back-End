@@ -89,7 +89,7 @@ class FriendRequestServiceTests {
 
         BaseSaveException exception = assertThrows(BaseSaveException.class, () -> friendRequestService.saveFriendRequest(friendRequestDTO));
         assertEquals("failed to save an entity: Failed to save friend request: DB error", exception.getMessage());
-        verify(logger, times(1)).log("DB error");
+        verify(logger, times(1)).error("DB error");
     }
 
     @Test
@@ -112,7 +112,7 @@ class FriendRequestServiceTests {
         assertNotNull(requests);
         assertTrue(requests.isEmpty(), "Expected an empty list when no friend requests are found.");
         verify(repository, times(1)).findByReceiverId(receiverId);
-        verify(logger, times(0)).log(anyString()); // No logging since it's not an error anymore
+        verify(logger, times(0)).info(anyString()); // No logging since it's not an error anymore
     }
 
     @Test
@@ -153,7 +153,7 @@ class FriendRequestServiceTests {
                 () -> friendRequestService.getIncomingFetchFriendRequestsByUserId(receiverId));
 
         assertEquals("DB read error", exception.getMessage());
-        verify(logger, times(1)).log("Database access error while retrieving incoming friend requests for userId: " + receiverId);
+        verify(logger, times(1)).error("Database access error while retrieving incoming friend requests for userId: " + receiverId);
     }
 
 
@@ -165,7 +165,7 @@ class FriendRequestServiceTests {
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> friendRequestService.deleteFriendRequest(friendRequestId));
         assertEquals("DB delete error", exception.getMessage());
-        verify(logger, times(1)).log("DB delete error");
+        verify(logger, times(1)).error("DB delete error");
     }
 
     @Test
@@ -173,7 +173,7 @@ class FriendRequestServiceTests {
         CreateFriendRequestDTO invalidRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), null, receiverId);
 
         assertThrows(NullPointerException.class, () -> friendRequestService.saveFriendRequest(invalidRequestDTO));
-        verify(logger, times(1)).log(anyString());
+        verify(logger, times(1)).error(anyString());
     }
 
     @Test

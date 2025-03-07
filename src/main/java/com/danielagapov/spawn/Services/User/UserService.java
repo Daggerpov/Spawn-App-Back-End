@@ -65,10 +65,10 @@ public class UserService implements IUserService {
         try {
             return getUserDTOs();
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BasesNotFoundException(EntityType.User);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -89,7 +89,7 @@ public class UserService implements IUserService {
             // Pass in the friendTagIds and friendTags as needed
             return UserMapper.toDTO(user, friendUserIds, friendTagIds);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -99,7 +99,7 @@ public class UserService implements IUserService {
         try {
             return getFullUserByUser(getUserById(id), new HashSet<>());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -117,7 +117,7 @@ public class UserService implements IUserService {
                     .toList();
             return friendIds;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -128,7 +128,7 @@ public class UserService implements IUserService {
             return repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -145,7 +145,7 @@ public class UserService implements IUserService {
                             FriendTag::getOwnerId
                     ));
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -163,7 +163,7 @@ public class UserService implements IUserService {
                             friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()) // List of user IDs for each FriendTag
                     ));
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -182,15 +182,15 @@ public class UserService implements IUserService {
                     .collect(Collectors.toList());
 
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new DatabaseException("Error accessing database while fetching users by tag ID: " + tagId, e);
 
         } catch (BaseNotFoundException | BasesNotFoundException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
 
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new ApplicationException("Unexpected error occurred while fetching users by tag ID: " + tagId, e);
         }
     }
@@ -207,10 +207,10 @@ public class UserService implements IUserService {
             // id is generated when saving
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save user: " + e.getMessage()); // TODO: fix throwing
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -241,7 +241,7 @@ public class UserService implements IUserService {
                 return UserMapper.toDTO(userEntity, friendUserIds, friendTagIds);
             });
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -254,7 +254,7 @@ public class UserService implements IUserService {
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
             return true;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             return false;
         }
     }
@@ -264,7 +264,7 @@ public class UserService implements IUserService {
         try {
             return repository.save(user);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -272,16 +272,16 @@ public class UserService implements IUserService {
     @Override
     public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
         try {
-            logger.log(String.format("Entering saveUserWithProfilePicture: {user: %s}", user));
+            logger.info(String.format("Entering saveUserWithProfilePicture: {user: %s}", user));
             if (user.getProfilePicture() == null) {
-                logger.log("Profile picture is null, user either chose their profile picture or has default");
+                logger.info("Profile picture is null, user either chose their profile picture or has default");
                 user = s3Service.putProfilePictureWithUser(profilePicture, user);
             }
             user = saveUser(user);
-            logger.log(String.format("Exiting saveUserWithProfilePicture: {user: %s}", user));
+            logger.info(String.format("Exiting saveUserWithProfilePicture: {user: %s}", user));
             return user;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -292,7 +292,7 @@ public class UserService implements IUserService {
             User user = repository.findByEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
             return getFullUserById(user.getId());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -312,11 +312,11 @@ public class UserService implements IUserService {
         // Pass in the friendTagIds and friendTags as needed
         return UserMapper.toDTO(user, friendUserIds, friendTagIds);
     }
-    
+
     @Override
     public UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO userDTO, byte[] profilePicture) {
         if (userDTO.getProfilePicture() == null) {
-            logger.log("Profile picture is null, user either chose their profile picture or has default");
+            logger.info("Profile picture is null, user either chose their profile picture or has default");
             userDTO = s3Service.putProfilePictureWithUser(profilePicture, userDTO);
         }
         User userEntity = UserMapper.toEntity(userDTO);
@@ -333,7 +333,7 @@ public class UserService implements IUserService {
                     .map(this::getUserById)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -350,7 +350,7 @@ public class UserService implements IUserService {
                     .distinct()
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -370,7 +370,7 @@ public class UserService implements IUserService {
                     ));
             return UserMapper.toDTOList(users, friendUserIdsMap, friendTagIdsMap);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -397,7 +397,7 @@ public class UserService implements IUserService {
                     .filter(friend -> !friend.getId().equals(userId)) // Exclude the user themselves
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -407,7 +407,7 @@ public class UserService implements IUserService {
     public void saveFriendToUser(UUID userId, UUID friendId) {
         try {
             if (userId.equals(friendId)) {
-                logger.log("Attempted to add self to Everyone tag. Skipping.");
+                logger.info("Attempted to add self to Everyone tag. Skipping.");
                 return;
             }
 
@@ -420,7 +420,7 @@ public class UserService implements IUserService {
             friendEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), userId));
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -507,7 +507,7 @@ public class UserService implements IUserService {
                     } catch (BaseNotFoundException e) {
                         // No incoming friend requests, safe to ignore
                     } catch (Exception e) {
-                        logger.log(e.getMessage());
+                        logger.error(e.getMessage());
                         throw e;
                     }
 
@@ -524,7 +524,7 @@ public class UserService implements IUserService {
 
             return recommendedFriends;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -539,7 +539,7 @@ public class UserService implements IUserService {
                     .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log("Error retrieving participants for eventId " + eventId + ": " + e.getMessage());
+            logger.error("Error retrieving participants for eventId " + eventId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving participants for eventId " + eventId, e);
         }
     }
@@ -555,7 +555,7 @@ public class UserService implements IUserService {
                     .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log("Error retrieving invited users for eventId " + eventId + ": " + e.getMessage());
+            logger.error("Error retrieving invited users for eventId " + eventId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving invited users for eventId " + eventId, e);
         }
     }
@@ -571,7 +571,7 @@ public class UserService implements IUserService {
                     .map(eventUser -> eventUser.getUser().getId())
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log("Error retrieving participant user IDs for eventId " + eventId + ": " + e.getMessage());
+            logger.error("Error retrieving participant user IDs for eventId " + eventId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving participant user IDs for eventId " + eventId, e);
         }
     }
@@ -587,7 +587,7 @@ public class UserService implements IUserService {
                     .map(eventUser -> eventUser.getUser().getId())
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log("Error retrieving invited user IDs for eventId " + eventId + ": " + e.getMessage());
+            logger.error("Error retrieving invited user IDs for eventId " + eventId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving invited user IDs for eventId " + eventId, e);
         }
     }
@@ -613,7 +613,7 @@ public class UserService implements IUserService {
                     user.getEmail()
             );
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -626,7 +626,7 @@ public class UserService implements IUserService {
                     .filter(Objects::nonNull) // Filter out null values (already visited users)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -637,7 +637,7 @@ public class UserService implements IUserService {
             User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
             return getFullUserById(user.getId());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -650,12 +650,12 @@ public class UserService implements IUserService {
     @Override
     public void verifyUserByUsername(String username) {
         try {
-            logger.log("Marking user as verified " + username);
+            logger.info("Marking user as verified " + username);
             User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
             user.setVerified(true);
             repository.save(user);
         } catch (Exception e) {
-            logger.log("Unexpected error while marking user as verified: " + e.getMessage());
+            logger.error("Unexpected error while marking user as verified: " + e.getMessage());
             throw e;
         }
     }
@@ -696,7 +696,7 @@ public class UserService implements IUserService {
 
             return fullFriendUserDTOList;
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }

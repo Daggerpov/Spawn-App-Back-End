@@ -28,12 +28,12 @@ public class CleanUnverifiedService {
      */
     @Scheduled(fixedRate = RATE)
     public void cleanUnverifiedExpiredUsers() {
-        logger.log("Cleaning unverified, expired users");
+        logger.info("Cleaning unverified, expired users");
         try {
             int numDeleted = userRepository.deleteAllExpiredUnverifiedUsers();
-            logger.log(String.format("Successfully deleted %s users from database", numDeleted));
+            logger.info(String.format("Successfully deleted %s users from database", numDeleted));
         } catch (Exception e) {
-            logger.log("Unexpected error while deleting expired, unverified users: " + e.getMessage());
+            logger.error("Unexpected error while deleting expired, unverified users: " + e.getMessage());
         }
     }
 }

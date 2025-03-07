@@ -56,7 +56,7 @@ public class S3Service implements IS3Service {
             s3.putObject(request, RequestBody.fromBytes(file));
             return CDN_BASE + key;
         } catch (Exception e) {
-            logger.log(e.getMessage()); // TODO: decide correct behaviour
+            logger.error(e.getMessage()); // TODO: decide correct behaviour
             throw e;
         }
     }
@@ -70,7 +70,7 @@ public class S3Service implements IS3Service {
             String key = UUID.randomUUID().toString();
             return putObjectWithKey(file, key);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -95,7 +95,7 @@ public class S3Service implements IS3Service {
                     user.getEmail()
             );
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -124,7 +124,7 @@ public class S3Service implements IS3Service {
             user = userService.saveEntity(user);
             return userService.getUserById(user.getId()); // because converting user -> dto is hard
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -142,7 +142,7 @@ public class S3Service implements IS3Service {
             user.setProfilePictureUrlString(null);
             userService.saveEntity(user);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -159,7 +159,7 @@ public class S3Service implements IS3Service {
             String key = extractObjectKey(urlString);
             deleteObject(key);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -178,7 +178,7 @@ public class S3Service implements IS3Service {
         try {
             s3.deleteObject(request);
         } catch (Exception e) {
-            logger.log(e.getMessage()); // TODO: decide correct behaviour
+            logger.error(e.getMessage()); // TODO: decide correct behaviour
             throw e;
         }
     }
@@ -193,7 +193,7 @@ public class S3Service implements IS3Service {
         try {
             return url.substring(url.lastIndexOf("/") + 1);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new ApplicationException("Invalid URL");
         }
     }

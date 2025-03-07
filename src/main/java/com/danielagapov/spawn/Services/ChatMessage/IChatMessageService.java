@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 
@@ -13,6 +14,8 @@ public interface IChatMessageService {
 
     // CRUD operations:
     ChatMessageDTO getChatMessageById(UUID id);
+
+    ChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO);
 
     ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessage);
 
