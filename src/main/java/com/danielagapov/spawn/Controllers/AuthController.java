@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.AuthUserDTO;
+import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;

@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.DTOs.ChatMessage.AbstractChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -74,6 +74,7 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChatMessage(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             boolean isDeleted = chatMessageService.deleteChatMessageById(id);
             if (isDeleted) {
@@ -91,6 +92,7 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
     @PostMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<ChatMessageLikesDTO> createChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
+        if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(chatMessageService.createChatMessageLike(chatMessageId, userId), HttpStatus.CREATED);
         } catch (BaseNotFoundException e) {
@@ -103,6 +105,7 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{chatMessageId}/likes
     @GetMapping("/{chatMessageId}/likes")
     public ResponseEntity<List<UserDTO>> getChatMessageLikes(@PathVariable UUID chatMessageId) {
+        if (chatMessageId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(chatMessageService.getChatMessageLikes(chatMessageId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -115,6 +118,7 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
     @DeleteMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<Void> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
+        if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
