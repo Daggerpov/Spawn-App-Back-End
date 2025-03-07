@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +26,8 @@ public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
     private String eventFriendTagColorHexCodeForRequestingUser;
     // ensures string formatting when serialized to JSON; for mobile (client)
     private @JsonFormat(shape = JsonFormat.Shape.STRING) ParticipationStatus participationStatus;
+    @JsonProperty("isSelfOwned") // specifying JSON name,
+    // since booleans get turned to `selfOwned` (remove `is` from name)
     private boolean isSelfOwned;
 
     public FullFeedEventDTO(UUID id,
