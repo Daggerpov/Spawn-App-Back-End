@@ -63,8 +63,8 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Making user"));
-        verify(logger).log(contains("Returning BaseUserDTO of newly made user"));
+        verify(logger).info(contains("Making user"));
+        verify(logger).info(contains("Returning BaseUserDTO of newly made user"));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Existing user detected in makeUser, mapping already exists"));
+        verify(logger).info(contains("Existing user detected in makeUser, mapping already exists"));
     }
 
     @Test
@@ -100,7 +100,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Existing user detected in makeUser, email already exists"));
+        verify(logger).error(contains("Existing user detected in makeUser, email already exists"));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class OAuthServiceTests {
         });
 
         assertThrows(DataAccessException.class, () -> oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google));
-        verify(logger).log(contains("Database error while creating user"));
+        verify(logger).error(contains("Database error while creating user"));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class OAuthServiceTests {
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenThrow(new RuntimeException("Unexpected save error"));
 
         assertThrows(RuntimeException.class, () -> oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google));
-        verify(logger).log(contains("Unexpected error while creating user"));
+        verify(logger).error(contains("Unexpected error while creating user"));
     }
 
     @Test
@@ -139,8 +139,8 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Making user"));
-        verify(logger).log(contains("Returning BaseUserDTO of newly made user"));
+        verify(logger).info(contains("Making user"));
+        verify(logger).info(contains("Returning BaseUserDTO of newly made user"));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Existing user detected in makeUser, mapping already exists"));
+        verify(logger).error(contains("Existing user detected in makeUser, mapping already exists"));
     }
 
     @Test
@@ -177,7 +177,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Existing user detected in makeUser, email already exists"));
+        verify(logger).error(contains("Existing user detected in makeUser, email already exists"));
     }
 
     @Test
@@ -189,7 +189,7 @@ public class OAuthServiceTests {
         });
 
         assertThrows(DataAccessException.class, () -> oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple));
-        verify(logger).log(contains("Database error while creating user"));
+        verify(logger).error(contains("Database error while creating user"));
     }
 
     @Test
@@ -200,7 +200,7 @@ public class OAuthServiceTests {
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenThrow(new RuntimeException("Unexpected save error"));
 
         assertThrows(RuntimeException.class, () -> oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple));
-        verify(logger).log(contains("Unexpected error while creating user"));
+        verify(logger).error(contains("Unexpected error while creating user"));
     }
 
     @Test
@@ -211,7 +211,7 @@ public class OAuthServiceTests {
         assertThrows(NullPointerException.class, () ->
                 oauthService.makeUser(userDTO, "externalId789", profilePicture, OAuthProvider.google));
 
-        verify(logger).log(contains("Unexpected error while creating user"));
+        verify(logger).error(contains("Unexpected error while creating user"));
     }
 
     @Test
@@ -230,7 +230,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertNotEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Existing user detected in makeUser, mapping already exists"));
+        verify(logger).info(contains("Existing user detected in makeUser, mapping already exists"));
     }
 
     @Test
@@ -246,7 +246,7 @@ public class OAuthServiceTests {
 
         assertNotNull(result);
         assertEquals(userDTO.getEmail(), result.getEmail());
-        verify(logger).log(contains("Making user"));
-        verify(logger).log(contains("Returning BaseUserDTO of newly made user"));
+        verify(logger).info(contains("Making user"));
+        verify(logger).info(contains("Returning BaseUserDTO of newly made user"));
     }
 }

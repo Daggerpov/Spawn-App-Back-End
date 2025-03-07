@@ -90,7 +90,7 @@ public class UserServiceTests {
 
         assertTrue(exception.getMessage().contains("Failed to save user"));
         verify(userRepository, times(1)).save(any(User.class));
-        verify(logger, times(1)).log("Database error");  // Verify that logging happened
+        verify(logger, times(1)).error("Database error");  // Verify that logging happened
     }
 
 
@@ -154,7 +154,7 @@ public class UserServiceTests {
 
         assertFalse(result);
         verify(userRepository, times(1)).deleteById(userId);
-        verify(logger, times(1)).log("Database error");  // Ensure logger is called
+        verify(logger, times(1)).error("Database error");  // Ensure logger is called
     }
 
     @Test
@@ -165,7 +165,7 @@ public class UserServiceTests {
         BasesNotFoundException exception = assertThrows(BasesNotFoundException.class, () -> userService.getAllUsers());
 
         assertTrue(exception.getMessage().contains("User"));
-        verify(logger, atLeastOnce()).log("Database error");
+        verify(logger, atLeastOnce()).error("Database error");
     }
 
     @Test
@@ -200,7 +200,7 @@ public class UserServiceTests {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.saveUser(userDTO));
 
         assertTrue(exception.getMessage().contains("Unexpected error"));
-        verify(logger, times(1)).log("Unexpected error");
+        verify(logger, times(1)).error("Unexpected error");
     }
 
     @Test
@@ -213,7 +213,7 @@ public class UserServiceTests {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.replaceUser(newUserDTO, userId));
 
         assertTrue(exception.getMessage().contains("Unexpected error"));
-        verify(logger, times(1)).log("Unexpected error");
+        verify(logger, times(1)).error("Unexpected error");
     }
 
     @Test
@@ -228,7 +228,7 @@ public class UserServiceTests {
         boolean result = userService.deleteUserById(userId);
 
         assertFalse(result);
-        verify(logger, times(1)).log("Unexpected error");
+        verify(logger, times(1)).error("Unexpected error");
     }
 
     @Test
@@ -244,7 +244,7 @@ public class UserServiceTests {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> userService.replaceUser(newUserDTO, userId));
 
         assertTrue(exception.getMessage().contains("Database error"));
-        verify(logger, atLeastOnce()).log("Database error");
+        verify(logger, atLeastOnce()).error("Database error");
     }
 
     @Test

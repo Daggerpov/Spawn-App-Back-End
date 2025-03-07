@@ -56,7 +56,8 @@ public class FriendTagServiceTests {
 
     @Test
     void getAllFriendTags_ShouldThrowException_WhenDatabaseErrorOccurs() {
-        when(friendTagRepository.findAll()).thenThrow(new DataAccessException("Database error") {});
+        when(friendTagRepository.findAll()).thenThrow(new DataAccessException("Database error") {
+        });
 
         BasesNotFoundException exception = assertThrows(BasesNotFoundException.class,
                 () -> friendTagService.getAllFriendTags());
@@ -109,7 +110,8 @@ public class FriendTagServiceTests {
         UUID ownerId = UUID.randomUUID();
         FriendTagDTO friendTagDTO = new FriendTagDTO(UUID.randomUUID(), "Test Tag", "#FFFFFF", ownerId, List.of(), false);
 
-        when(friendTagRepository.save(any(FriendTag.class))).thenThrow(new DataAccessException("Database error") {});
+        when(friendTagRepository.save(any(FriendTag.class))).thenThrow(new DataAccessException("Database error") {
+        });
 
         BaseSaveException exception = assertThrows(BaseSaveException.class,
                 () -> friendTagService.saveFriendTag(friendTagDTO));
@@ -217,7 +219,8 @@ public class FriendTagServiceTests {
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-        doThrow(new DataAccessException("Database error") {}).when(userFriendTagRepository).save(any(UserFriendTag.class));
+        doThrow(new DataAccessException("Database error") {
+        }).when(userFriendTagRepository).save(any(UserFriendTag.class));
 
         assertThrows(BaseSaveException.class, () -> friendTagService.saveUserToFriendTag(friendTagId, userId));
 
@@ -235,7 +238,7 @@ public class FriendTagServiceTests {
                 () -> friendTagService.saveFriendTag(friendTagDTO));
 
         assertEquals("Unexpected error", exception.getMessage());
-        verify(logger, times(1)).log("Unexpected error");
+        verify(logger, times(1)).error("Unexpected error");
     }
 
     @Test
@@ -324,7 +327,8 @@ public class FriendTagServiceTests {
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
         when(userRepository.existsById(userId)).thenReturn(true);
-        doThrow(new DataAccessException("Database error") {}).when(userFriendTagRepository).deleteByFriendTagIdAndUserId(friendTagId, userId);
+        doThrow(new DataAccessException("Database error") {
+        }).when(userFriendTagRepository).deleteByFriendTagIdAndUserId(friendTagId, userId);
 
         BaseSaveException exception = assertThrows(BaseSaveException.class,
                 () -> friendTagService.removeUserFromFriendTag(friendTagId, userId));

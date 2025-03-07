@@ -177,7 +177,7 @@ public class ChatMessageServiceTests {
         };
         when(chatMessageRepository.findAll()).thenThrow(dae);
         BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getAllChatMessages());
-        verify(logger, times(1)).log(dae.getMessage());
+        verify(logger, times(1)).error(dae.getMessage());
     }
 
     @Test
@@ -492,7 +492,7 @@ public class ChatMessageServiceTests {
         };
         when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenThrow(dae);
         BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
-        verify(logger, times(1)).log(dae.getMessage());
+        verify(logger, times(1)).error(dae.getMessage());
     }
 
     @Test

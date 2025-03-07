@@ -1,11 +1,9 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.BetaAccessSignUpDTO;
-import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Mappers.BetaAccessSignUpMapper;
 import com.danielagapov.spawn.Models.BetaAccessSignUp;
 import com.danielagapov.spawn.Repositories.IBetaAccessSignUpRepository;
 import com.danielagapov.spawn.Services.BetaAccessSignUp.BetaAccessSignUpService;
@@ -59,11 +57,12 @@ public class BetaAccessSignUpServiceTests {
 
     @Test
     public void testGetAllBetaAccessSignUpRecords_DataAccessException() {
-        DataAccessException dae = new DataAccessException("DB error") {};
+        DataAccessException dae = new DataAccessException("DB error") {
+        };
         when(repository.findAll()).thenThrow(dae);
 
         BasesNotFoundException exception = assertThrows(BasesNotFoundException.class, () -> service.getAllBetaAccessSignUpRecords());
-        verify(logger, times(1)).log(dae.getMessage());
+        verify(logger, times(1)).error(dae.getMessage());
     }
 
     @Test
@@ -83,7 +82,7 @@ public class BetaAccessSignUpServiceTests {
         when(repository.findAll()).thenThrow(re);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> service.getAllEmails());
-        verify(logger, times(2)).log(re.getMessage());
+        verify(logger, times(2)).error(re.getMessage());
     }
 
     @Test
@@ -98,12 +97,13 @@ public class BetaAccessSignUpServiceTests {
 
     @Test
     public void testSignUp_DataAccessException() {
-        DataAccessException dae = new DataAccessException("Save failed") {};
+        DataAccessException dae = new DataAccessException("Save failed") {
+        };
         when(repository.save(any(BetaAccessSignUp.class))).thenThrow(dae);
 
         BaseSaveException exception = assertThrows(BaseSaveException.class, () -> service.signUp(testDTO));
         assertTrue(exception.getMessage().contains("Failed to save beta access sign up record"));
-        verify(logger, times(1)).log(dae.getMessage());
+        verify(logger, times(1)).error(dae.getMessage());
     }
 
     @Test
@@ -112,6 +112,6 @@ public class BetaAccessSignUpServiceTests {
         when(repository.save(any(BetaAccessSignUp.class))).thenThrow(re);
 
         RuntimeException exception = assertThrows(RuntimeException.class, () -> service.signUp(testDTO));
-        verify(logger, times(1)).log(re.getMessage());
+        verify(logger, times(1)).error(re.getMessage());
     }
 }
