@@ -6,14 +6,17 @@ import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
@@ -42,32 +45,45 @@ public class EventController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
+  
     // full path: /api/v1/events/user/{creatorUserId}?full=full
     @GetMapping("user/{creatorUserId}")
-    public ResponseEntity<List<? extends AbstractEventDTO>> getEventsCreatedByUserId(@PathVariable UUID creatorUserId, @RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<?> getEventsCreatedByUserId(@PathVariable UUID creatorUserId, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(eventService.convertEventsToFullFeedSelfOwnedEvents(eventService.getEventsByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(eventService.getEventsByOwnerId(creatorUserId), HttpStatus.OK);
             }
-        } catch (BasesNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (EventsNotFoundException e) {
+            // thrown list of events not found for given user id
+            // return response with empty list and 200 status
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            // user or event not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            // any other exception
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     // full path: /api/v1/events/friendTag/{friendTagFilterId}
     @GetMapping("friendTag/{friendTagFilterId}")
-    public ResponseEntity<List<FullFeedEventDTO>> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
+    public ResponseEntity<?> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
         if (friendTagFilterId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 
         try {
             return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
+        } catch (EventsNotFoundException e) {
+            // list of events not found for tag filter id
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            // friend tag filter not found for friend tag id
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // any other exception
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -91,12 +107,12 @@ public class EventController {
 
     // full path: /api/v1/events/{id}
     @PutMapping("{id}")
-    public ResponseEntity<EventDTO> replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
+    public ResponseEntity<?> replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(eventService.replaceEvent(newEvent, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -104,7 +120,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}
     @DeleteMapping("{id}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
+    public ResponseEntity<?> deleteEvent(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             boolean isDeleted = eventService.deleteEventById(id);
@@ -114,7 +130,7 @@ public class EventController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
             }
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -122,7 +138,7 @@ public class EventController {
 
     // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
-    public ResponseEntity<List<? extends AbstractUserDTO>> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<?> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
@@ -130,8 +146,12 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
             }
+        } catch (EventsNotFoundException e) {
+            // list of events for user not found
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            // user not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -139,7 +159,7 @@ public class EventController {
 
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
     @GetMapping("{eventId}/participating")
-    public ResponseEntity<Boolean> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
+    public ResponseEntity<?> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
@@ -148,7 +168,8 @@ public class EventController {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            // event or user not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -156,7 +177,7 @@ public class EventController {
 
     // full path: /api/v1/events/{eventId}/invited?userId={userid}
     @GetMapping("{eventId}/invited")
-    public ResponseEntity<Boolean> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
+    public ResponseEntity<?> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
         if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
@@ -165,7 +186,8 @@ public class EventController {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            // event or user not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -174,13 +196,14 @@ public class EventController {
     // this corresponds to the button on the event for invited users
     // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
     @PutMapping("{eventId}/toggleStatus/{userId}")
-    public ResponseEntity<FullFeedEventDTO> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
+    public ResponseEntity<?> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
         if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
             return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            // event or user not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -190,7 +213,7 @@ public class EventController {
     @GetMapping("invitedEvents/{userId}")
     // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<? extends AbstractEventDTO>> getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required = false) boolean full) {
+    public ResponseEntity<?> getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required = false) boolean full) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
@@ -198,8 +221,14 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
             }
+        } catch (EventsNotFoundException e) {
+            // list of events for user id not found
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            // user not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -209,12 +238,18 @@ public class EventController {
     @GetMapping("feedEvents/{requestingUserId}")
     // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<List<FullFeedEventDTO>> getFeedEvents(@PathVariable UUID requestingUserId) {
+    public ResponseEntity<?> getFeedEvents(@PathVariable UUID requestingUserId) {
         if (requestingUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(eventService.getFeedEvents(requestingUserId), HttpStatus.OK);
+        } catch (EventsNotFoundException e) {
+            // list of events for feed not found
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            // user or event not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
