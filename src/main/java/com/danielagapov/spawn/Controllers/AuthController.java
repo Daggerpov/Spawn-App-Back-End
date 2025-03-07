@@ -74,13 +74,13 @@ public class AuthController {
      */
     // full path: /api/v1/auth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<FullUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
+    public ResponseEntity<BaseUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
                                                 @RequestParam("externalUserId") String externalUserId,
                                                 @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             logger.log(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
                     userCreationDTO, externalUserId, provider));
-            FullUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
+            BaseUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (Exception e) {

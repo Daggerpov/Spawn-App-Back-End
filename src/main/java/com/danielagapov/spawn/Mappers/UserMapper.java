@@ -66,4 +66,16 @@ public class UserMapper {
                 .collect(Collectors.toList());
     }
 
+    public static BaseUserDTO toBaseDTO(UserDTO user) {
+        return new BaseUserDTO(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getBio(),
+                user.getProfilePicture()
+        );
+    }
+
 }

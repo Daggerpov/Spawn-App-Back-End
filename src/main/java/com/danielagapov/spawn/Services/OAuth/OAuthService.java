@@ -17,7 +17,6 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,7 +33,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public FullUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
+    public BaseUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
         UserDTO newUser = new UserDTO(
                 userCreationDTO.getId(),
                 null,
@@ -51,7 +50,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public FullUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
+    public BaseUserDTO makeUser(UserDTO userDTO, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
             // TODO: temporary solution
             if (mappingExistsByExternalId(externalUserId)) {
@@ -71,9 +70,9 @@ public class OAuthService implements IOAuthService {
             logger.log(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
             createAndSaveMapping(externalUserId, userDTO, provider);
 
-            FullUserDTO fullUserDTO = userService.getFullUserByUser(userDTO, new HashSet<>());
-            logger.log(String.format("Returning FullUserDTO of newly made user: {fullUserDTO: %s}", fullUserDTO));
-            return fullUserDTO;
+            BaseUserDTO baseUserDTO = UserMapper.toBaseDTO(userDTO);
+            logger.log(String.format("Returning BaseUserDTO of newly made user: {baseUserDTO: %s}", baseUserDTO));
+            return baseUserDTO;
         } catch (DataAccessException e) {
             logger.log("Database error while creating user: " + e.getMessage());
             throw e;
