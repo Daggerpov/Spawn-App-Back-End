@@ -6,12 +6,15 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.FriendTagAction;
+import com.danielagapov.spawn.Exceptions.FriendTagsNotFoundException;
+import com.danielagapov.spawn.Exceptions.UsersNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,11 +37,14 @@ public class FriendTagController {
             } else {
                 return new ResponseEntity<>(friendTagService.getAllFriendTags(), HttpStatus.OK);
             }
+        } catch (FriendTagsNotFoundException e) {
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // returns ResponseEntity with friend tag or friend tag entity type (BaseNotFound)
     // full path: /api/v1/friendTags/{id}?full=full
     @GetMapping("{id}")
     public ResponseEntity<?> getFriendTag(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
@@ -76,6 +82,7 @@ public class FriendTagController {
         }
     }
 
+    // returns ResponseEntity with FriendTagDTO or friend tag entity type (BaseNotFound)
     // full path: /api/v1/friendTags/{id}
     @PutMapping("{id}")
     public ResponseEntity<?> replaceFriendTag(@RequestBody FriendTagDTO newFriendTag, @PathVariable UUID id) {
@@ -89,6 +96,7 @@ public class FriendTagController {
         }
     }
 
+    // returns ResponseEntity with void or friend tag entity type (BaseNotFound)
     // full path: /api/v1/friendTags/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<?> deleteFriendTag(@PathVariable UUID id) {
@@ -107,6 +115,8 @@ public class FriendTagController {
         }
     }
 
+    // returns ResponseEntity with list of friend tags (can be empty)
+    //  or not found entity type (user)
     // full path: /api/v1/friendTags/owner/{ownerId}?full=full
     @GetMapping("owner/{ownerId}")
     public ResponseEntity<?> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value = "full", required = false) boolean full) {
@@ -119,11 +129,14 @@ public class FriendTagController {
             }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (FriendTagsNotFoundException e) {
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // returns ResponseEntity with void or not found entity type
     // full path: /api/v1/friendTags/{id}?friendTagAction={addFriend/removeFriend}&userId=userId
     @PostMapping("{id}")
     public ResponseEntity<?> modifyFriendTagFriends(@PathVariable UUID id, @RequestParam FriendTagAction friendTagAction, @RequestParam UUID userId) {
@@ -145,8 +158,9 @@ public class FriendTagController {
         }
     }
 
+    // returns ResponseEntity with list of friend tags (can be empty)
+    //  or not found entity type (user)
     // full path: /api/v1/friendTags/friendTagsForFriend?ownerUserId&friendUserId
-
     /**
      * The purpose of this endpoint is to show which friend tags a user has placed a friend into
      * on mobile -> in the event creation view when adding friends to an event, or in the friends view
@@ -162,12 +176,16 @@ public class FriendTagController {
             return new ResponseEntity<>(friendTagService.getPertainingFullFriendTagsForFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (FriendTagsNotFoundException e) {
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (Exception e) {
             // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // returns ResponseEntity with list of FullUserDTOs (can be empty)
+    //  or not found entity type (friendTag)
     /**
      * The purpose of this endpoint is to return which friends a user can add to a friend tag, since
      * they haven't already been added to that friend tag already. On mobile, this corresponds to the
@@ -181,11 +199,15 @@ public class FriendTagController {
             return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (UsersNotFoundException e) {
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // returns ResponseEntity with list of FriendTagDTOs (can be empty)
+    //  or not found entity type (user)
     // full path: /api/v1/friendTags/addUserToTags/{ownerUserId}?friendUserId=friendUserId
     @GetMapping("addUserToTags/{ownerUserId}")
     public ResponseEntity<?> getTagsNotAddedToFriend(@PathVariable UUID ownerUserId, @RequestParam UUID friendUserId) {
@@ -194,11 +216,14 @@ public class FriendTagController {
             return new ResponseEntity<>(friendTagService.getTagsNotAddedToFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (FriendTagsNotFoundException e) {
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // returns ResponseEntity with void or not found entity type (friendTag, user)
     // full path: /api/v1/friendTags/addUserToTags?friendUserId=friendUserId
     @PostMapping("addUserToTags")
     public ResponseEntity<?> addUserToTags(@RequestBody List<UUID> friendTagIds, @RequestParam UUID friendUserId) {
@@ -215,7 +240,8 @@ public class FriendTagController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
+    
+    // returns ResponseEntity with void or not found entity type (friendTag, user)
     // full path: /api/v1/friendTags/bulkAddFriendsToTag
     @PostMapping("bulkAddFriendsToTag")
     public ResponseEntity<?> bulkAddFriendsToTag(@RequestBody List<FullUserDTO> friends, @RequestParam UUID friendTagId) {
