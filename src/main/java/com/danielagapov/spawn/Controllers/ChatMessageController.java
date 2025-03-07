@@ -3,7 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.ChatMessage.AbstractChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -64,9 +64,9 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages
     @PostMapping
-    public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody ChatMessageDTO newChatMessage) {
+    public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {
         try {
-            return new ResponseEntity<>(chatMessageService.saveChatMessage(newChatMessage), HttpStatus.CREATED);
+            return new ResponseEntity<>(chatMessageService.createChatMessage(newChatMessage), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
