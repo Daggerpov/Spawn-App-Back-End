@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -207,7 +208,7 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public List<UserDTO> getChatMessageLikes(UUID chatMessageId) {
+    public List<BaseUserDTO> getChatMessageLikes(UUID chatMessageId) {
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId));
 

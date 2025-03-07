@@ -9,7 +9,7 @@ import java.util.List;
 public class FetchFriendRequestMapper {
     public static FetchFriendRequestDTO toDTO(FriendRequest friendRequest) {
         User sender = friendRequest.getSender();
-        return new FetchFriendRequestDTO(friendRequest.getId(), PotentialFriendUserMapper.toDTO(sender));
+        return new FetchFriendRequestDTO(friendRequest.getId(), UserMapper.toDTO(sender));
     }
 
     public static List<FetchFriendRequestDTO> toDTOList(List<FriendRequest> friendRequests) {

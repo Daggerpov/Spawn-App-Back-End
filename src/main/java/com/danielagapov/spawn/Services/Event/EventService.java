@@ -1,11 +1,7 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
-import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
-import com.danielagapov.spawn.DTOs.Event.EventDTO;
-import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.Event.*;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -550,7 +546,7 @@ public class EventService implements IEventService {
                     chatMessageService.getFullChatMessagesByEventId(event.getId()),
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                     requestingUserId != null ? getParticipationStatus(event.getId(), requestingUserId) : null,
-                    requestingUserId == event.getCreatorUserId()
+                    event.getCreatorUserId().equals(requestingUserId)
             );
         } catch (BaseNotFoundException e) {
             return null;

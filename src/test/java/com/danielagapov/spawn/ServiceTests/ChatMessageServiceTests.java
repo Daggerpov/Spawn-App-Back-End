@@ -2,6 +2,7 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -419,7 +420,7 @@ public class ChatMessageServiceTests {
         List<UUID> friendTagIds = List.of(UUID.randomUUID());
         when(userService.getFriendUserIdsByUserId(dummyUser.getId())).thenReturn(friendIds);
         when(ftService.getFriendTagIdsByOwnerUserId(dummyUser.getId())).thenReturn(friendTagIds);
-        List<UserDTO> result = chatMessageService.getChatMessageLikes(chatMessageId);
+        List<BaseUserDTO> result = chatMessageService.getChatMessageLikes(chatMessageId);
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(dummyUser.getId(), result.get(0).getId());
