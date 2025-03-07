@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.ReportedContentDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
 import com.danielagapov.spawn.Enums.ResolutionStatus;
+import com.danielagapov.spawn.Exceptions.ReportsNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.Report.IReportContentService;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,57 +61,67 @@ public class ReportController {
         }
     }
 
+    // returns ResponseEntity with list of ReportedContentDTO (can be empty)
+    // or not found entity type (user)
     // full path: /api/v1/reports/reporters/{reporterId}
     @GetMapping("reporter/{reporterId}")
-    public ResponseEntity<List<ReportedContentDTO>> getReportsByReporter(@PathVariable UUID reporterId) {
+    public ResponseEntity<?> getReportsByReporter(@PathVariable UUID reporterId) {
         if (reporterId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             List<ReportedContentDTO> reports = reportService.getReportsByReporterId(reporterId);
             return ResponseEntity.ok(reports);
         } catch (BaseNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (ReportsNotFoundException e) {
+            return ResponseEntity.ok(new ArrayList<>());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
+    // returns ResponseEntity with list of ReportedContentDTO (can be empty)
+    // or not found entity type (user)
     // full path: /api/v1/reports/reported-users/{contentOwnerId}
     @GetMapping("{contentOwnerId}")
-    public ResponseEntity<List<ReportedContentDTO>> getReportsByContentOwner(@PathVariable UUID contentOwnerId) {
+    public ResponseEntity<?> getReportsByContentOwner(@PathVariable UUID contentOwnerId) {
         if (contentOwnerId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             List<ReportedContentDTO> reports = reportService.getReportsByContentOwnerId(contentOwnerId);
             return ResponseEntity.ok(reports);
         } catch (BaseNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (ReportsNotFoundException e) {
+            return ResponseEntity.ok(new ArrayList<>());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
+    // returns void or not found entity type (report)
     // full path: /api/v1/reports/{reportId}
     @DeleteMapping("{reportId}")
-    public ResponseEntity<Void> deleteReport(@PathVariable UUID reportId) {
+    public ResponseEntity<?> deleteReport(@PathVariable UUID reportId) {
         if (reportId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             reportService.deleteReportById(reportId);
             return ResponseEntity.noContent().build();
         } catch (BaseNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
+    // returns ReportedContentDTO or not found entity type (report)
     // full path: /api/v1/reports/{reportId}
     @GetMapping("{reportId}")
-    public ResponseEntity<ReportedContentDTO> getReportById(@PathVariable UUID reportId) {
+    public ResponseEntity<?> getReportById(@PathVariable UUID reportId) {
         if (reportId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             ReportedContentDTO report = reportService.getReportById(reportId);
             return ResponseEntity.ok(report);
         } catch (BaseNotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
