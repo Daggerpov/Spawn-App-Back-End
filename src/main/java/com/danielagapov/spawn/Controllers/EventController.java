@@ -61,7 +61,7 @@ public class EventController {
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // user or event not found
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             // any other exception
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -80,7 +80,7 @@ public class EventController {
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // friend tag filter not found for friend tag id
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             // any other exception
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -112,7 +112,7 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.replaceEvent(newEvent, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -130,7 +130,7 @@ public class EventController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
             }
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -151,7 +151,7 @@ public class EventController {
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // user not found
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -169,7 +169,7 @@ public class EventController {
             }
         } catch (BaseNotFoundException e) {
             // event or user not found
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -187,7 +187,7 @@ public class EventController {
             }
         } catch (BaseNotFoundException e) {
             // event or user not found
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -203,7 +203,7 @@ public class EventController {
             return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // event or user not found
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -226,7 +226,7 @@ public class EventController {
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // user not found
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -247,7 +247,7 @@ public class EventController {
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // user or event not found
-            return new ResponseEntity<>(e.et, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
