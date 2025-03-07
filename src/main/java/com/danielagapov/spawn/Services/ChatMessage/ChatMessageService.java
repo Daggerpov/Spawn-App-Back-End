@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
@@ -27,6 +28,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +103,19 @@ public class ChatMessageService implements IChatMessageService {
                     return ChatMessageMapper.toDTO(chatMessage, likedByUserIds);
                 })
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
+    }
+
+    @Override
+    public ChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO) {
+        ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
+                UUID.randomUUID(),
+                newChatMessageDTO.getContent(),
+                Instant.now(),
+                newChatMessageDTO.getSenderUserId(),
+                newChatMessageDTO.getEventId(),
+                List.of()
+        );
+        return saveChatMessage(chatMessageDTO);
     }
 
     @Override
