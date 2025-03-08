@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -172,8 +173,16 @@ public class FriendTagService implements IFriendTagService {
         }
 
         try {
+            // Alter to check if the tag is an "Everyone" tag before deleting
+            FriendTagDTO friendTag = getFriendTagById(id);
+            if (friendTag.isEveryone()) {
+                logger.warn("Cannot delete the 'Everyone' tag");
+                return true;
+            }
+            
             uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
+
             return true;
         } catch (Exception e) {
             logger.error(e.getMessage());
