@@ -107,6 +107,7 @@ public class ChatMessageService implements IChatMessageService {
 
     @Override
     public ChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO) {
+        logger.info("Creating chat message: " + newChatMessageDTO.getContent());
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
                 UUID.randomUUID(),
                 newChatMessageDTO.getContent(),
