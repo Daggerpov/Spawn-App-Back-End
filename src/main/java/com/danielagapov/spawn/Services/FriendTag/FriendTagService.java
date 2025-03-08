@@ -175,11 +175,12 @@ public class FriendTagService implements IFriendTagService {
         try {
             // Alter to check if the tag is an "Everyone" tag before deleting
             FriendTagDTO friendTag = getFriendTagById(id);
+
             if (friendTag.isEveryone()) {
                 logger.warn("Cannot delete the 'Everyone' tag");
                 return true;
             }
-            
+
             uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
 
@@ -189,6 +190,7 @@ public class FriendTagService implements IFriendTagService {
             return false;
         }
     }
+
 
     @Override
     public void saveUserToFriendTag(UUID id, UUID userId) {
