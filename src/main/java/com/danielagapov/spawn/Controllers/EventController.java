@@ -252,4 +252,22 @@ public class EventController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // full path: /api/v1/events/{id}
+    @GetMapping("{id}")
+    public ResponseEntity<?> getFullEventById(@PathVariable UUID id, @RequestParam UUID requestingUserId) {
+        if (id == null || requestingUserId == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            // Event not found
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // Any other exception
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
