@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,7 @@ import java.util.UUID;
 public class PushNotificationService {
 
     @Value("${apns.certificate.path}")
-    private String apnsCertificatePath;
+    private String apnsCertificate;
 
     @Value("${apns.certificate.password}")
     private String apnsCertificatePassword;
@@ -47,17 +49,25 @@ public class PushNotificationService {
 
     @PostConstruct
     public void initialize() {
-        // Initialize APNS
-        if (apnsProduction) {
-            apnsService = APNS.newService()
-                    .withCert(apnsCertificatePath, apnsCertificatePassword)
-                    .withProductionDestination()
-                    .build();
-        } else {
-            apnsService = APNS.newService()
-                    .withCert(apnsCertificatePath, apnsCertificatePassword)
-                    .withSandboxDestination()
-                    .build();
+        try {
+            // Decode the Base64 encoded certificate from environment variable
+            byte[] certificateBytes = Base64.getDecoder().decode(apnsCertificate);
+            
+            // Initialize APNS with the certificate from environment variable
+            if (apnsProduction) {
+                apnsService = APNS.newService()
+                        .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
+                        .withProductionDestination()
+                        .build();
+            } else {
+                apnsService = APNS.newService()
+                        .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
+                        .withSandboxDestination()
+                        .build();
+            }
+        } catch (Exception e) {
+            System.err.println("Error initializing APNS service: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

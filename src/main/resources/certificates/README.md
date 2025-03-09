@@ -8,8 +8,12 @@
 4. Create a new Push Notification certificate (Development or Production)
 5. Download the certificate and double-click to add it to your Keychain
 6. Export the certificate as a .p12 file (you'll be prompted to set a password)
-7. Place the .p12 file in this directory with the name `apns-cert.p12`
-8. Update the password in `application.properties` to match the one you set
+7. Convert the .p12 file to Base64 format using the following command:
+   ```
+   cat apns-cert.p12 | base64 | tr -d '\n' > apns-cert-base64.txt
+   ```
+8. Set the Base64 encoded certificate as an environment variable named `APNS_CERTIFICATE`
+9. Set the certificate password as an environment variable named `CERTIFICATE_PASSWORD`
 
 ## Firebase Cloud Messaging (FCM) Setup
 
@@ -21,13 +25,13 @@
 
 ## Configuration
 
-Make sure to update the following properties in `application.properties`:
+The application is configured to use environment variables for sensitive information:
 
 ```properties
 # APNS Configuration for iOS
-apns.certificate.path=classpath:certificates/apns-cert.p12
-apns.certificate.password=your_certificate_password
-apns.production=false  # Set to true for production
+apns.certificate.path=${APNS_CERTIFICATE}
+apns.certificate.password=${CERTIFICATE_PASSWORD}
+apns.production=true  # Set to false for development
 
 # Firebase Configuration for Android
 firebase.config.path=firebase-config.json
