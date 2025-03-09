@@ -1,16 +1,19 @@
 package com.danielagapov.spawn.Services.PushNotification;
 
+import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.Enums.DeviceType;
 import com.danielagapov.spawn.Models.DeviceToken;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.DeviceTokenRepository;
+import com.danielagapov.spawn.Repositories.IDeviceTokenRepository;
+import com.danielagapov.spawn.Services.User.IUserService;
 import com.notnoop.apns.APNS;
 import com.notnoop.apns.ApnsService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,12 +34,15 @@ public class PushNotificationService {
     @Value("${apns.production:false}")
     private boolean apnsProduction;
 
-    private final DeviceTokenRepository deviceTokenRepository;
+    private final IDeviceTokenRepository IDeviceTokenRepository;
+    private final IUserService userService;
     private ApnsService apnsService;
 
+
     @Autowired
-    public PushNotificationService(DeviceTokenRepository deviceTokenRepository) {
-        this.deviceTokenRepository = deviceTokenRepository;
+    public PushNotificationService(IDeviceTokenRepository IDeviceTokenRepository, IUserService userService) {
+        this.IDeviceTokenRepository = IDeviceTokenRepository;
+        this.userService = userService;
     }
 
     @PostConstruct
@@ -58,22 +64,24 @@ public class PushNotificationService {
     /**
      * Register a device token for a user
      *
-     * @param user       the user to register the token for
-     * @param token      the device token
-     * @param deviceType the type of device (IOS, WEB)
      * @return the created DeviceToken entity
      */
-    public DeviceToken registerDeviceToken(User user, String token, DeviceType deviceType) {
+    public DeviceToken registerDeviceToken(DeviceTokenDTO deviceTokenDTO) {
+        String token = deviceTokenDTO.getToken();
+        User user = userService.getUserEntityById(deviceTokenDTO.getUserId());
         // Check if token already exists
-        if (deviceTokenRepository.existsByToken(token)) {
-            deviceTokenRepository.deleteByToken(token);
+        if (IDeviceTokenRepository.existsByToken(token)) {
+            IDeviceTokenRepository.deleteByToken(token);
         }
 
         DeviceToken deviceToken = new DeviceToken();
         deviceToken.setUser(user);
         deviceToken.setToken(token);
-        deviceToken.setDeviceType(deviceType);
-        return deviceTokenRepository.save(deviceToken);
+        deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
+        // Send a test notification to confirm registration
+        sendTestNotification(user.getId());
+
+        return IDeviceTokenRepository.save(deviceToken);
     }
 
     /**
@@ -82,22 +90,22 @@ public class PushNotificationService {
      * @param token the device token to unregister
      */
     public void unregisterDeviceToken(String token) {
-        if (deviceTokenRepository.existsByToken(token)) {
-            deviceTokenRepository.deleteByToken(token);
+        if (IDeviceTokenRepository.existsByToken(token)) {
+            IDeviceTokenRepository.deleteByToken(token);
         }
     }
 
     /**
      * Send a push notification to a specific user
      *
-     * @param userId      the ID of the user to send the notification to
-     * @param title       the notification title
-     * @param message     the notification message
-     * @param customData  optional custom data to include in the notification
+     * @param userId     the ID of the user to send the notification to
+     * @param title      the notification title
+     * @param message    the notification message
+     * @param customData optional custom data to include in the notification
      */
     public void sendNotificationToUser(UUID userId, String title, String message, Map<String, String> customData) {
-        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
-        
+        List<DeviceToken> deviceTokens = IDeviceTokenRepository.findByUserId(userId);
+
         for (DeviceToken deviceToken : deviceTokens) {
             if (deviceToken.getDeviceType() == DeviceType.IOS) {
                 sendApnsNotification(deviceToken.getToken(), title, message, customData);
@@ -108,10 +116,10 @@ public class PushNotificationService {
     /**
      * Send push notification to multiple users
      *
-     * @param userIds     the IDs of the users to send the notification to
-     * @param title       the notification title
-     * @param message     the notification message
-     * @param customData  optional custom data to include in the notification
+     * @param userIds    the IDs of the users to send the notification to
+     * @param title      the notification title
+     * @param message    the notification message
+     * @param customData optional custom data to include in the notification
      */
     public void sendNotificationToUsers(List<UUID> userIds, String title, String message, Map<String, String> customData) {
         for (UUID userId : userIds) {
@@ -141,5 +149,17 @@ public class PushNotificationService {
             // Log error but continue processing other tokens
             System.err.println("Error sending APNS notification: " + e.getMessage());
         }
+    }
+
+    private void sendTestNotification(UUID userId) {
+        // Send a test notification to confirm registration
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "registration");
+        sendNotificationToUser(
+                userId,
+                "Push Notifications Enabled",
+                "You will now receive notifications from Spawn App",
+                data
+        );
     }
 } 

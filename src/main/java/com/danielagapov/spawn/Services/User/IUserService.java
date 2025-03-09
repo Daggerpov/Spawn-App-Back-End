@@ -7,7 +7,6 @@ import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
-import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.Map;
@@ -88,12 +87,4 @@ public interface IUserService {
     boolean existsByUsername(String username);
 
     void verifyUserByUsername(String username);
-
-    /**
-     * Gets a User entity from the Authentication object
-     *
-     * @param authentication The Authentication object from Spring Security
-     * @return The User entity
-     */
-    User getUserFromAuthentication(Authentication authentication);
 }

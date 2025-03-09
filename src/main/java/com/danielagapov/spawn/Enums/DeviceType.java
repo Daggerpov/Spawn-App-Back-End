@@ -5,5 +5,5 @@ package com.danielagapov.spawn.Enums;
  */
 public enum DeviceType {
     IOS,
-    WEB
+    ANDROID
 } 

@@ -29,8 +29,6 @@ import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -714,33 +712,5 @@ public class UserService implements IUserService {
                 fullUser.getProfilePicture(),
                 mutualFriendCount
         );
-    }
-
-    /**
-     * Gets a User entity from the Authentication object
-     *
-     * @param authentication The Authentication object from Spring Security
-     * @return The User entity
-     */
-    @Override
-    public User getUserFromAuthentication(Authentication authentication) {
-        if (authentication == null) {
-            throw new ApplicationException("Authentication is null");
-        }
-        
-        String username;
-        Object principal = authentication.getPrincipal();
-        
-        if (principal instanceof UserDetails) {
-            username = ((UserDetails) principal).getUsername();
-        } else {
-            username = principal.toString();
-        }
-        
-        // Find the user by username
-        User user = repository.findByUsername(username)
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.User, "username", username));
-        
-        return user;
     }
 }
