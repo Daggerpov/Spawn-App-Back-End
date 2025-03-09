@@ -4,15 +4,12 @@ import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
 import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
-import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +29,11 @@ public class EventController {
         this.userService = userService;
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events?full=full
     @GetMapping
     public ResponseEntity<List<? extends AbstractEventDTO>> getEvents(@RequestParam(value = "full", required = false) boolean full) {
@@ -45,7 +47,14 @@ public class EventController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-  
+
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently." +
+            "This may become a feature, as Owen has suggested, " +
+            "with showing a friend's recent events.")
     // full path: /api/v1/events/user/{creatorUserId}?full=full
     @GetMapping("user/{creatorUserId}")
     public ResponseEntity<?> getEventsCreatedByUserId(@PathVariable UUID creatorUserId, @RequestParam(value = "full", required = false) boolean full) {
@@ -87,13 +96,6 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/mock-endpoint
-    @GetMapping("mock-endpoint")
-    public ResponseEntity<String> getMockEndpoint() {
-        return new ResponseEntity<>("This is the mock endpoint for events. Everything is working with it.",
-                HttpStatus.OK);
-    }
-
     // full path: /api/v1/events
     @PostMapping
     public ResponseEntity<AbstractEventDTO> createEvent(@RequestBody EventCreationDTO eventCreationDTO) {
@@ -105,6 +107,13 @@ public class EventController {
         }
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/events/{id}
     @PutMapping("{id}")
     public ResponseEntity<?> replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
@@ -118,6 +127,13 @@ public class EventController {
         }
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/events/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<?> deleteEvent(@PathVariable UUID id) {
@@ -136,6 +152,11 @@ public class EventController {
         }
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
     public ResponseEntity<?> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
@@ -157,6 +178,11 @@ public class EventController {
         }
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
     @GetMapping("{eventId}/participating")
     public ResponseEntity<?> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
@@ -175,6 +201,11 @@ public class EventController {
         }
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/{eventId}/invited?userId={userid}
     @GetMapping("{eventId}/invited")
     public ResponseEntity<?> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
@@ -209,6 +240,11 @@ public class EventController {
         }
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/invitedEvents/{userId}?full=full
     @GetMapping("invitedEvents/{userId}")
     // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:

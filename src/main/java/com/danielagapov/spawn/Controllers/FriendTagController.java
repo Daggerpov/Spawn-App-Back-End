@@ -25,6 +25,11 @@ public class FriendTagController {
         this.friendTagService = friendTagService;
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/friendTags?full=full
     @GetMapping
     public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTags(@RequestParam(value = "full", required = false) boolean full) {
@@ -39,6 +44,11 @@ public class FriendTagController {
         }
     }
 
+    // Despite this not currently being used, let's not delete it.
+    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
+    // wasn't being used -> so I removed it, but had to add it back for a new feature.
+    // So, let's consider removing it in the future, but keep for now.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/friendTags/{id}?full=full
     @GetMapping("{id}")
     public ResponseEntity<AbstractFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
@@ -51,16 +61,6 @@ public class FriendTagController {
             }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/friendTags/mock-endpoint
-    @GetMapping("mock-endpoint")
-    public ResponseEntity<String> getMockEndpoint() {
-        try {
-            return new ResponseEntity<>("This is the mock endpoint for friendTags. Everything is working with it.", HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
