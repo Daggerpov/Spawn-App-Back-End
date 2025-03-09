@@ -52,6 +52,12 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             }
 
             FeedbackSubmission feedback = FeedbackSubmissionMapper.toEntity(dto);
+            feedback.setFromUserId(userId);
+
+            if (feedback.getFromUserEmail() == null) {
+                feedback.setFromUserEmail(dto.getFromUserEmail());
+            }
+
             return repository.save(feedback);
         } catch (DataAccessException e) {
             logger.log(e.getMessage());

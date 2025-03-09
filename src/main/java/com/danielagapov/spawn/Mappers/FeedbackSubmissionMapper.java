@@ -12,7 +12,7 @@ public class FeedbackSubmissionMapper {
         return new FeedbackSubmissionDTO(
                 entity.getType(),
                 entity.getFromUserId(),
-                null,
+                entity.getFromUserEmail(),
                 entity.getMessage()
         );
     }
@@ -22,6 +22,7 @@ public class FeedbackSubmissionMapper {
                 null,
                 dto.getType(),
                 dto.getFromUserId(),
+                dto.getFromUserEmail(),
                 null,
                 dto.getMessage()
         );

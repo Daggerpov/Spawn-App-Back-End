@@ -25,6 +25,9 @@ public class FeedbackSubmission implements Serializable {
     private FeedbackType type;
 
     private UUID fromUserId;
+
+    @Column
+    private String fromUserEmail;
     private OffsetDateTime submittedAt;
 
     @Column(columnDefinition = "TEXT")
