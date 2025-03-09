@@ -28,10 +28,7 @@ public class UserController {
         this.logger = logger;
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users?full=full
     @GetMapping
@@ -47,10 +44,7 @@ public class UserController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
@@ -82,10 +76,7 @@ public class UserController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
@@ -104,10 +95,7 @@ public class UserController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users
     @PostMapping
@@ -119,10 +107,7 @@ public class UserController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
@@ -170,10 +155,7 @@ public class UserController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/update-pfp/{id}
     @PatchMapping("update-pfp/{id}")
@@ -186,10 +168,7 @@ public class UserController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")

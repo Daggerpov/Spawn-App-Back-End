@@ -29,10 +29,7 @@ public class EventController {
         this.userService = userService;
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events?full=full
     @GetMapping
@@ -48,10 +45,7 @@ public class EventController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently." +
             "This may become a feature, as Owen has suggested, " +
             "with showing a friend's recent events.")
@@ -107,10 +101,7 @@ public class EventController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
@@ -127,10 +118,7 @@ public class EventController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
@@ -152,10 +140,7 @@ public class EventController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/{id}/users?full=full
     @GetMapping("{id}/users")
@@ -178,10 +163,7 @@ public class EventController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/{eventId}/participating?userId={userid}
     @GetMapping("{eventId}/participating")
@@ -201,10 +183,7 @@ public class EventController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/{eventId}/invited?userId={userid}
     @GetMapping("{eventId}/invited")
@@ -240,10 +219,7 @@ public class EventController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now. 
+    // TL;DR: Don't remove this endpoint; it may become useful. 
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/events/invitedEvents/{userId}?full=full
     @GetMapping("invitedEvents/{userId}")

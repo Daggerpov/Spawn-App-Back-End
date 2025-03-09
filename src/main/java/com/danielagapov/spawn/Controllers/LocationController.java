@@ -21,10 +21,7 @@ public class LocationController {
         this.locationService = locationService;
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/locations
     @GetMapping
@@ -36,10 +33,7 @@ public class LocationController {
         }
     }
 
-    // Despite this not currently being used, let's not delete it.
-    // Recently, I noticed that our `EventController::getFullEventById()` endpoint
-    // wasn't being used -> so I removed it, but had to add it back for a new feature.
-    // So, let's consider removing it in the future, but keep for now.
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/locations/{id}
     @GetMapping("{id}")
