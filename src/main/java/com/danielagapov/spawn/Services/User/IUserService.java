@@ -89,4 +89,6 @@ public interface IUserService {
     void verifyUserByUsername(String username);
 
     int getMutualFriendCount(UUID receiverId, UUID id);
+
+    BaseUserDTO getBaseUserById(UUID id);
 }

@@ -731,4 +731,18 @@ public class UserService implements IUserService {
         return user1Friends.size();
     }
 
+    @Override
+    public BaseUserDTO getBaseUserById(UUID id) {
+        try {
+            User user = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            return UserMapper.toDTO(user);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+
+
 }
