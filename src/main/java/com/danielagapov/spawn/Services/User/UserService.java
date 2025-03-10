@@ -107,15 +107,22 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
-            // Fetch FriendTag entities related to the given user (for example, by userId)
-            List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
+            // Get all friend tags for the user
+            List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id)
+                    .orElse(Collections.emptyList());
 
-            // Retrieve the user IDs associated with those FriendTags
-            List<UUID> friendIds = friendTags.stream()
-                    .flatMap(friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()).stream())
-                    .distinct() // Remove duplicates
-                    .toList();
-            return friendIds;
+            // Get the "Everyone" tag
+            Optional<FriendTag> everyoneTag = friendTags.stream()
+                    .filter(FriendTag::isEveryone)
+                    .findFirst();
+
+            // If "Everyone" tag exists, get all friend IDs from it
+            if (everyoneTag.isPresent()) {
+                return uftRepository.findFriendIdsByTagId(everyoneTag.get().getId());
+            }
+
+            // If no "Everyone" tag, return empty list
+            return Collections.emptyList();
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
