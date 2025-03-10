@@ -6,6 +6,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
+import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
@@ -265,5 +266,121 @@ public class UserServiceTests {
 
         assertTrue(result.isEmpty());
         verify(userRepository, times(1)).findAll();
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldReturnCorrectCount_WhenUsersHaveMutualFriends() {
+        // Setup
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID mutualFriend1Id = UUID.randomUUID();
+        UUID mutualFriend2Id = UUID.randomUUID();
+        UUID uniqueFriend1Id = UUID.randomUUID();
+        UUID uniqueFriend2Id = UUID.randomUUID();
+
+        // User1's friends: mutualFriend1, mutualFriend2, uniqueFriend1
+        when(friendTagRepository.findByOwnerId(user1Id))
+            .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
+        when(userFriendTagRepository.findFriendIdsByTagId(any()))
+            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
+            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
+
+        // User2's friends: mutualFriend1, mutualFriend2, uniqueFriend2
+        when(friendTagRepository.findByOwnerId(user2Id))
+            .thenReturn(Optional.of(List.of(createEveryoneTag(user2Id))));
+
+        int result = userService.getMutualFriendCount(user1Id, user2Id);
+
+        assertEquals(2, result);
+        verify(friendTagRepository, times(2)).findByOwnerId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldReturnZero_WhenNoMutualFriends() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID friend1Id = UUID.randomUUID();
+        UUID friend2Id = UUID.randomUUID();
+
+        // User1's friends: friend1
+        when(friendTagRepository.findByOwnerId(user1Id))
+            .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
+        when(userFriendTagRepository.findFriendIdsByTagId(any()))
+            .thenReturn(List.of(friend1Id))
+            .thenReturn(List.of(friend2Id));
+
+        // User2's friends: friend2
+        when(friendTagRepository.findByOwnerId(user2Id))
+            .thenReturn(Optional.of(List.of(createEveryoneTag(user2Id))));
+
+        int result = userService.getMutualFriendCount(user1Id, user2Id);
+
+        assertEquals(0, result);
+        verify(friendTagRepository, times(2)).findByOwnerId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldReturnZero_WhenOneUserHasNoFriends() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+
+        // User1 has one friend
+        when(friendTagRepository.findByOwnerId(user1Id))
+            .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
+        when(userFriendTagRepository.findFriendIdsByTagId(any()))
+            .thenReturn(List.of(friendId))
+            .thenReturn(List.of()); // User2 has no friends
+
+        // User2 has no friends (empty everyone tag)
+        when(friendTagRepository.findByOwnerId(user2Id))
+            .thenReturn(Optional.of(List.of(createEveryoneTag(user2Id))));
+
+        int result = userService.getMutualFriendCount(user1Id, user2Id);
+
+        assertEquals(0, result);
+        verify(friendTagRepository, times(2)).findByOwnerId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldReturnZero_WhenBothUsersHaveNoFriends() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+
+        // Both users have empty everyone tags
+        when(friendTagRepository.findByOwnerId(any()))
+            .thenReturn(Optional.of(List.of(createEveryoneTag(UUID.randomUUID()))));
+        when(userFriendTagRepository.findFriendIdsByTagId(any()))
+            .thenReturn(List.of());
+
+        int result = userService.getMutualFriendCount(user1Id, user2Id);
+
+        assertEquals(0, result);
+        verify(friendTagRepository, times(2)).findByOwnerId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldReturnZero_WhenNoEveryoneTag() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+
+        // Users have no everyone tag
+        when(friendTagRepository.findByOwnerId(any()))
+            .thenReturn(Optional.of(List.of()));
+
+        int result = userService.getMutualFriendCount(user1Id, user2Id);
+
+        assertEquals(0, result);
+        verify(friendTagRepository, times(2)).findByOwnerId(any());
+        verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
+    }
+
+    // Helper method to create an "Everyone" tag
+    private FriendTag createEveryoneTag(UUID ownerId) {
+        return new FriendTag(UUID.randomUUID(), "Everyone", "#000000", ownerId, true);
     }
 }
