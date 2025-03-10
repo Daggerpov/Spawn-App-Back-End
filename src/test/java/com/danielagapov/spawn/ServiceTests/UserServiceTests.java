@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -282,8 +283,8 @@ public class UserServiceTests {
         when(friendTagRepository.findByOwnerId(user1Id))
             .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
-            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
+            .thenReturn(Optional.of(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id)))
+            .thenReturn(Optional.of(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id)));
 
         // User2's friends: mutualFriend1, mutualFriend2, uniqueFriend2
         when(friendTagRepository.findByOwnerId(user2Id))
@@ -307,8 +308,8 @@ public class UserServiceTests {
         when(friendTagRepository.findByOwnerId(user1Id))
             .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(List.of(friend1Id))
-            .thenReturn(List.of(friend2Id));
+            .thenReturn(Optional.of(List.of(friend1Id)))
+            .thenReturn(Optional.of(List.of(friend2Id)));
 
         // User2's friends: friend2
         when(friendTagRepository.findByOwnerId(user2Id))
@@ -331,8 +332,8 @@ public class UserServiceTests {
         when(friendTagRepository.findByOwnerId(user1Id))
             .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(List.of(friendId))
-            .thenReturn(List.of()); // User2 has no friends
+            .thenReturn(Optional.of(List.of(friendId)))
+            .thenReturn(Optional.of(Collections.emptyList())); // User2 has no friends
 
         // User2 has no friends (empty everyone tag)
         when(friendTagRepository.findByOwnerId(user2Id))
@@ -354,7 +355,7 @@ public class UserServiceTests {
         when(friendTagRepository.findByOwnerId(any()))
             .thenReturn(Optional.of(List.of(createEveryoneTag(UUID.randomUUID()))));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(List.of());
+            .thenReturn(Optional.of(Collections.emptyList()));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -376,6 +377,72 @@ public class UserServiceTests {
 
         assertEquals(0, result);
         verify(friendTagRepository, times(2)).findByOwnerId(any());
+        verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldHandleEmptyOptionals() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+
+        when(friendTagRepository.findByOwnerId(any()))
+            .thenReturn(Optional.empty());
+
+        int result = userService.getMutualFriendCount(user1Id, user2Id);
+
+        assertEquals(0, result);
+        verify(friendTagRepository, times(2)).findByOwnerId(any());
+        verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
+    }
+
+    @Test
+    void getFriendUserIdsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
+        UUID tagId = UUID.randomUUID();
+        when(userFriendTagRepository.findFriendIdsByTagId(tagId))
+            .thenReturn(Optional.empty());
+
+        List<UUID> result = userService.getFriendUserIdsByFriendTagId(tagId);
+
+        assertTrue(result.isEmpty());
+        verify(userFriendTagRepository, times(1)).findFriendIdsByTagId(tagId);
+    }
+
+    @Test
+    void getFriendsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
+        UUID tagId = UUID.randomUUID();
+        when(userFriendTagRepository.findFriendIdsByTagId(tagId))
+            .thenReturn(Optional.empty());
+
+        List<UserDTO> result = userService.getFriendsByFriendTagId(tagId);
+
+        assertTrue(result.isEmpty());
+        verify(userFriendTagRepository, times(1)).findFriendIdsByTagId(tagId);
+    }
+
+    @Test
+    void saveFriendToUser_ShouldSkip_WhenNoEveryoneTagFound() {
+        UUID userId = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+
+        when(friendTagRepository.findEveryoneTagByOwnerId(any()))
+            .thenReturn(Optional.empty());
+
+        userService.saveFriendToUser(userId, friendId);
+
+        verify(friendTagService, never()).saveUserToFriendTag(any(), any());
+    }
+
+    @Test
+    void getFriendUserIdsByUserId_ShouldReturnEmptyList_WhenNoEveryoneTagFound() {
+        UUID userId = UUID.randomUUID();
+        
+        when(friendTagRepository.findByOwnerId(userId))
+            .thenReturn(Optional.of(List.of(new FriendTag(UUID.randomUUID(), "Test", "#000000", userId, false))));
+
+        List<UUID> result = userService.getFriendUserIdsByUserId(userId);
+
+        assertTrue(result.isEmpty());
+        verify(friendTagRepository, times(1)).findByOwnerId(userId);
         verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
     }
 

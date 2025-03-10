@@ -118,7 +118,8 @@ public class UserService implements IUserService {
 
             // If "Everyone" tag exists, get all friend IDs from it
             if (everyoneTag.isPresent()) {
-                return uftRepository.findFriendIdsByTagId(everyoneTag.get().getId());
+                return uftRepository.findFriendIdsByTagId(everyoneTag.get().getId())
+                        .orElse(Collections.emptyList());
             }
 
             // If no "Everyone" tag, return empty list
@@ -333,9 +334,11 @@ public class UserService implements IUserService {
         return getUserById(userEntity.getId());
     }
 
+    @Override
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
             return uftRepository.findFriendIdsByTagId(friendTagId)
+                    .orElse(Collections.emptyList())
                     .stream()
                     .map(this::getUserById)
                     .collect(Collectors.toList());
@@ -348,14 +351,8 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId) {
         try {
-            // Call the method to get the list of UserDTOs
-            List<UserDTO> friends = getFriendsByFriendTagId(friendTagId);
-
-            // Extract the user IDs from the UserDTO list
-            return friends.stream()
-                    .map(UserDTO::getId)
-                    .distinct()
-                    .collect(Collectors.toList());
+            return uftRepository.findFriendIdsByTagId(friendTagId)
+                    .orElse(Collections.emptyList());
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -421,7 +418,6 @@ public class UserService implements IUserService {
             Optional<FriendTag> userEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
             userEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), friendId));
-
 
             Optional<FriendTag> friendEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(friendId);
             friendEveryoneTag.ifPresent(tag ->
