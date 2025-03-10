@@ -5,7 +5,6 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -302,16 +301,14 @@ public class FriendTagService implements IFriendTagService {
         FriendTagDTO friendTagDTO = getFriendTagById(friendTagId);
         UUID requestingUserId = friendTagDTO.getOwnerUserId();
 
-        List<UserDTO> friends = userService.getFriendsByUserId(requestingUserId);
+        List<UUID> friendUserIds = userService.getFriendUserIdsByUserId(requestingUserId);
 
-        List<UserDTO> friendsAddedToTag = userService.getFriendsByFriendTagId(friendTagId);
-
-        List<UserDTO> friendsNotAddedToTag = friends.stream()
-                .filter(friend -> !friendsAddedToTag.contains(friend))
+        List<UUID> friendIdsNotAddedToTag = friendUserIds.stream()
+                .filter(friendUserId -> !friendTagDTO.getFriendUserIds().contains(friendUserId))
                 .toList();
 
-        return friendsNotAddedToTag.stream()
-                .map(userDTO -> userService.getBaseUserById(requestingUserId))
+        return friendIdsNotAddedToTag.stream()
+                .map(userService::getBaseUserById)
                 .collect(Collectors.toList());
     }
 
