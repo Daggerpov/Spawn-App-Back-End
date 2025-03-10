@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -169,7 +170,7 @@ public class FriendTagController {
      */
     // full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
     @GetMapping("friendsNotAddedToTag/{friendTagId}")
-    public ResponseEntity<List<FullUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
+    public ResponseEntity<List<BaseUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
         if (friendTagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);
