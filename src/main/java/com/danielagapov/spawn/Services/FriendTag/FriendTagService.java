@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.FriendTag;
 import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
@@ -21,7 +22,6 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,13 +60,6 @@ public class FriendTagService implements IFriendTagService {
             logger.error(e.getMessage());
             throw e;
         }
-    }
-
-    @Override
-    public List<FullFriendTagDTO> getAllFullFriendTags() {
-        return getAllFriendTags().stream()
-                .map(this::getFullFriendTagByFriendTag)
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -122,11 +115,6 @@ public class FriendTagService implements IFriendTagService {
             logger.error(e.getMessage());
             throw e;
         }
-    }
-
-    @Override
-    public List<FullFriendTagDTO> getFullFriendTagsByOwnerId(UUID ownerId) {
-        return getFriendTagsByOwnerId(ownerId).stream().map(this::getFullFriendTagByFriendTag).collect(Collectors.toList());
     }
 
     @Override
@@ -310,7 +298,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    public List<FullUserDTO> getFriendsNotAddedToTag(UUID friendTagId) {
+    public List<BaseUserDTO> getFriendsNotAddedToTag(UUID friendTagId) {
         FriendTagDTO friendTagDTO = getFriendTagById(friendTagId);
         UUID requestingUserId = friendTagDTO.getOwnerUserId();
 
@@ -323,7 +311,7 @@ public class FriendTagService implements IFriendTagService {
                 .toList();
 
         return friendsNotAddedToTag.stream()
-                .map(userDTO -> userService.getFullUserById(requestingUserId))
+                .map(userDTO -> userService.getBaseUserById(requestingUserId))
                 .collect(Collectors.toList());
     }
 
