@@ -22,6 +22,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -316,12 +317,18 @@ public class FriendTagServiceTests {
     void getFriendTagsByOwnerId_ShouldReturnEmptyList_WhenOwnerHasNoTags() {
         UUID ownerId = UUID.randomUUID();
 
-        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(new ArrayList<>());
+        // Properly stub the findByOwnerId to return an empty Optional
+        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(new ArrayList<>()));
+        // Mock the maps that are used in the service
+        when(userService.getOwnerUserIdsMap()).thenReturn(new HashMap<>());
+        when(userService.getFriendUserIdsMap()).thenReturn(new HashMap<>());
 
         List<FriendTagDTO> result = friendTagService.getFriendTagsByOwnerId(ownerId);
 
         assertTrue(result.isEmpty());
         verify(friendTagRepository, times(1)).findByOwnerId(ownerId);
+        verify(userService, times(1)).getOwnerUserIdsMap();
+        verify(userService, times(1)).getFriendUserIdsMap();
     }
 
     @Test
