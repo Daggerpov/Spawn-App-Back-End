@@ -6,11 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface IChatMessageLikesRepository extends JpaRepository<ChatMessageLikes, Long> {
     boolean existsByChatMessage_IdAndUser_Id(UUID chatMessageId, UUID userId);
     void deleteByChatMessage_IdAndUser_Id(UUID chatMessageId, UUID userId);
-    List<ChatMessageLikes> findByChatMessage(ChatMessage chatMessage);
+    Optional<List<ChatMessageLikes>> findByChatMessage(ChatMessage chatMessage);
 }

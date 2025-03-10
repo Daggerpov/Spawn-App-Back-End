@@ -168,7 +168,8 @@ public class UserService implements IUserService {
             return friendTags.stream()
                     .collect(Collectors.toMap(
                             friendTag -> friendTag, // Use FriendTag as the key
-                            friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()) // List of user IDs for each FriendTag
+                            friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId())
+                                    .orElse(Collections.emptyList()) // Handle Optional
                     ));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -179,7 +180,8 @@ public class UserService implements IUserService {
     @Override
     public List<UserDTO> getUsersByTagId(UUID tagId) {
         try {
-            List<UUID> userIds = uftRepository.findFriendIdsByTagId(tagId);
+            List<UUID> userIds = uftRepository.findFriendIdsByTagId(tagId)
+                    .orElse(Collections.emptyList());
 
             if (userIds.isEmpty()) {
                 throw new BasesNotFoundException(EntityType.User);
@@ -535,7 +537,8 @@ public class UserService implements IUserService {
     @Override
     public List<BaseUserDTO> getParticipantsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId)
+                    .orElse(Collections.emptyList());
 
             return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.participating)
@@ -547,11 +550,11 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<BaseUserDTO> getInvitedByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId)
+                    .orElse(Collections.emptyList());
 
             return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.invited)
@@ -563,11 +566,11 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<UUID> getParticipantUserIdsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId)
+                    .orElse(Collections.emptyList());
 
             return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.participating)
@@ -579,11 +582,11 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<UUID> getInvitedUserIdsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId)
+                    .orElse(Collections.emptyList());
 
             return eventUsers.stream()
                     .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.invited)
@@ -595,6 +598,55 @@ public class UserService implements IUserService {
         }
     }
 
+    @Override
+    public List<EventUser> getEventUsersByEventId(UUID eventId) {
+        try {
+            return eventUserRepository.findByEvent_Id(eventId)
+                    .orElse(Collections.emptyList());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<EventUser> getEventUsersByUserId(UUID userId) {
+        try {
+            return eventUserRepository.findByUser_Id(userId)
+                    .orElse(Collections.emptyList());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<EventUser> getEventUsersByUserIdAndStatus(UUID userId, ParticipationStatus status) {
+        try {
+            return eventUserRepository.findByUser_Id(userId)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(eu -> eu.getStatus() == status)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<EventUser> getEventUsersByEventIdAndStatus(UUID eventId, ParticipationStatus status) {
+        try {
+            return eventUserRepository.findByEvent_Id(eventId)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .filter(eu -> eu.getStatus() == status)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
 
     @Override
     public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {

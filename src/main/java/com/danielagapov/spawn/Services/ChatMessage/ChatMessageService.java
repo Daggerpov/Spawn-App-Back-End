@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -86,7 +87,8 @@ public class ChatMessageService implements IChatMessageService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageId));
 
         // Retrieve all the likes for the given chat message
-        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
+        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage)
+                .orElse(Collections.emptyList());
 
         // Extract the user IDs of the users who liked the chat message
         return likes.stream()
@@ -164,7 +166,8 @@ public class ChatMessageService implements IChatMessageService {
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
 
             // Retrieve all chat messages for the specified event
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId)
+                    .orElse(Collections.emptyList());
 
             // Extract the IDs of the chat messages and return them as a list
             return chatMessages.stream()
@@ -226,7 +229,8 @@ public class ChatMessageService implements IChatMessageService {
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId));
 
-        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
+        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage)
+                .orElse(Collections.emptyList());
 
         return likes.stream()
                 .map(like -> {
@@ -256,7 +260,8 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
         try {
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId)
+                    .orElse(Collections.emptyList());
 
             return chatMessages.stream()
                     .map(chatMessage -> {

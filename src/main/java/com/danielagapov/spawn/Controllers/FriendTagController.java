@@ -169,7 +169,7 @@ public class FriendTagController {
      */
     // full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
     @GetMapping("friendsNotAddedToTag/{friendTagId}")
-    public ResponseEntity<List<FullUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
+    public ResponseEntity<List<BaseUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
         if (friendTagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);

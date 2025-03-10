@@ -5,17 +5,22 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
 import com.danielagapov.spawn.Enums.ResolutionStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Logger.Logger;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Models.ChatMessage;
+import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.ReportedContent;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IReportedContentRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Exceptions.Logger.Logger;
 import lombok.AllArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,15 +42,18 @@ public class ReportContentService implements IReportContentService {
             if (reportType != null && contentType != null) {
                 // both filters
                 logger.info("Getting reports by report type and content type");
-                reports = repository.getAllByContentTypeAndReportType(contentType, reportType);
+                reports = repository.getAllByContentTypeAndReportType(contentType, reportType)
+                        .orElse(Collections.emptyList());
             } else if (reportType != null) {
                 // only report type filter
                 logger.info("Getting reports by report type");
-                reports = repository.getAllByReportType(reportType);
+                reports = repository.getAllByReportType(reportType)
+                        .orElse(Collections.emptyList());
             } else if (contentType != null) {
                 // only content type filter
                 logger.info("Getting reports by content type");
-                reports = repository.getAllByContentType(contentType);
+                reports = repository.getAllByContentType(contentType)
+                        .orElse(Collections.emptyList());
             } else {
                 // no filter
                 reports = repository.findAll();
@@ -90,10 +98,16 @@ public class ReportContentService implements IReportContentService {
     @Override
     public List<ReportedContentDTO> getReportsByReporterId(UUID reporterId) {
         try {
-            List<ReportedContent> reports = repository.getAllByReporterId(reporterId);
-            return ReportedContentDTO.fromEntityList(reports);
+            return repository.getAllByReporterId(reporterId)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ReportedContentDTO::fromEntity)
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ReportedContent);
         } catch (Exception e) {
-            logger.error("Unexpected error while getting reports by reporter id: " + e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -101,10 +115,16 @@ public class ReportContentService implements IReportContentService {
     @Override
     public List<ReportedContentDTO> getReportsByContentOwnerId(UUID contentOwnerId) {
         try {
-            List<ReportedContent> reports = repository.getAllByContentOwnerId(contentOwnerId);
-            return ReportedContentDTO.fromEntityList(reports);
+            return repository.getAllByContentOwnerId(contentOwnerId)
+                    .orElse(Collections.emptyList())
+                    .stream()
+                    .map(ReportedContentDTO::fromEntity)
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ReportedContent);
         } catch (Exception e) {
-            logger.error("Unexpected error while getting reports by reported user id: " + e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
