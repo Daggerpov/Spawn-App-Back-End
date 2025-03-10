@@ -12,11 +12,10 @@ import java.util.UUID;
 @Setter
 public class FetchFriendRequestDTO extends AbstractFriendRequestDTO implements Serializable {
     private BaseUserDTO senderUser;
-
-    public FetchFriendRequestDTO(UUID id, BaseUserDTO senderUser) {
+    private int mutualFriendCount;
+    public FetchFriendRequestDTO(UUID id, BaseUserDTO senderUser, int mutualFriendCount) {
         super(id);
         this.senderUser = senderUser;
+        this.mutualFriendCount = mutualFriendCount;
     }
-
-
 }
