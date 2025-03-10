@@ -62,7 +62,10 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
         List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
-        return FetchFriendRequestMapper.toDTOList(friendRequests);
+
+        return friendRequests.stream()
+                .map(friendRequest -> FetchFriendRequestMapper.toDTO(friendRequest, userService.getMutualFriendCount(id, friendRequest.getSender().getId())))
+                .toList();
     }
 
     @Override
@@ -116,9 +119,14 @@ public class FriendRequestService implements IFriendRequestService {
     public List<FetchFriendRequestDTO> convertFriendRequestsToFetchFriendRequests(List<CreateFriendRequestDTO> friendRequests) {
         List<FetchFriendRequestDTO> fullFriendRequests = new ArrayList<>();
         for (CreateFriendRequestDTO friendRequest : friendRequests) {
+            UUID senderId = friendRequest.getSenderUserId();
+            UUID receiverId = friendRequest.getReceiverUserId();
+            int mutualFriendCount = userService.getMutualFriendCount(receiverId, senderId);
+
             fullFriendRequests.add(new FetchFriendRequestDTO(
                     friendRequest.getId(),
-                    UserMapper.toDTO(userService.getUserEntityById(friendRequest.getSenderUserId()))
+                    UserMapper.toDTO(userService.getUserEntityById(senderId)),
+                    mutualFriendCount
             ));
         }
         return fullFriendRequests;
@@ -145,5 +153,4 @@ public class FriendRequestService implements IFriendRequestService {
             throw e;
         }
     }
-
 }

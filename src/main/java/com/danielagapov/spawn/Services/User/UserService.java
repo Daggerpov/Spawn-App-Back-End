@@ -713,4 +713,14 @@ public class UserService implements IUserService {
                 mutualFriendCount
         );
     }
+
+    @Override
+    public int getMutualFriendCount(UUID userId1, UUID userId2) {
+        List<UUID> user1Friends = getFriendUserIdsByUserId(userId1);
+        List<UUID> user2Friends = getFriendUserIdsByUserId(userId2);
+
+        user1Friends.retainAll(user2Friends);
+        return user1Friends.size();
+    }
+
 }
