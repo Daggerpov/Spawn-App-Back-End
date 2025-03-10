@@ -47,7 +47,6 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
                 userId = user.getId();
             }
 
-
             if (userId == null) {
                 throw new BaseSaveException("Either userId or userEmail must be provided");
             }
