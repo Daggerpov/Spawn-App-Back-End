@@ -15,6 +15,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -40,12 +41,13 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             UUID userId = dto.getFromUserId();
 
             if (userId == null && dto.getFromUserEmail() != null) {
-                User user = userRepository.findByEmail(dto.getFromUserEmail());
-                if (user == null) {
-                    throw new BaseNotFoundException(EntityType.User, dto.getFromUserEmail());
+                Optional<User> userOptional = userRepository.findByEmail(dto.getFromUserEmail());
+                if (userOptional.isEmpty()) {
+                    throw new BaseNotFoundException(EntityType.User, dto.getFromUserEmail(), "email");
                 }
-                userId = user.getId();
+                userId = userOptional.get().getId();
             }
+
 
             if (userId == null) {
                 throw new BaseSaveException("Either userId or userEmail must be provided");
@@ -60,10 +62,10 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
             return repository.save(feedback);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
