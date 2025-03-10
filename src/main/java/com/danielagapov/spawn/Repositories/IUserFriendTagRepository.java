@@ -8,16 +8,17 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, UUID> {
     @Query("SELECT uft.friend.id FROM UserFriendTag uft WHERE uft.friendTag.id = :tagId")
-    List<UUID> findFriendIdsByTagId(@Param("tagId") UUID tagId);
+    Optional<List<UUID>> findFriendIdsByTagId(@Param("tagId") UUID tagId);
 
     @Modifying
     @Query("DELETE FROM UserFriendTag uft WHERE uft.friendTag.id = :tagId AND uft.friend.id = :friendId")
     void deleteByFriendTagIdAndUserId(@Param("tagId") UUID tagId, @Param("friendId") UUID friendId);
 
-    boolean existsByFriendTagIdAndFriendId(UUID id, UUID userId);
+    Optional<Boolean> existsByFriendTagIdAndFriendId(UUID id, UUID userId);
 }
