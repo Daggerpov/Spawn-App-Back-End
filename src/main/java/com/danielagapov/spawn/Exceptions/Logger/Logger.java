@@ -29,7 +29,6 @@ public class Logger implements ILogger {
         // Index 0 is getStackTrace, index 1 is this method, index 2 is the logging method (info/warn/error),
         // and index 3 is the actual caller we want
         StackTraceElement caller = stackTrace[3];
-
         String fileName = caller.getFileName();
         String methodName = caller.getMethodName();
         int lineNumber = caller.getLineNumber();
