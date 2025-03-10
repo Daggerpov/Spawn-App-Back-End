@@ -30,8 +30,6 @@ public class FriendRequestService implements IFriendRequestService {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;
-
-        FetchFriendRequestMapper.setUserService(userService);
     }
 
     @Override
@@ -64,7 +62,10 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
         List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
-        return FetchFriendRequestMapper.toDTOList(friendRequests, id);
+
+        return friendRequests.stream()
+                .map(friendRequest -> FetchFriendRequestMapper.toDTO(friendRequest, userService.getMutualFriendCount(id, friendRequest.getSender().getId())))
+                .toList();
     }
 
     @Override
