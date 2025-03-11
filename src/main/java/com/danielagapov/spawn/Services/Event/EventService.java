@@ -408,6 +408,20 @@ public class EventService implements IEventService {
     }
 
     @Override
+    public List<EventDTO> getEventsInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId) {
+        try {
+            List<Event> events = repository.getEventsInvitedToWithFriendTagId(friendTagId, requestingUserId);
+            return getEventDTOs(events);
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BaseNotFoundException(EntityType.FriendTag, friendTagId);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
         List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
 
@@ -498,7 +512,7 @@ public class EventService implements IEventService {
         try {
             UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).getOwnerUserId();
             List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
-            List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsByFriendTagId(friendTagFilterId), requestingUserId);
+            List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsInvitedToByFriendTagId(friendTagFilterId, requestingUserId), requestingUserId);
 
             // Remove expired events
             removeExpiredEvents(eventsCreated);
