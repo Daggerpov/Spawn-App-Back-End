@@ -73,10 +73,8 @@ public class PushNotificationService {
 
     /**
      * Register a device token for a user
-     *
-     * @return the created DeviceToken entity
      */
-    public DeviceToken registerDeviceToken(DeviceTokenDTO deviceTokenDTO) {
+    public void registerDeviceToken(DeviceTokenDTO deviceTokenDTO) {
         String token = deviceTokenDTO.getToken();
         User user = userService.getUserEntityById(deviceTokenDTO.getUserId());
         // Check if token already exists
@@ -91,7 +89,7 @@ public class PushNotificationService {
         // Send a test notification to confirm registration
         sendTestNotification(user.getId());
 
-        return IDeviceTokenRepository.save(deviceToken);
+        IDeviceTokenRepository.save(deviceToken);
     }
 
     /**
