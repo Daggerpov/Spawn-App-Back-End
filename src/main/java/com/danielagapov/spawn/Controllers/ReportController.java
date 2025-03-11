@@ -5,7 +5,7 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
 import com.danielagapov.spawn.Enums.ResolutionStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.List.ReportsNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.Report.IReportContentService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -72,8 +72,12 @@ public class ReportController {
             return ResponseEntity.ok(reports);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (ReportsNotFoundException e) {
-            return ResponseEntity.ok(new ArrayList<>());
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.ReportedContent) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -90,8 +94,12 @@ public class ReportController {
             return ResponseEntity.ok(reports);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (ReportsNotFoundException e) {
-            return ResponseEntity.ok(new ArrayList<>());
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.ReportedContent) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }

@@ -9,7 +9,6 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.List.UsersNotFoundException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -212,8 +211,12 @@ public class FriendTagController {
             return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (UsersNotFoundException e) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

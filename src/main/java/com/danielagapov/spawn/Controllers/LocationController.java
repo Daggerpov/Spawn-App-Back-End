@@ -1,8 +1,9 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.Event.LocationDTO;
-import com.danielagapov.spawn.Exceptions.LocationsNotFoundException;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,8 +31,12 @@ public class LocationController {
     public ResponseEntity<List<LocationDTO>> getLocations() {
         try {
             return new ResponseEntity<>(locationService.getAllLocations(), HttpStatus.OK);
-        } catch (LocationsNotFoundException e) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.Location) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
