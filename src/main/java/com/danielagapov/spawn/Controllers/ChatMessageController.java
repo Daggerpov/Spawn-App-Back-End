@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -124,7 +126,11 @@ public class ChatMessageController {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (BasesNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            if (e.entityType == EntityType.ChatMessageLike) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
