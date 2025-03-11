@@ -87,4 +87,8 @@ public interface IUserService {
     boolean existsByUsername(String username);
 
     void verifyUserByUsername(String username);
+
+    int getMutualFriendCount(UUID receiverId, UUID id);
+
+    BaseUserDTO getBaseUserById(UUID id);
 }

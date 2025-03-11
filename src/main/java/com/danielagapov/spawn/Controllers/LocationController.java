@@ -25,7 +25,8 @@ public class LocationController {
         this.locationService = locationService;
     }
 
-    // returns ResponseEntity with list of LocationDTOs (can be empty)
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/locations
     @GetMapping
     public ResponseEntity<List<LocationDTO>> getLocations() {
@@ -42,7 +43,8 @@ public class LocationController {
         }
     }
 
-    // returns ResponseEntity with LocationDTO or not found entity type (location)
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/locations/{id}
     @GetMapping("{id}")
     public ResponseEntity<?> getLocationById(@PathVariable UUID id) {

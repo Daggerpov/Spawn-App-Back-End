@@ -22,6 +22,9 @@ import java.util.UUID;
 public class ReportController {
     private final IReportContentService reportService;
 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/reports?reportType=?<ReportType>&contentType=<EntityType>
     @GetMapping
     public ResponseEntity<List<ReportedContentDTO>> getReports(
@@ -36,6 +39,9 @@ public class ReportController {
         }
     }
 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/reports
     @PostMapping
     public ResponseEntity<ReportedContentDTO> createReport(@RequestBody ReportedContentDTO report) {
@@ -47,6 +53,9 @@ public class ReportController {
         }
     }
 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/reports/{reportId}?resolution=<ResolutionStatus>
     @PutMapping("{reportId}")
     public ResponseEntity<ReportedContentDTO> resolveReport(@PathVariable UUID reportId, @RequestParam("resolution") ResolutionStatus resolution) {
@@ -61,8 +70,9 @@ public class ReportController {
         }
     }
 
-    // returns ResponseEntity with list of ReportedContentDTO (can be empty)
-    // or not found entity type (user)
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/reports/reporters/{reporterId}
     @GetMapping("reporter/{reporterId}")
     public ResponseEntity<?> getReportsByReporter(@PathVariable UUID reporterId) {
@@ -83,8 +93,9 @@ public class ReportController {
         }
     }
 
-    // returns ResponseEntity with list of ReportedContentDTO (can be empty)
-    // or not found entity type (user)
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/reports/reported-users/{contentOwnerId}
     @GetMapping("{contentOwnerId}")
     public ResponseEntity<?> getReportsByContentOwner(@PathVariable UUID contentOwnerId) {
@@ -105,7 +116,9 @@ public class ReportController {
         }
     }
 
-    // returns void or not found entity type (report)
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/reports/{reportId}
     @DeleteMapping("{reportId}")
     public ResponseEntity<?> deleteReport(@PathVariable UUID reportId) {
@@ -120,7 +133,9 @@ public class ReportController {
         }
     }
 
-    // returns ReportedContentDTO or not found entity type (report)
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/reports/{reportId}
     @GetMapping("{reportId}")
     public ResponseEntity<?> getReportById(@PathVariable UUID reportId) {

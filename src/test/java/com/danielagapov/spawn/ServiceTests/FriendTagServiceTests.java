@@ -22,6 +22,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -158,12 +159,19 @@ public class FriendTagServiceTests {
     void deleteFriendTagById_ShouldDeleteFriendTag_WhenFriendTagExists() {
         UUID friendTagId = UUID.randomUUID();
 
+        // Create a FriendTag that is NOT an "Everyone" tag
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
+
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag)); // Mocking retrieval
+        when(userFriendTagRepository.findAllById(List.of(friendTagId))).thenReturn(List.of()); // No associated UserFriendTags
 
-        assertDoesNotThrow(() -> friendTagService.deleteFriendTagById(friendTagId));
+        boolean result = friendTagService.deleteFriendTagById(friendTagId);
 
+        assertTrue(result);
         verify(friendTagRepository, times(1)).deleteById(friendTagId);
     }
+
 
     @Test
     void deleteFriendTagById_ShouldThrowException_WhenFriendTagDoesNotExist() {
@@ -242,18 +250,57 @@ public class FriendTagServiceTests {
     }
 
     @Test
-    void deleteFriendTagById_ShouldDeleteAssociatedUserFriendTags() {
+    void deleteFriendTagById_ShouldDeleteFriendTag_WhenValid() {
         UUID friendTagId = UUID.randomUUID();
+        UUID userFriendTagId = UUID.randomUUID();
+
+        // Create a FriendTag that is NOT an "Everyone" tag
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
         UserFriendTag userFriendTag = new UserFriendTag();
-        userFriendTag.setId(UUID.randomUUID());
+        userFriendTag.setId(userFriendTagId);
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag)); // Avoids getFriendTagById()
         when(userFriendTagRepository.findAllById(List.of(friendTagId))).thenReturn(List.of(userFriendTag));
 
-        assertDoesNotThrow(() -> friendTagService.deleteFriendTagById(friendTagId));
+        boolean result = friendTagService.deleteFriendTagById(friendTagId);
 
-        verify(userFriendTagRepository, times(1)).deleteById(userFriendTag.getId());
+        assertTrue(result);
+        verify(userFriendTagRepository, times(1)).deleteById(userFriendTagId);
         verify(friendTagRepository, times(1)).deleteById(friendTagId);
+    }
+
+    @Test
+    void deleteFriendTagById_ShouldDeleteAssociatedUserFriendTags() {
+        UUID friendTagId = UUID.randomUUID();
+        UUID userFriendTagId = UUID.randomUUID();
+
+        // Create a mock FriendTag that is NOT an "Everyone" tag
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
+        UserFriendTag userFriendTag = new UserFriendTag();
+        userFriendTag.setId(userFriendTagId);
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
+        when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag)); // Avoids getFriendTagById()
+        when(userFriendTagRepository.findAllById(List.of(friendTagId))).thenReturn(List.of(userFriendTag));
+
+        boolean result = friendTagService.deleteFriendTagById(friendTagId);
+
+        assertTrue(result);
+        verify(userFriendTagRepository, times(1)).deleteById(userFriendTagId);
+        verify(friendTagRepository, times(1)).deleteById(friendTagId);
+    }
+
+    @Test
+    void deleteFriendTagById_ShouldThrowException_WhenFriendTagNotFound() {
+        UUID friendTagId = UUID.randomUUID();
+
+        when(friendTagRepository.existsById(friendTagId)).thenReturn(false);
+
+        assertThrows(BaseNotFoundException.class, () -> friendTagService.deleteFriendTagById(friendTagId));
+
+        verify(friendTagRepository, never()).deleteById(any());
+        verify(userFriendTagRepository, never()).deleteById(any());
     }
 
     @Test
@@ -270,12 +317,18 @@ public class FriendTagServiceTests {
     void getFriendTagsByOwnerId_ShouldReturnEmptyList_WhenOwnerHasNoTags() {
         UUID ownerId = UUID.randomUUID();
 
-        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(new ArrayList<>());
+        // Properly stub the findByOwnerId to return an empty Optional
+        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(new ArrayList<>()));
+        // Mock the maps that are used in the service
+        when(userService.getOwnerUserIdsMap()).thenReturn(new HashMap<>());
+        when(userService.getFriendUserIdsMap()).thenReturn(new HashMap<>());
 
         List<FriendTagDTO> result = friendTagService.getFriendTagsByOwnerId(ownerId);
 
         assertTrue(result.isEmpty());
         verify(friendTagRepository, times(1)).findByOwnerId(ownerId);
+        verify(userService, times(1)).getOwnerUserIdsMap();
+        verify(userService, times(1)).getFriendUserIdsMap();
     }
 
     @Test

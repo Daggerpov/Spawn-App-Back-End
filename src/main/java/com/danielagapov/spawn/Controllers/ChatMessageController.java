@@ -28,6 +28,9 @@ public class ChatMessageController {
         this.chatMessageService = chatMessageService;
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/chatMessages?full=full
     @GetMapping
     public ResponseEntity<List<? extends AbstractChatMessageDTO>> getChatMessages(@RequestParam(value = "full", required = false) boolean full) {
@@ -42,6 +45,9 @@ public class ChatMessageController {
         }
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/chatMessages/{id}?full=full
     @GetMapping("/{id}")
     public ResponseEntity<AbstractChatMessageDTO> getChatMessage(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
@@ -58,12 +64,6 @@ public class ChatMessageController {
         }
     }
 
-    // full path: /api/v1/chatMessages/mock-endpoint
-    @GetMapping("/mock-endpoint")
-    public ResponseEntity<String> getMockEndpoint() {
-        return new ResponseEntity<>("This is the mock endpoint for chatMessages. Everything is working with it.", HttpStatus.OK);
-    }
-
     // full path: /api/v1/chatMessages
     @PostMapping
     public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {
@@ -74,6 +74,11 @@ public class ChatMessageController {
         }
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/chatMessages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChatMessage(@PathVariable UUID id) {
@@ -92,6 +97,11 @@ public class ChatMessageController {
         }
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
     @PostMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<ChatMessageLikesDTO> createChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
@@ -105,6 +115,10 @@ public class ChatMessageController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/chatMessages/{chatMessageId}/likes
     @GetMapping("/{chatMessageId}/likes")
     public ResponseEntity<List<BaseUserDTO>> getChatMessageLikes(@PathVariable UUID chatMessageId) {
@@ -118,7 +132,12 @@ public class ChatMessageController {
         }
     }
 
-    // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
+
+
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     @DeleteMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<Void> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
         if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

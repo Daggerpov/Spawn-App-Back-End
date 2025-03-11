@@ -3,8 +3,8 @@ package com.danielagapov.spawn.Services.FriendTag;
 import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -62,13 +62,6 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    public List<FullFriendTagDTO> getAllFullFriendTags() {
-        return getAllFriendTags().stream()
-                .map(this::getFullFriendTagByFriendTag)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public FriendTagDTO getFriendTagById(UUID id) {
         return repository.findById(id)
                 .map(friendTag -> {
@@ -88,16 +81,11 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public List<UUID> getFriendTagIdsByOwnerUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
-        List<FriendTag> friendTags = repository.findByOwnerId(id);
-
-        if (friendTags == null || friendTags.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // Extract and return the FriendTag IDs
-        return friendTags.stream()
+        return repository.findByOwnerId(id)
+                .orElse(Collections.emptyList())
+                .stream()
                 .filter(Objects::nonNull)
-                .map(FriendTag::getId) // Get the ID of each FriendTag
+                .map(FriendTag::getId)
                 .collect(Collectors.toList());
     }
 
@@ -107,7 +95,8 @@ public class FriendTagService implements IFriendTagService {
             // Fetch the raw data
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
             Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
-            List<FriendTag> friendTags = repository.findByOwnerId(ownerId);
+            List<FriendTag> friendTags = repository.findByOwnerId(ownerId)
+                    .orElse(Collections.emptyList());
 
             // Sort the list with "Everyone" tag first
             friendTags.sort((tag1, tag2) -> {
@@ -125,11 +114,6 @@ public class FriendTagService implements IFriendTagService {
             logger.error(e.getMessage());
             throw e;
         }
-    }
-
-    @Override
-    public List<FullFriendTagDTO> getFullFriendTagsByOwnerId(UUID ownerId) {
-        return getFriendTagsByOwnerId(ownerId).stream().map(this::getFullFriendTagByFriendTag).collect(Collectors.toList());
     }
 
     @Override
@@ -172,14 +156,24 @@ public class FriendTagService implements IFriendTagService {
         }
 
         try {
+            // Alter to check if the tag is an "Everyone" tag before deleting
+            FriendTagDTO friendTag = getFriendTagById(id);
+
+            if (friendTag.isEveryone()) {
+                logger.warn("Cannot delete the 'Everyone' tag");
+                return true;
+            }
+
             uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
+
             return true;
         } catch (Exception e) {
             logger.error(e.getMessage());
             return false;
         }
     }
+
 
     @Override
     public void saveUserToFriendTag(UUID id, UUID userId) {
@@ -303,20 +297,18 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    public List<FullUserDTO> getFriendsNotAddedToTag(UUID friendTagId) {
+    public List<BaseUserDTO> getFriendsNotAddedToTag(UUID friendTagId) {
         FriendTagDTO friendTagDTO = getFriendTagById(friendTagId);
         UUID requestingUserId = friendTagDTO.getOwnerUserId();
 
-        List<UserDTO> friends = userService.getFriendsByUserId(requestingUserId);
+        List<UUID> friendUserIds = userService.getFriendUserIdsByUserId(requestingUserId);
 
-        List<UserDTO> friendsAddedToTag = userService.getFriendsByFriendTagId(friendTagId);
-
-        List<UserDTO> friendsNotAddedToTag = friends.stream()
-                .filter(friend -> !friendsAddedToTag.contains(friend))
+        List<UUID> friendIdsNotAddedToTag = friendUserIds.stream()
+                .filter(friendUserId -> !friendTagDTO.getFriendUserIds().contains(friendUserId))
                 .toList();
 
-        return friendsNotAddedToTag.stream()
-                .map(userDTO -> userService.getFullUserById(requestingUserId))
+        return friendIdsNotAddedToTag.stream()
+                .map(userService::getBaseUserById)
                 .collect(Collectors.toList());
     }
 

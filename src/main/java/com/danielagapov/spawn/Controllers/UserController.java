@@ -28,6 +28,8 @@ public class UserController {
         this.logger = logger;
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users?full=full
     @GetMapping
     public ResponseEntity<List<? extends AbstractUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
@@ -42,6 +44,8 @@ public class UserController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
     public ResponseEntity<AbstractUserDTO> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
@@ -72,16 +76,8 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/mock-endpoint
-    @GetMapping("mock-endpoint")
-    public ResponseEntity<String> getMockEndpoint() {
-        try {
-            return new ResponseEntity<>("This is the mock endpoint for users. Everything is working with it.", HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
     public ResponseEntity<List<? extends AbstractUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
@@ -99,6 +95,8 @@ public class UserController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users
     @PostMapping
     public ResponseEntity<UserDTO> createUser(@RequestParam("user") UserDTO newUser, @RequestParam("pfp") byte[] file) {
@@ -109,6 +107,10 @@ public class UserController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/users/{id}
     @PutMapping("{id}")
     public ResponseEntity<UserDTO> replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
@@ -153,6 +155,8 @@ public class UserController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/update-pfp/{id}
     @PatchMapping("update-pfp/{id}")
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
@@ -164,6 +168,10 @@ public class UserController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/users/default-pfp
     @GetMapping("default-pfp")
     public ResponseEntity<String> getDefaultProfilePicture() {
