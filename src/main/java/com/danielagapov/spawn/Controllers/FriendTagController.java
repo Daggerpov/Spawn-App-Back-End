@@ -5,9 +5,10 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FriendTagAction;
-import com.danielagapov.spawn.Exceptions.FriendTagsNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.List.UsersNotFoundException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.http.HttpStatus;
@@ -37,8 +38,12 @@ public class FriendTagController {
             } else {
                 return new ResponseEntity<>(friendTagService.getAllFriendTags(), HttpStatus.OK);
             }
-        } catch (FriendTagsNotFoundException e) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.FriendTag) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -129,8 +134,12 @@ public class FriendTagController {
             }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (FriendTagsNotFoundException e) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.FriendTag) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -176,8 +185,12 @@ public class FriendTagController {
             return new ResponseEntity<>(friendTagService.getPertainingFullFriendTagsForFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (FriendTagsNotFoundException e) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.FriendTag) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -216,8 +229,12 @@ public class FriendTagController {
             return new ResponseEntity<>(friendTagService.getTagsNotAddedToFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (FriendTagsNotFoundException e) {
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.FriendTag) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
