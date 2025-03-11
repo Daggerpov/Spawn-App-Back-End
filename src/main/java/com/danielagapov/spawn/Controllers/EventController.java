@@ -5,8 +5,8 @@ import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
-import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
@@ -55,10 +55,15 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsByOwnerId(creatorUserId), HttpStatus.OK);
             }
-        } catch (EventsNotFoundException e) {
+        } catch (BasesNotFoundException e) {
             // thrown list of events not found for given user id
-            // return response with empty list and 200 status
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            // if entities not found is Event: return response with empty list and 200 status
+            // otherwise: bad request http status
+            if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (BaseNotFoundException e) {
             // user or event not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -75,9 +80,15 @@ public class EventController {
 
         try {
             return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
-        } catch (EventsNotFoundException e) {
-            // list of events not found for tag filter id
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            // thrown list of events not found for given user id
+            // if entities not found is Event: return response with empty list and 200 status
+            // otherwise: bad request http status
+            if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (BaseNotFoundException e) {
             // friend tag filter not found for friend tag id
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -146,9 +157,15 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
             }
-        } catch (EventsNotFoundException e) {
-            // list of events for user not found
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            // thrown list of events not found for given user id
+            // if entities not found is Event: return response with empty list and 200 status
+            // otherwise: bad request http status
+            if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (BaseNotFoundException e) {
             // user not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -221,9 +238,15 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
             }
-        } catch (EventsNotFoundException e) {
-            // list of events for user id not found
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            // thrown list of events not found for given user id
+            // if entities not found is Event: return response with empty list and 200 status
+            // otherwise: bad request http status
+            if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (BaseNotFoundException e) {
             // user not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -242,9 +265,15 @@ public class EventController {
         if (requestingUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(eventService.getFeedEvents(requestingUserId), HttpStatus.OK);
-        } catch (EventsNotFoundException e) {
-            // list of events for feed not found
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        } catch (BasesNotFoundException e) {
+            // thrown list of events not found for given user id
+            // if entities not found is Event: return response with empty list and 200 status
+            // otherwise: bad request http status
+            if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
         } catch (BaseNotFoundException e) {
             // user or event not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
