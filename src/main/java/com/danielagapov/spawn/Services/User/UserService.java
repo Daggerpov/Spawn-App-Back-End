@@ -682,20 +682,18 @@ public class UserService implements IUserService {
     @Override
     public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
         try {
-            List<UserDTO> userFriends = getFriendsByUserId(requestingUserId);
-            List<FullUserDTO> fullUserFriends = convertUsersToFullUsers(userFriends, new HashSet<>());
+            List<User> userFriends = getFriendUsersByUserId(requestingUserId);
 
             List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<>();
-            for (FullUserDTO user : fullUserFriends) {
+            for (User user : userFriends) {
                 FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO(
                         user.getId(),
                         user.getUsername(),
-                        user.getProfilePicture(),
+                        user.getProfilePictureUrlString(),
                         user.getFirstName(),
                         user.getLastName(),
                         user.getBio(),
                         user.getEmail(),
-                        // only added property from `FullUserDTO`:
                         friendTagService.getPertainingFriendTagsForFriend(requestingUserId, user.getId())
                 );
                 fullFriendUserDTOList.add(fullFriendUserDTO);
@@ -706,6 +704,20 @@ public class UserService implements IUserService {
             logger.error(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public List<User> getFriendUsersByUserId(UUID requestingUserId) {
+        try {
+            return friendTagRepository.getFriendsFromEveryoneTagByOwnerId(requestingUserId).orElseThrow(() -> new BaseNotFoundException(EntityType.User));
+        } catch (BaseNotFoundException e) {
+            logger.warn("Could not find user with id: " + requestingUserId);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error: " + e.getMessage());
+        }
+
+        return List.of();
     }
 
     private RecommendedFriendUserDTO recommendedFriendUserFromFullUser(FullUserDTO fullUser, int mutualFriendCount) {
@@ -742,7 +754,6 @@ public class UserService implements IUserService {
             throw e;
         }
     }
-
 
 
 }
