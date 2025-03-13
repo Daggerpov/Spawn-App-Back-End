@@ -25,6 +25,7 @@ import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Services.PushNotification.PushNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -45,13 +46,14 @@ public class EventService implements IEventService {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
     private final ILocationService locationService;
+    private final PushNotificationService pushNotificationService;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
                         IEventUserRepository eventUserRepository, IUserRepository userRepository,
                         IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService) {
+                        ILogger logger, ILocationService locationService, PushNotificationService pushNotificationService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
@@ -61,6 +63,7 @@ public class EventService implements IEventService {
         this.chatMessageService = chatMessageService;
         this.logger = logger;
         this.locationService = locationService;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @Override
@@ -376,14 +379,45 @@ public class EventService implements IEventService {
             // throw BaseNotFound for events if eventIf has no eventUsers
             throw new BaseNotFoundException(EntityType.Event, eventId);
         }
+        
+        Event event = repository.findById(eventId).orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+        
         for (EventUser eventUser : eventUsers) {
             if (eventUser.getUser().getId().equals(userId) && !eventUser.getStatus().equals(ParticipationStatus.notInvited)) {
                 // if invited -> set status to participating
                 // if participating -> set status to invited
                 if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
                     eventUser.setStatus(ParticipationStatus.participating);
+                    
+                    // Send notification to event creator when user participates
+                    Map<String, String> data = new HashMap<>();
+                    data.put("type", "event_participation");
+                    data.put("eventId", eventId.toString());
+                    data.put("userId", userId.toString());
+                    
+                    pushNotificationService.sendNotificationToUser(
+                        event.getCreator().getId(),
+                        "New Event Participant",
+                        user.getUsername() + " is now participating in your event: " + event.getTitle(),
+                        data
+                    );
+                    
                 } else if (eventUser.getStatus().equals(ParticipationStatus.participating)) {
                     eventUser.setStatus(ParticipationStatus.invited);
+                    
+                    // Send notification to event creator when user revokes participation
+                    Map<String, String> data = new HashMap<>();
+                    data.put("type", "event_participation_revoked");
+                    data.put("eventId", eventId.toString());
+                    data.put("userId", userId.toString());
+                    
+                    pushNotificationService.sendNotificationToUser(
+                        event.getCreator().getId(),
+                        "Event Participation Revoked",
+                        user.getUsername() + " is no longer participating in your event: " + event.getTitle(),
+                        data
+                    );
                 }
                 eventUserRepository.save(eventUser);
                 break;
