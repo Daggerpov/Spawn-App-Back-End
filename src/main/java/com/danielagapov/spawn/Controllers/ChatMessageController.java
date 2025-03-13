@@ -139,17 +139,13 @@ public class ChatMessageController {
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     @DeleteMapping("/{chatMessageId}/likes/{userId}")
-    public ResponseEntity<Void> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
+    public ResponseEntity<?> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
         if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (BasesNotFoundException e) {
-            if (e.entityType == EntityType.ChatMessageLike) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

@@ -52,7 +52,7 @@ public class LocationController {
         try {
             return new ResponseEntity<>(locationService.getLocationById(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(e.entityType, HttpStatus.OK);
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

@@ -243,7 +243,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
             if (!exists) {
-                throw new BasesNotFoundException(EntityType.ChatMessage);
+                throw new BaseNotFoundException(EntityType.ChatMessage);
             }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
         } catch (Exception e) {
