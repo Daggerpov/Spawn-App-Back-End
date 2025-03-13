@@ -47,6 +47,8 @@ public interface IUserService {
 
     List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId);
 
+    List<User> getFriendUsersByUserId(UUID requestingUserId);
+
     // For Friend Tags:
 
     List<UserDTO> getUsersByTagId(UUID tagId);
