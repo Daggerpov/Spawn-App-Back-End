@@ -93,4 +93,6 @@ public interface IUserService {
     int getMutualFriendCount(UUID receiverId, UUID id);
 
     BaseUserDTO getBaseUserById(UUID id);
+
+    BaseUserDTO updateUserBio(UUID id, String bio);
 }

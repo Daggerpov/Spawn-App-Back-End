@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -189,6 +190,20 @@ public class UserController {
             return s3Service.putObject(file);
         } catch (Exception e) {
             return e.getMessage();
+        }
+    }
+
+    // full path: /api/v1/users/update-bio/{id}
+    @PatchMapping("update-bio/{id}")
+    public ResponseEntity<BaseUserDTO> updateUserBio(@PathVariable UUID id, @RequestBody String bio) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            return new ResponseEntity<>(userService.updateUserBio(id, bio), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error updating bio for user " + id + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
