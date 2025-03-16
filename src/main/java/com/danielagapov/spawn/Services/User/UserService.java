@@ -455,6 +455,14 @@ public class UserService implements IUserService {
                     .limit(3)
                     .collect(Collectors.toList());
 
+            // Track users already added to recommendations
+            Set<UUID> recommendedUserIds = recommendedFriends.stream()
+                    .map(RecommendedFriendUserDTO::getId)
+                    .collect(Collectors.toSet());
+            
+            // Add these to excluded users to prevent duplicates
+            excludedUserIds.addAll(recommendedUserIds);
+
             if (recommendedFriends.size() >= 3) {
                 return recommendedFriends;
             }
