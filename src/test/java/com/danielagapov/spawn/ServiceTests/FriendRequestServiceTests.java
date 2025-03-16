@@ -183,7 +183,7 @@ class FriendRequestServiceTests {
         anotherFriendRequest.setSender(sender);
         anotherFriendRequest.setReceiver(receiver);
 
-        when(repository.findByReceiverId(receiverId)).thenReturn(List.of(friendRequest, anotherFriendRequest));
+        when(repository.findByReceiverId(receiverId)).thenReturn(Optional.of(List.of(friendRequest, anotherFriendRequest)));
 
         List<FetchFriendRequestDTO> requests = friendRequestService.getIncomingFetchFriendRequestsByUserId(receiverId);
 
