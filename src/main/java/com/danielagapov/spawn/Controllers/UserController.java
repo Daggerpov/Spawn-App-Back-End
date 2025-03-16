@@ -189,4 +189,22 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // full path: /api/v1/users/update/{id}
+    @PatchMapping("update/{id}")
+    public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            return new ResponseEntity<>(
+                userService.updateUser(id, updateDTO.getBio(), updateDTO.getUsername(), 
+                    updateDTO.getFirstName(), updateDTO.getLastName()), 
+                HttpStatus.OK
+            );
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error updating user " + id + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }

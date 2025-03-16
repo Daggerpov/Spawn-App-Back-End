@@ -755,14 +755,10 @@ public class UserService implements IUserService {
             
             user = repository.save(user);
             
-            List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
-            List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(id);
-            
-            return UserMapper.toDTO(user, friendUserIds, friendTagIds);
+            return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
             throw e;
         }
     }
-
 }
