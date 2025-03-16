@@ -600,11 +600,8 @@ public class UserService implements IUserService {
     @Override
     public List<EventUser> getEventUsersByUserIdAndStatus(UUID userId, ParticipationStatus status) {
         try {
-            return eventUserRepository.findByUser_Id(userId)
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    .filter(eu -> eu.getStatus() == status)
-                    .collect(Collectors.toList());
+            return eventUserRepository.findByUser_IdAndStatus(userId, status)
+                    .orElse(Collections.emptyList());
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -614,11 +611,8 @@ public class UserService implements IUserService {
     @Override
     public List<EventUser> getEventUsersByEventIdAndStatus(UUID eventId, ParticipationStatus status) {
         try {
-            return eventUserRepository.findByEvent_Id(eventId)
-                    .orElse(Collections.emptyList())
-                    .stream()
-                    .filter(eu -> eu.getStatus() == status)
-                    .collect(Collectors.toList());
+            return eventUserRepository.findByEvent_IdAndStatus(eventId, status)
+                    .orElse(Collections.emptyList());
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
