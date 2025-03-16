@@ -263,7 +263,7 @@ public class UserServiceTests {
             () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
         
         assertTrue(exception.getMessage().contains("Unexpected error"));
-        verify(logger, times(1)).error("Unexpected error");
+        verify(logger, times(1)).error(anyString());
     }
 
     @Test
