@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.S3.IS3Service;
@@ -108,23 +109,6 @@ public class UserController {
         }
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/users/{id}
-    @PutMapping("{id}")
-    public ResponseEntity<UserDTO> replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            return new ResponseEntity<>(userService.replaceUser(newUser, id), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
@@ -193,16 +177,20 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/update-bio/{id}
-    @PatchMapping("update-bio/{id}")
-    public ResponseEntity<BaseUserDTO> updateUserBio(@PathVariable UUID id, @RequestBody String bio) {
+    // full path: /api/v1/users/update/{id}
+    @PatchMapping("update/{id}")
+    public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(userService.updateUserBio(id, bio), HttpStatus.OK);
+            return new ResponseEntity<>(
+                userService.updateUser(id, updateDTO.getBio(), updateDTO.getUsername(), 
+                    updateDTO.getFirstName(), updateDTO.getLastName()), 
+                HttpStatus.OK
+            );
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            logger.error("Error updating bio for user " + id + ": " + e.getMessage());
+            logger.error("Error updating user " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

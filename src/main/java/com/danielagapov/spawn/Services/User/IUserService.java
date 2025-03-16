@@ -25,8 +25,6 @@ public interface IUserService {
 
     UserDTO saveUser(UserDTO user);
 
-    UserDTO replaceUser(UserDTO user, UUID id);
-
     boolean deleteUserById(UUID id);
 
     User saveEntity(User user);
@@ -94,5 +92,5 @@ public interface IUserService {
 
     BaseUserDTO getBaseUserById(UUID id);
 
-    BaseUserDTO updateUserBio(UUID id, String bio);
+    BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 }
