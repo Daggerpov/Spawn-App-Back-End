@@ -108,23 +108,6 @@ public class UserController {
         }
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/users/{id}
-    @PutMapping("{id}")
-    public ResponseEntity<UserDTO> replaceUser(@RequestBody UserDTO newUser, @PathVariable UUID id) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            return new ResponseEntity<>(userService.replaceUser(newUser, id), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
