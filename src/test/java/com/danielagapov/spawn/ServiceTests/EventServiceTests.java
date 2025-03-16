@@ -417,7 +417,7 @@ public class EventServiceTests {
         dummyUser.setId(UUID.randomUUID());
         dummyEU.setUser(dummyUser);
         dummyEU.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
+        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(Optional.of(List.of(dummyEU)));
 
         List<FullFeedEventDTO> fullEvents = eventService.getAllFullEvents();
 
@@ -626,7 +626,7 @@ public class EventServiceTests {
         otherUser.setId(UUID.randomUUID());
         eu.setUser(otherUser);
         eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu));
+        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(Optional.of(List.of(eu)));
 
         ParticipationStatus status = eventService.getParticipationStatus(eventId, userId);
 
@@ -725,8 +725,8 @@ public class EventServiceTests {
         validEventUser.setUser(invitedUser);
         validEventUser.setStatus(ParticipationStatus.invited);
         validEventUser.setEvent(event);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(validEventUser));
-        when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(validEventUser));
+        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(Optional.of(List.of(validEventUser)));
+        when(eventUserRepository.findByUser_Id(userId)).thenReturn(Optional.of(List.of(validEventUser)));
 
         when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
@@ -819,7 +819,7 @@ public class EventServiceTests {
         dummyUser.setId(UUID.randomUUID()); // not equal to requestingUserId
         dummyEU.setUser(dummyUser);
         dummyEU.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
+        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(Optional.of(List.of(dummyEU)));
         // Stub friend tag lookup to return null (i.e. no friend tag applies).
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
@@ -855,7 +855,7 @@ public class EventServiceTests {
         validUser.setId(UUID.randomUUID());
         validEventUser.setUser(validUser);
         validEventUser.setStatus(ParticipationStatus.participating);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(validEventUser));
+        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(Optional.of(List.of(validEventUser)));
 
         List<FullFeedEventDTO> fullEvents = eventService.convertEventsToFullFeedSelfOwnedEvents(events, requestingUserId);
 
@@ -886,7 +886,7 @@ public class EventServiceTests {
         invitedEventUser.setEvent(event);
 
         when(eventUserRepository.existsById(compositeId)).thenReturn(true); // Added mock to prevent BaseNotFoundException
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(invitedEventUser));
+        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(Optional.of(List.of(invitedEventUser)));
         when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event)); // Mock event lookup
 
