@@ -140,8 +140,6 @@ public class UserController {
         }
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/update-pfp/{id}
     @PatchMapping("update-pfp/{id}")
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
