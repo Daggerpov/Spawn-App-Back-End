@@ -222,37 +222,6 @@ public class UserService implements IUserService {
         }
     }
 
-
-    // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
-    @Override
-    public UserDTO replaceUser(UserDTO newUser, UUID id) {
-        // TODO: we may want to make this function easier to read in the future,
-        // but for now, I left the logic the same as what Seabert wrote.
-        try {
-            return repository.findById(id).map(user -> {
-                user.setBio(newUser.getBio());
-                user.setFirstName(newUser.getFirstName());
-                user.setLastName(newUser.getLastName());
-                user.setUsername(newUser.getUsername());
-                repository.save(user);
-
-                List<UUID> friendUserIds = getFriendUserIdsByUserId(user.getId());
-                List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(user.getId());
-                return UserMapper.toDTO(user, friendUserIds, friendTagIds);
-            }).orElseGet(() -> {
-                User userEntity = UserMapper.toEntity(newUser);
-                repository.save(userEntity);
-
-                List<UUID> friendUserIds = getFriendUserIdsByUserId(userEntity.getId());
-                List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(userEntity.getId());
-                return UserMapper.toDTO(userEntity, friendUserIds, friendTagIds);
-            });
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
     @Override
     public boolean deleteUserById(UUID id) {
         User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
@@ -769,6 +738,29 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(user, friendUserIds, friendTagIds);
         } catch (Exception e) {
             logger.error("Error updating bio for user " + id + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName) {
+        try {
+            User user = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            
+            user.setBio(bio);
+            user.setUsername(username);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            
+            user = repository.save(user);
+            
+            List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
+            List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(id);
+            
+            return UserMapper.toDTO(user, friendUserIds, friendTagIds);
+        } catch (Exception e) {
+            logger.error("Error updating user " + id + ": " + e.getMessage());
             throw e;
         }
     }
