@@ -93,4 +93,6 @@ public interface IUserService {
     BaseUserDTO getBaseUserById(UUID id);
 
     BaseUserDTO updateUserBio(UUID id, String bio);
+
+    BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 }
