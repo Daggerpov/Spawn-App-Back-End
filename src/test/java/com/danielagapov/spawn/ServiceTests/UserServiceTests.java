@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyString;
 
 public class UserServiceTests {
 
@@ -95,37 +96,84 @@ public class UserServiceTests {
         verify(logger, times(1)).error("Database error");  // Verify that logging happened
     }
 
-
     @Test
-    void replaceUser_ShouldUpdateUser_WhenUserExists() {
+    void updateUser_ShouldUpdateAllFields_WhenUserExists() {
+        // Arrange
         UUID userId = UUID.randomUUID();
-        UserDTO newUserDTO = new UserDTO(userId, List.of(), "john_doe_updated", "profile.jpg", "John", "Doe", "A bio updated", List.of(), "john.doe@example.com");
-        User existingUser = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
-
+        User existingUser = new User(userId, "old_username", "profile.jpg", "OldFirst", "OldLast", "Old bio", "user@example.com");
+        User updatedUser = new User(userId, "new_username", "profile.jpg", "NewFirst", "NewLast", "New bio", "user@example.com");
+        
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(User.class))).thenReturn(existingUser);
-
-        UserDTO result = userService.replaceUser(newUserDTO, userId);
-
-        assertEquals("john_doe_updated", result.getUsername());
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        
+        // Act
+        var result = userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast");
+        
+        // Assert
+        assertEquals("new_username", result.getUsername());
+        assertEquals("NewFirst", result.getFirstName());
+        assertEquals("NewLast", result.getLastName());
+        assertEquals("New bio", result.getBio());
+        
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, times(1)).save(any(User.class));
     }
-
+    
     @Test
-    void replaceUser_ShouldCreateUser_WhenUserDoesNotExist() {
+    void updateUser_ShouldHandleNullValues_WhenUpdatingPartially() {
+        // Arrange
         UUID userId = UUID.randomUUID();
-        UserDTO newUserDTO = new UserDTO(userId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
-        User newUser = UserMapper.toEntity(newUserDTO);
-
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenReturn(newUser);
-
-        UserDTO result = userService.replaceUser(newUserDTO, userId);
-
-        assertEquals("john_doe", result.getUsername());
+        User existingUser = new User(userId, "old_username", "profile.jpg", "OldFirst", "OldLast", "Old bio", "user@example.com");
+        User updatedUser = new User(userId, "old_username", "profile.jpg", "OldFirst", "NewLast", "New bio", "user@example.com");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        
+        // Act - only updating bio and lastName, keeping other fields the same
+        var result = userService.updateUser(userId, "New bio", null, null, "NewLast");
+        
+        // Assert
+        assertEquals("old_username", result.getUsername());  // unchanged
+        assertEquals("OldFirst", result.getFirstName());     // unchanged
+        assertEquals("NewLast", result.getLastName());       // changed
+        assertEquals("New bio", result.getBio());            // changed
+        
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, times(1)).save(any(User.class));
+    }
+    
+    @Test
+    void updateUser_ShouldThrowException_WhenUserDoesNotExist() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, 
+            () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+        
+        assertTrue(exception.getMessage().contains("User"));
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, never()).save(any(User.class));
+    }
+    
+    @Test
+    void updateUser_ShouldLogAndThrowException_WhenDatabaseErrorOccurs() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        User existingUser = new User(userId, "username", "profile.jpg", "First", "Last", "Bio", "user@example.com");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {});
+        
+        // Act & Assert
+        Exception exception = assertThrows(DataAccessException.class, 
+            () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+        
+        assertTrue(exception.getMessage().contains("Database error"));
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, times(1)).save(any(User.class));
+        verify(logger, times(1)).error(anyString());
     }
 
     @Test
@@ -206,16 +254,17 @@ public class UserServiceTests {
     }
 
     @Test
-    void replaceUser_ShouldLogException_WhenUnexpectedErrorOccurs() {
+    void updateUser_ShouldLogAndThrowException_WhenUnexpectedErrorOccurs() {
+        // Arrange
         UUID userId = UUID.randomUUID();
-        UserDTO newUserDTO = new UserDTO(userId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
-
         when(userRepository.findById(userId)).thenThrow(new RuntimeException("Unexpected error"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.replaceUser(newUserDTO, userId));
-
+        
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, 
+            () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+        
         assertTrue(exception.getMessage().contains("Unexpected error"));
-        verify(logger, times(1)).error("Unexpected error");
+        verify(logger, times(1)).error(anyString());
     }
 
     @Test
@@ -231,22 +280,6 @@ public class UserServiceTests {
 
         assertFalse(result);
         verify(logger, times(1)).error("Unexpected error");
-    }
-
-    @Test
-    void replaceUser_ShouldThrowException_WhenDatabaseErrorOccurs() {
-        UUID userId = UUID.randomUUID();
-        UserDTO newUserDTO = new UserDTO(userId, List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
-        User existingUser = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
-
-        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {
-        });
-
-        DataAccessException exception = assertThrows(DataAccessException.class, () -> userService.replaceUser(newUserDTO, userId));
-
-        assertTrue(exception.getMessage().contains("Database error"));
-        verify(logger, atLeastOnce()).error("Database error");
     }
 
     @Test

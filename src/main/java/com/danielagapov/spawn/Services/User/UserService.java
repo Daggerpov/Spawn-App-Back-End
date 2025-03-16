@@ -225,37 +225,6 @@ public class UserService implements IUserService {
         }
     }
 
-
-    // basically 'upserting' (a.k.a. inserting if not already in DB, otherwise, updating)
-    @Override
-    public UserDTO replaceUser(UserDTO newUser, UUID id) {
-        // TODO: we may want to make this function easier to read in the future,
-        // but for now, I left the logic the same as what Seabert wrote.
-        try {
-            return repository.findById(id).map(user -> {
-                user.setBio(newUser.getBio());
-                user.setFirstName(newUser.getFirstName());
-                user.setLastName(newUser.getLastName());
-                user.setUsername(newUser.getUsername());
-                repository.save(user);
-
-                List<UUID> friendUserIds = getFriendUserIdsByUserId(user.getId());
-                List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(user.getId());
-                return UserMapper.toDTO(user, friendUserIds, friendTagIds);
-            }).orElseGet(() -> {
-                User userEntity = UserMapper.toEntity(newUser);
-                repository.save(userEntity);
-
-                List<UUID> friendUserIds = getFriendUserIdsByUserId(userEntity.getId());
-                List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(userEntity.getId());
-                return UserMapper.toDTO(userEntity, friendUserIds, friendTagIds);
-            });
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
     @Override
     public boolean deleteUserById(UUID id) {
         User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
@@ -483,6 +452,14 @@ public class UserService implements IUserService {
                     .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::getMutualFriendCount).reversed())
                     .limit(3)
                     .collect(Collectors.toList());
+
+            // Track users already added to recommendations
+            Set<UUID> recommendedUserIds = recommendedFriends.stream()
+                    .map(RecommendedFriendUserDTO::getId)
+                    .collect(Collectors.toSet());
+            
+            // Add these to excluded users to prevent duplicates
+            excludedUserIds.addAll(recommendedUserIds);
 
             if (recommendedFriends.size() >= 3) {
                 return recommendedFriends;
@@ -730,20 +707,18 @@ public class UserService implements IUserService {
     @Override
     public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
         try {
-            List<UserDTO> userFriends = getFriendsByUserId(requestingUserId);
-            List<FullUserDTO> fullUserFriends = convertUsersToFullUsers(userFriends, new HashSet<>());
+            List<User> userFriends = getFriendUsersByUserId(requestingUserId);
 
             List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<>();
-            for (FullUserDTO user : fullUserFriends) {
+            for (User user : userFriends) {
                 FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO(
                         user.getId(),
                         user.getUsername(),
-                        user.getProfilePicture(),
+                        user.getProfilePictureUrlString(),
                         user.getFirstName(),
                         user.getLastName(),
                         user.getBio(),
                         user.getEmail(),
-                        // only added property from `FullUserDTO`:
                         friendTagService.getPertainingFriendTagsForFriend(requestingUserId, user.getId())
                 );
                 fullFriendUserDTOList.add(fullFriendUserDTO);
@@ -754,6 +729,20 @@ public class UserService implements IUserService {
             logger.error(e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public List<User> getFriendUsersByUserId(UUID requestingUserId) {
+        try {
+            return friendTagRepository.getFriendsFromEveryoneTagByOwnerId(requestingUserId).orElseThrow(() -> new BaseNotFoundException(EntityType.User));
+        } catch (BaseNotFoundException e) {
+            logger.warn("Could not find user with id: " + requestingUserId);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error: " + e.getMessage());
+        }
+
+        return List.of();
     }
 
     private RecommendedFriendUserDTO recommendedFriendUserFromFullUser(FullUserDTO fullUser, int mutualFriendCount) {
@@ -779,4 +768,35 @@ public class UserService implements IUserService {
         return user1Friends.size();
     }
 
+    @Override
+    public BaseUserDTO getBaseUserById(UUID id) {
+        try {
+            User user = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            return UserMapper.toDTO(user);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName) {
+        try {
+            User user = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            
+            user.setBio(bio);
+            user.setUsername(username);
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            
+            user = repository.save(user);
+            
+            return UserMapper.toDTO(user);
+        } catch (Exception e) {
+            logger.error("Error updating user " + id + ": " + e.getMessage());
+            throw e;
+        }
+    }
 }

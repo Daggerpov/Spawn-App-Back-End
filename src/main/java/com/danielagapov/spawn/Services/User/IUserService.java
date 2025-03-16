@@ -27,8 +27,6 @@ public interface IUserService {
 
     UserDTO saveUser(UserDTO user);
 
-    UserDTO replaceUser(UserDTO user, UUID id);
-
     boolean deleteUserById(UUID id);
 
     User saveEntity(User user);
@@ -48,6 +46,8 @@ public interface IUserService {
     List<UUID> getFriendUserIdsByUserId(UUID id);
 
     List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId);
+
+    List<User> getFriendUsersByUserId(UUID requestingUserId);
 
     // For Friend Tags:
 
@@ -100,4 +100,8 @@ public interface IUserService {
     void verifyUserByUsername(String username);
 
     int getMutualFriendCount(UUID receiverId, UUID id);
+
+    BaseUserDTO getBaseUserById(UUID id);
+
+    BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 }
