@@ -725,24 +725,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public BaseUserDTO updateUserBio(UUID id, String bio) {
-        try {
-            User user = repository.findById(id)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-            user.setBio(bio);
-            user = repository.save(user);
-            
-            List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
-            List<UUID> friendTagIds = friendTagService.getFriendTagIdsByOwnerUserId(id);
-            
-            return UserMapper.toDTO(user, friendUserIds, friendTagIds);
-        } catch (Exception e) {
-            logger.error("Error updating bio for user " + id + ": " + e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName) {
         try {
             User user = repository.findById(id)

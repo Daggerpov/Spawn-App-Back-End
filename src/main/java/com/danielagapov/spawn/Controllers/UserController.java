@@ -176,20 +176,6 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/update-bio/{id}
-    @PatchMapping("update-bio/{id}")
-    public ResponseEntity<BaseUserDTO> updateUserBio(@PathVariable UUID id, @RequestBody String bio) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            return new ResponseEntity<>(userService.updateUserBio(id, bio), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            logger.error("Error updating bio for user " + id + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/update/{id}
     @PatchMapping("update/{id}")
     public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
