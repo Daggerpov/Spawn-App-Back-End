@@ -580,6 +580,7 @@ public class EventServiceTests {
         eu2.setStatus(ParticipationStatus.invited);
 
         when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(Optional.of(List.of(eu1, eu2)));
+        when(eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating)).thenReturn(Optional.of(List.of(eu1)));
         UserDTO userDTO1 = new UserDTO(
                 user1.getId(), List.of(), "user1", "pic.jpg", "First", "Last", "bio", List.of(), "email1@example.com");
         when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
@@ -701,6 +702,7 @@ public class EventServiceTests {
         eu.setEvent(event);
         eu.setStatus(ParticipationStatus.invited);
         when(eventUserRepository.findByUser_Id(userId)).thenReturn(Optional.of(List.of(eu)));
+        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(Optional.of(List.of(eu)));
         when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
@@ -728,6 +730,7 @@ public class EventServiceTests {
         validEventUser.setEvent(event);
         when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(Optional.of(List.of(validEventUser)));
         when(eventUserRepository.findByUser_Id(userId)).thenReturn(Optional.of(List.of(validEventUser)));
+        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(Optional.of(List.of(validEventUser)));
 
         when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
@@ -890,8 +893,8 @@ public class EventServiceTests {
         // Mock repository methods
         when(eventUserRepository.existsById(compositeId)).thenReturn(true);
         when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(invitedEventUser));
+        when(eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId)).thenReturn(Optional.of(List.of(invitedEventUser)));
         when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(Optional.of(List.of(invitedEventUser)));
-        when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
 
         // Mock service methods for full event conversion
