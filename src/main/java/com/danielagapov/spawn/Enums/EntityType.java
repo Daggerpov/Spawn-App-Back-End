@@ -12,6 +12,7 @@ public enum EntityType {
     // Relationships between entities
     ChatMessageLike("Chat Message Like"),
     FriendRequest("Friend Request"),
+    FeedbackSubmission("Feedback Submission"),
     Location("Location");
 
     private final String description;

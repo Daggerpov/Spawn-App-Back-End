@@ -15,4 +15,6 @@ public class FeedbackSubmissionDTO {
     private UUID fromUserId;
     private String fromUserEmail;
     private String message;
+    private boolean isResolved;
+    private String resolutionComment;
 }

@@ -40,21 +40,14 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         try {
             UUID userId = dto.getFromUserId();
 
-            if (userId == null && dto.getFromUserEmail() != null) {
-                Optional<User> userOptional = userRepository.findByEmail(dto.getFromUserEmail());
-                if (userOptional.isEmpty()) {
-                    throw new BaseNotFoundException(EntityType.User, dto.getFromUserEmail(), "email");
-                }
-                userId = userOptional.get().getId();
-            }
-
-
             if (userId == null) {
-                throw new BaseSaveException("Either userId or userEmail must be provided");
+                throw new BaseSaveException("User ID must be provided");
             }
 
-            FeedbackSubmission feedback = FeedbackSubmissionMapper.toEntity(dto);
-            feedback.setFromUserId(userId);
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+
+            FeedbackSubmission feedback = FeedbackSubmissionMapper.toEntity(dto, user);
 
             if (feedback.getFromUserEmail() == null) {
                 feedback.setFromUserEmail(dto.getFromUserEmail());
@@ -69,6 +62,15 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             throw e;
         }
     }
+
+    public void resolveFeedback(UUID id, String resolutionComment) {
+        FeedbackSubmission feedback = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+        feedback.setResolved(true);
+        feedback.setResolutionComment(resolutionComment);
+        repository.save(feedback);
+    }
+
 
     @Override
     public List<FeedbackSubmissionDTO> getAllFeedbacks() {

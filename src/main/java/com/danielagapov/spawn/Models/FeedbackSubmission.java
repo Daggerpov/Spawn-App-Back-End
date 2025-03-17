@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -24,11 +26,20 @@ public class FeedbackSubmission implements Serializable {
     @Enumerated(EnumType.STRING)
     private FeedbackType type;
 
-    private UUID fromUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "from_user_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private User fromUser;
+
 
     @Column
     private String fromUserEmail;
     private OffsetDateTime submittedAt;
+
+    private boolean isResolved = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String resolutionComment;
 
     @Column(columnDefinition = "TEXT")
     private String message;
