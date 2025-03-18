@@ -288,7 +288,7 @@ public class ChatMessageServiceTests {
         chatMessage1.setEvent(dummyEvent);
         chatMessage2.setEvent(dummyEvent);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(Optional.of(messages));
+        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(messages);
         when(chatMessageRepository.findById(id1)).thenReturn(Optional.of(chatMessage1));
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(Optional.of(new ArrayList<>()));
@@ -354,7 +354,7 @@ public class ChatMessageServiceTests {
         chatMessage1.setEvent(eventForMessages);
         chatMessage2.setEvent(eventForMessages);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(Optional.of(messages));
+        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(messages);
         List<UUID> ids = chatMessageService.getChatMessageIdsByEventId(eventId);
         assertNotNull(ids);
         assertEquals(2, ids.size());
@@ -473,7 +473,7 @@ public class ChatMessageServiceTests {
         chatMessage1.setEvent(dummyEvent);
         chatMessage2.setEvent(dummyEvent);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(Optional.of(messages));
+        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(messages);
         when(chatMessageRepository.findById(id1)).thenReturn(Optional.of(chatMessage1));
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(Optional.of(new ArrayList<>()));

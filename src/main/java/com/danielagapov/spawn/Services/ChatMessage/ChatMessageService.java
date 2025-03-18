@@ -166,8 +166,7 @@ public class ChatMessageService implements IChatMessageService {
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
 
             // Retrieve all chat messages for the specified event
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId)
-                    .orElse(Collections.emptyList());
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
 
             // Extract the IDs of the chat messages and return them as a list
             return chatMessages.stream()
@@ -260,8 +259,7 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
         try {
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId)
-                    .orElse(Collections.emptyList());
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
 
             return chatMessages.stream()
                     .map(chatMessage -> {
