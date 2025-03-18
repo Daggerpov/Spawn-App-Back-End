@@ -295,8 +295,7 @@ public class EventService implements IEventService {
 
     @Override
     public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating)
-                .orElse(Collections.emptyList());
+        List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
         return eventUsers.stream()
                 .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
                 .toList();
@@ -349,8 +348,7 @@ public class EventService implements IEventService {
     // invited/participating
     @Override
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
-        List<EventUser> existingEventUsers = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId)
-                .orElse(Collections.emptyList());
+        List<EventUser> existingEventUsers = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId);
         if (existingEventUsers.isEmpty()) {
             // throw BaseNotFound for events if eventIf has no eventUsers
             throw new BaseNotFoundException(EntityType.Event, eventId);
@@ -373,8 +371,7 @@ public class EventService implements IEventService {
 
     @Override
     public List<EventDTO> getEventsInvitedTo(UUID id) {
-        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited)
-                .orElse(Collections.emptyList());
+        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
         return getEventDTOs(eventUsers.stream()
                 .map(EventUser::getEvent)
                 .toList());
@@ -396,8 +393,7 @@ public class EventService implements IEventService {
 
     @Override
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
-        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited)
-                .orElse(Collections.emptyList());
+        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
         return convertEventsToFullFeedEvents(
                 getEventDTOs(eventUsers.stream()
                         .map(EventUser::getEvent)

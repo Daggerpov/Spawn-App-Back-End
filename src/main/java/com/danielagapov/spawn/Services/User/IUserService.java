@@ -6,7 +6,6 @@ import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
-import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
 
@@ -76,15 +75,6 @@ public interface IUserService {
     List<UUID> getParticipantUserIdsByEventId(UUID eventId);
 
     List<UUID> getInvitedUserIdsByEventId(UUID eventId);
-
-    // Event User methods:
-    List<EventUser> getEventUsersByEventId(UUID eventId);
-
-    List<EventUser> getEventUsersByUserId(UUID userId);
-
-    List<EventUser> getEventUsersByUserIdAndStatus(UUID userId, ParticipationStatus status);
-
-    List<EventUser> getEventUsersByEventIdAndStatus(UUID eventId, ParticipationStatus status);
 
     // Helper
     FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers);
