@@ -293,10 +293,18 @@ public class EventService implements IEventService {
 
     @Override
     public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
-        return eventUsers.stream()
-                .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
-                .toList();
+        try {
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
+            return eventUsers.stream()
+                    .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BaseNotFoundException(EntityType.Event, eventId);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
     }
 
     @Override
