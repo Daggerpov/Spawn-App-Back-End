@@ -102,24 +102,7 @@ public class EventServiceTests {
         );
     }
 
-    private FullFeedEventDTO dummyFullFeedEventDTO(UUID eventId, String title) {
-        return new FullFeedEventDTO(
-                eventId,
-                title,
-                OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(1),
-                new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0),
-                "Note",
-                new UserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email"),
-                List.of(),
-                List.of(),
-                List.of(),
-                null,
-                null,
-                false
-        );
-    }
-
+    
     // --- Basic tests (unchanged) ---
     @Test
     void getAllEvents_ShouldReturnList_WhenEventsExist() {

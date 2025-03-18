@@ -6,8 +6,6 @@ import com.danielagapov.spawn.Enums.ReportType;
 import com.danielagapov.spawn.Enums.ResolutionStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Models.ChatMessage;
-import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.ReportedContent;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IReportedContentRepository;
@@ -20,7 +18,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 

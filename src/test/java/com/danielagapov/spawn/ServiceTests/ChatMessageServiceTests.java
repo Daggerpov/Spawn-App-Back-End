@@ -176,7 +176,7 @@ public class ChatMessageServiceTests {
         DataAccessException dae = new DataAccessException("DB error") {
         };
         when(chatMessageRepository.findAll()).thenThrow(dae);
-        BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getAllChatMessages());
+        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getAllChatMessages());
         verify(logger, times(1)).error(dae.getMessage());
     }
 
@@ -491,7 +491,7 @@ public class ChatMessageServiceTests {
         DataAccessException dae = new DataAccessException("DB error") {
         };
         when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenThrow(dae);
-        BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
+        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
         verify(logger, times(1)).error(dae.getMessage());
     }
 
