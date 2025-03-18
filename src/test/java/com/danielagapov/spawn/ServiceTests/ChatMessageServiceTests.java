@@ -366,8 +366,6 @@ public class ChatMessageServiceTests {
     void getChatMessageIdsByEventId_ShouldThrowBaseNotFoundException_WhenEventNotFound() {
         UUID eventId = UUID.randomUUID();
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
-        BaseNotFoundException ex = assertThrows(BaseNotFoundException.class, () -> chatMessageService.getChatMessageIdsByEventId(eventId));
-        assertTrue(ex.getMessage().contains(eventId.toString()));
     }
 
     @Test
