@@ -87,8 +87,7 @@ public class ChatMessageService implements IChatMessageService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageId));
 
         // Retrieve all the likes for the given chat message
-        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage)
-                .orElse(Collections.emptyList());
+        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
 
         // Extract the user IDs of the users who liked the chat message
         return likes.stream()
@@ -228,8 +227,7 @@ public class ChatMessageService implements IChatMessageService {
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId));
 
-        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage)
-                .orElse(Collections.emptyList());
+        List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
 
         return likes.stream()
                 .map(like -> {

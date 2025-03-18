@@ -13,5 +13,5 @@ import java.util.UUID;
 public interface IChatMessageLikesRepository extends JpaRepository<ChatMessageLikes, Long> {
     boolean existsByChatMessage_IdAndUser_Id(UUID chatMessageId, UUID userId);
     void deleteByChatMessage_IdAndUser_Id(UUID chatMessageId, UUID userId);
-    Optional<List<ChatMessageLikes>> findByChatMessage(ChatMessage chatMessage);
+    List<ChatMessageLikes> findByChatMessage(ChatMessage chatMessage);
 }

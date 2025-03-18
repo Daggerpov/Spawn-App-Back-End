@@ -15,10 +15,10 @@ public interface IEventRepository extends JpaRepository<Event, UUID> {
     // JPA (Java Persistence API) should automatically create queries based on these method names:
 
     // finds events that have been created by a user, by their `creatorId`
-    Optional<List<Event>> findByCreatorId(UUID creatorId);
+    List<Event> findByCreatorId(UUID creatorId);
     
     // finds events that have been created by any of the users in the list
-    Optional<List<Event>> findByCreatorIdIn(List<UUID> creatorIds);
+    List<Event> findByCreatorIdIn(List<UUID> creatorIds);
 
     @Query("SELECT e FROM Event e " +
             "JOIN e.creator c " +

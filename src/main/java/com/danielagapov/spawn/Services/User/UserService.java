@@ -562,46 +562,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<EventUser> getEventUsersByEventId(UUID eventId) {
-        try {
-            return eventUserRepository.findByEvent_Id(eventId);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<EventUser> getEventUsersByUserId(UUID userId) {
-        try {
-            return eventUserRepository.findByUser_Id(userId);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<EventUser> getEventUsersByUserIdAndStatus(UUID userId, ParticipationStatus status) {
-        try {
-            return eventUserRepository.findByUser_IdAndStatus(userId, status);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<EventUser> getEventUsersByEventIdAndStatus(UUID eventId, ParticipationStatus status) {
-        try {
-            return eventUserRepository.findByEvent_IdAndStatus(eventId, status);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
         try {
             if (visitedUsers.contains(user.getId())) {

@@ -314,14 +314,14 @@ public class UserServiceTests {
 
         // User1's friends: mutualFriend1, mutualFriend2, uniqueFriend1
         when(friendTagRepository.findByOwnerId(user1Id))
-            .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
+            .thenReturn(List.of(createEveryoneTag(user1Id)));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(Optional.of(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id)))
-            .thenReturn(Optional.of(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id)));
+            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
+            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
 
         // User2's friends: mutualFriend1, mutualFriend2, uniqueFriend2
         when(friendTagRepository.findByOwnerId(user2Id))
-            .thenReturn(Optional.of(List.of(createEveryoneTag(user2Id))));
+            .thenReturn(List.of(createEveryoneTag(user2Id)));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -339,14 +339,14 @@ public class UserServiceTests {
 
         // User1's friends: friend1
         when(friendTagRepository.findByOwnerId(user1Id))
-            .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
+            .thenReturn(List.of(createEveryoneTag(user1Id)));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(Optional.of(List.of(friend1Id)))
-            .thenReturn(Optional.of(List.of(friend2Id)));
+            .thenReturn(List.of(friend1Id))
+            .thenReturn(List.of(friend2Id));
 
         // User2's friends: friend2
         when(friendTagRepository.findByOwnerId(user2Id))
-            .thenReturn(Optional.of(List.of(createEveryoneTag(user2Id))));
+            .thenReturn(List.of(createEveryoneTag(user2Id)));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -363,14 +363,14 @@ public class UserServiceTests {
 
         // User1 has one friend
         when(friendTagRepository.findByOwnerId(user1Id))
-            .thenReturn(Optional.of(List.of(createEveryoneTag(user1Id))));
+            .thenReturn(List.of(createEveryoneTag(user1Id)));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(Optional.of(List.of(friendId)))
-            .thenReturn(Optional.of(Collections.emptyList())); // User2 has no friends
+            .thenReturn(List.of(friendId))
+            .thenReturn(Collections.emptyList()); // User2 has no friends
 
         // User2 has no friends (empty everyone tag)
         when(friendTagRepository.findByOwnerId(user2Id))
-            .thenReturn(Optional.of(List.of(createEveryoneTag(user2Id))));
+            .thenReturn(List.of(createEveryoneTag(user2Id)));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -386,9 +386,9 @@ public class UserServiceTests {
 
         // Both users have empty everyone tags
         when(friendTagRepository.findByOwnerId(any()))
-            .thenReturn(Optional.of(List.of(createEveryoneTag(UUID.randomUUID()))));
+            .thenReturn(List.of(createEveryoneTag(UUID.randomUUID())));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(Optional.of(Collections.emptyList()));
+            .thenReturn(Collections.emptyList());
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -404,7 +404,7 @@ public class UserServiceTests {
 
         // Users have no everyone tag
         when(friendTagRepository.findByOwnerId(any()))
-            .thenReturn(Optional.of(List.of()));
+            .thenReturn(List.of());
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -419,7 +419,7 @@ public class UserServiceTests {
         UUID user2Id = UUID.randomUUID();
 
         when(friendTagRepository.findByOwnerId(any()))
-            .thenReturn(Optional.empty());
+            .thenReturn(List.of());
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -432,7 +432,7 @@ public class UserServiceTests {
     void getFriendUserIdsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
         UUID tagId = UUID.randomUUID();
         when(userFriendTagRepository.findFriendIdsByTagId(tagId))
-            .thenReturn(Optional.empty());
+            .thenReturn(List.of());
 
         List<UUID> result = userService.getFriendUserIdsByFriendTagId(tagId);
 
@@ -444,7 +444,7 @@ public class UserServiceTests {
     void getFriendsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
         UUID tagId = UUID.randomUUID();
         when(userFriendTagRepository.findFriendIdsByTagId(tagId))
-            .thenReturn(Optional.empty());
+            .thenReturn(List.of());
 
         List<UserDTO> result = userService.getFriendsByFriendTagId(tagId);
 
@@ -470,7 +470,7 @@ public class UserServiceTests {
         UUID userId = UUID.randomUUID();
         
         when(friendTagRepository.findByOwnerId(userId))
-            .thenReturn(Optional.of(List.of(new FriendTag(UUID.randomUUID(), "Test", "#000000", userId, false))));
+            .thenReturn(List.of(new FriendTag(UUID.randomUUID(), "Test", "#000000", userId, false)));
 
         List<UUID> result = userService.getFriendUserIdsByUserId(userId);
 

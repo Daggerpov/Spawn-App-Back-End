@@ -94,7 +94,7 @@ class FriendRequestServiceTests {
 
     @Test
     void getIncomingFetchFriendRequestsByUserId_ShouldReturnRequests_WhenRequestsExist() {
-        when(repository.findByReceiverId(receiverId)).thenReturn(Optional.of(List.of(friendRequest)));
+        when(repository.findByReceiverId(receiverId)).thenReturn(List.of(friendRequest));
 
         List<FetchFriendRequestDTO> requests = friendRequestService.getIncomingFetchFriendRequestsByUserId(receiverId);
 
@@ -105,7 +105,7 @@ class FriendRequestServiceTests {
 
     @Test
     void getIncomingFetchFriendRequestsByUserId_ShouldReturnEmptyList_WhenNoRequestsFound() {
-        when(repository.findByReceiverId(receiverId)).thenReturn(Optional.of(List.of()));
+        when(repository.findByReceiverId(receiverId)).thenReturn(List.of());
 
         List<FetchFriendRequestDTO> requests = friendRequestService.getIncomingFetchFriendRequestsByUserId(receiverId);
 
@@ -183,7 +183,7 @@ class FriendRequestServiceTests {
         anotherFriendRequest.setSender(sender);
         anotherFriendRequest.setReceiver(receiver);
 
-        when(repository.findByReceiverId(receiverId)).thenReturn(Optional.of(List.of(friendRequest, anotherFriendRequest)));
+        when(repository.findByReceiverId(receiverId)).thenReturn(List.of(friendRequest, anotherFriendRequest));
 
         List<FetchFriendRequestDTO> requests = friendRequestService.getIncomingFetchFriendRequestsByUserId(receiverId);
 

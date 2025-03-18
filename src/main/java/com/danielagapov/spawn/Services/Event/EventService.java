@@ -114,8 +114,7 @@ public class EventService implements IEventService {
             // Step 2: Retrieve events created by any of the friends
             // Step 3: Filter events based on whether their owner is in the list of friend
             // IDs
-            List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds)
-                    .orElse(Collections.emptyList());
+            List<Event> filteredEvents = repository.findByCreatorIdIn(friendIds);
 
             // Step 3: Map filtered events to detailed DTOs
             return filteredEvents.stream()
@@ -223,8 +222,7 @@ public class EventService implements IEventService {
 
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
-        List<Event> events = repository.findByCreatorId(creatorUserId)
-                .orElse(Collections.emptyList());
+        List<Event> events = repository.findByCreatorId(creatorUserId);
         return getEventDTOs(events);
     }
 

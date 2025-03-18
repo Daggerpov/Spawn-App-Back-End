@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Repository
 public interface IFriendRequestsRepository extends JpaRepository<FriendRequest, UUID> {
-    Optional<List<FriendRequest>> findByReceiverId(UUID receiverId);
+    List<FriendRequest> findByReceiverId(UUID receiverId);
 
-    Optional<List<FriendRequest>> findBySenderId(UUID userId);
+    List<FriendRequest> findBySenderId(UUID userId);
 }

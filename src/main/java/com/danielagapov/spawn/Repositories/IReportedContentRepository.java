@@ -10,13 +10,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface IReportedContentRepository extends JpaRepository<ReportedContent, UUID> {
-    Optional<List<ReportedContent>> getAllByContentTypeAndReportType(EntityType contentType, ReportType reportType);
+    List<ReportedContent> getAllByContentTypeAndReportType(EntityType contentType, ReportType reportType);
 
-    Optional<List<ReportedContent>> getAllByReportType(ReportType reportType);
+    List<ReportedContent> getAllByReportType(ReportType reportType);
 
-    Optional<List<ReportedContent>> getAllByContentType(EntityType contentType);
+    List<ReportedContent> getAllByContentType(EntityType contentType);
 
-    Optional<List<ReportedContent>> getAllByReporterId(UUID reporterId);
+    List<ReportedContent> getAllByReporterId(UUID reporterId);
 
-    Optional<List<ReportedContent>> getAllByContentOwnerId(UUID reporterId);
+    List<ReportedContent> getAllByContentOwnerId(UUID reporterId);
 }

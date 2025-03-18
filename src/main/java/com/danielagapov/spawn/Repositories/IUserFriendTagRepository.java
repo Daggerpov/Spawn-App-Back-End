@@ -14,7 +14,7 @@ import java.util.UUID;
 @Repository
 public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, UUID> {
     @Query("SELECT uft.friend.id FROM UserFriendTag uft WHERE uft.friendTag.id = :tagId")
-    Optional<List<UUID>> findFriendIdsByTagId(@Param("tagId") UUID tagId);
+    List<UUID> findFriendIdsByTagId(@Param("tagId") UUID tagId);
 
     @Modifying
     @Query("DELETE FROM UserFriendTag uft WHERE uft.friendTag.id = :tagId AND uft.friend.id = :friendId")

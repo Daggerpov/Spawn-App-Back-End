@@ -77,8 +77,7 @@ public class FriendRequestService implements IFriendRequestService {
 
     private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
-            return repository.findByReceiverId(id)
-                    .orElse(Collections.emptyList());
+            return repository.findByReceiverId(id);
         } catch (DataAccessException e) {
             logger.error("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues
@@ -130,8 +129,7 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
         try {
-            List<FriendRequest> friendRequests = repository.findBySenderId(userId)
-                    .orElse(Collections.emptyList());
+            List<FriendRequest> friendRequests = repository.findBySenderId(userId);
             return FriendRequestMapper.toDTOList(friendRequests);
         } catch (Exception e) {
             logger.error(e.getMessage());

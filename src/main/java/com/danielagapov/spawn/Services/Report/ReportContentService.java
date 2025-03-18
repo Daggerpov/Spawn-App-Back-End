@@ -42,18 +42,15 @@ public class ReportContentService implements IReportContentService {
             if (reportType != null && contentType != null) {
                 // both filters
                 logger.info("Getting reports by report type and content type");
-                reports = repository.getAllByContentTypeAndReportType(contentType, reportType)
-                        .orElse(Collections.emptyList());
+                reports = repository.getAllByContentTypeAndReportType(contentType, reportType);
             } else if (reportType != null) {
                 // only report type filter
                 logger.info("Getting reports by report type");
-                reports = repository.getAllByReportType(reportType)
-                        .orElse(Collections.emptyList());
+                reports = repository.getAllByReportType(reportType);
             } else if (contentType != null) {
                 // only content type filter
                 logger.info("Getting reports by content type");
-                reports = repository.getAllByContentType(contentType)
-                        .orElse(Collections.emptyList());
+                reports = repository.getAllByContentType(contentType);
             } else {
                 // no filter
                 reports = repository.findAll();
@@ -99,7 +96,6 @@ public class ReportContentService implements IReportContentService {
     public List<ReportedContentDTO> getReportsByReporterId(UUID reporterId) {
         try {
             return repository.getAllByReporterId(reporterId)
-                    .orElse(Collections.emptyList())
                     .stream()
                     .map(ReportedContentDTO::fromEntity)
                     .toList();
@@ -116,7 +112,6 @@ public class ReportContentService implements IReportContentService {
     public List<ReportedContentDTO> getReportsByContentOwnerId(UUID contentOwnerId) {
         try {
             return repository.getAllByContentOwnerId(contentOwnerId)
-                    .orElse(Collections.emptyList())
                     .stream()
                     .map(ReportedContentDTO::fromEntity)
                     .toList();
