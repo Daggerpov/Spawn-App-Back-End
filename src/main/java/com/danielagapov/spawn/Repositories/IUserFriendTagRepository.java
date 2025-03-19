@@ -20,5 +20,5 @@ public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, U
     @Query("DELETE FROM UserFriendTag uft WHERE uft.friendTag.id = :tagId AND uft.friend.id = :friendId")
     void deleteByFriendTagIdAndUserId(@Param("tagId") UUID tagId, @Param("friendId") UUID friendId);
 
-    Optional<Boolean> existsByFriendTagIdAndFriendId(UUID id, UUID userId);
+    boolean existsByFriendTagIdAndFriendId(UUID id, UUID userId);
 }
