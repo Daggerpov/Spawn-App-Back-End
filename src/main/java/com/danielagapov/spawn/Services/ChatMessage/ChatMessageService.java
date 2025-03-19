@@ -330,22 +330,19 @@ public class ChatMessageService implements IChatMessageService {
             }
 
             // 2. Notify participating users (except the sender)
-            List<EventUser> participants = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> participants = eventUserRepository.findEventsByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
             for (EventUser participant : participants) {
-                // Only notify users who are participating (not just invited)
-                if (participant.getStatus() == ParticipationStatus.participating) {
-                    UUID participantId = participant.getUser().getId();
-
-                    // Skip if participant is the sender or the event creator (already notified)
-                    if (!participantId.equals(senderUserId) && !participantId.equals(event.getCreator().getId())) {
-                        pushNotificationService.sendNotificationToUser(
-                                participantId,
-                                "New Comment on Event",
-                                sender.getUsername() + " commented on an event you're participating in: " + event.getTitle(),
-                                data
-                        );
-                    }
+                UUID participantId = participant.getUser().getId();
+                // Skip if participant is the sender or the event creator (already notified)
+                if (!participantId.equals(senderUserId) && !participantId.equals(event.getCreator().getId())) {
+                    pushNotificationService.sendNotificationToUser(
+                            participantId,
+                            "New Comment on Event",
+                            sender.getUsername() + " commented on an event you're participating in: " + event.getTitle(),
+                            data
+                    );
                 }
+
             }
         } catch (Exception e) {
             // Log error but don't prevent message creation

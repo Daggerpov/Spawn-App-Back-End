@@ -12,16 +12,12 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
-import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.PushNotification.PushNotificationService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 @Service
 public class FriendRequestService implements IFriendRequestService {
@@ -54,16 +50,7 @@ public class FriendRequestService implements IFriendRequestService {
             repository.save(friendRequest);
 
             // Send push notification to the receiver
-            Map<String, String> data = new HashMap<>();
-            data.put("type", "friend_request");
-            data.put("senderId", senderId.toString());
-            
-            pushNotificationService.sendNotificationToUser(
-                receiverId,
-                "New Friend Request",
-                sender.getUsername() + " sent you a friend request",
-                data
-            );
+            sendNewFriendRequestNotification(sender, receiverId);
 
             // Return the saved friend request DTO with additional details (friends and friend tags)
             return FriendRequestMapper.toDTO(friendRequest);
@@ -86,6 +73,19 @@ public class FriendRequestService implements IFriendRequestService {
     public List<CreateFriendRequestDTO> getIncomingCreateFriendRequestsByUserId(UUID id) {
         List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
         return FriendRequestMapper.toDTOList(friendRequests);
+    }
+
+    private void sendNewFriendRequestNotification(User sender, UUID receiverId) {
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "friend_request");
+        data.put("senderId", sender.getId().toString());
+
+        pushNotificationService.sendNotificationToUser(
+                receiverId,
+                "New Friend Request",
+                sender.getUsername() + " sent you a friend request",
+                data
+        );
     }
 
     private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
@@ -112,19 +112,19 @@ public class FriendRequestService implements IFriendRequestService {
         try {
             FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
             userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
-            
+
             // Send push notification to the sender
             Map<String, String> data = new HashMap<>();
             data.put("type", "friend_request_accepted");
             data.put("receiverId", fr.getReceiver().getId().toString());
-            
+
             pushNotificationService.sendNotificationToUser(
-                fr.getSender().getId(),
-                "Friend Request Accepted",
-                fr.getReceiver().getUsername() + " accepted your friend request",
-                data
+                    fr.getSender().getId(),
+                    "Friend Request Accepted",
+                    fr.getReceiver().getUsername() + " has accepted your friend request",
+                    data
             );
-            
+
             deleteFriendRequest(id);
         } catch (Exception e) {
             logger.error(e.getMessage());
