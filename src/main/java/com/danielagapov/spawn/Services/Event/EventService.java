@@ -419,56 +419,42 @@ public class EventService implements IEventService {
     // invited/participating
     @Override
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
-            // throw BaseNotFound for events if eventIf has no eventUsers
-            throw new BaseNotFoundException(EntityType.Event, eventId);
+        EventUser eventUser = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.EventUser));
+
+        if (eventUser.getStatus() == ParticipationStatus.participating) {
+            eventUser.setStatus(ParticipationStatus.invited);
+        } else if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
+            eventUser.setStatus(ParticipationStatus.participating);
         }
-
-        Event event = repository.findById(eventId).orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
-        User user = userRepository.findById(userId).orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(userId) && !eventUser.getStatus().equals(ParticipationStatus.notInvited)) {
-                // if invited -> set status to participating
-                // if participating -> set status to invited
-                if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
-                    eventUser.setStatus(ParticipationStatus.participating);
-
-                    // Send notification to event creator when user participates
-                    Map<String, String> data = new HashMap<>();
-                    data.put("type", "event_participation");
-                    data.put("eventId", eventId.toString());
-                    data.put("userId", userId.toString());
-
-                    pushNotificationService.sendNotificationToUser(
-                            event.getCreator().getId(),
-                            "New Event Participant",
-                            user.getUsername() + " is now participating in your event: " + event.getTitle(),
-                            data
-                    );
-
-                } else if (eventUser.getStatus().equals(ParticipationStatus.participating)) {
-                    eventUser.setStatus(ParticipationStatus.invited);
-
-                    // Send notification to event creator when user revokes participation
-                    Map<String, String> data = new HashMap<>();
-                    data.put("type", "event_participation_revoked");
-                    data.put("eventId", eventId.toString());
-                    data.put("userId", userId.toString());
-
-                    pushNotificationService.sendNotificationToUser(
-                            event.getCreator().getId(),
-                            "Event Participation Revoked",
-                            user.getUsername() + " is no longer participating in your event: " + event.getTitle(),
-                            data
-                    );
-                }
-                eventUserRepository.save(eventUser);
-                break;
-            }
-        }
+        sendParticipationStatusUpdateNotification(eventUser);
+        eventUserRepository.save(eventUser);
         return getFullEventById(eventId, userId);
+    }
+
+    private void sendParticipationStatusUpdateNotification(EventUser eventUser) {
+        final Event event = eventUser.getEvent();
+        final User user = eventUser.getUser();
+        final ParticipationStatus status = eventUser.getStatus();
+        Map<String, String> data = new HashMap<>();
+        data.put("eventId", event.getId().toString());
+        data.put("userId", user.getId().toString());
+        if (status == ParticipationStatus.participating) { // Status changed from invited to participating
+            data.put("type", "event_participation");
+            pushNotificationService.sendNotificationToUser(
+                    event.getCreator().getId(),
+                    "New Event Participant",
+                    user.getUsername() + " is now participating in your event: " + event.getTitle(),
+                    data
+            );
+        } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
+            data.put("type", "event_participation_revoked");
+            pushNotificationService.sendNotificationToUser(
+                    event.getCreator().getId(),
+                    "Event Participation Revoked",
+                    user.getUsername() + " is no longer participating in your event: " + event.getTitle(),
+                    data
+            );
+        }
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.danielagapov.spawn.Models.EventUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface IEventUserRepository extends JpaRepository<EventUser, EventUsersId> {
@@ -14,4 +15,6 @@ public interface IEventUserRepository extends JpaRepository<EventUser, EventUser
     List<EventUser> findByUser_Id(UUID userId);
 
     List<EventUser> findEventsByEvent_IdAndStatus(UUID eventId, ParticipationStatus status);
+
+    Optional<EventUser> findByEvent_IdAndUser_Id(UUID eventId, UUID userId);
 }
