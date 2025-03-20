@@ -47,13 +47,13 @@ public class FeedbackSubmissionController {
      * @return A success response if the feedback was resolved, otherwise an error response.
      */
     @PutMapping("/resolve/{id}")
-    public ResponseEntity<Void> resolveFeedback(
+    public ResponseEntity<FeedbackSubmissionDTO> resolveFeedback(
             @PathVariable UUID id,
             @RequestBody(required = false) String resolutionComment
     ) {
         try {
-            service.resolveFeedback(id, resolutionComment);
-            return ResponseEntity.ok().build();
+            FeedbackSubmissionDTO resolvedFeedback = service.resolveFeedback(id, resolutionComment);
+            return new ResponseEntity<>(resolvedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -71,6 +71,23 @@ public class FeedbackSubmissionController {
     public ResponseEntity<List<FeedbackSubmissionDTO>> getAllFeedbacks() {
         try {
             return new ResponseEntity<>(service.getAllFeedbacks(), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Endpoint for deleting a feedback submission.
+     * @param id The unique ID of the feedback submission to delete.
+     * @return A success response if the feedback was deleted, otherwise an error response.
+     */
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<FeedbackSubmissionDTO> deleteFeedback(@PathVariable UUID id) {
+        try {
+            FeedbackSubmissionDTO deletedFeedback = service.deleteFeedback(id);
+            return new ResponseEntity<>(deletedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

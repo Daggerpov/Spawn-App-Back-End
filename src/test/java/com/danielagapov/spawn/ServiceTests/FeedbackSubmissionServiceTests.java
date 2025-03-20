@@ -105,15 +105,20 @@ public class FeedbackSubmissionServiceTests {
         UUID feedbackId = UUID.randomUUID();
         FeedbackSubmission feedback = new FeedbackSubmission();
         feedback.setId(feedbackId);
+        feedback.setType(FeedbackType.BUG); // <-- FIXED LINE
+        feedback.setMessage("Test message");
+        feedback.setFromUserEmail("test@example.com");
 
         when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
+        when(repository.save(any(FeedbackSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.resolveFeedback(feedbackId, "Resolved reason");
+        FeedbackSubmissionDTO result = service.resolveFeedback(feedbackId, "Resolved reason");
 
-        assertTrue(feedback.isResolved());
-        assertEquals("Resolved reason", feedback.getResolutionComment());
+        assertTrue(result.isResolved());
+        assertEquals("Resolved reason", result.getResolutionComment());
         verify(repository).save(feedback);
     }
+
 
     @Test
     public void resolveFeedback_ShouldThrowException_WhenFeedbackNotFound() {
@@ -139,4 +144,36 @@ public class FeedbackSubmissionServiceTests {
         assertEquals(1, dtos.size());
         assertEquals("Feedback message", dtos.get(0).getMessage());
     }
+
+    @Test
+    public void deleteFeedback_ShouldDeleteAndReturnDTO_WhenFeedbackExists() {
+        UUID feedbackId = UUID.randomUUID();
+
+        FeedbackSubmission feedback = new FeedbackSubmission();
+        feedback.setId(feedbackId);
+        feedback.setMessage("Delete me!");
+        feedback.setFromUserEmail("delete@example.com");
+        feedback.setResolved(false);
+        feedback.setResolutionComment(null);
+
+        when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
+
+        FeedbackSubmissionDTO deletedDTO = service.deleteFeedback(feedbackId);
+
+        assertNotNull(deletedDTO);
+        assertEquals("Delete me!", deletedDTO.getMessage());
+        assertEquals("delete@example.com", deletedDTO.getFromUserEmail());
+        verify(repository, times(1)).delete(feedback);
+    }
+
+    @Test
+    public void deleteFeedback_ShouldThrowException_WhenFeedbackNotFound() {
+        UUID feedbackId = UUID.randomUUID();
+
+        when(repository.findById(feedbackId)).thenReturn(Optional.empty());
+
+        assertThrows(BaseNotFoundException.class, () -> service.deleteFeedback(feedbackId));
+        verify(repository, never()).delete(any());
+    }
+
 }

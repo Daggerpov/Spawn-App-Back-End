@@ -63,12 +63,19 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         }
     }
 
-    public void resolveFeedback(UUID id, String resolutionComment) {
+    @Override
+    public FeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment) {
         FeedbackSubmission feedback = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+
         feedback.setResolved(true);
-        feedback.setResolutionComment(resolutionComment);
-        repository.save(feedback);
+
+        if (resolutionComment != null && !resolutionComment.isBlank()) {
+            feedback.setResolutionComment(resolutionComment);
+        }
+
+        FeedbackSubmission updated = repository.save(feedback);
+        return FeedbackSubmissionMapper.toDTO(updated);
     }
 
 
@@ -82,5 +89,14 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         } catch (DataAccessException e) {
             throw new RuntimeException("Error fetching feedbacks from database", e);
         }
+    }
+
+    @Override
+    public FeedbackSubmissionDTO deleteFeedback(UUID id) {
+        FeedbackSubmission feedback = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+
+        repository.delete(feedback);
+        return FeedbackSubmissionMapper.toDTO(feedback);
     }
 }

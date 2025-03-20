@@ -10,5 +10,7 @@ public interface IFeedbackSubmissionService {
     FeedbackSubmission submitFeedback(FeedbackSubmissionDTO dto);
     List<FeedbackSubmissionDTO> getAllFeedbacks();
 
-    void resolveFeedback(UUID id, String resolutionComment);
+    FeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment);
+
+    FeedbackSubmissionDTO deleteFeedback(UUID id);
 }
