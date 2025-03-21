@@ -1,17 +1,14 @@
 package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.Enums.NotificationType;
-import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
 
-import java.util.UUID;
 
 /**
  * Event for when a user's participation status changes in an event
  */
 public class EventParticipationNotificationEvent extends NotificationEvent {
-    private final User participant;
     private final Event event;
 
     public static EventParticipationNotificationEvent forJoining(User participant, Event event) {
@@ -33,7 +30,6 @@ public class EventParticipationNotificationEvent extends NotificationEvent {
     private EventParticipationNotificationEvent(User participant, Event event, NotificationType type) {
         super(type);
         
-        this.participant = participant;
         this.event = event;
         
         // Set data

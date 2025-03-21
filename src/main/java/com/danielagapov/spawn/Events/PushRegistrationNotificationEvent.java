@@ -3,8 +3,6 @@ package com.danielagapov.spawn.Events;
 import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Models.User;
 
-import java.util.UUID;
-
 /**
  * Event for when a device is registered for push notifications
  */

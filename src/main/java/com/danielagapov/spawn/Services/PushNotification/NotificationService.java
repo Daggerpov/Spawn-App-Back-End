@@ -94,15 +94,6 @@ public class NotificationService {
     }
 
     /**
-     * Send notifications to multiple users
-     */
-    public void sendNotificationToUsers(List<UUID> userIds, String title, String message, Map<String, String> data) {
-        for (UUID userId : userIds) {
-            sendNotificationToUser(userId, title, message, data);
-        }
-    }
-
-    /**
      * Process notification events
      */
     @EventListener

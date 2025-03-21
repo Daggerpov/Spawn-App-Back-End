@@ -8,7 +8,6 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Event for when an event is updated

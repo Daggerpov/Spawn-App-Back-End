@@ -11,15 +11,11 @@ import java.util.UUID;
  * Event for when users are invited to an event
  */
 public class EventInviteNotificationEvent extends NotificationEvent {
-    private final User creator;
-    private final Event event;
     private final Set<UUID> invitedUserIds;
 
     public EventInviteNotificationEvent(User creator, Event event, Set<UUID> invitedUserIds) {
         super(NotificationType.EVENT_INVITE);
         
-        this.creator = creator;
-        this.event = event;
         this.invitedUserIds = invitedUserIds;
         
         // Set common data
