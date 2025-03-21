@@ -220,20 +220,16 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
-            sendNewEventNotification(event, allInvitedUserIds);
+            // Create and publish event invite notification directly
+            eventPublisher.publishEvent(
+                new EventInviteNotificationEvent(event.getCreator(), event, allInvitedUserIds)
+            );
 
             return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.error("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
         }
-    }
-
-    private void sendNewEventNotification(Event event, Set<UUID> invitedUserIds) {
-        // Create and publish event invite notification
-        eventPublisher.publishEvent(
-            new EventInviteNotificationEvent(event.getCreator(), event, invitedUserIds)
-        );
     }
 
     @Override
@@ -279,7 +275,9 @@ public class EventService implements IEventService {
             // Save updated event
             repository.save(event);
 
-            sendEventUpdateNotififcation(event);
+            eventPublisher.publishEvent(
+                new EventUpdateNotificationEvent(event.getCreator(), event, eventUserRepository)
+            );
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
@@ -289,16 +287,12 @@ public class EventService implements IEventService {
             // Convert DTO to entity
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
             eventEntity = repository.save(eventEntity);
-            sendEventUpdateNotififcation(eventEntity);
+            
+            eventPublisher.publishEvent(
+                new EventUpdateNotificationEvent(eventEntity.getCreator(), eventEntity, eventUserRepository)
+            );
             return constructDTOFromEntity(eventEntity);
         });
-    }
-
-    private void sendEventUpdateNotififcation(Event event) {
-        // Create and publish event update notification
-        eventPublisher.publishEvent(
-            new EventUpdateNotificationEvent(event.getCreator(), event, eventUserRepository)
-        );
     }
 
     private List<UUID> getParticipatingUserIdsByEventId(UUID eventId) {
@@ -412,12 +406,7 @@ public class EventService implements IEventService {
         } else if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
             eventUser.setStatus(ParticipationStatus.participating);
         }
-        sendParticipationStatusUpdateNotification(eventUser);
-        eventUserRepository.save(eventUser);
-        return getFullEventById(eventId, userId);
-    }
-
-    private void sendParticipationStatusUpdateNotification(EventUser eventUser) {
+        
         final Event event = eventUser.getEvent();
         final User user = eventUser.getUser();
         final ParticipationStatus status = eventUser.getStatus();
@@ -431,6 +420,9 @@ public class EventService implements IEventService {
                 EventParticipationNotificationEvent.forLeaving(user, event)
             );
         }
+        
+        eventUserRepository.save(eventUser);
+        return getFullEventById(eventId, userId);
     }
 
     @Override
