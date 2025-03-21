@@ -24,6 +24,7 @@ import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
+import com.danielagapov.spawn.Services.PushNotification.PushNotificationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -45,13 +46,14 @@ public class EventService implements IEventService {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
     private final ILocationService locationService;
+    private final PushNotificationService pushNotificationService;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
                         IEventUserRepository eventUserRepository, IUserRepository userRepository,
                         IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService) {
+                        ILogger logger, ILocationService locationService, PushNotificationService pushNotificationService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
@@ -61,6 +63,7 @@ public class EventService implements IEventService {
         this.chatMessageService = chatMessageService;
         this.logger = logger;
         this.locationService = locationService;
+        this.pushNotificationService = pushNotificationService;
     }
 
     @Override
@@ -213,10 +216,28 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
+            sendNewEventNotification(event, allInvitedUserIds);
+
             return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.error("Error creating event: " + e.getMessage());
             throw new ApplicationException("Failed to create event", e);
+        }
+    }
+
+    private void sendNewEventNotification(Event event, Set<UUID> invitedUserIds) {
+        User creator = event.getCreator();
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "event_invite");
+        data.put("eventId", event.getId().toString());
+
+        for (UUID invitedUserId : invitedUserIds) {
+            pushNotificationService.sendNotificationToUser(
+                    invitedUserId,
+                    "Event Invite",
+                    creator.getUsername() + " has invited you to an event: " + event.getTitle(),
+                    data
+            );
         }
     }
 
@@ -271,10 +292,37 @@ public class EventService implements IEventService {
 
             // Convert DTO to entity
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
-            repository.save(eventEntity);
-
+            eventEntity = repository.save(eventEntity);
+            sendEventUpdateNotififcation(eventEntity);
             return constructDTOFromEntity(eventEntity);
         });
+    }
+
+    private void sendEventUpdateNotififcation(Event event) {
+        User creator = event.getCreator();
+        List<UUID> participatingUserIds = getParticipatingUserIdsByEventId(event.getId());
+        Map<String, String> data = new HashMap<>();
+        data.put("type", "eventUpdate");
+        data.put("eventId", event.getId().toString());
+
+        for (UUID participatingUserId : participatingUserIds) {
+            pushNotificationService.sendNotificationToUser(
+                    participatingUserId,
+                    "Event Update",
+                    creator.getUsername() + " has updated an event that you're attending: " + event.getTitle(),
+                    data
+            );
+        }
+    }
+
+    private List<UUID> getParticipatingUserIdsByEventId(UUID eventId) {
+        try {
+            List<EventUser> eventUsers = eventUserRepository.findEventsByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
+            return eventUsers.stream().map((eventUser -> eventUser.getUser().getId())).collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            logger.error("Error finding events by event id: " + e.getMessage());
+            throw e;
+        }
     }
 
     private EventDTO constructDTOFromEntity(Event eventEntity) {
@@ -371,25 +419,42 @@ public class EventService implements IEventService {
     // invited/participating
     @Override
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
-            // throw BaseNotFound for events if eventIf has no eventUsers
-            throw new BaseNotFoundException(EntityType.Event, eventId);
+        EventUser eventUser = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.EventUser));
+
+        if (eventUser.getStatus() == ParticipationStatus.participating) {
+            eventUser.setStatus(ParticipationStatus.invited);
+        } else if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
+            eventUser.setStatus(ParticipationStatus.participating);
         }
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(userId) && !eventUser.getStatus().equals(ParticipationStatus.notInvited)) {
-                // if invited -> set status to participating
-                // if participating -> set status to invited
-                if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
-                    eventUser.setStatus(ParticipationStatus.participating);
-                } else if (eventUser.getStatus().equals(ParticipationStatus.participating)) {
-                    eventUser.setStatus(ParticipationStatus.invited);
-                }
-                eventUserRepository.save(eventUser);
-                break;
-            }
-        }
+        sendParticipationStatusUpdateNotification(eventUser);
+        eventUserRepository.save(eventUser);
         return getFullEventById(eventId, userId);
+    }
+
+    private void sendParticipationStatusUpdateNotification(EventUser eventUser) {
+        final Event event = eventUser.getEvent();
+        final User user = eventUser.getUser();
+        final ParticipationStatus status = eventUser.getStatus();
+        Map<String, String> data = new HashMap<>();
+        data.put("eventId", event.getId().toString());
+        data.put("userId", user.getId().toString());
+        if (status == ParticipationStatus.participating) { // Status changed from invited to participating
+            data.put("type", "event_participation");
+            pushNotificationService.sendNotificationToUser(
+                    event.getCreator().getId(),
+                    "New Event Participant",
+                    user.getUsername() + " is now participating in your event: " + event.getTitle(),
+                    data
+            );
+        } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
+            data.put("type", "event_participation_revoked");
+            pushNotificationService.sendNotificationToUser(
+                    event.getCreator().getId(),
+                    "Event Participation Revoked",
+                    user.getUsername() + " is no longer participating in your event: " + event.getTitle(),
+                    data
+            );
+        }
     }
 
     @Override

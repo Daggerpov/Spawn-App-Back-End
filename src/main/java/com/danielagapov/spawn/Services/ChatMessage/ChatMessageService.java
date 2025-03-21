@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -15,24 +16,16 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.ChatMessage;
-import com.danielagapov.spawn.Models.ChatMessageLikes;
-import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
-import com.danielagapov.spawn.Repositories.IChatMessageRepository;
-import com.danielagapov.spawn.Repositories.IEventRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Models.*;
+import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.PushNotification.PushNotificationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,10 +37,13 @@ public class ChatMessageService implements IChatMessageService {
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
+    private final PushNotificationService pushNotificationService;
+    private final IEventUserRepository eventUserRepository;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
-                              IFriendTagService ftService, IUserRepository userRepository, ILogger logger) {
+                              IFriendTagService ftService, IUserRepository userRepository, ILogger logger,
+                              PushNotificationService pushNotificationService, IEventUserRepository eventUserRepository) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.eventRepository = eventRepository;
@@ -55,6 +51,8 @@ public class ChatMessageService implements IChatMessageService {
         this.ftService = ftService;
         this.userRepository = userRepository;
         this.logger = logger;
+        this.pushNotificationService = pushNotificationService;
+        this.eventUserRepository = eventUserRepository;
     }
 
     @Override
@@ -115,7 +113,13 @@ public class ChatMessageService implements IChatMessageService {
                 newChatMessageDTO.getEventId(),
                 List.of()
         );
-        return saveChatMessage(chatMessageDTO);
+
+        ChatMessageDTO savedMessage = saveChatMessage(chatMessageDTO);
+
+        // Send notifications after saving the message
+        sendChatMessageNotifications(savedMessage);
+
+        return savedMessage;
     }
 
     @Override
@@ -292,5 +296,58 @@ public class ChatMessageService implements IChatMessageService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Send push notifications for a new chat message
+     *
+     * @param chatMessageDTO The saved chat message
+     */
+    private void sendChatMessageNotifications(ChatMessageDTO chatMessageDTO) {
+        try {
+            UUID eventId = chatMessageDTO.getEventId();
+            UUID senderUserId = chatMessageDTO.getSenderUserId();
+
+            // Get event and sender details
+            Event event = eventRepository.findById(eventId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
+            User sender = userRepository.findById(senderUserId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, senderUserId));
+
+            // Prepare notification data
+            Map<String, String> data = new HashMap<>();
+            data.put("type", "chatMessage");
+            data.put("eventId", eventId.toString());
+            data.put("messageId", chatMessageDTO.getId().toString());
+            data.put("senderId", senderUserId.toString());
+
+            // 1. Notify event creator if they're not the sender
+            if (!event.getCreator().getId().equals(senderUserId)) {
+                pushNotificationService.sendNotificationToUser(
+                        event.getCreator().getId(),
+                        "New Comment on Your Event",
+                        sender.getUsername() + " commented on " + event.getTitle() + ": " + chatMessageDTO.getContent(),
+                        data
+                );
+            }
+
+            // 2. Notify participating users (except the sender)
+            List<EventUser> participants = eventUserRepository.findEventsByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
+            for (EventUser participant : participants) {
+                UUID participantId = participant.getUser().getId();
+                // Skip if participant is the sender or the event creator (already notified)
+                if (!participantId.equals(senderUserId) && !participantId.equals(event.getCreator().getId())) {
+                    pushNotificationService.sendNotificationToUser(
+                            participantId,
+                            "New Comment on Event",
+                            sender.getUsername() + " commented on an event you're participating in: " + event.getTitle(),
+                            data
+                    );
+                }
+
+            }
+        } catch (Exception e) {
+            // Log error but don't prevent message creation
+            logger.error("Error sending chat message notifications: " + e.getMessage());
+        }
+    }
 
 }
