@@ -24,16 +24,20 @@ import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
-import com.danielagapov.spawn.Services.PushNotification.PushNotificationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.danielagapov.spawn.Events.EventInviteNotificationEvent;
+import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
+import com.danielagapov.spawn.Events.EventUpdateNotificationEvent;
 
 @Service
 public class EventService implements IEventService {
@@ -46,14 +50,14 @@ public class EventService implements IEventService {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
     private final ILocationService locationService;
-    private final PushNotificationService pushNotificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
                         IEventUserRepository eventUserRepository, IUserRepository userRepository,
                         IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService, PushNotificationService pushNotificationService) {
+                        ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
@@ -63,7 +67,7 @@ public class EventService implements IEventService {
         this.chatMessageService = chatMessageService;
         this.logger = logger;
         this.locationService = locationService;
-        this.pushNotificationService = pushNotificationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -226,19 +230,10 @@ public class EventService implements IEventService {
     }
 
     private void sendNewEventNotification(Event event, Set<UUID> invitedUserIds) {
-        User creator = event.getCreator();
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "event_invite");
-        data.put("eventId", event.getId().toString());
-
-        for (UUID invitedUserId : invitedUserIds) {
-            pushNotificationService.sendNotificationToUser(
-                    invitedUserId,
-                    "Event Invite",
-                    creator.getUsername() + " has invited you to an event: " + event.getTitle(),
-                    data
-            );
-        }
+        // Create and publish event invite notification
+        eventPublisher.publishEvent(
+            new EventInviteNotificationEvent(event.getCreator(), event, invitedUserIds)
+        );
     }
 
     @Override
@@ -284,6 +279,7 @@ public class EventService implements IEventService {
             // Save updated event
             repository.save(event);
 
+            sendEventUpdateNotififcation(event);
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
@@ -299,20 +295,10 @@ public class EventService implements IEventService {
     }
 
     private void sendEventUpdateNotififcation(Event event) {
-        User creator = event.getCreator();
-        List<UUID> participatingUserIds = getParticipatingUserIdsByEventId(event.getId());
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "eventUpdate");
-        data.put("eventId", event.getId().toString());
-
-        for (UUID participatingUserId : participatingUserIds) {
-            pushNotificationService.sendNotificationToUser(
-                    participatingUserId,
-                    "Event Update",
-                    creator.getUsername() + " has updated an event that you're attending: " + event.getTitle(),
-                    data
-            );
-        }
+        // Create and publish event update notification
+        eventPublisher.publishEvent(
+            new EventUpdateNotificationEvent(event.getCreator(), event, eventUserRepository)
+        );
     }
 
     private List<UUID> getParticipatingUserIdsByEventId(UUID eventId) {
@@ -435,24 +421,14 @@ public class EventService implements IEventService {
         final Event event = eventUser.getEvent();
         final User user = eventUser.getUser();
         final ParticipationStatus status = eventUser.getStatus();
-        Map<String, String> data = new HashMap<>();
-        data.put("eventId", event.getId().toString());
-        data.put("userId", user.getId().toString());
+        
         if (status == ParticipationStatus.participating) { // Status changed from invited to participating
-            data.put("type", "event_participation");
-            pushNotificationService.sendNotificationToUser(
-                    event.getCreator().getId(),
-                    "New Event Participant",
-                    user.getUsername() + " is now participating in your event: " + event.getTitle(),
-                    data
+            eventPublisher.publishEvent(
+                EventParticipationNotificationEvent.forJoining(user, event)
             );
         } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
-            data.put("type", "event_participation_revoked");
-            pushNotificationService.sendNotificationToUser(
-                    event.getCreator().getId(),
-                    "Event Participation Revoked",
-                    user.getUsername() + " is no longer participating in your event: " + event.getTitle(),
-                    data
+            eventPublisher.publishEvent(
+                EventParticipationNotificationEvent.forLeaving(user, event)
             );
         }
     }

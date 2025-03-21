@@ -19,7 +19,6 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.*;
 import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Services.PushNotification.PushNotificationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Events.NewCommentNotificationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -39,14 +38,13 @@ public class ChatMessageService implements IChatMessageService {
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
-    private final PushNotificationService pushNotificationService;
     private final IEventUserRepository eventUserRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
                               IFriendTagService ftService, IUserRepository userRepository, ILogger logger,
-                              PushNotificationService pushNotificationService, IEventUserRepository eventUserRepository,
+                              IEventUserRepository eventUserRepository,
                               ApplicationEventPublisher eventPublisher) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
@@ -55,7 +53,6 @@ public class ChatMessageService implements IChatMessageService {
         this.ftService = ftService;
         this.userRepository = userRepository;
         this.logger = logger;
-        this.pushNotificationService = pushNotificationService;
         this.eventUserRepository = eventUserRepository;
         this.eventPublisher = eventPublisher;
     }

@@ -81,19 +81,6 @@ public class FriendRequestService implements IFriendRequestService {
         return FriendRequestMapper.toDTOList(friendRequests);
     }
 
-    private void sendNewFriendRequestNotification(User sender, UUID receiverId) {
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "friend_request");
-        data.put("senderId", sender.getId().toString());
-
-        pushNotificationService.sendNotificationToUser(
-                receiverId,
-                "New Friend Request",
-                sender.getUsername() + " sent you a friend request",
-                data
-        );
-    }
-
     private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             List<FriendRequest> friendRequests = repository.findByReceiverId(id);
@@ -174,5 +161,4 @@ public class FriendRequestService implements IFriendRequestService {
             throw e;
         }
     }
-
 }

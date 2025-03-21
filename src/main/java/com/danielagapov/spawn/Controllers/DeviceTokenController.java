@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.Services.PushNotification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,14 +19,24 @@ public class DeviceTokenController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Void> registerDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
-        notificationService.registerDeviceToken(deviceTokenDTO);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> registerDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
+        try {
+            notificationService.registerDeviceToken(deviceTokenDTO);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error registering device token: " + e.getMessage());
+        }
     }
 
     @PostMapping("/unregister")
-    public ResponseEntity<Void> unregisterDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
-        notificationService.unregisterDeviceToken(deviceTokenDTO.getToken());
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> unregisterDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
+        try {
+            notificationService.unregisterDeviceToken(deviceTokenDTO.getToken());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error unregistering device token: " + e.getMessage());
+        }
     }
 } 

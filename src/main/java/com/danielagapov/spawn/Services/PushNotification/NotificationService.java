@@ -3,11 +3,13 @@ package com.danielagapov.spawn.Services.PushNotification;
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.Enums.DeviceType;
 import com.danielagapov.spawn.Events.NotificationEvent;
+import com.danielagapov.spawn.Events.PushRegistrationNotificationEvent;
 import com.danielagapov.spawn.Models.DeviceToken;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IDeviceTokenRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -26,14 +28,17 @@ public class NotificationService {
     private final IDeviceTokenRepository deviceTokenRepository;
     private final IUserService userService;
     private final Map<DeviceType, NotificationStrategy> strategies;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     public NotificationService(
             IDeviceTokenRepository deviceTokenRepository,
             IUserService userService,
-            List<NotificationStrategy> strategyList) {
+            List<NotificationStrategy> strategyList,
+            ApplicationEventPublisher eventPublisher) {
         this.deviceTokenRepository = deviceTokenRepository;
         this.userService = userService;
+        this.eventPublisher = eventPublisher;
         
         // Create a map of device types to strategies
         this.strategies = strategyList.stream()
@@ -60,14 +65,7 @@ public class NotificationService {
         deviceTokenRepository.save(deviceToken);
         
         // Send a test notification to confirm registration
-        Map<String, String> data = new HashMap<>();
-        data.put("type", "registration");
-        sendNotificationToUser(
-                user.getId(),
-                "Push Notifications Enabled",
-                "You will now receive notifications from Spawn App",
-                data
-        );
+        eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));
     }
 
     /**
