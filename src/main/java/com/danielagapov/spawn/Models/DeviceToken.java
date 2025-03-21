@@ -17,7 +17,7 @@ import java.util.UUID;
  * Used to send push notifications to specific devices for various events.
  */
 @Entity
-@Table(name = "device_tokens")
+@Table(name = "device_token")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
