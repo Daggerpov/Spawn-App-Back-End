@@ -11,5 +11,6 @@ public enum NotificationType {
     NEW_COMMENT,
     FRIEND_REQUEST,
     FRIEND_REQUEST_ACCEPTED,
-    PUSH_ENABLED
+    PUSH_ENABLED,
+    PUSH_REGISTRATION
 } 

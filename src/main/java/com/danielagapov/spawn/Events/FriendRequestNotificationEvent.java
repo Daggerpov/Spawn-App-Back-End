@@ -9,13 +9,11 @@ import java.util.UUID;
  * Event for when a friend request is sent
  */
 public class FriendRequestNotificationEvent extends NotificationEvent {
-    private final User sender;
     private final UUID receiverId;
 
     public FriendRequestNotificationEvent(User sender, UUID receiverId) {
         super(NotificationType.FRIEND_REQUEST);
         
-        this.sender = sender;
         this.receiverId = receiverId;
         
         // Set data

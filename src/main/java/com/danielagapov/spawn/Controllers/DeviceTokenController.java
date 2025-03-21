@@ -29,7 +29,7 @@ public class DeviceTokenController {
         }
     }
 
-    @PostMapping("/unregister")
+    @DeleteMapping("/unregister")
     public ResponseEntity<?> unregisterDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
         try {
             notificationService.unregisterDeviceToken(deviceTokenDTO.getToken());
