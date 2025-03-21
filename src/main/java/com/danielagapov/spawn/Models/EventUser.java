@@ -20,7 +20,7 @@ import java.io.Serializable;
  * Once they've chosen to participate, their status is flipped to .participating.
  */
 @Entity
-@Table(name = "event_users")
+@Table(name = "event_user")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

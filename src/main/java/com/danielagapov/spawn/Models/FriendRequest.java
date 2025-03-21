@@ -22,7 +22,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-        name = "friend_requests",
+        name = "friend_request",
         uniqueConstraints = @UniqueConstraint(columnNames = {"sender_id", "receiver_id"})
 )
 @NoArgsConstructor

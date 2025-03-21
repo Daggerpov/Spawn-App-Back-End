@@ -21,7 +21,7 @@ import java.io.Serializable;
  * for our own users as well.
  */
 @Entity
-@Table(name = "chat_message_likes")
+@Table(name = "chat_message_like")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

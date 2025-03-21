@@ -25,7 +25,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-        name = "user_friend_tags",
+        name = "user_friend_tag",
         uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "friend_tag_id"}) // Ensure unique user-tag pairs
 )
 @NoArgsConstructor
