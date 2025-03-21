@@ -3,6 +3,8 @@ package com.danielagapov.spawn.Services.FriendRequest;
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Events.FriendRequestAcceptedNotificationEvent;
+import com.danielagapov.spawn.Events.FriendRequestNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -12,8 +14,8 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
-import com.danielagapov.spawn.Services.PushNotification.PushNotificationService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -24,13 +26,17 @@ public class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
     private final IUserService userService;
     private final ILogger logger;
-    private final PushNotificationService pushNotificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService, ILogger logger, PushNotificationService pushNotificationService) {
+    public FriendRequestService(
+            IFriendRequestsRepository repository, 
+            IUserService userService, 
+            ILogger logger, 
+            ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;
-        this.pushNotificationService = pushNotificationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -49,8 +55,8 @@ public class FriendRequestService implements IFriendRequestService {
             // Save the friend request
             repository.save(friendRequest);
 
-            // Send push notification to the receiver
-            sendNewFriendRequestNotification(sender, receiverId);
+            // Publish friend request notification event
+            eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
 
             // Return the saved friend request DTO with additional details (friends and friend tags)
             return FriendRequestMapper.toDTO(friendRequest);
@@ -113,16 +119,9 @@ public class FriendRequestService implements IFriendRequestService {
             FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
             userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
 
-            // Send push notification to the sender
-            Map<String, String> data = new HashMap<>();
-            data.put("type", "friend_request_accepted");
-            data.put("receiverId", fr.getReceiver().getId().toString());
-
-            pushNotificationService.sendNotificationToUser(
-                    fr.getSender().getId(),
-                    "Friend Request Accepted",
-                    fr.getReceiver().getUsername() + " has accepted your friend request",
-                    data
+            // Publish friend request accepted notification event
+            eventPublisher.publishEvent(
+                new FriendRequestAcceptedNotificationEvent(fr.getReceiver(), fr.getSender().getId())
             );
 
             deleteFriendRequest(id);
