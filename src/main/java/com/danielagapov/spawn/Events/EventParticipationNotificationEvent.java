@@ -13,7 +13,6 @@ import java.util.UUID;
 public class EventParticipationNotificationEvent extends NotificationEvent {
     private final User participant;
     private final Event event;
-    private final NotificationType type;
 
     public static EventParticipationNotificationEvent forJoining(User participant, Event event) {
         return new EventParticipationNotificationEvent(
@@ -36,7 +35,6 @@ public class EventParticipationNotificationEvent extends NotificationEvent {
         
         this.participant = participant;
         this.event = event;
-        this.type = type;
         
         // Set data
         addData("eventId", event.getId().toString());
