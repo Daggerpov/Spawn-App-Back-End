@@ -11,7 +11,6 @@ import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.FriendRequest.FriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -73,7 +72,6 @@ class FriendRequestServiceTests {
     }
 
     @Test
-    @Disabled("will be resolved after notification refactor")
     void saveFriendRequest_ShouldSaveAndReturnDTO_WhenValidRequest() {
         when(userService.getUserEntityById(senderId)).thenReturn(sender);
         when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
@@ -122,7 +120,6 @@ class FriendRequestServiceTests {
     }
 
     @Test
-    @Disabled("will be resolved after notification refactor")
     void acceptFriendRequest_ShouldAddFriendAndDeleteRequest_WhenValidRequest() {
         UUID friendRequestId = friendRequest.getId();
         when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
