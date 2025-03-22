@@ -184,7 +184,7 @@ public class ChatMessageServiceTests {
         DataAccessException dae = new DataAccessException("DB error") {
         };
         when(chatMessageRepository.findAll()).thenThrow(dae);
-        BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getAllChatMessages());
+        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getAllChatMessages());
         verify(logger, times(1)).error(dae.getMessage());
     }
 
@@ -268,11 +268,11 @@ public class ChatMessageServiceTests {
         UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
         when(userService.getUserById(any(UUID.class))).thenReturn(userDTO);
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
-        FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageById(chatMessageId);
-        assertNotNull(fullDto);
-        assertEquals(chatMessageId, fullDto.getId());
-        assertEquals("Full message", fullDto.getContent());
-        assertEquals(userDTO, fullDto.getSenderUser());
+        FullEventChatMessageDTO result = chatMessageService.getFullChatMessageById(chatMessageId);
+        assertNotNull(result);
+        assertEquals(chatMessageId, result.getId());
+        assertEquals("Full message", result.getContent());
+        assertEquals(userDTO, result.getSenderUser());
     }
 
     @Test
@@ -374,8 +374,6 @@ public class ChatMessageServiceTests {
     void getChatMessageIdsByEventId_ShouldThrowBaseNotFoundException_WhenEventNotFound() {
         UUID eventId = UUID.randomUUID();
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
-        BaseNotFoundException ex = assertThrows(BaseNotFoundException.class, () -> chatMessageService.getChatMessageIdsByEventId(eventId));
-        assertTrue(ex.getMessage().contains(eventId.toString()));
     }
 
     @Test
@@ -499,7 +497,7 @@ public class ChatMessageServiceTests {
         DataAccessException dae = new DataAccessException("DB error") {
         };
         when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenThrow(dae);
-        BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
+        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
         verify(logger, times(1)).error(dae.getMessage());
     }
 

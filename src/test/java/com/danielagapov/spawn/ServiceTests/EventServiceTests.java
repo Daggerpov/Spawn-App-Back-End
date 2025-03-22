@@ -107,24 +107,7 @@ public class EventServiceTests {
         );
     }
 
-    private FullFeedEventDTO dummyFullFeedEventDTO(UUID eventId, String title) {
-        return new FullFeedEventDTO(
-                eventId,
-                title,
-                OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(1),
-                new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0),
-                "Note",
-                new UserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email"),
-                List.of(),
-                List.of(),
-                List.of(),
-                null,
-                null,
-                false
-        );
-    }
-
+    
     // --- Basic tests (unchanged) ---
     @Test
     void getAllEvents_ShouldReturnList_WhenEventsExist() {
@@ -587,6 +570,7 @@ public class EventServiceTests {
         eu2.setStatus(ParticipationStatus.invited);
 
         when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu1, eu2));
+        when(eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating)).thenReturn(List.of(eu1));
         UserDTO userDTO1 = new UserDTO(
                 user1.getId(), List.of(), "user1", "pic.jpg", "First", "Last", "bio", List.of(), "email1@example.com");
         when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
@@ -706,7 +690,9 @@ public class EventServiceTests {
         user.setId(userId);
         eu.setUser(user);
         eu.setEvent(event);
+        eu.setStatus(ParticipationStatus.invited);
         when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(eu));
+        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(eu));
         when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
@@ -734,6 +720,7 @@ public class EventServiceTests {
         validEventUser.setEvent(event);
         when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(validEventUser));
         when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(validEventUser));
+        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(validEventUser));
 
         when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
@@ -878,19 +865,19 @@ public class EventServiceTests {
         UUID userId = UUID.randomUUID();
         var compositeId = new EventUsersId(eventId, userId);
 
+        // Create and set up the event
+        Event event = new Event();
+        event.setId(eventId);
+        User creator = new User();
+        creator.setId(UUID.randomUUID());
+        event.setCreator(creator);
+
+        // Create and set up the event user
         EventUser invitedEventUser = new EventUser();
         User user = new User();
         user.setId(userId);
         invitedEventUser.setUser(user);
         invitedEventUser.setStatus(ParticipationStatus.invited);
-
-        Event event = new Event();
-        event.setId(eventId);
-
-        User creator = new User();
-        creator.setId(UUID.randomUUID());
-        event.setCreator(creator);
-
         invitedEventUser.setEvent(event);
 
         // Mock the method that EventService.toggleParticipation actually calls
@@ -912,6 +899,7 @@ public class EventServiceTests {
         assertNotNull(result);
         assertEquals(ParticipationStatus.participating, invitedEventUser.getStatus());
 
+        // Test toggle from participating to invited
         result = eventService.toggleParticipation(eventId, userId);
         assertNotNull(result);
         assertEquals(ParticipationStatus.invited, invitedEventUser.getStatus());

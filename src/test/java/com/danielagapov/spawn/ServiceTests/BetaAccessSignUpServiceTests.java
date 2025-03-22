@@ -61,7 +61,7 @@ public class BetaAccessSignUpServiceTests {
         };
         when(repository.findAll()).thenThrow(dae);
 
-        BasesNotFoundException exception = assertThrows(BasesNotFoundException.class, () -> service.getAllBetaAccessSignUpRecords());
+        assertThrows(BasesNotFoundException.class, () -> service.getAllBetaAccessSignUpRecords());
         verify(logger, times(1)).warn(dae.getMessage());
     }
 
@@ -81,7 +81,7 @@ public class BetaAccessSignUpServiceTests {
         RuntimeException re = new RuntimeException("Unexpected error");
         when(repository.findAll()).thenThrow(re);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> service.getAllEmails());
+        assertThrows(RuntimeException.class, () -> service.getAllEmails());
         verify(logger, times(2)).error(re.getMessage());
     }
 
@@ -111,7 +111,7 @@ public class BetaAccessSignUpServiceTests {
         RuntimeException re = new RuntimeException("Unexpected save error");
         when(repository.save(any(BetaAccessSignUp.class))).thenThrow(re);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> service.signUp(testDTO));
+        assertThrows(RuntimeException.class, () -> service.signUp(testDTO));
         verify(logger, times(1)).error(re.getMessage());
     }
 }

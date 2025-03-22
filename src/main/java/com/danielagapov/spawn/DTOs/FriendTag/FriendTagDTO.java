@@ -5,14 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
 @NoArgsConstructor
-public class FriendTagDTO extends AbstractFriendTagDTO implements Serializable {
+public class FriendTagDTO extends AbstractFriendTagDTO {
     private UUID ownerUserId;
     private List<UUID> friendUserIds;
     @JsonProperty("isEveryone") // Explicitly define JSON property name

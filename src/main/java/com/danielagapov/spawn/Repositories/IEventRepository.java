@@ -15,8 +15,8 @@ public interface IEventRepository extends JpaRepository<Event, UUID> {
 
     // finds events that have been created by a user, by their `creatorId`
     List<Event> findByCreatorId(UUID creatorId);
-
-    // finds events that have been created by users, whose ids are in the `creatorIds` list
+    
+    // finds events that have been created by any of the users in the list
     List<Event> findByCreatorIdIn(List<UUID> creatorIds);
 
     @Query("SELECT e FROM Event e " +

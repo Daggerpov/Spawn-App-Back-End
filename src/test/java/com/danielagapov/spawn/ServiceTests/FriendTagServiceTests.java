@@ -317,8 +317,8 @@ public class FriendTagServiceTests {
     void getFriendTagsByOwnerId_ShouldReturnEmptyList_WhenOwnerHasNoTags() {
         UUID ownerId = UUID.randomUUID();
 
-        // Properly stub the findByOwnerId to return an empty Optional
-        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(Optional.of(new ArrayList<>()));
+        // Properly stub the findByOwnerId to return an empty list
+        when(friendTagRepository.findByOwnerId(ownerId)).thenReturn(new ArrayList<>());
         // Mock the maps that are used in the service
         when(userService.getOwnerUserIdsMap()).thenReturn(new HashMap<>());
         when(userService.getFriendUserIdsMap()).thenReturn(new HashMap<>());
