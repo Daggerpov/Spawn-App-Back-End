@@ -33,6 +33,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.time.OffsetDateTime;
@@ -70,6 +71,9 @@ public class EventServiceTests {
 
     @Mock
     private IChatMessageService chatMessageService;
+    
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private EventService eventService;
@@ -885,10 +889,20 @@ public class EventServiceTests {
 
         invitedEventUser.setEvent(event);
 
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true); // Added mock to prevent BaseNotFoundException
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(invitedEventUser));
+        // Mock the method that EventService.toggleParticipation actually calls
+        when(eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId)).thenReturn(Optional.of(invitedEventUser));
         when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event)); // Mock event lookup
+        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        
+        // Mock for getFullEventById which is called by toggleParticipation to return the result
+        LocationDTO locationDTO = new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0);
+        when(locationService.getLocationById(any(UUID.class))).thenReturn(locationDTO);
+        when(userService.getFullUserById(any(UUID.class))).thenReturn(
+            new FullUserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email")
+        );
+        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
 
         FullFeedEventDTO result = eventService.toggleParticipation(eventId, userId);
         assertNotNull(result);
