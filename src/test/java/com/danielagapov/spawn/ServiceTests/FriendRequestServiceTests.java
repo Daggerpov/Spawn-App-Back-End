@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.util.List;
@@ -36,6 +37,9 @@ class FriendRequestServiceTests {
 
     @Mock
     private ILogger logger;
+    
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private FriendRequestService friendRequestService;
