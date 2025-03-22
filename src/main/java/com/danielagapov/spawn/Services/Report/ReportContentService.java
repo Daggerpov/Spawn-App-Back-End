@@ -5,14 +5,16 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
 import com.danielagapov.spawn.Enums.ResolutionStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Logger.Logger;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Models.ReportedContent;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IReportedContentRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Exceptions.Logger.Logger;
 import lombok.AllArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -90,10 +92,15 @@ public class ReportContentService implements IReportContentService {
     @Override
     public List<ReportedContentDTO> getReportsByReporterId(UUID reporterId) {
         try {
-            List<ReportedContent> reports = repository.getAllByReporterId(reporterId);
-            return ReportedContentDTO.fromEntityList(reports);
+            return repository.getAllByReporterId(reporterId)
+                    .stream()
+                    .map(ReportedContentDTO::fromEntity)
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ReportedContent);
         } catch (Exception e) {
-            logger.error("Unexpected error while getting reports by reporter id: " + e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -101,10 +108,15 @@ public class ReportContentService implements IReportContentService {
     @Override
     public List<ReportedContentDTO> getReportsByContentOwnerId(UUID contentOwnerId) {
         try {
-            List<ReportedContent> reports = repository.getAllByContentOwnerId(contentOwnerId);
-            return ReportedContentDTO.fromEntityList(reports);
+            return repository.getAllByContentOwnerId(contentOwnerId)
+                    .stream()
+                    .map(ReportedContentDTO::fromEntity)
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ReportedContent);
         } catch (Exception e) {
-            logger.error("Unexpected error while getting reports by reported user id: " + e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }

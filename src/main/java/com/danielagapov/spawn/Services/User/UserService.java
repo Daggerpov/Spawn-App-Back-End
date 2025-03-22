@@ -108,8 +108,7 @@ public class UserService implements IUserService {
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
             // Get all friend tags for the user
-            List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id)
-                    .orElse(Collections.emptyList());
+            List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
 
             // Get the "Everyone" tag
             Optional<FriendTag> everyoneTag = friendTags.stream()
@@ -167,7 +166,7 @@ public class UserService implements IUserService {
             return friendTags.stream()
                     .collect(Collectors.toMap(
                             friendTag -> friendTag, // Use FriendTag as the key
-                            friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()) // List of user IDs for each FriendTag
+                            friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId())
                     ));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -302,6 +301,7 @@ public class UserService implements IUserService {
         return getUserById(userEntity.getId());
     }
 
+    @Override
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
             return uftRepository.findFriendIdsByTagId(friendTagId)
@@ -317,14 +317,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId) {
         try {
-            // Call the method to get the list of UserDTOs
-            List<UserDTO> friends = getFriendsByFriendTagId(friendTagId);
-
-            // Extract the user IDs from the UserDTO list
-            return friends.stream()
-                    .map(UserDTO::getId)
-                    .distinct()
-                    .collect(Collectors.toList());
+            return uftRepository.findFriendIdsByTagId(friendTagId);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -390,7 +383,6 @@ public class UserService implements IUserService {
             Optional<FriendTag> userEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
             userEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), friendId));
-
 
             Optional<FriendTag> friendEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(friendId);
             friendEveryoneTag.ifPresent(tag ->
@@ -516,10 +508,9 @@ public class UserService implements IUserService {
     @Override
     public List<BaseUserDTO> getParticipantsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.participating)
                     .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -528,14 +519,12 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<BaseUserDTO> getInvitedByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.invited);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.invited)
                     .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -544,14 +533,12 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<UUID> getParticipantUserIdsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.participating)
                     .map(eventUser -> eventUser.getUser().getId())
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -560,14 +547,12 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<UUID> getInvitedUserIdsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.invited);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.invited)
                     .map(eventUser -> eventUser.getUser().getId())
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -575,7 +560,6 @@ public class UserService implements IUserService {
             throw new ApplicationException("Error retrieving invited user IDs for eventId " + eventId, e);
         }
     }
-
 
     @Override
     public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
@@ -686,7 +670,7 @@ public class UserService implements IUserService {
     @Override
     public List<User> getFriendUsersByUserId(UUID requestingUserId) {
         try {
-            return friendTagRepository.getFriendsFromEveryoneTagByOwnerId(requestingUserId).orElseThrow(() -> new BaseNotFoundException(EntityType.User));
+            return friendTagRepository.getFriendsFromEveryoneTagByOwnerId(requestingUserId);
         } catch (BaseNotFoundException e) {
             logger.warn("Could not find user with id: " + requestingUserId);
             throw e;

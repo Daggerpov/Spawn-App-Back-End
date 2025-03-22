@@ -3,12 +3,11 @@ package com.danielagapov.spawn.DTOs.FriendTag;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.util.UUID;
 
 @Getter
 @Setter
-public class FriendTagCreationDTO extends AbstractFriendTagDTO implements Serializable {
+public class FriendTagCreationDTO extends AbstractFriendTagDTO {
     private UUID ownerUserId;
 
     public FriendTagCreationDTO(UUID id, String displayName, String colorHexCode, UUID ownerUserId) {

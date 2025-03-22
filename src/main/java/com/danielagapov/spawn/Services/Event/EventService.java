@@ -223,29 +223,18 @@ public class EventService implements IEventService {
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
         List<Event> events = repository.findByCreatorId(creatorUserId);
-
         return getEventDTOs(events);
     }
 
     private List<EventDTO> getEventDTOs(List<Event> events) {
-        List<EventDTO> eventDTOs = new ArrayList<>();
-
-        for (Event event : events) {
-            UUID eventId = event.getId();
-
-            // Fetch related data for the current event
-            UUID creatorUserId = event.getCreator().getId();
-            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventId);
-            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventId);
-            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventId);
-
-            // Map the event to its DTO
-            EventDTO eventDTO = EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds,
-                    chatMessageIds);
-            eventDTOs.add(eventDTO);
-        }
-
-        return eventDTOs;
+        return events.stream()
+                .map(event -> EventMapper.toDTO(
+                        event,
+                        event.getCreator().getId(),
+                        userService.getParticipantUserIdsByEventId(event.getId()),
+                        userService.getInvitedUserIdsByEventId(event.getId()),
+                        chatMessageService.getChatMessageIdsByEventId(event.getId())))
+                .toList();
     }
 
     @Override
@@ -305,14 +294,8 @@ public class EventService implements IEventService {
     @Override
     public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-
-            if (eventUsers.isEmpty()) {
-                throw new BaseNotFoundException(EntityType.Event, eventId);
-            }
-
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus().equals(ParticipationStatus.participating))
                     .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
                     .toList();
         } catch (DataAccessException e) {
@@ -371,12 +354,12 @@ public class EventService implements IEventService {
     // invited/participating
     @Override
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
+        List<EventUser> existingEventUsers = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId);
+        if (existingEventUsers.isEmpty()) {
             // throw BaseNotFound for events if eventIf has no eventUsers
             throw new BaseNotFoundException(EntityType.Event, eventId);
         }
-        for (EventUser eventUser : eventUsers) {
+        for (EventUser eventUser : existingEventUsers) {
             if (eventUser.getUser().getId().equals(userId) && !eventUser.getStatus().equals(ParticipationStatus.notInvited)) {
                 // if invited -> set status to participating
                 // if participating -> set status to invited
@@ -394,17 +377,10 @@ public class EventService implements IEventService {
 
     @Override
     public List<EventDTO> getEventsInvitedTo(UUID id) {
-        List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
-
-        List<Event> events = new ArrayList<>();
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(id)) {
-                events.add(eventUser.getEvent());
-            }
-        }
-
-        return getEventDTOs(events);
+        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
+        return getEventDTOs(eventUsers.stream()
+                .map(EventUser::getEvent)
+                .toList());
     }
 
     @Override
@@ -423,25 +399,12 @@ public class EventService implements IEventService {
 
     @Override
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
-        List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
-
-        if (eventUsers == null || eventUsers.isEmpty()) {
-            return Collections.emptyList(); // ✅ Always return an empty list instead of null
-        }
-
-        List<Event> events = new ArrayList<>();
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(id) && eventUser.getStatus() != ParticipationStatus.notInvited) {
-                events.add(eventUser.getEvent());
-            }
-        }
-
-        List<EventDTO> eventDTOs = getEventDTOs(events);
-
-        return eventDTOs.stream()
-                .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
-                .toList();
+        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
+        return convertEventsToFullFeedEvents(
+                getEventDTOs(eventUsers.stream()
+                        .map(EventUser::getEvent)
+                        .toList()),
+                id);
     }
 
     /**

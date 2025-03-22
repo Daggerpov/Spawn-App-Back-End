@@ -76,19 +76,12 @@ public class FriendRequestService implements IFriendRequestService {
 
     private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
-            List<FriendRequest> friendRequests = repository.findByReceiverId(id);
-
-            // Return an empty list if no incoming friend requests are found
-            if (friendRequests.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            return friendRequests;
+            return repository.findByReceiverId(id);
         } catch (DataAccessException e) {
             logger.error("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues
         } catch (Exception e) {
-            logger.error("Unexpected error while retrieving incoming friend requests for userId: " + id + ", Error: " + e.getMessage());
+            logger.error("Error retrieving incoming friend requests for userId: " + id);
             throw e;
         }
     }
@@ -135,21 +128,10 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
         try {
-            // Retrieve friend requests sent by the user
-            List<FriendRequest> sentRequests = repository.findBySenderId(userId);
-
-            // Return an empty list if no friend requests are found
-            if (sentRequests.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            // Convert the FriendRequest entities to DTOs before returning
-            return FriendRequestMapper.toDTOList(sentRequests);
-        } catch (DataAccessException e) {
-            logger.error("Database access error while retrieving sent friend requests for userId: " + userId);
-            throw e; // Only throw for database access issues
+            List<FriendRequest> friendRequests = repository.findBySenderId(userId);
+            return FriendRequestMapper.toDTOList(friendRequests);
         } catch (Exception e) {
-            logger.error("Unexpected error while retrieving sent friend requests for userId: " + userId + ", Error: " + e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }

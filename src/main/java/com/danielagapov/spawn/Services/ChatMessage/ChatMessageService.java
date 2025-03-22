@@ -159,10 +159,6 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<UUID> getChatMessageIdsByEventId(UUID eventId) {
         try {
-            // Find the event by its ID
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
-
             // Retrieve all chat messages for the specified event
             List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
 
