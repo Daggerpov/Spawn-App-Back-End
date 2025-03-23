@@ -9,6 +9,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -177,14 +178,26 @@ public class UserController {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(
-                userService.updateUser(id, updateDTO.getBio(), updateDTO.getUsername(), 
-                    updateDTO.getFirstName(), updateDTO.getLastName()), 
-                HttpStatus.OK
+                    userService.updateUser(id, updateDTO.getBio(), updateDTO.getUsername(),
+                            updateDTO.getFirstName(), updateDTO.getLastName()),
+                    HttpStatus.OK
             );
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/filtered/{requestingUserId}?query=searchQuery
+    @GetMapping("filtered/{requestingUserId}")
+    public ResponseEntity<SearchedUserResult> getRecommendedFriendsBySearch(@PathVariable UUID requestingUserId, @RequestParam String searchQuery) {
+        try {
+            return new ResponseEntity<>(userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

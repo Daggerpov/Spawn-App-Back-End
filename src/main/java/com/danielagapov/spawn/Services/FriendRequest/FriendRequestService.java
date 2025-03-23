@@ -19,7 +19,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class FriendRequestService implements IFriendRequestService {
@@ -29,9 +31,9 @@ public class FriendRequestService implements IFriendRequestService {
     private final ApplicationEventPublisher eventPublisher;
 
     public FriendRequestService(
-            IFriendRequestsRepository repository, 
-            IUserService userService, 
-            ILogger logger, 
+            IFriendRequestsRepository repository,
+            IUserService userService,
+            ILogger logger,
             ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;
@@ -83,8 +85,8 @@ public class FriendRequestService implements IFriendRequestService {
         List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
         return FriendRequestMapper.toDTOList(friendRequests);
     }
-
-    private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
+    
+    public List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
             return repository.findByReceiverId(id);
         } catch (DataAccessException e) {
@@ -104,7 +106,7 @@ public class FriendRequestService implements IFriendRequestService {
 
             // Publish friend request accepted notification event
             eventPublisher.publishEvent(
-                new FriendRequestAcceptedNotificationEvent(fr.getReceiver(), fr.getSender().getId())
+                    new FriendRequestAcceptedNotificationEvent(fr.getReceiver(), fr.getSender().getId())
             );
 
             deleteFriendRequest(id);

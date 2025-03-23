@@ -28,8 +28,8 @@ public class FullUserDTO extends BaseUserDTO {
         if (!(obj instanceof FullUserDTO other))
             return false;
         boolean fullUserTraitsEqual = other.getFriends().equals(this.friends) &&
-                                        other.getFriendTags().equals(this.friendTags) &&
-                                        other.getProfilePicture().equals(this.profilePicture);
+                other.getFriendTags().equals(this.friendTags) &&
+                other.getProfilePicture().equals(getProfilePicture());
         boolean superEquals = super.equals(other);
         return fullUserTraitsEqual && superEquals;
     }

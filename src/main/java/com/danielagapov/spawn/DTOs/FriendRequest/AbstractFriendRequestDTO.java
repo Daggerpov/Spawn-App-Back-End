@@ -13,4 +13,10 @@ import java.util.UUID;
 @Setter
 public abstract class AbstractFriendRequestDTO {
     private UUID id;
+
+    @Override
+    public boolean equals(Object obj) {
+        AbstractFriendRequestDTO other = (AbstractFriendRequestDTO) obj;
+        return this.id.equals(other.getId());
+    }
 }

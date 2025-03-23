@@ -1,5 +1,8 @@
 package com.danielagapov.spawn.ServiceTests;
 
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -10,8 +13,10 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
+import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -25,8 +30,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 public class UserServiceTests {
 
@@ -43,6 +48,8 @@ public class UserServiceTests {
     private ILogger logger;
     @Mock
     private IFriendTagService friendTagService;
+    @Mock
+    private IFriendRequestService friendRequestService;
 
     @InjectMocks
     private UserService userService;
@@ -101,74 +108,75 @@ public class UserServiceTests {
         UUID userId = UUID.randomUUID();
         User existingUser = new User(userId, "old_username", "profile.jpg", "OldFirst", "OldLast", "Old bio", "user@example.com");
         User updatedUser = new User(userId, "new_username", "profile.jpg", "NewFirst", "NewLast", "New bio", "user@example.com");
-        
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class))).thenReturn(updatedUser);
-        
+
         // Act
         var result = userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast");
-        
+
         // Assert
         assertEquals("new_username", result.getUsername());
         assertEquals("NewFirst", result.getFirstName());
         assertEquals("NewLast", result.getLastName());
         assertEquals("New bio", result.getBio());
-        
+
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, times(1)).save(any(User.class));
     }
-    
+
     @Test
     void updateUser_ShouldHandleNullValues_WhenUpdatingPartially() {
         // Arrange
         UUID userId = UUID.randomUUID();
         User existingUser = new User(userId, "old_username", "profile.jpg", "OldFirst", "OldLast", "Old bio", "user@example.com");
         User updatedUser = new User(userId, "old_username", "profile.jpg", "OldFirst", "NewLast", "New bio", "user@example.com");
-        
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class))).thenReturn(updatedUser);
-        
+
         // Act - only updating bio and lastName, keeping other fields the same
         var result = userService.updateUser(userId, "New bio", null, null, "NewLast");
-        
+
         // Assert
         assertEquals("old_username", result.getUsername());  // unchanged
         assertEquals("OldFirst", result.getFirstName());     // unchanged
         assertEquals("NewLast", result.getLastName());       // changed
         assertEquals("New bio", result.getBio());            // changed
-        
+
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, times(1)).save(any(User.class));
     }
-    
+
     @Test
     void updateUser_ShouldThrowException_WhenUserDoesNotExist() {
         // Arrange
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        
+
         // Act & Assert
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, 
-            () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
-        
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+                () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+
         assertTrue(exception.getMessage().contains("User"));
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, never()).save(any(User.class));
     }
-    
+
     @Test
     void updateUser_ShouldLogAndThrowException_WhenDatabaseErrorOccurs() {
         // Arrange
         UUID userId = UUID.randomUUID();
         User existingUser = new User(userId, "username", "profile.jpg", "First", "Last", "Bio", "user@example.com");
-        
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {});
-        
+        when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {
+        });
+
         // Act & Assert
-        Exception exception = assertThrows(DataAccessException.class, 
-            () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
-        
+        Exception exception = assertThrows(DataAccessException.class,
+                () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+
         assertTrue(exception.getMessage().contains("Database error"));
         verify(userRepository, times(1)).findById(userId);
         verify(userRepository, times(1)).save(any(User.class));
@@ -257,11 +265,11 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).thenThrow(new RuntimeException("Unexpected error"));
-        
+
         // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
-            () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
-        
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+
         assertTrue(exception.getMessage().contains("Unexpected error"));
         verify(logger, times(1)).error(anyString());
     }
@@ -313,14 +321,14 @@ public class UserServiceTests {
 
         // User1's friends: mutualFriend1, mutualFriend2, uniqueFriend1
         when(friendTagRepository.findByOwnerId(user1Id))
-            .thenReturn(List.of(createEveryoneTag(user1Id)));
+                .thenReturn(List.of(createEveryoneTag(user1Id)));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
-            .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
+                .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
+                .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
 
         // User2's friends: mutualFriend1, mutualFriend2, uniqueFriend2
         when(friendTagRepository.findByOwnerId(user2Id))
-            .thenReturn(List.of(createEveryoneTag(user2Id)));
+                .thenReturn(List.of(createEveryoneTag(user2Id)));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -338,14 +346,14 @@ public class UserServiceTests {
 
         // User1's friends: friend1
         when(friendTagRepository.findByOwnerId(user1Id))
-            .thenReturn(List.of(createEveryoneTag(user1Id)));
+                .thenReturn(List.of(createEveryoneTag(user1Id)));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(List.of(friend1Id))
-            .thenReturn(List.of(friend2Id));
+                .thenReturn(List.of(friend1Id))
+                .thenReturn(List.of(friend2Id));
 
         // User2's friends: friend2
         when(friendTagRepository.findByOwnerId(user2Id))
-            .thenReturn(List.of(createEveryoneTag(user2Id)));
+                .thenReturn(List.of(createEveryoneTag(user2Id)));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -362,14 +370,14 @@ public class UserServiceTests {
 
         // User1 has one friend
         when(friendTagRepository.findByOwnerId(user1Id))
-            .thenReturn(List.of(createEveryoneTag(user1Id)));
+                .thenReturn(List.of(createEveryoneTag(user1Id)));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(List.of(friendId))
-            .thenReturn(Collections.emptyList()); // User2 has no friends
+                .thenReturn(List.of(friendId))
+                .thenReturn(Collections.emptyList()); // User2 has no friends
 
         // User2 has no friends (empty everyone tag)
         when(friendTagRepository.findByOwnerId(user2Id))
-            .thenReturn(List.of(createEveryoneTag(user2Id)));
+                .thenReturn(List.of(createEveryoneTag(user2Id)));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -385,9 +393,9 @@ public class UserServiceTests {
 
         // Both users have empty everyone tags
         when(friendTagRepository.findByOwnerId(any()))
-            .thenReturn(List.of(createEveryoneTag(UUID.randomUUID())));
+                .thenReturn(List.of(createEveryoneTag(UUID.randomUUID())));
         when(userFriendTagRepository.findFriendIdsByTagId(any()))
-            .thenReturn(Collections.emptyList());
+                .thenReturn(Collections.emptyList());
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -403,7 +411,7 @@ public class UserServiceTests {
 
         // Users have no everyone tag
         when(friendTagRepository.findByOwnerId(any()))
-            .thenReturn(List.of());
+                .thenReturn(List.of());
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -418,7 +426,7 @@ public class UserServiceTests {
         UUID user2Id = UUID.randomUUID();
 
         when(friendTagRepository.findByOwnerId(any()))
-            .thenReturn(List.of());
+                .thenReturn(List.of());
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
@@ -431,7 +439,7 @@ public class UserServiceTests {
     void getFriendUserIdsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
         UUID tagId = UUID.randomUUID();
         when(userFriendTagRepository.findFriendIdsByTagId(tagId))
-            .thenReturn(List.of());
+                .thenReturn(List.of());
 
         List<UUID> result = userService.getFriendUserIdsByFriendTagId(tagId);
 
@@ -443,7 +451,7 @@ public class UserServiceTests {
     void getFriendsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
         UUID tagId = UUID.randomUUID();
         when(userFriendTagRepository.findFriendIdsByTagId(tagId))
-            .thenReturn(List.of());
+                .thenReturn(List.of());
 
         List<UserDTO> result = userService.getFriendsByFriendTagId(tagId);
 
@@ -457,7 +465,7 @@ public class UserServiceTests {
         UUID friendId = UUID.randomUUID();
 
         when(friendTagRepository.findEveryoneTagByOwnerId(any()))
-            .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
         userService.saveFriendToUser(userId, friendId);
 
@@ -467,15 +475,60 @@ public class UserServiceTests {
     @Test
     void getFriendUserIdsByUserId_ShouldReturnEmptyList_WhenNoEveryoneTagFound() {
         UUID userId = UUID.randomUUID();
-        
+
         when(friendTagRepository.findByOwnerId(userId))
-            .thenReturn(List.of(new FriendTag(UUID.randomUUID(), "Test", "#000000", userId, false)));
+                .thenReturn(List.of(new FriendTag(UUID.randomUUID(), "Test", "#000000", userId, false)));
 
         List<UUID> result = userService.getFriendUserIdsByUserId(userId);
 
         assertTrue(result.isEmpty());
         verify(friendTagRepository, times(1)).findByOwnerId(userId);
         verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
+    }
+
+    @Test
+    void getRecommendedFriendsBySearch_ShouldWorkWithQueryFullRecommendations() {
+        UserService spyUserService = spy(userService);
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID user3Id = UUID.randomUUID();
+        UUID user4Id = UUID.randomUUID();
+        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, "Jane", "Doe", "jane.doe@example.com", "jane_doe", "A bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "Lorem", "Ipsum", "email@e.com", "person", "A bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "Lauren", "Ibson", "lauren_ibson@e.ca", "LaurenIbson", "A bio", "profile.jpg", 1);
+        when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(spyUserService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
+        when(spyUserService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
+        SearchedUserResult res = spyUserService.getRecommendedFriendsBySearch(user1Id, "person");
+        assertEquals(new SearchedUserResult(List.of(), List.of(user3Full), List.of()), res);
+    }
+
+    @Test
+    void getRecommendedFriendsBySearch_ShouldWorkWithQueryFullRecommendationsAndFriends() {
+        UserService spyUserService = spy(userService);
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID user3Id = UUID.randomUUID();
+        UUID user4Id = UUID.randomUUID();
+        UUID user5Id = UUID.randomUUID();
+        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, "Jane", "Doe", "jane.doe@example.com", "jane_doe", "A bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "Lorem", "Ipsum", "email@e.com", "person", "A bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "Lauren", "Ibson", "lauren_ibson@e.ca", "LaurenIbson", "A bio", "profile.jpg", 1);
+
+        UUID ftId = UUID.randomUUID();
+        // Very incomplete relationship but it should suffice for a test.
+        FriendTagDTO ft = new FriendTagDTO(ftId, "Everyone", "#ffffff", user1Id, List.of(), true);
+        FullFriendUserDTO user5Full = new FullFriendUserDTO(user5Id, "thatPerson", "profile.jpg", "That", "Person", "A bio", "thatPerson@email.com", List.of(ft));
+
+        when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(spyUserService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
+        when(spyUserService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of(user5Full));
+
+        SearchedUserResult res = spyUserService.getRecommendedFriendsBySearch(user1Id, "person");
+        SearchedUserResult expected = new SearchedUserResult(List.of(), List.of(user3Full), List.of(user5Full));
+        assertEquals(expected, res);
     }
 
     // Helper method to create an "Everyone" tag

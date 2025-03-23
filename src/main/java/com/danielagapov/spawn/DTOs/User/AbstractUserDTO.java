@@ -18,4 +18,9 @@ public abstract class AbstractUserDTO implements Serializable {
     private String email;
     private String username;
     private String bio;
+
+    @Override
+    public boolean equals(Object obj) {
+        return getId().equals(((AbstractUserDTO) obj).getId());
+    }
 }

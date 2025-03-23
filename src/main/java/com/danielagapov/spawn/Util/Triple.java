@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Utils;
+package com.danielagapov.spawn.Util;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -7,15 +7,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 // Represents a tuple of 3 items
 public class Triple<X, Y, Z> {
-    public X x;
-    public Y y;
-    public Z z;
+    private X x;
+    private Y y;
+    private Z z;
+
     public X first() {
         return this.x;
     }
+
     public Y second() {
         return this.y;
     }
+
     public Z third() {
         return this.z;
     }
