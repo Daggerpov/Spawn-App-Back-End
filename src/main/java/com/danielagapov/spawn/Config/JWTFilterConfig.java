@@ -28,19 +28,16 @@ public class JWTFilterConfig extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        logger.log("Executing JWT filter");
-
         // Retrieve the Authorization header from the HTTP request
         String authHeader = request.getHeader("Authorization");
 
         // Check if the Authorization header is missing or does not start with "Bearer "
         // If so, skip JWT validation and proceed with the next filter in the chain
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.log("Empty Authorization header, skipping JWT filter");
             filterChain.doFilter(request, response);
             return;
         }
-        logger.log("Token found");
+        logger.info("Token found");
 
         // Extract the JWT token from the Authorization header (removing the "Bearer " prefix)
         String jwt = authHeader.substring(7);
@@ -48,7 +45,7 @@ public class JWTFilterConfig extends OncePerRequestFilter {
         try {
             username = jwtService.extractUsername(jwt);
         } catch (Exception e) {
-            logger.log("Failed to extract username. Invalid or expired token");
+            logger.warn("Failed to extract username. Invalid or expired token");
             filterChain.doFilter(request, response);
             return;
         }
@@ -60,7 +57,7 @@ public class JWTFilterConfig extends OncePerRequestFilter {
 
             // Validate the JWT token against the UserDetails
             if (jwtService.isValidToken(jwt, userDetails)) {
-                logger.log("Token is valid, setting authentication");
+                logger.info("Token is valid, setting authentication");
 
                 /*
                  * Create an authentication token containing the user details and authorities.
@@ -78,7 +75,7 @@ public class JWTFilterConfig extends OncePerRequestFilter {
                  */
                 SecurityContextHolder.getContext().setAuthentication(token);
             } else {
-                logger.log("Invalid token, user is not authenticated");
+                logger.warn("Invalid token, user is not authenticated");
             }
         }
         // Proceed with the next filter in the chain

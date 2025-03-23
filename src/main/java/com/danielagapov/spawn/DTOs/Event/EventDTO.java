@@ -4,14 +4,13 @@ package com.danielagapov.spawn.DTOs.Event;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
-public class EventDTO extends AbstractEventDTO implements Serializable {
+public class EventDTO extends AbstractEventDTO {
     UUID locationId;
     UUID creatorUserId;
     List<UUID> participantUserIds;

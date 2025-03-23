@@ -28,6 +28,7 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
 
     /**
      * This would likely be used for internal use, just to check who's signed up
+     *
      * @return all beta access sign up record DTOs
      */
     @Override
@@ -35,10 +36,10 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
         try {
             return BetaAccessSignUpMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.warn(e.getMessage());
             throw new BasesNotFoundException(EntityType.FriendTag);
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -53,13 +54,14 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
                     .map(BetaAccessSignUpDTO::getEmail)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
 
     /**
      * This is meant for saving a record to the database upon signing up through our site
+     *
      * @param dto constructed in the front-end of our site via a form input
      * @return back the dto after persisting to database, if successful. Throws otherwise.
      */
@@ -75,10 +77,10 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
             entity = repository.save(entity);
             return BetaAccessSignUpMapper.toDTO(entity);
         } catch (DataAccessException e) {
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save beta access sign up record: " + e.getMessage());
         } catch (Exception e) { // also catches IllegalArgumentException for duplicate emails
-            logger.log(e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }

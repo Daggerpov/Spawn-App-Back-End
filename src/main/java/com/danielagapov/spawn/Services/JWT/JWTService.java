@@ -22,8 +22,11 @@ import java.util.function.Function;
 
 @Service
 @AllArgsConstructor
+// TODO: consider refactor to type hierarchy with AccessToken, RefreshToken, EmailToken extending JWTService
 public class JWTService implements IJWTService {
     private static final String SIGNING_SECRET;
+
+    private enum TokenType {ACCESS, REFRESH, EMAIL}
 
     static {
         final String secret = System.getenv("SIGNING_SECRET");
@@ -33,6 +36,7 @@ public class JWTService implements IJWTService {
 
     private static final long ACCESS_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; //  24 hours
     private static final long REFRESH_TOKEN_EXPIRY = 1000L * 60 * 60 * 24 * 180; // 180 days or 6 months
+    private static final long EMAIL_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; // 24 hours
     private final ILogger logger;
     private final IUserService userService;
 
@@ -45,53 +49,69 @@ public class JWTService implements IJWTService {
     @Override
     public boolean isValidToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && isTokenNonExpired(token);
+        return username.equals(userDetails.getUsername()) && isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.ACCESS);
     }
+
 
     @Override
     public String generateAccessToken(String username) {
-        logger.log("Generating access token for user: " + username);
-        return generateToken(username, ACCESS_TOKEN_EXPIRY);
+        logger.info("Generating access token for user: " + username);
+        Map<String, Object> claims = makeClaims(TokenType.ACCESS);
+        return generateToken(username, ACCESS_TOKEN_EXPIRY, claims);
     }
 
     @Override
     public String refreshAccessToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
+        final String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new TokenNotFoundException("No refresh token found");
         }
         // Extract the JWT token from the Authorization header (removing the "Bearer " prefix)
-        String token = authHeader.substring(7);
-        String username;
+        final String token = authHeader.substring(7);
+        final String username;
         try {
             username = extractUsername(token);
         } catch (Exception e) {
-            logger.log("Failed to extract username. Invalid or expired token");
+            logger.error("Failed to extract username. Invalid or expired token");
             throw e;
         }
         if (username == null || !userService.existsByUsername(username)) {
-            logger.log("Extracted username does not correspond to any user entity");
+            logger.warn("Extracted username does not correspond to any user entity");
             throw new BadTokenException();
         }
-        if (isTokenNonExpired(token)) {
+        if (isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.REFRESH)) {
             // This is a valid refresh token, grant a new access token to the requester
             String newAccessToken = generateAccessToken(username);
             return newAccessToken;
         } else {
-            logger.log("Expired token found");
+            logger.warn("Expired token found");
             throw new BadTokenException();
         }
-
     }
 
     @Override
     public String generateRefreshToken(String username) {
-        logger.log("Generating refresh token for user: " + username);
-        return generateToken(username, REFRESH_TOKEN_EXPIRY);
+        logger.info("Generating refresh token for user: " + username);
+        Map<String, Object> claims = makeClaims(TokenType.REFRESH);
+        return generateToken(username, REFRESH_TOKEN_EXPIRY, claims);
     }
 
-    private String generateToken(String username, long expiry) {
-        Map<String, Object> claims = new HashMap<>();
+    @Override
+    public String generateEmailToken(String username) {
+        logger.info("Generating email token for user: " + username);
+        Map<String, Object> claims = makeClaims(TokenType.EMAIL);
+        return generateToken(username, EMAIL_TOKEN_EXPIRY, claims);
+    }
+
+    @Override
+    public boolean isValidEmailToken(String token) {
+        return isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.EMAIL);
+    }
+
+
+    /* ------------------------------ HELPERS ------------------------------ */
+
+    private String generateToken(String username, long expiry, Map<String, Object> claims) {
         try {
             return Jwts.builder()
                     .claims()
@@ -103,11 +123,10 @@ public class JWTService implements IJWTService {
                     .signWith(getKey())
                     .compact();
         } catch (Exception e) {
-            logger.log("Error generating JWT token: " + e.getMessage());
+            logger.error("Error generating JWT token: " + e.getMessage());
             throw e;
         }
     }
-
 
     /**
      * Helper method used to extract a particular claim from the payload of a JWT.
@@ -129,6 +148,13 @@ public class JWTService implements IJWTService {
                 .getPayload();
     }
 
+    private TokenType extractTokenType(String token) {
+        Claims claims = extractAllClaims(token);
+        String typeAsString = (String) claims.get("type");
+        return TokenType.valueOf(typeAsString); // returns "type" claim as TokenType
+
+    }
+
     /**
      * Returns whether the token is expired
      */
@@ -137,11 +163,23 @@ public class JWTService implements IJWTService {
     }
 
     /**
-     * This method generates the signing key for a JWT by converting the base64 encoded SIGNING_SECRET string field
-     * of this class into a cryptographic key using HMAC-SHA
+     * This method generates the signing key for a JWT by converting the base64 encoded secret string field
+     * into a cryptographic key using HMAC-SHA
      */
     private SecretKey getKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
+        final byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private Map<String, Object> makeClaims(TokenType type) {
+        final Map<String, Object> claims = new HashMap<>();
+        claims.put("type", type);
+        return claims;
+    }
+
+    private boolean isMatchingTokenType(String token, TokenType tokenType) {
+        final TokenType type = extractTokenType(token);
+        return type == tokenType;
+
     }
 }

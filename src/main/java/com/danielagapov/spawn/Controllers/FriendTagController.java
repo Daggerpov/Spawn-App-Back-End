@@ -1,12 +1,13 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +26,11 @@ public class FriendTagController {
         this.friendTagService = friendTagService;
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/friendTags?full=full
     @GetMapping
-    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTags(@RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTags(@RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getAllFriendTags()), HttpStatus.OK);
@@ -39,9 +42,12 @@ public class FriendTagController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/friendTags/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<AbstractFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<AbstractFriendTagDTO> getFriendTag(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.getFullFriendTagById(id), HttpStatus.OK);
@@ -55,23 +61,11 @@ public class FriendTagController {
         }
     }
 
-    // full path: /api/v1/friendTags/mock-endpoint
-    @GetMapping("mock-endpoint")
-    public ResponseEntity<String> getMockEndpoint() {
-        try {
-            return new ResponseEntity<>("This is the mock endpoint for friendTags. Everything is working with it.", HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/friendTags
     @PostMapping
-    public ResponseEntity<FriendTagDTO> createFriendTag(@RequestBody FriendTagDTO newFriendTag) {
+    public ResponseEntity<FriendTagDTO> createFriendTag(@RequestBody FriendTagCreationDTO newFriendTag) {
         try {
             return new ResponseEntity<>(friendTagService.saveFriendTag(newFriendTag), HttpStatus.CREATED);
-        } catch (BaseSaveException e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -80,6 +74,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/{id}
     @PutMapping("{id}")
     public ResponseEntity<FriendTagDTO> replaceFriendTag(@RequestBody FriendTagDTO newFriendTag, @PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(friendTagService.replaceFriendTag(newFriendTag, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -92,6 +87,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteFriendTag(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             boolean isDeleted = friendTagService.deleteFriendTagById(id);
             if (isDeleted) {
@@ -108,7 +104,8 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/owner/{ownerId}?full=full
     @GetMapping("owner/{ownerId}")
-    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value = "full", required = false) boolean full) {
+        if (ownerId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
                 return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(ownerId)), HttpStatus.OK);
@@ -125,6 +122,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/{id}?friendTagAction={addFriend/removeFriend}&userId=userId
     @PostMapping("{id}")
     public ResponseEntity<Void> modifyFriendTagFriends(@PathVariable UUID id, @RequestParam FriendTagAction friendTagAction, @RequestParam UUID userId) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (friendTagAction == FriendTagAction.addFriend) {
                 friendTagService.saveUserToFriendTag(id, userId);
@@ -147,14 +145,16 @@ public class FriendTagController {
     /**
      * The purpose of this endpoint is to show which friend tags a user has placed a friend into
      * on mobile -> in the event creation view when adding friends to an event, or in the friends view
+     *
      * @param ownerUserId
      * @param friendUserId
      * @return friend tags that `owner` has placed `friend` into
      */
     @GetMapping("{friendTagsForFriend}")
     public ResponseEntity<List<FullFriendTagDTO>> getFriendTagsForFriend(@RequestParam UUID ownerUserId, @RequestParam UUID friendUserId) {
+        if (ownerUserId == null || friendUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(friendTagService.getPertainingFriendTagsForFriend(ownerUserId, friendUserId), HttpStatus.OK);
+            return new ResponseEntity<>(friendTagService.getPertainingFullFriendTagsForFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
@@ -170,7 +170,8 @@ public class FriendTagController {
      */
     // full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
     @GetMapping("friendsNotAddedToTag/{friendTagId}")
-    public ResponseEntity<List<FullUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
+    public ResponseEntity<List<BaseUserDTO>> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
+        if (friendTagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -180,8 +181,10 @@ public class FriendTagController {
         }
     }
 
+    // full path: /api/v1/friendTags/addUserToTags/{ownerUserId}?friendUserId=friendUserId
     @GetMapping("addUserToTags/{ownerUserId}")
     public ResponseEntity<List<FullFriendTagDTO>> getTagsNotAddedToFriend(@PathVariable UUID ownerUserId, @RequestParam UUID friendUserId) {
+        if (ownerUserId == null || friendUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(friendTagService.getTagsNotAddedToFriend(ownerUserId, friendUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -191,10 +194,14 @@ public class FriendTagController {
         }
     }
 
+    // full path: /api/v1/friendTags/addUserToTags?friendUserId=friendUserId
     @PostMapping("addUserToTags")
     public ResponseEntity<Void> addUserToTags(@RequestBody List<UUID> friendTagIds, @RequestParam UUID friendUserId) {
+        if (friendUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            friendTagService.addFriendToFriendTags(friendTagIds, friendUserId);
+            if (!friendTagIds.isEmpty()) {
+                friendTagService.addFriendToFriendTags(friendTagIds, friendUserId);
+            }
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -207,6 +214,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/bulkAddFriendsToTag
     @PostMapping("bulkAddFriendsToTag")
     public ResponseEntity<Void> bulkAddFriendsToTag(@RequestBody List<FullUserDTO> friends, @RequestParam UUID friendTagId) {
+        if (friendTagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             friendTagService.saveUsersToFriendTag(friendTagId, friends);
             return new ResponseEntity<>(HttpStatus.OK);

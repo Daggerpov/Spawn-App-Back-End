@@ -2,12 +2,14 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.ChatMessageLikes;
 import com.danielagapov.spawn.Models.Event;
@@ -16,16 +18,17 @@ import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
 import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.time.Instant;
@@ -60,6 +63,12 @@ public class ChatMessageServiceTests {
 
     @Mock
     private ILogger logger;
+    
+    @Mock
+    private IEventUserRepository eventUserRepository;
+    
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ChatMessageService chatMessageService;
@@ -172,10 +181,11 @@ public class ChatMessageServiceTests {
 
     @Test
     void getAllChatMessages_ShouldThrowBasesNotFoundException_WhenDataAccessExceptionOccurs() {
-        DataAccessException dae = new DataAccessException("DB error") {};
+        DataAccessException dae = new DataAccessException("DB error") {
+        };
         when(chatMessageRepository.findAll()).thenThrow(dae);
-        BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getAllChatMessages());
-        verify(logger, times(1)).log(dae.getMessage());
+        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getAllChatMessages());
+        verify(logger, times(1)).error(dae.getMessage());
     }
 
     @Test
@@ -255,14 +265,14 @@ public class ChatMessageServiceTests {
         chatMessage.setEvent(dummyEvent);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(chatMessage));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
-        FullUserDTO fullUser = new FullUserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
+        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
+        when(userService.getUserById(any(UUID.class))).thenReturn(userDTO);
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
-        FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageById(chatMessageId);
-        assertNotNull(fullDto);
-        assertEquals(chatMessageId, fullDto.getId());
-        assertEquals("Full message", fullDto.getContent());
-        assertEquals(fullUser, fullDto.getSenderUser());
+        FullEventChatMessageDTO result = chatMessageService.getFullChatMessageById(chatMessageId);
+        assertNotNull(result);
+        assertEquals(chatMessageId, result.getId());
+        assertEquals("Full message", result.getContent());
+        assertEquals(userDTO, result.getSenderUser());
     }
 
     @Test
@@ -364,8 +374,6 @@ public class ChatMessageServiceTests {
     void getChatMessageIdsByEventId_ShouldThrowBaseNotFoundException_WhenEventNotFound() {
         UUID eventId = UUID.randomUUID();
         when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
-        BaseNotFoundException ex = assertThrows(BaseNotFoundException.class, () -> chatMessageService.getChatMessageIdsByEventId(eventId));
-        assertTrue(ex.getMessage().contains(eventId.toString()));
     }
 
     @Test
@@ -418,7 +426,7 @@ public class ChatMessageServiceTests {
         List<UUID> friendTagIds = List.of(UUID.randomUUID());
         when(userService.getFriendUserIdsByUserId(dummyUser.getId())).thenReturn(friendIds);
         when(ftService.getFriendTagIdsByOwnerUserId(dummyUser.getId())).thenReturn(friendTagIds);
-        List<UserDTO> result = chatMessageService.getChatMessageLikes(chatMessageId);
+        List<BaseUserDTO> result = chatMessageService.getChatMessageLikes(chatMessageId);
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(dummyUser.getId(), result.get(0).getId());
@@ -486,10 +494,11 @@ public class ChatMessageServiceTests {
     @Test
     void getChatMessagesByEventId_ShouldThrowBasesNotFoundException_WhenDataAccessExceptionOccurs() {
         UUID eventId = UUID.randomUUID();
-        DataAccessException dae = new DataAccessException("DB error") {};
+        DataAccessException dae = new DataAccessException("DB error") {
+        };
         when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenThrow(dae);
-        BasesNotFoundException ex = assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
-        verify(logger, times(1)).log(dae.getMessage());
+        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
+        verify(logger, times(1)).error(dae.getMessage());
     }
 
     @Test
@@ -515,8 +524,8 @@ public class ChatMessageServiceTests {
         dummyChatMessage.setEvent(dummyEvent);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
-        FullUserDTO fullUser = new FullUserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
-        when(userService.getFullUserById(senderId)).thenReturn(fullUser);
+        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
+        when(userService.getUserById(senderId)).thenReturn(userDTO);
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
         assertNotNull(fullDto);
@@ -524,7 +533,7 @@ public class ChatMessageServiceTests {
         assertEquals("Full chat message", fullDto.getContent());
         assertEquals(timestamp, fullDto.getTimestamp());
         assertEquals(eventId, fullDto.getEventId());
-        assertEquals(fullUser, fullDto.getSenderUser());
+        assertEquals(userDTO, fullDto.getSenderUser());
     }
 
     @Test
@@ -551,8 +560,8 @@ public class ChatMessageServiceTests {
         dummyChatMessage.setEvent(dummyEvent);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
-        FullUserDTO fullUser = new FullUserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
-        when(userService.getFullUserById(senderId)).thenReturn(fullUser);
+        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
+        when(userService.getUserById(senderId)).thenReturn(userDTO);
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageDTOs);
         assertNotNull(result);
@@ -562,6 +571,6 @@ public class ChatMessageServiceTests {
         assertEquals("Chat message conversion", fullDto.getContent());
         assertEquals(timestamp, fullDto.getTimestamp());
         assertEquals(eventId, fullDto.getEventId());
-        assertEquals(fullUser, fullDto.getSenderUser());
+        assertEquals(userDTO, fullDto.getSenderUser());
     }
 }

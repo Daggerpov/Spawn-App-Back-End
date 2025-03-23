@@ -37,13 +37,13 @@ public class BetaAccessSignUpController {
         }
     }
 
-    // full path: /api/v1/betaAccessSignUp/
+    // full path: /api/v1/betaAccessSignUp/records
 
     /**
      * @return returns all signed-up users, for our own internal reference,
      * without having to check the database
      */
-    @GetMapping
+    @GetMapping("records")
     public ResponseEntity<List<BetaAccessSignUpDTO>> getAllRecords() {
         try {
             return new ResponseEntity<>(service.getAllBetaAccessSignUpRecords(), HttpStatus.OK);
@@ -58,13 +58,14 @@ public class BetaAccessSignUpController {
 
     /**
      * Sign-up endpoint for creating a new record
+     *
      * @param dto constructed via front-end form submission
      * @return back the DTO after being persisted into our database if successful.
      * Otherwise, we'll throw a 500 (INTERNAL_SERVER_ERROR).
      */
     @PostMapping
     public ResponseEntity<BetaAccessSignUpDTO> signUp(@RequestBody BetaAccessSignUpDTO dto) {
-        logger.log("New beta access sign up for this email: " + dto.getEmail());
+        logger.info("New beta access sign up for this email: " + dto.getEmail());
         try {
             return new ResponseEntity<>(service.signUp(dto), HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {

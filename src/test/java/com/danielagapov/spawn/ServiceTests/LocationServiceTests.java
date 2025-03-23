@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.LocationDTO;
+import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -56,11 +56,12 @@ public class LocationServiceTests {
     @Test
     void getAllLocations_ShouldThrowBasesNotFoundException_WhenDataAccessExceptionOccurs() {
         // Arrange
-        when(locationRepository.findAll()).thenThrow(new DataAccessException("Database error") {});
+        when(locationRepository.findAll()).thenThrow(new DataAccessException("Database error") {
+        });
 
         // Act & Assert
         assertThrows(BasesNotFoundException.class, () -> locationService.getAllLocations());
-        verify(logger, times(1)).log("Database error");
+        verify(logger, times(1)).error("Database error");
     }
 
     @Test
@@ -136,10 +137,11 @@ public class LocationServiceTests {
     void save_ShouldThrowApplicationException_WhenDataAccessExceptionOccurs() {
         // Arrange
         Location location = new Location(UUID.randomUUID(), "Location 1", 10.0, 20.0);
-        when(locationRepository.save(location)).thenThrow(new DataAccessException("Database error") {});
+        when(locationRepository.save(location)).thenThrow(new DataAccessException("Database error") {
+        });
 
         // Act & Assert
         assertThrows(ApplicationException.class, () -> locationService.save(location));
-        verify(logger, times(1)).log("Database error");
+        verify(logger, times(1)).error("Database error");
     }
 }

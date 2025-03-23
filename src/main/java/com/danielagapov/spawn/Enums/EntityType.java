@@ -6,11 +6,14 @@ public enum EntityType {
     Event("Event"),
     FriendTag("Friend Tag"),
     User("User"),
+    ReportedContent("Reported Content"),
+    ExternalIdMap("External Id Map"),
 
     // Relationships between entities
     ChatMessageLike("Chat Message Like"),
     FriendRequest("Friend Request"),
-    Location("Location");
+    Location("Location"),
+    EventUser("Event User");
 
     private final String description;
 

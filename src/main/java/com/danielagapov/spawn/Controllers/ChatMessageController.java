@@ -1,9 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.*;
 import com.danielagapov.spawn.DTOs.ChatMessage.AbstractChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
@@ -25,9 +26,12 @@ public class ChatMessageController {
         this.chatMessageService = chatMessageService;
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/chatMessages?full=full
     @GetMapping
-    public ResponseEntity<List<? extends AbstractChatMessageDTO>> getChatMessages(@RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<List<? extends AbstractChatMessageDTO>> getChatMessages(@RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageService.getAllChatMessages()), HttpStatus.OK);
@@ -39,9 +43,12 @@ public class ChatMessageController {
         }
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/chatMessages/{id}?full=full
     @GetMapping("/{id}")
-    public ResponseEntity<AbstractChatMessageDTO> getChatMessage(@PathVariable UUID id, @RequestParam(value="full", required=false) boolean full) {
+    public ResponseEntity<AbstractChatMessageDTO> getChatMessage(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
                 return new ResponseEntity<>(chatMessageService.getFullChatMessageById(id), HttpStatus.OK);
@@ -55,25 +62,25 @@ public class ChatMessageController {
         }
     }
 
-    // full path: /api/v1/chatMessages/mock-endpoint
-    @GetMapping("/mock-endpoint")
-    public ResponseEntity<String> getMockEndpoint() {
-        return new ResponseEntity<>("This is the mock endpoint for chatMessages. Everything is working with it.", HttpStatus.OK);
-    }
-
     // full path: /api/v1/chatMessages
     @PostMapping
-    public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody ChatMessageDTO newChatMessage) {
+    public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {
         try {
-            return new ResponseEntity<>(chatMessageService.saveChatMessage(newChatMessage), HttpStatus.CREATED);
+            return new ResponseEntity<>(chatMessageService.createChatMessage(newChatMessage), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/chatMessages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChatMessage(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             boolean isDeleted = chatMessageService.deleteChatMessageById(id);
             if (isDeleted) {
@@ -88,9 +95,15 @@ public class ChatMessageController {
         }
     }
 
+
+    // TL;DR: Don't remove this endpoint; it may become useful. 
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
     @PostMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<ChatMessageLikesDTO> createChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
+        if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(chatMessageService.createChatMessageLike(chatMessageId, userId), HttpStatus.CREATED);
         } catch (BaseNotFoundException e) {
@@ -100,9 +113,14 @@ public class ChatMessageController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/chatMessages/{chatMessageId}/likes
     @GetMapping("/{chatMessageId}/likes")
-    public ResponseEntity<List<UserDTO>> getChatMessageLikes(@PathVariable UUID chatMessageId) {
+    public ResponseEntity<List<BaseUserDTO>> getChatMessageLikes(@PathVariable UUID chatMessageId) {
+        if (chatMessageId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(chatMessageService.getChatMessageLikes(chatMessageId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -112,9 +130,15 @@ public class ChatMessageController {
         }
     }
 
-    // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
+
+
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently. " +
+            "Pending mobile feature implementation, per:" +
+            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     @DeleteMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<Void> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
+        if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

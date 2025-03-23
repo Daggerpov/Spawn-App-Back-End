@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.LocationDTO;
+import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +21,8 @@ public class LocationController {
         this.locationService = locationService;
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/locations
     @GetMapping
     public ResponseEntity<List<LocationDTO>> getLocations() {
@@ -31,9 +33,12 @@ public class LocationController {
         }
     }
 
+    // TL;DR: Don't remove this endpoint; it may become useful.
+    @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/locations/{id}
     @GetMapping("{id}")
     public ResponseEntity<LocationDTO> getLocationById(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(locationService.getLocationById(id), HttpStatus.OK);
         } catch (Exception e) {
