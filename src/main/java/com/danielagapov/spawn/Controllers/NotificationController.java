@@ -47,7 +47,7 @@ public class NotificationController {
     
     // full path: /api/v1/notifications/preferences/{userId}
     @GetMapping("/preferences/{userId}")
-    public ResponseEntity<NotificationPreferencesDTO> getNotificationPreferences(@PathVariable UUID userId) {
+    public ResponseEntity<?> getNotificationPreferences(@PathVariable UUID userId) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             NotificationPreferencesDTO preferences = notificationService.getNotificationPreferences(userId);
@@ -65,7 +65,7 @@ public class NotificationController {
 
     // full path: /api/v1/notifications/preferences/{userId}
     @PostMapping("/preferences/{userId}")
-    public ResponseEntity<NotificationPreferencesDTO> updateNotificationPreferences(
+    public ResponseEntity<?> updateNotificationPreferences(
             @PathVariable UUID userId,
             @RequestBody NotificationPreferencesDTO preferencesDTO) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
