@@ -1,12 +1,15 @@
 package com.danielagapov.spawn.Services.PushNotification;
 
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
+import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
 import com.danielagapov.spawn.Enums.DeviceType;
 import com.danielagapov.spawn.Events.NotificationEvent;
 import com.danielagapov.spawn.Events.PushRegistrationNotificationEvent;
 import com.danielagapov.spawn.Models.DeviceToken;
+import com.danielagapov.spawn.Models.NotificationPreferences;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IDeviceTokenRepository;
+import com.danielagapov.spawn.Repositories.INotificationPreferencesRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private final IDeviceTokenRepository deviceTokenRepository;
+    private final INotificationPreferencesRepository preferencesRepository;
     private final IUserService userService;
     private final Map<DeviceType, NotificationStrategy> strategies;
     private final ApplicationEventPublisher eventPublisher;
@@ -33,10 +37,12 @@ public class NotificationService {
     @Autowired
     public NotificationService(
             IDeviceTokenRepository deviceTokenRepository,
+            INotificationPreferencesRepository preferencesRepository,
             IUserService userService,
             List<NotificationStrategy> strategyList,
             ApplicationEventPublisher eventPublisher) {
         this.deviceTokenRepository = deviceTokenRepository;
+        this.preferencesRepository = preferencesRepository;
         this.userService = userService;
         this.eventPublisher = eventPublisher;
         
@@ -75,6 +81,58 @@ public class NotificationService {
         if (deviceTokenRepository.existsByToken(token)) {
             deviceTokenRepository.deleteByToken(token);
         }
+    }
+
+    /**
+     * Get notification preferences for a user
+     */
+    public NotificationPreferencesDTO getNotificationPreferences(UUID userId) {
+        User user = userService.getUserEntityById(userId);
+        NotificationPreferences preferences = preferencesRepository.findByUser(user).orElse(null);
+        
+        // Return null if no preferences exist
+        if (preferences == null) {
+            return null;
+        }
+        
+        // Map entity to DTO
+        return new NotificationPreferencesDTO(
+            preferences.isFriendRequestsEnabled(),
+            preferences.isEventInvitesEnabled(),
+            preferences.isEventUpdatesEnabled(),
+            preferences.isChatMessagesEnabled(),
+            userId
+        );
+    }
+    
+    /**
+     * Save notification preferences for a user
+     */
+    public NotificationPreferencesDTO saveNotificationPreferences(NotificationPreferencesDTO preferencesDTO) {
+        User user = userService.getUserEntityById(preferencesDTO.getUserId());
+        
+        // Find existing preferences or create new
+        NotificationPreferences preferences = preferencesRepository.findByUser(user)
+            .orElse(new NotificationPreferences());
+        
+        // Update entity
+        preferences.setUser(user);
+        preferences.setFriendRequestsEnabled(preferencesDTO.isFriendRequestsEnabled());
+        preferences.setEventInvitesEnabled(preferencesDTO.isEventInvitesEnabled());
+        preferences.setEventUpdatesEnabled(preferencesDTO.isEventUpdatesEnabled());
+        preferences.setChatMessagesEnabled(preferencesDTO.isChatMessagesEnabled());
+        
+        // Save
+        preferences = preferencesRepository.save(preferences);
+        
+        // Return updated DTO
+        return new NotificationPreferencesDTO(
+            preferences.isFriendRequestsEnabled(),
+            preferences.isEventInvitesEnabled(),
+            preferences.isEventUpdatesEnabled(),
+            preferences.isChatMessagesEnabled(),
+            preferencesDTO.getUserId()
+        );
     }
 
     /**
