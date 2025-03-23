@@ -22,7 +22,7 @@ public class NotificationPreferences {
     /**
      * User who owns these preferences
      */
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
     
