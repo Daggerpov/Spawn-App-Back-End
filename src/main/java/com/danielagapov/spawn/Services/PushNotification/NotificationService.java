@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
 import com.danielagapov.spawn.Enums.DeviceType;
 import com.danielagapov.spawn.Events.NotificationEvent;
 import com.danielagapov.spawn.Events.PushRegistrationNotificationEvent;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.DeviceToken;
 import com.danielagapov.spawn.Models.NotificationPreferences;
 import com.danielagapov.spawn.Models.User;
@@ -33,6 +34,7 @@ public class NotificationService {
     private final IUserService userService;
     private final Map<DeviceType, NotificationStrategy> strategies;
     private final ApplicationEventPublisher eventPublisher;
+    private final ILogger logger;
 
     @Autowired
     public NotificationService(
@@ -40,15 +42,19 @@ public class NotificationService {
             INotificationPreferencesRepository preferencesRepository,
             IUserService userService,
             List<NotificationStrategy> strategyList,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            ILogger logger) {
         this.deviceTokenRepository = deviceTokenRepository;
         this.preferencesRepository = preferencesRepository;
         this.userService = userService;
         this.eventPublisher = eventPublisher;
+        this.logger = logger;
         
         // Create a map of device types to strategies
         this.strategies = strategyList.stream()
                 .collect(Collectors.toMap(NotificationStrategy::getDeviceType, strategy -> strategy));
+        
+        logger.info("NotificationService initialized with " + strategies.size() + " strategies");
     }
 
     /**
@@ -58,8 +64,12 @@ public class NotificationService {
         String token = deviceTokenDTO.getToken();
         User user = userService.getUserEntityById(deviceTokenDTO.getUserId());
         
+        logger.info(String.format("Registering device token for user: %s, device type: %s", 
+                user.getId(), deviceTokenDTO.getDeviceType()));
+        
         // Check if token already exists
         if (deviceTokenRepository.existsByToken(token)) {
+            logger.info("Token already exists, updating existing record");
             deviceTokenRepository.deleteByToken(token);
         }
 
@@ -69,17 +79,23 @@ public class NotificationService {
         deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
         
         deviceTokenRepository.save(deviceToken);
+        logger.info("Device token saved successfully for user: " + user.getId());
         
         // Send a test notification to confirm registration
         eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));
+        logger.info("Sent test notification for token registration confirmation");
     }
 
     /**
      * Unregister a device token
      */
     public void unregisterDeviceToken(String token) {
+        logger.info("Unregistering device token: " + token);
         if (deviceTokenRepository.existsByToken(token)) {
             deviceTokenRepository.deleteByToken(token);
+            logger.info("Device token unregistered successfully");
+        } else {
+            logger.warn("Attempted to unregister non-existent token: " + token);
         }
     }
 
@@ -87,28 +103,34 @@ public class NotificationService {
      * Get notification preferences for a user
      */
     public NotificationPreferencesDTO getNotificationPreferences(UUID userId) {
+        logger.info("Getting notification preferences for user: " + userId);
         User user = userService.getUserEntityById(userId);
         NotificationPreferences preferences = preferencesRepository.findByUser(user).orElse(null);
         
         // Return null if no preferences exist
         if (preferences == null) {
+            logger.info("No notification preferences found for user: " + userId);
             return null;
         }
         
         // Map entity to DTO
-        return new NotificationPreferencesDTO(
+        NotificationPreferencesDTO preferencesDTO = new NotificationPreferencesDTO(
             preferences.isFriendRequestsEnabled(),
             preferences.isEventInvitesEnabled(),
             preferences.isEventUpdatesEnabled(),
             preferences.isChatMessagesEnabled(),
             userId
         );
+        
+        logger.info("Retrieved notification preferences for user: " + userId);
+        return preferencesDTO;
     }
     
     /**
      * Save notification preferences for a user
      */
     public NotificationPreferencesDTO saveNotificationPreferences(NotificationPreferencesDTO preferencesDTO) {
+        logger.info("Saving notification preferences for user: " + preferencesDTO.getUserId());
         User user = userService.getUserEntityById(preferencesDTO.getUserId());
         
         // Find existing preferences or create new
@@ -124,6 +146,7 @@ public class NotificationService {
         
         // Save
         preferences = preferencesRepository.save(preferences);
+        logger.info("Notification preferences saved successfully for user: " + preferencesDTO.getUserId());
         
         // Return updated DTO
         return new NotificationPreferencesDTO(
@@ -139,14 +162,26 @@ public class NotificationService {
      * Send a notification to a user
      */
     public void sendNotificationToUser(UUID userId, String title, String message, Map<String, String> data) {
+        logger.info(String.format("Sending notification to user %s: Title: '%s', Message: '%s'", 
+                userId, title, message));
         List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
 
+        if (deviceTokens.isEmpty()) {
+            logger.warn("No device tokens found for user: " + userId);
+            return;
+        }
+        
+        logger.info("Found " + deviceTokens.size() + " device(s) for user: " + userId);
+        
         for (DeviceToken deviceToken : deviceTokens) {
             DeviceType deviceType = deviceToken.getDeviceType();
             NotificationStrategy strategy = strategies.get(deviceType);
             
             if (strategy != null) {
+                logger.info("Using " + deviceType + " strategy to send notification");
                 strategy.sendNotificationToDevice(deviceToken.getToken(), title, message, data);
+            } else {
+                logger.warn("No strategy found for device type: " + deviceType);
             }
         }
     }
@@ -159,19 +194,29 @@ public class NotificationService {
         // Get the list of target users from the event
         List<UUID> targetUserIds = event.getTargetUserIds();
         
+        logger.info("Handling notification event: " + event.getClass().getSimpleName() + 
+                " for " + targetUserIds.size() + " users");
+        
         // Skip if there are no target users
         if (targetUserIds.isEmpty()) {
+            logger.warn("Event has no target users, skipping");
             return;
         }
         
         // Send the notification to all target users
         for (UUID userId : targetUserIds) {
-            sendNotificationToUser(
-                    userId,
-                    event.getTitle(),
-                    event.getMessage(),
-                    event.getData()
-            );
+            try {
+                sendNotificationToUser(
+                        userId,
+                        event.getTitle(),
+                        event.getMessage(),
+                        event.getData()
+                );
+            } catch (Exception e) {
+                logger.error("Error sending notification to user " + userId + ": " + e.getMessage());
+            }
         }
+        
+        logger.info("Notification event processing completed");
     }
 } 
