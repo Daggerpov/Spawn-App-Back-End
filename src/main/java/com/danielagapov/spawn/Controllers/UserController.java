@@ -145,8 +145,12 @@ public class UserController {
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(s3Service.updateProfilePicture(file, id), HttpStatus.OK);
+            logger.info("Received request to update profile picture for user " + id + " (file size: " + file.length + " bytes)");
+            UserDTO updatedUser = s3Service.updateProfilePicture(file, id);
+            logger.info("Successfully updated profile picture for user " + id + ": " + updatedUser.getProfilePicture());
+            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (Exception e) {
+            logger.error("Error updating profile picture for user " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -155,8 +159,12 @@ public class UserController {
     @GetMapping("default-pfp")
     public ResponseEntity<String> getDefaultProfilePicture() {
         try {
-            return new ResponseEntity<>(s3Service.getDefaultProfilePicture(), HttpStatus.OK);
+            logger.info("Received request for default profile picture");
+            String defaultPfp = s3Service.getDefaultProfilePicture();
+            logger.info("Returning default profile picture: " + defaultPfp);
+            return new ResponseEntity<>(defaultPfp, HttpStatus.OK);
         } catch (Exception e) {
+            logger.error("Error retrieving default profile picture: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -165,8 +173,12 @@ public class UserController {
     @PostMapping("s3/test-s3")
     public String testPostS3(@RequestBody byte[] file) {
         try {
-            return s3Service.putObject(file);
+            logger.info("Received test S3 upload request (file size: " + file.length + " bytes)");
+            String url = s3Service.putObject(file);
+            logger.info("Successfully uploaded test file to S3: " + url);
+            return url;
         } catch (Exception e) {
+            logger.error("Error in test S3 upload: " + e.getMessage());
             return e.getMessage();
         }
     }
@@ -176,12 +188,29 @@ public class UserController {
     public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(
-                userService.updateUser(id, updateDTO.getBio(), updateDTO.getUsername(), 
-                    updateDTO.getFirstName(), updateDTO.getLastName()), 
-                HttpStatus.OK
+            logger.info("Received request to update user " + id + ": " + 
+                        "username=" + updateDTO.getUsername() + ", " +
+                        "firstName=" + updateDTO.getFirstName() + ", " +
+                        "lastName=" + updateDTO.getLastName() + ", " +
+                        "bio=" + updateDTO.getBio());
+            
+            BaseUserDTO updatedUser = userService.updateUser(
+                id, 
+                updateDTO.getBio(), 
+                updateDTO.getUsername(), 
+                updateDTO.getFirstName(), 
+                updateDTO.getLastName()
             );
+            
+            logger.info("Successfully updated user " + id + ": " +
+                        "username=" + updatedUser.getUsername() + ", " +
+                        "firstName=" + updatedUser.getFirstName() + ", " +
+                        "lastName=" + updatedUser.getLastName() + ", " +
+                        "bio=" + updatedUser.getBio());
+            
+            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("User not found for update: " + id);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
