@@ -18,6 +18,7 @@ import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
 import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.time.Instant;
@@ -61,6 +63,12 @@ public class ChatMessageServiceTests {
 
     @Mock
     private ILogger logger;
+    
+    @Mock
+    private IEventUserRepository eventUserRepository;
+    
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ChatMessageService chatMessageService;
