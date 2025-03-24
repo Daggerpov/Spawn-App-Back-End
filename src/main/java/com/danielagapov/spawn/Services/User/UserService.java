@@ -469,36 +469,12 @@ public class UserService implements IUserService {
         for (UserDTO potentialFriend : allUsers) {
             if (recommendedFriends.size() >= recommendedFriendLimit) break;
             UUID potentialFriendId = potentialFriend.getId();
-            boolean isExcluded = excludedUserIds.contains(potentialFriendId);
 
-            if (!isExcluded) {
-                boolean hasAlreadySentFriendRequest = false;
-
-                try {
-                    List<FetchFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(potentialFriendId);
-
-                    for (FetchFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                        boolean potentialFriendSentOrReceived = friendRequestDTO.getSenderUser().getId().equals(userId);
-                        if (potentialFriendSentOrReceived) {
-                            hasAlreadySentFriendRequest = true;
-                            break;
-                        }
-                    }
-                } catch (BaseNotFoundException e) {
-                    // No incoming friend requests, safe to ignore
-                } catch (Exception e) {
-                    logger.error(e.getMessage());
-                    throw e;
-                }
-
-                if (!hasAlreadySentFriendRequest) {
-                    User potentialFriendUser = getUserEntityById(potentialFriendId);
-
-                    recommendedFriends.add(FriendUserMapper.toDTO(potentialFriendUser, 0));
-
-                    // Add to excluded list to prevent duplicates
-                    excludedUserIds.add(potentialFriendId);
-                }
+            // Check if the potential friend is already excluded
+            if (!excludedUserIds.contains(potentialFriendId)) {
+                recommendedFriends.add(FriendUserMapper.toDTO(getUserEntityById(potentialFriendId), 0));
+                // Add to excluded list to prevent duplicates
+                excludedUserIds.add(potentialFriendId);
             }
         }
         return recommendedFriends;
