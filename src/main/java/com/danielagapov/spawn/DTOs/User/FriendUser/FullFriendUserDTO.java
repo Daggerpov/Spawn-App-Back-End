@@ -18,4 +18,6 @@ public class FullFriendUserDTO extends BaseUserDTO {
         super(id, firstName, lastName, email, username, bio, profilePicture);
         this.associatedFriendTagsToOwner = associatedFriendTagsToOwner;
     }
+
+
 }
