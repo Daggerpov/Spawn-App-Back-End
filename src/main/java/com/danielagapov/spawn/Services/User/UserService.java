@@ -523,28 +523,26 @@ public class UserService implements IUserService {
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
         try {
-            // Step 1. Find all incoming friend Requests
             List<FetchFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(requestingUserId)
                     .stream()
                     .filter(fr -> isQueryMatch(fr.getSenderUser(), searchQuery))
                     .toList();
+
             List<RecommendedFriendUserDTO> recommendedFriends;
             List<FullFriendUserDTO> friends;
 
-            // If searchQuery is empty:
+            // If searchQuery is empty, return all recommended friends
             if (searchQuery.isEmpty()) {
-                // Step 2. Get recommended friends
                 recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
-                // Step 3. Get all friends
                 friends = getFullFriendUsersByUserId(requestingUserId);
-            } else { // If searchQuery is not empty:
-                // Step 2. List all recommended friends who match based on searchQuery
+            } else {
+                // Get recommended mutual friends
                 recommendedFriends = getRecommendedMutuals(requestingUserId)
                         .stream()
                         .filter(entry -> isQueryMatch(entry, searchQuery))
                         .collect(Collectors.toList());
 
-                // If we don't have enough matches from mutuals, supplement with random recommendations
+                // If not enough mutual friends, supplement with random recommendations
                 if (recommendedFriends.size() < recommendedFriendLimit) {
                     List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(requestingUserId)
                             .stream()
@@ -552,16 +550,16 @@ public class UserService implements IUserService {
                             .limit(recommendedFriendLimit - recommendedFriends.size())
                             .collect(Collectors.toList());
 
-                    // Add the filtered random recommendations
                     recommendedFriends.addAll(randomRecommendations);
                 }
 
-                // Step 3. List all friends who match based on searchQuery
+                // Get friends who match the search query
                 friends = getFullFriendUsersByUserId(requestingUserId)
                         .stream()
                         .filter(user -> isQueryMatch(user, searchQuery))
                         .collect(Collectors.toList());
             }
+
             return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
         } catch (Exception e) {
             logger.error(e.getMessage());

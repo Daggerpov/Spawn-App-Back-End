@@ -11,15 +11,15 @@ public class Triple<X, Y, Z> {
     private Y y;
     private Z z;
 
-    public X first() {
+    public X getFirst() {
         return this.x;
     }
 
-    public Y second() {
+    public Y getSecond() {
         return this.y;
     }
 
-    public Z third() {
+    public Z getThird() {
         return this.z;
     }
 
@@ -31,6 +31,6 @@ public class Triple<X, Y, Z> {
             return false;
         if (!(obj instanceof Triple other))
             return false;
-        return other.first().equals(this.first()) && other.second().equals(this.second()) && other.third().equals(this.third());
+        return other.getFirst().equals(this.getFirst()) && other.getSecond().equals(this.getSecond()) && other.getThird().equals(this.getThird());
     }
 }

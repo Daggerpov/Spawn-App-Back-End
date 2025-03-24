@@ -17,9 +17,9 @@ public class SearchedUserResult extends Triple<List<FetchFriendRequestDTO>, List
         if (this == obj) return true; // Check if the same reference
         if (obj == null || getClass() != obj.getClass()) return false; // Null check and class check
         SearchedUserResult other = (SearchedUserResult) obj; // Safe cast
-        return isListSame(first(), other.first()) && 
-               isListSame(second(), other.second()) && 
-               isListSame(third(), other.third());
+        return isListSame(getFirst(), other.getFirst()) &&
+               isListSame(getSecond(), other.getSecond()) &&
+               isListSame(getThird(), other.getThird());
     }
 
     private <T> boolean isListSame(List<T> list1, List<T> list2) {
