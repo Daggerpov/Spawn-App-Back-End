@@ -18,4 +18,19 @@ public class FullUserDTO extends BaseUserDTO {
         this.friends = friends;
         this.friendTags = friendTags;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null)
+            return false;
+        if (!(obj instanceof FullUserDTO other))
+            return false;
+        boolean fullUserTraitsEqual = other.getFriends().equals(this.friends) &&
+                other.getFriendTags().equals(this.friendTags) &&
+                other.getProfilePicture().equals(getProfilePicture());
+        boolean superEquals = super.equals(other);
+        return fullUserTraitsEqual && superEquals;
+    }
 }

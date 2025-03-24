@@ -7,6 +7,7 @@ import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Util.SearchedUserResult;
 
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,7 @@ public interface IUserService {
 
     void saveFriendToUser(UUID userId, UUID friendId);
 
-    List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId);
+    List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId);
 
     // For Events:
 
@@ -93,4 +94,6 @@ public interface IUserService {
     BaseUserDTO getBaseUserById(UUID id);
 
     BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
+
+    SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
 }
