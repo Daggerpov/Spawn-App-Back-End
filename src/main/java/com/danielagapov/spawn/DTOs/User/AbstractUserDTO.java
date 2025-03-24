@@ -21,6 +21,9 @@ public abstract class AbstractUserDTO implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        return getId().equals(((AbstractUserDTO) obj).getId());
+        if (this == obj) return true; // Check if the same reference
+        if (obj == null || getClass() != obj.getClass()) return false; // Null check and class check
+        AbstractUserDTO that = (AbstractUserDTO) obj; // Safe cast
+        return id != null && id.equals(that.id); // Compare IDs
     }
 }

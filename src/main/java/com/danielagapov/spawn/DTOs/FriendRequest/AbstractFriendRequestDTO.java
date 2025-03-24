@@ -16,7 +16,9 @@ public abstract class AbstractFriendRequestDTO {
 
     @Override
     public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
         AbstractFriendRequestDTO other = (AbstractFriendRequestDTO) obj;
-        return this.id.equals(other.getId());
+        return id != null && id.equals(other.getId());
     }
 }
