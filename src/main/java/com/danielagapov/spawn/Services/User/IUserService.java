@@ -64,7 +64,7 @@ public interface IUserService {
 
     void saveFriendToUser(UUID userId, UUID friendId);
 
-    List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId);
+    List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId);
 
     // For Events:
 

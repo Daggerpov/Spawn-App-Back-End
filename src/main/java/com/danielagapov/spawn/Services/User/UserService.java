@@ -40,8 +40,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService implements IUserService {
+    private static final long recommendedFriendLimit = 3L;
     private final IUserRepository repository;
-
     private final IEventUserRepository eventUserRepository;
     private final IUserFriendTagRepository uftRepository;
     private final IFriendTagService friendTagService;
@@ -49,7 +49,6 @@ public class UserService implements IUserService {
     private final IS3Service s3Service;
     private final IFriendRequestService friendRequestService;
     private final ILogger logger;
-    private static final long recommendedFriendLimit = 3L;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
@@ -401,16 +400,39 @@ public class UserService implements IUserService {
     // returns top x (specified by limit) friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
     @Override
-    public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
+    public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
         try {
-            List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId).stream().limit(recommendedFriendLimit).toList();
+            // First get mutuals-based recommendations
+            List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId);
 
+            // If we already have enough mutual-based recommendations, limit and return them
             if (recommendedFriends.size() >= recommendedFriendLimit) {
-                return recommendedFriends;
+                return recommendedFriends.stream()
+                        .limit(recommendedFriendLimit)
+                        .collect(Collectors.toList());
             }
 
-            // Otherwise fill with random friends
-            recommendedFriends = getRandomNRecommendations(userId);
+            // Otherwise, supplement with random recommendations
+            List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(userId);
+
+            // Add random recommendations, avoiding duplicates
+            Set<UUID> existingIds = recommendedFriends.stream()
+                    .map(RecommendedFriendUserDTO::getId)
+                    .collect(Collectors.toSet());
+
+            for (RecommendedFriendUserDTO randomFriend : randomRecommendations) {
+                // Skip if we've reached the limit
+                if (recommendedFriends.size() >= recommendedFriendLimit) {
+                    break;
+                }
+
+                // Skip if this user is already in our recommendations
+                if (!existingIds.contains(randomFriend.getId())) {
+                    recommendedFriends.add(randomFriend);
+                    existingIds.add(randomFriend.getId());
+                }
+            }
+
             return recommendedFriends;
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -439,8 +461,7 @@ public class UserService implements IUserService {
                 .collect(Collectors.toList());
     }
 
-    // Gets random N users for userId to be friends, if n > number of possible recommended friends, return all possible recommended friends
-    private List<RecommendedFriendUserDTO> getRandomNRecommendations(UUID userId) {
+    private List<RecommendedFriendUserDTO> getRandomRecommendations(UUID userId) {
         List<RecommendedFriendUserDTO> recommendedFriends = new ArrayList<>();
         List<UserDTO> allUsers = getAllUsers();
         Set<UUID> excludedUserIds = getExcludedUserIds(userId);
@@ -537,31 +558,33 @@ public class UserService implements IUserService {
             // If searchQuery is empty:
             if (searchQuery.isEmpty()) {
                 // Step 2. Get recommended friends
-                recommendedFriends = getRecommendedFriendsForUserId(requestingUserId);
+                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
                 // Step 3. Get all friends
                 friends = getFullFriendUsersByUserId(requestingUserId);
             } else { // If searchQuery is not empty:
                 // Step 2. List all recommended friends who match based on searchQuery
-                // Map mutual friends to RecommendedFriendUserDTO
                 recommendedFriends = getRecommendedMutuals(requestingUserId)
                         .stream()
                         .filter(entry -> isQueryMatch(entry, searchQuery))
                         .collect(Collectors.toList());
+
+                // If we don't have enough matches from mutuals, supplement with random recommendations
                 if (recommendedFriends.size() < recommendedFriendLimit) {
-                    // TODO: this operation is rather expensive
-                    recommendedFriends.addAll(getRecommendedFriendsForUserId(requestingUserId)
+                    List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(requestingUserId)
                             .stream()
                             .filter(entry -> isQueryMatch(entry, searchQuery))
                             .limit(recommendedFriendLimit - recommendedFriends.size())
-                            .toList());
-                    recommendedFriends = recommendedFriends.stream().distinct().collect(Collectors.toList());
+                            .collect(Collectors.toList());
+
+                    // Add the filtered random recommendations
+                    recommendedFriends.addAll(randomRecommendations);
                 }
+
                 // Step 3. List all friends who match based on searchQuery
-                friends = getFullFriendUsersByUserId(
-                        requestingUserId)
+                friends = getFullFriendUsersByUserId(requestingUserId)
                         .stream()
                         .filter(user -> isQueryMatch(user, searchQuery))
-                        .toList();
+                        .collect(Collectors.toList());
             }
             return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
         } catch (Exception e) {

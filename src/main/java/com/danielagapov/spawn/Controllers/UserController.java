@@ -133,7 +133,7 @@ public class UserController {
     public ResponseEntity<List<RecommendedFriendUserDTO>> getRecommendedFriends(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(userService.getRecommendedFriendsForUserId(id), HttpStatus.OK);
+            return new ResponseEntity<>(userService.getLimitedRecommendedFriendsForUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
