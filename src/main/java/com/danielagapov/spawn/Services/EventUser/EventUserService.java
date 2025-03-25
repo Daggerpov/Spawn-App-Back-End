@@ -1,9 +1,12 @@
 package com.danielagapov.spawn.Services.EventUser;
 
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -16,9 +19,11 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import lombok.AllArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +36,7 @@ public class EventUserService implements IEventUserService {
     private final IUserService userService;
     private final IEventService eventService;
     private final ILogger logger;
+    private final ApplicationEventPublisher eventPublisher;
 
     // return type boolean represents whether the user was already invited or not
     // if false -> invites them
@@ -138,6 +144,48 @@ public class EventUserService implements IEventUserService {
             logger.error(e.getMessage());
             throw e;
         }
+    }
+
+    // returns the updated event, with modified participants and invited users
+    // invited/participating
+    // if true -> change status
+    // if false -> return 400 in controller to indicate that the user is not
+    // invited/participating
+    @Override
+    public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
+        EventUser eventUser = repository.findByEvent_IdAndUser_Id(eventId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.EventUser));
+
+        if (eventUser.getStatus() == ParticipationStatus.participating) {
+            eventUser.setStatus(ParticipationStatus.invited);
+        } else if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
+            eventUser.setStatus(ParticipationStatus.participating);
+        }
+
+        final Event event = eventUser.getEvent();
+        final User user = eventUser.getUser();
+        final ParticipationStatus status = eventUser.getStatus();
+
+        if (status == ParticipationStatus.participating) { // Status changed from invited to participating
+            eventPublisher.publishEvent(
+                    EventParticipationNotificationEvent.forJoining(user, event)
+            );
+        } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
+            eventPublisher.publishEvent(
+                    EventParticipationNotificationEvent.forLeaving(user, event)
+            );
+        }
+
+        repository.save(eventUser);
+        return eventService.getFullEventByEvent(eventService.getEventDTOByEntity(eventUser.getEvent()), userId, new HashSet<>());
+    }
+
+    @Override
+    public List<EventDTO> getEventsInvitedTo(UUID id) {
+        List<EventUser> eventUsers = repository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
+        return eventUsers.stream()
+                .map(EventUser::getEvent)
+                .map(eventService::getEventDTOByEntity)
+                .toList();
     }
 
     private List<UUID> getParticipatingUserIdsByEventId(UUID eventId) {

@@ -704,7 +704,7 @@ public class EventServiceTests {
         when(eventUserService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
 
-        List<EventDTO> events = eventService.getEventsInvitedTo(userId);
+        List<EventDTO> events = eventUserService.getEventsInvitedTo(userId);
 
         assertNotNull(events);
         assertEquals(1, events.size());
@@ -901,12 +901,12 @@ public class EventServiceTests {
         when(eventUserService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
 
-        FullFeedEventDTO result = eventService.toggleParticipation(eventId, userId);
+        FullFeedEventDTO result = eventUserService.toggleParticipation(eventId, userId);
         assertNotNull(result);
         assertEquals(ParticipationStatus.participating, invitedEventUser.getStatus());
 
         // Test toggle from participating to invited
-        result = eventService.toggleParticipation(eventId, userId);
+        result = eventUserService.toggleParticipation(eventId, userId);
         assertNotNull(result);
         assertEquals(ParticipationStatus.invited, invitedEventUser.getStatus());
 

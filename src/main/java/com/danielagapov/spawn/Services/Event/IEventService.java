@@ -26,12 +26,9 @@ public interface IEventService {
 
     boolean deleteEventById(UUID id);
 
+    EventDTO getEventDTOByEntity(Event event);
+
     // Participation-related methods:
-
-    // returns back the updated event dto, with participants and invited users updated:
-    FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId);
-
-    List<EventDTO> getEventsInvitedTo(UUID id);
 
     List<EventDTO> getEventsInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId);
 

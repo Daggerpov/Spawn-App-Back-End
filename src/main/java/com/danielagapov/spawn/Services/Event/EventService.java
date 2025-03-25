@@ -7,7 +7,6 @@ import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Events.EventInviteNotificationEvent;
-import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
 import com.danielagapov.spawn.Events.EventUpdateNotificationEvent;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -99,12 +98,7 @@ public class EventService implements IEventService {
         Event event = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
 
-        UUID creatorUserId = event.getCreator().getId();
-        List<UUID> participantUserIds = eventUserService.getParticipantUserIdsByEventId(id);
-        List<UUID> invitedUserIds = eventUserService.getInvitedUserIdsByEventId(id);
-        List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
-
-        return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+        return getEventDTOByEntity(event);
     }
 
     @Override
@@ -316,45 +310,15 @@ public class EventService implements IEventService {
         }
     }
 
-    // returns the updated event, with modified participants and invited users
-    // invited/participating
-    // if true -> change status
-    // if false -> return 400 in controller to indicate that the user is not
-    // invited/participating
     @Override
-    public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
-        EventUser eventUser = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.EventUser));
+    public EventDTO getEventDTOByEntity(Event event) {
+        UUID eventId = event.getId();
+        UUID creatorUserId = event.getCreator().getId();
+        List<UUID> participantUserIds = eventUserService.getParticipantUserIdsByEventId(eventId);
+        List<UUID> invitedUserIds = eventUserService.getInvitedUserIdsByEventId(eventId);
+        List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventId);
 
-        if (eventUser.getStatus() == ParticipationStatus.participating) {
-            eventUser.setStatus(ParticipationStatus.invited);
-        } else if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
-            eventUser.setStatus(ParticipationStatus.participating);
-        }
-
-        final Event event = eventUser.getEvent();
-        final User user = eventUser.getUser();
-        final ParticipationStatus status = eventUser.getStatus();
-
-        if (status == ParticipationStatus.participating) { // Status changed from invited to participating
-            eventPublisher.publishEvent(
-                    EventParticipationNotificationEvent.forJoining(user, event)
-            );
-        } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
-            eventPublisher.publishEvent(
-                    EventParticipationNotificationEvent.forLeaving(user, event)
-            );
-        }
-
-        eventUserRepository.save(eventUser);
-        return getFullEventById(eventId, userId);
-    }
-
-    @Override
-    public List<EventDTO> getEventsInvitedTo(UUID id) {
-        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
-        return getEventDTOs(eventUsers.stream()
-                .map(EventUser::getEvent)
-                .toList());
+        return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
     }
 
     @Override

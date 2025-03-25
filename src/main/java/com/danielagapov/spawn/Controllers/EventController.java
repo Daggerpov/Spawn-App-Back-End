@@ -212,7 +212,7 @@ public class EventController {
     public ResponseEntity<?> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
         if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
+            FullFeedEventDTO updatedEventAfterParticipationToggle = eventUserService.toggleParticipation(eventId, userId);
             return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // event or user not found
@@ -234,7 +234,7 @@ public class EventController {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
+                return new ResponseEntity<>(eventUserService.getEventsInvitedTo(userId), HttpStatus.OK);
             }
         } catch (EventsNotFoundException e) {
             // list of events for user id not found
