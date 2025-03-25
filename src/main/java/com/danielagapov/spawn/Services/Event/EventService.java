@@ -1,10 +1,14 @@
 package com.danielagapov.spawn.Services.Event;
 
+import com.danielagapov.spawn.Controllers.EventController;
 import com.danielagapov.spawn.DTOs.Event.*;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Events.EventInviteNotificationEvent;
+import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
+import com.danielagapov.spawn.Events.EventUpdateNotificationEvent;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -22,22 +26,19 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import com.danielagapov.spawn.Services.EventUser.IEventUserService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import com.danielagapov.spawn.Events.EventInviteNotificationEvent;
-import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
-import com.danielagapov.spawn.Events.EventUpdateNotificationEvent;
 
 @Service
 public class EventService implements IEventService {
@@ -51,13 +52,11 @@ public class EventService implements IEventService {
     private final ILogger logger;
     private final ILocationService locationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final IEventUserService eventUserService;
 
     @Autowired
-    @Lazy // avoid circular dependency problems with ChatMessageService
-    public EventService(IEventRepository repository, ILocationRepository locationRepository,
-                        IEventUserRepository eventUserRepository, IUserRepository userRepository,
-                        IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher) {
+    @Lazy
+    public EventService(IEventRepository repository, ILocationRepository locationRepository, IEventUserRepository eventUserRepository, IUserRepository userRepository, IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher, IEventUserService eventUserService, EventController eventController) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
@@ -68,7 +67,9 @@ public class EventService implements IEventService {
         this.logger = logger;
         this.locationService = locationService;
         this.eventPublisher = eventPublisher;
+        this.eventUserService = eventUserService;
     }
+
 
     @Override
     public List<FullFeedEventDTO> getAllFullEvents() {
@@ -99,11 +100,16 @@ public class EventService implements IEventService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
 
         UUID creatorUserId = event.getCreator().getId();
-        List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(id);
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(id);
+        List<UUID> participantUserIds = eventUserService.getParticipantUserIdsByEventId(id);
+        List<UUID> invitedUserIds = eventUserService.getInvitedUserIdsByEventId(id);
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(id);
 
         return EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+    }
+
+    @Override
+    public Event getEventEntityById(UUID eventId) {
+        return repository.findById(eventId).orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
     }
 
     @Override
@@ -128,8 +134,8 @@ public class EventService implements IEventService {
                     .map(event -> EventMapper.toDTO(
                             event,
                             event.getCreator().getId(),
-                            userService.getParticipantUserIdsByEventId(event.getId()),
-                            userService.getInvitedUserIdsByEventId(event.getId()),
+                            eventUserService.getParticipantUserIdsByEventId(event.getId()),
+                            eventUserService.getInvitedUserIdsByEventId(event.getId()),
                             chatMessageService.getChatMessageIdsByEventId(event.getId())))
                     .toList();
         } catch (DataAccessException e) {
@@ -172,8 +178,8 @@ public class EventService implements IEventService {
             return EventMapper.toDTO(
                     eventEntity,
                     eventEntity.getCreator().getId(), // creatorUserId
-                    userService.getParticipantUserIdsByEventId(eventEntity.getId()), // participantUserIds
-                    userService.getInvitedUserIdsByEventId(eventEntity.getId()), // invitedUserIds
+                    eventUserService.getParticipantUserIdsByEventId(eventEntity.getId()), // participantUserIds
+                    eventUserService.getInvitedUserIdsByEventId(eventEntity.getId()), // invitedUserIds
                     chatMessageService.getChatMessageIdsByEventId(eventEntity.getId()) // chatMessageIds
             );
         } catch (DataAccessException e) {
@@ -222,7 +228,7 @@ public class EventService implements IEventService {
 
             // Create and publish event invite notification directly
             eventPublisher.publishEvent(
-                new EventInviteNotificationEvent(event.getCreator(), event, allInvitedUserIds)
+                    new EventInviteNotificationEvent(event.getCreator(), event, allInvitedUserIds)
             );
 
             return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
@@ -243,8 +249,8 @@ public class EventService implements IEventService {
                 .map(event -> EventMapper.toDTO(
                         event,
                         event.getCreator().getId(),
-                        userService.getParticipantUserIdsByEventId(event.getId()),
-                        userService.getInvitedUserIdsByEventId(event.getId()),
+                        eventUserService.getParticipantUserIdsByEventId(event.getId()),
+                        eventUserService.getInvitedUserIdsByEventId(event.getId()),
                         chatMessageService.getChatMessageIdsByEventId(event.getId())))
                 .toList();
     }
@@ -265,7 +271,7 @@ public class EventService implements IEventService {
             repository.save(event);
 
             eventPublisher.publishEvent(
-                new EventUpdateNotificationEvent(event.getCreator(), event, eventUserRepository)
+                    new EventUpdateNotificationEvent(event.getCreator(), event, eventUserRepository)
             );
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
@@ -276,29 +282,20 @@ public class EventService implements IEventService {
             // Convert DTO to entity
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
             eventEntity = repository.save(eventEntity);
-            
+
             eventPublisher.publishEvent(
-                new EventUpdateNotificationEvent(eventEntity.getCreator(), eventEntity, eventUserRepository)
+                    new EventUpdateNotificationEvent(eventEntity.getCreator(), eventEntity, eventUserRepository)
             );
             return constructDTOFromEntity(eventEntity);
         });
     }
 
-    private List<UUID> getParticipatingUserIdsByEventId(UUID eventId) {
-        try {
-            List<EventUser> eventUsers = eventUserRepository.findEventsByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
-            return eventUsers.stream().map((eventUser -> eventUser.getUser().getId())).collect(Collectors.toList());
-        } catch (DataAccessException e) {
-            logger.error("Error finding events by event id: " + e.getMessage());
-            throw e;
-        }
-    }
 
     private EventDTO constructDTOFromEntity(Event eventEntity) {
         // Fetch related data for DTO
         UUID creatorUserId = eventEntity.getCreator().getId();
-        List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventEntity.getId());
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventEntity.getId());
+        List<UUID> participantUserIds = eventUserService.getParticipantUserIdsByEventId(eventEntity.getId());
+        List<UUID> invitedUserIds = eventUserService.getInvitedUserIdsByEventId(eventEntity.getId());
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventEntity.getId());
 
         return EventMapper.toDTO(eventEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
@@ -319,62 +316,6 @@ public class EventService implements IEventService {
         }
     }
 
-    @Override
-    public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
-        try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
-            return eventUsers.stream()
-                    .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
-                    .toList();
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new BaseNotFoundException(EntityType.Event, eventId);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-        return eventUserRepository.findById(compositeId)
-                .map(EventUser::getStatus)
-                .orElse(ParticipationStatus.notInvited);
-    }
-
-
-    // return type boolean represents whether the user was already invited or not
-    // if false -> invites them
-    // if true -> return 400 in Controller to indicate that the user has already
-    // been invited, or it is a bad request.
-    @Override
-    public boolean inviteUser(UUID eventId, UUID userId) {
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-        Optional<EventUser> existingEventUser = eventUserRepository.findById(compositeId);
-
-        if (existingEventUser.isPresent()) {
-            // User is already invited
-            return existingEventUser.get().getStatus().equals(ParticipationStatus.invited);
-        } else {
-            // Create a new invitation.
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-            Event event = repository.findById(eventId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
-
-            EventUser newEventUser = new EventUser();
-            newEventUser.setId(compositeId);
-            newEventUser.setEvent(event);
-            newEventUser.setUser(user);
-            newEventUser.setStatus(ParticipationStatus.invited);
-
-            eventUserRepository.save(newEventUser);
-            return false;
-        }
-    }
-
-
     // returns the updated event, with modified participants and invited users
     // invited/participating
     // if true -> change status
@@ -389,21 +330,21 @@ public class EventService implements IEventService {
         } else if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
             eventUser.setStatus(ParticipationStatus.participating);
         }
-        
+
         final Event event = eventUser.getEvent();
         final User user = eventUser.getUser();
         final ParticipationStatus status = eventUser.getStatus();
-        
+
         if (status == ParticipationStatus.participating) { // Status changed from invited to participating
             eventPublisher.publishEvent(
-                EventParticipationNotificationEvent.forJoining(user, event)
+                    EventParticipationNotificationEvent.forJoining(user, event)
             );
         } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
             eventPublisher.publishEvent(
-                EventParticipationNotificationEvent.forLeaving(user, event)
+                    EventParticipationNotificationEvent.forLeaving(user, event)
             );
         }
-        
+
         eventUserRepository.save(eventUser);
         return getFullEventById(eventId, userId);
     }
@@ -549,11 +490,11 @@ public class EventService implements IEventService {
                     location,
                     event.getNote(),
                     creator,
-                    userService.getParticipantsByEventId(event.getId()),
-                    userService.getInvitedByEventId(event.getId()),
+                    eventUserService.getParticipantsByEventId(event.getId()),
+                    eventUserService.getInvitedByEventId(event.getId()),
                     chatMessageService.getFullChatMessagesByEventId(event.getId()),
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
-                    requestingUserId != null ? getParticipationStatus(event.getId(), requestingUserId) : null,
+                    requestingUserId != null ? eventUserService.getParticipationStatus(event.getId(), requestingUserId) : null,
                     event.getCreatorUserId().equals(requestingUserId)
             );
         } catch (BaseNotFoundException e) {
