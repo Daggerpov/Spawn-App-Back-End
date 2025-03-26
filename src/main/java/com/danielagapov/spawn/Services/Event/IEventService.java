@@ -4,6 +4,8 @@ import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
 import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.Event;
 
 import java.util.List;
@@ -55,4 +57,12 @@ public interface IEventService {
     List<EventDTO> getEventsByOwnerId(UUID creatorUserId);
 
     String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
+
+    FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId);
+
+    List<EventDTO> getEventsInvitedTo(UUID userId);
+
+    ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
+
+    List<UserDTO> getParticipatingUsersByEventId(UUID id);
 }

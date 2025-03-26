@@ -479,6 +479,26 @@ public class EventService implements IEventService {
     }
 
     @Override
+    public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
+        return eventUserService.toggleParticipation(eventId, userId);
+    }
+
+    @Override
+    public List<EventDTO> getEventsInvitedTo(UUID userId) {
+        return eventUserService.getEventsInvitedTo(userId);
+    }
+
+    @Override
+    public ParticipationStatus getParticipationStatus(UUID eventId, UUID userId) {
+        return eventUserService.getParticipationStatus(eventId, userId);
+    }
+
+    @Override
+    public List<UserDTO> getParticipatingUsersByEventId(UUID id) {
+        return eventUserService.getParticipatingUsersByEventId(id);
+    }
+
+    @Override
     public List<FullFeedEventDTO> convertEventsToFullFeedEvents(List<EventDTO> events, UUID requestingUserId) {
         ArrayList<FullFeedEventDTO> fullEvents = new ArrayList<>();
 

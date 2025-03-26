@@ -8,7 +8,6 @@ import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
 import com.danielagapov.spawn.Services.Event.IEventService;
-import com.danielagapov.spawn.Services.EventUser.IEventUserService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,12 +23,10 @@ import java.util.UUID;
 public class EventController {
     private final IEventService eventService;
     private final IUserService userService;
-    private final IEventUserService eventUserService;
 
-    public EventController(IEventService eventService, IUserService userService, IEventUserService eventUserService) {
+    public EventController(IEventService eventService, IUserService userService) {
         this.eventService = eventService;
         this.userService = userService;
-        this.eventUserService = eventUserService;
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful. 
@@ -151,9 +148,9 @@ public class EventController {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(eventUserService.getParticipatingUsersByEventId(id), new HashSet<>()), HttpStatus.OK);
+                return new ResponseEntity<>(userService.convertUsersToFullUsers(eventService.getParticipatingUsersByEventId(id), new HashSet<>()), HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(eventUserService.getParticipatingUsersByEventId(id), HttpStatus.OK);
+                return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
             }
         } catch (EventsNotFoundException e) {
             // list of events for user not found
@@ -173,7 +170,7 @@ public class EventController {
     public ResponseEntity<?> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            if (eventUserService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
+            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
                 return new ResponseEntity<>(true, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(false, HttpStatus.OK);
@@ -193,7 +190,7 @@ public class EventController {
     public ResponseEntity<?> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
         if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            if (eventUserService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
+            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
                 return new ResponseEntity<>(true, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(false, HttpStatus.OK);
@@ -212,7 +209,7 @@ public class EventController {
     public ResponseEntity<?> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
         if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            FullFeedEventDTO updatedEventAfterParticipationToggle = eventUserService.toggleParticipation(eventId, userId);
+            FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
             return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // event or user not found
@@ -234,7 +231,7 @@ public class EventController {
             if (full) {
                 return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
             } else {
-                return new ResponseEntity<>(eventUserService.getEventsInvitedTo(userId), HttpStatus.OK);
+                return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
             }
         } catch (EventsNotFoundException e) {
             // list of events for user id not found
