@@ -27,12 +27,17 @@ import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.danielagapov.spawn.Events.EventInviteNotificationEvent;
+import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
+import com.danielagapov.spawn.Events.EventUpdateNotificationEvent;
 
 @Service
 public class EventService implements IEventService {
@@ -45,13 +50,14 @@ public class EventService implements IEventService {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
     private final ILocationService locationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
     public EventService(IEventRepository repository, ILocationRepository locationRepository,
                         IEventUserRepository eventUserRepository, IUserRepository userRepository,
                         IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService) {
+                        ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
@@ -61,6 +67,7 @@ public class EventService implements IEventService {
         this.chatMessageService = chatMessageService;
         this.logger = logger;
         this.locationService = locationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -213,6 +220,11 @@ public class EventService implements IEventService {
                 eventUserRepository.save(eventUser);
             }
 
+            // Create and publish event invite notification directly
+            eventPublisher.publishEvent(
+                new EventInviteNotificationEvent(event.getCreator(), event, allInvitedUserIds)
+            );
+
             return EventMapper.toDTO(event, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
         } catch (Exception e) {
             logger.error("Error creating event: " + e.getMessage());
@@ -223,29 +235,18 @@ public class EventService implements IEventService {
     @Override
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
         List<Event> events = repository.findByCreatorId(creatorUserId);
-
         return getEventDTOs(events);
     }
 
     private List<EventDTO> getEventDTOs(List<Event> events) {
-        List<EventDTO> eventDTOs = new ArrayList<>();
-
-        for (Event event : events) {
-            UUID eventId = event.getId();
-
-            // Fetch related data for the current event
-            UUID creatorUserId = event.getCreator().getId();
-            List<UUID> participantUserIds = userService.getParticipantUserIdsByEventId(eventId);
-            List<UUID> invitedUserIds = userService.getInvitedUserIdsByEventId(eventId);
-            List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByEventId(eventId);
-
-            // Map the event to its DTO
-            EventDTO eventDTO = EventMapper.toDTO(event, creatorUserId, participantUserIds, invitedUserIds,
-                    chatMessageIds);
-            eventDTOs.add(eventDTO);
-        }
-
-        return eventDTOs;
+        return events.stream()
+                .map(event -> EventMapper.toDTO(
+                        event,
+                        event.getCreator().getId(),
+                        userService.getParticipantUserIdsByEventId(event.getId()),
+                        userService.getInvitedUserIdsByEventId(event.getId()),
+                        chatMessageService.getChatMessageIdsByEventId(event.getId())))
+                .toList();
     }
 
     @Override
@@ -263,6 +264,9 @@ public class EventService implements IEventService {
             // Save updated event
             repository.save(event);
 
+            eventPublisher.publishEvent(
+                new EventUpdateNotificationEvent(event.getCreator(), event, eventUserRepository)
+            );
             return constructDTOFromEntity(event);
         }).orElseGet(() -> {
             // Map and save new event, fetch location and creator
@@ -271,10 +275,23 @@ public class EventService implements IEventService {
 
             // Convert DTO to entity
             Event eventEntity = EventMapper.toEntity(newEvent, location, creator);
-            repository.save(eventEntity);
-
+            eventEntity = repository.save(eventEntity);
+            
+            eventPublisher.publishEvent(
+                new EventUpdateNotificationEvent(eventEntity.getCreator(), eventEntity, eventUserRepository)
+            );
             return constructDTOFromEntity(eventEntity);
         });
+    }
+
+    private List<UUID> getParticipatingUserIdsByEventId(UUID eventId) {
+        try {
+            List<EventUser> eventUsers = eventUserRepository.findEventsByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
+            return eventUsers.stream().map((eventUser -> eventUser.getUser().getId())).collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            logger.error("Error finding events by event id: " + e.getMessage());
+            throw e;
+        }
     }
 
     private EventDTO constructDTOFromEntity(Event eventEntity) {
@@ -305,14 +322,8 @@ public class EventService implements IEventService {
     @Override
     public List<UserDTO> getParticipatingUsersByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-
-            if (eventUsers.isEmpty()) {
-                throw new BaseNotFoundException(EntityType.Event, eventId);
-            }
-
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus().equals(ParticipationStatus.participating))
                     .map(eventUser -> userService.getUserById(eventUser.getUser().getId()))
                     .toList();
         } catch (DataAccessException e) {
@@ -371,40 +382,38 @@ public class EventService implements IEventService {
     // invited/participating
     @Override
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
-        List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
-        if (eventUsers.isEmpty()) {
-            // throw BaseNotFound for events if eventIf has no eventUsers
-            throw new BaseNotFoundException(EntityType.Event, eventId);
+        EventUser eventUser = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.EventUser));
+
+        if (eventUser.getStatus() == ParticipationStatus.participating) {
+            eventUser.setStatus(ParticipationStatus.invited);
+        } else if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
+            eventUser.setStatus(ParticipationStatus.participating);
         }
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(userId) && !eventUser.getStatus().equals(ParticipationStatus.notInvited)) {
-                // if invited -> set status to participating
-                // if participating -> set status to invited
-                if (eventUser.getStatus().equals(ParticipationStatus.invited)) {
-                    eventUser.setStatus(ParticipationStatus.participating);
-                } else if (eventUser.getStatus().equals(ParticipationStatus.participating)) {
-                    eventUser.setStatus(ParticipationStatus.invited);
-                }
-                eventUserRepository.save(eventUser);
-                break;
-            }
+        
+        final Event event = eventUser.getEvent();
+        final User user = eventUser.getUser();
+        final ParticipationStatus status = eventUser.getStatus();
+        
+        if (status == ParticipationStatus.participating) { // Status changed from invited to participating
+            eventPublisher.publishEvent(
+                EventParticipationNotificationEvent.forJoining(user, event)
+            );
+        } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
+            eventPublisher.publishEvent(
+                EventParticipationNotificationEvent.forLeaving(user, event)
+            );
         }
+        
+        eventUserRepository.save(eventUser);
         return getFullEventById(eventId, userId);
     }
 
     @Override
     public List<EventDTO> getEventsInvitedTo(UUID id) {
-        List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
-
-        List<Event> events = new ArrayList<>();
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(id)) {
-                events.add(eventUser.getEvent());
-            }
-        }
-
-        return getEventDTOs(events);
+        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
+        return getEventDTOs(eventUsers.stream()
+                .map(EventUser::getEvent)
+                .toList());
     }
 
     @Override
@@ -423,25 +432,12 @@ public class EventService implements IEventService {
 
     @Override
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
-        List<EventUser> eventUsers = eventUserRepository.findByUser_Id(id);
-
-        if (eventUsers == null || eventUsers.isEmpty()) {
-            return Collections.emptyList(); // ✅ Always return an empty list instead of null
-        }
-
-        List<Event> events = new ArrayList<>();
-
-        for (EventUser eventUser : eventUsers) {
-            if (eventUser.getUser().getId().equals(id) && eventUser.getStatus() != ParticipationStatus.notInvited) {
-                events.add(eventUser.getEvent());
-            }
-        }
-
-        List<EventDTO> eventDTOs = getEventDTOs(events);
-
-        return eventDTOs.stream()
-                .map(eventDTO -> getFullEventByEvent(eventDTO, id, new HashSet<>()))
-                .toList();
+        List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
+        return convertEventsToFullFeedEvents(
+                getEventDTOs(eventUsers.stream()
+                        .map(EventUser::getEvent)
+                        .toList()),
+                id);
     }
 
     /**
@@ -460,22 +456,30 @@ public class EventService implements IEventService {
 
             List<FullFeedEventDTO> eventsInvitedTo = getFullEventsInvitedTo(requestingUserId);
 
-            // Remove expired events
-            eventsCreated = removeExpiredEvents(eventsCreated);
-            eventsInvitedTo = removeExpiredEvents(eventsInvitedTo);
-
-            // Sort events
-            sortEventsByStartTime(eventsCreated);
-            sortEventsByStartTime(eventsInvitedTo);
-
-            // Combine the two lists into one.
-            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-            combinedEvents.addAll(eventsInvitedTo);
-            return combinedEvents;
+            return makeFeed(eventsCreated, eventsInvitedTo);
         } catch (Exception e) {
             logger.error("Error fetching feed events for user: " + requestingUserId + " - " + e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Helper function to remove expired events, sort by time, and combine the events created by a user,
+     * and the events they are invited to
+     */
+    private List<FullFeedEventDTO> makeFeed(List<FullFeedEventDTO> eventsCreated, List<FullFeedEventDTO> eventsInvitedTo) {
+        // Remove expired events
+        eventsCreated = removeExpiredEvents(eventsCreated);
+        eventsInvitedTo = removeExpiredEvents(eventsInvitedTo);
+
+        // Sort events
+        sortEventsByStartTime(eventsCreated);
+        sortEventsByStartTime(eventsInvitedTo);
+
+        // Combine the two lists into one.
+        List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
+        combinedEvents.addAll(eventsInvitedTo);
+        return combinedEvents;
     }
 
     /**
@@ -514,18 +518,8 @@ public class EventService implements IEventService {
             List<FullFeedEventDTO> eventsCreated = convertEventsToFullFeedSelfOwnedEvents(getEventsByOwnerId(requestingUserId), requestingUserId);
             List<FullFeedEventDTO> eventsByFriendTagFilter = convertEventsToFullFeedEvents(getEventsInvitedToByFriendTagId(friendTagFilterId, requestingUserId), requestingUserId);
 
-            // Remove expired events
-            removeExpiredEvents(eventsCreated);
-            removeExpiredEvents(eventsByFriendTagFilter);
-
-            // Sort events
-            sortEventsByStartTime(eventsCreated);
-            sortEventsByStartTime(eventsByFriendTagFilter);
-
-            // Combine the lists with eventsCreated first.
-            List<FullFeedEventDTO> combinedEvents = new ArrayList<>(eventsCreated);
-            combinedEvents.addAll(eventsByFriendTagFilter);
-            return combinedEvents;
+            // Remove expired events and sort
+            return makeFeed(eventsCreated, eventsByFriendTagFilter);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;

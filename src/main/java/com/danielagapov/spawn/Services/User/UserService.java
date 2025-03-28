@@ -1,7 +1,9 @@
 package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
@@ -15,6 +17,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.DatabaseException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.FriendTag;
@@ -26,6 +29,7 @@ import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
+import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -36,8 +40,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService implements IUserService {
+    private static final long recommendedFriendLimit = 3L;
     private final IUserRepository repository;
-
     private final IEventUserRepository eventUserRepository;
     private final IUserFriendTagRepository uftRepository;
     private final IFriendTagService friendTagService;
@@ -108,8 +112,7 @@ public class UserService implements IUserService {
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
             // Get all friend tags for the user
-            List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id)
-                    .orElse(Collections.emptyList());
+            List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
 
             // Get the "Everyone" tag
             Optional<FriendTag> everyoneTag = friendTags.stream()
@@ -167,7 +170,7 @@ public class UserService implements IUserService {
             return friendTags.stream()
                     .collect(Collectors.toMap(
                             friendTag -> friendTag, // Use FriendTag as the key
-                            friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId()) // List of user IDs for each FriendTag
+                            friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId())
                     ));
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -302,6 +305,7 @@ public class UserService implements IUserService {
         return getUserById(userEntity.getId());
     }
 
+    @Override
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
             return uftRepository.findFriendIdsByTagId(friendTagId)
@@ -317,14 +321,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId) {
         try {
-            // Call the method to get the list of UserDTOs
-            List<UserDTO> friends = getFriendsByFriendTagId(friendTagId);
-
-            // Extract the user IDs from the UserDTO list
-            return friends.stream()
-                    .map(UserDTO::getId)
-                    .distinct()
-                    .collect(Collectors.toList());
+            return uftRepository.findFriendIdsByTagId(friendTagId);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -391,7 +388,6 @@ public class UserService implements IUserService {
             userEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), friendId));
 
-
             Optional<FriendTag> friendEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(friendId);
             friendEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), userId));
@@ -401,108 +397,39 @@ public class UserService implements IUserService {
         }
     }
 
-    // returns top 3 friends with most mutuals with user (with `userId`) as
+    // returns top x (specified by limit) friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
     @Override
-    public List<RecommendedFriendUserDTO> getRecommendedFriendsForUserId(UUID userId) {
+    public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
         try {
-            // Fetch the requesting user's friends
-            List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
+            // First get mutuals-based recommendations
+            List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId);
 
-            // Fetch users who have already received a friend request from the user
-            List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(userId)
-                    .stream()
-                    .map(CreateFriendRequestDTO::getReceiverUserId)
-                    .toList();
-
-            // Map mutual friends to RecommendedFriendUserDTO
-            List<UUID> receivedFriendRequestSenderUserIds = friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)
-                    .stream()
-                    .map(request -> request.getSenderUser().getId())
-                    .toList();
-
-            List<UUID> existingFriendUserIds = getFriendUserIdsByUserId(userId);
-
-            // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
-            Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
-            excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
-            excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
-            excludedUserIds.addAll(existingFriendUserIds);
-            excludedUserIds.add(userId); // Exclude self
-
-            // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
-            Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
-            for (UUID friendId : requestingUserFriendIds) {
-                List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
-
-                for (UUID friendOfFriendId : friendOfFriendIds) {
-                    if (!excludedUserIds.contains(friendOfFriendId)) {
-                        mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
-                    }
-                }
+            // If we already have enough mutual-based recommendations, limit and return them
+            if (recommendedFriends.size() >= recommendedFriendLimit) {
+                return recommendedFriends.stream()
+                        .limit(recommendedFriendLimit)
+                        .collect(Collectors.toList());
             }
 
-            // Map mutual friends to RecommendedFriendUserDTO
-            List<RecommendedFriendUserDTO> recommendedFriends = mutualFriendCounts.entrySet().stream()
-                    .map(entry -> {
-                        UUID mutualFriendId = entry.getKey();
-                        int mutualFriendCount = entry.getValue();
-                        FullUserDTO fullUser = getFullUserById(mutualFriendId);
+            // Otherwise, supplement with random recommendations
+            List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(userId);
 
-                        return recommendedFriendUserFromFullUser(fullUser, mutualFriendCount);
-                    })
-                    .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::getMutualFriendCount).reversed())
-                    .limit(3)
-                    .collect(Collectors.toList());
-
-            // Track users already added to recommendations
-            Set<UUID> recommendedUserIds = recommendedFriends.stream()
+            // Add random recommendations, avoiding duplicates
+            Set<UUID> existingIds = recommendedFriends.stream()
                     .map(RecommendedFriendUserDTO::getId)
                     .collect(Collectors.toSet());
-            
-            // Add these to excluded users to prevent duplicates
-            excludedUserIds.addAll(recommendedUserIds);
 
-            if (recommendedFriends.size() >= 3) {
-                return recommendedFriends;
-            }
+            for (RecommendedFriendUserDTO randomFriend : randomRecommendations) {
+                // Skip if we've reached the limit
+                if (recommendedFriends.size() >= recommendedFriendLimit) {
+                    break;
+                }
 
-            // Otherwise, recommend random users not already friends, not sent/received requests, and not self
-            List<UserDTO> allUsers = getAllUsers();
-
-            for (UserDTO potentialFriend : allUsers) {
-                if (recommendedFriends.size() >= 3) break;
-
-                UUID potentialFriendId = potentialFriend.getId();
-                boolean isExcluded = excludedUserIds.contains(potentialFriendId);
-
-                if (!isExcluded) {
-                    boolean hasAlreadySentFriendRequest = false;
-
-                    try {
-                        List<CreateFriendRequestDTO> potentialFriendIncomingFriendRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(potentialFriendId);
-
-                        for (CreateFriendRequestDTO friendRequestDTO : potentialFriendIncomingFriendRequests) {
-                            if (friendRequestDTO.getSenderUserId().equals(userId)) {
-                                hasAlreadySentFriendRequest = true;
-                                break;
-                            }
-                        }
-                    } catch (BaseNotFoundException e) {
-                        // No incoming friend requests, safe to ignore
-                    } catch (Exception e) {
-                        logger.error(e.getMessage());
-                        throw e;
-                    }
-
-                    if (!hasAlreadySentFriendRequest) {
-                        FullUserDTO fullUserDTO = getFullUserById(potentialFriendId);
-
-                        recommendedFriends.add(recommendedFriendUserFromFullUser(fullUserDTO, 0));
-
-                        // Add to excluded list to prevent duplicates
-                        excludedUserIds.add(potentialFriendId);
-                    }
+                // Skip if this user is already in our recommendations
+                if (!existingIds.contains(randomFriend.getId())) {
+                    recommendedFriends.add(randomFriend);
+                    existingIds.add(randomFriend.getId());
                 }
             }
 
@@ -513,13 +440,146 @@ public class UserService implements IUserService {
         }
     }
 
+    public List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId) {
+        // Fetch the requesting user's friends
+        List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
+
+        Set<UUID> excludedUserIds = getExcludedUserIds(userId);
+
+        // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
+        Map<UUID, Integer> mutualFriendCounts = getMutualFriendCounts(requestingUserFriendIds, excludedUserIds);
+
+        // Map mutual friends to RecommendedFriendUserDTO
+        return mutualFriendCounts.entrySet().stream()
+                .map(entry -> {
+                    UUID mutualFriendId = entry.getKey();
+                    int mutualFriendCount = entry.getValue();
+                    User user = getUserEntityById(mutualFriendId);
+                    return FriendUserMapper.toDTO(user, mutualFriendCount);
+                })
+                .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::getMutualFriendCount).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<RecommendedFriendUserDTO> getRandomRecommendations(UUID userId) {
+        List<RecommendedFriendUserDTO> recommendedFriends = new ArrayList<>();
+        List<UserDTO> allUsers = getAllUsers();
+        Set<UUID> excludedUserIds = getExcludedUserIds(userId);
+
+        for (UserDTO potentialFriend : allUsers) {
+            if (recommendedFriends.size() >= recommendedFriendLimit) break;
+            UUID potentialFriendId = potentialFriend.getId();
+
+            // Check if the potential friend is already excluded
+            if (!excludedUserIds.contains(potentialFriendId)) {
+                recommendedFriends.add(FriendUserMapper.toDTO(getUserEntityById(potentialFriendId), 0));
+                // Add to excluded list to prevent duplicates
+                excludedUserIds.add(potentialFriendId);
+            }
+        }
+        return recommendedFriends;
+    }
+
+    private Map<UUID, Integer> getMutualFriendCounts(List<UUID> requestingUserFriendIds, Set<UUID> excludedUserIds) {
+        Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
+        for (UUID friendId : requestingUserFriendIds) {
+            List<UUID> friendOfFriendIds = getFriendUserIdsByUserId(friendId);
+
+            for (UUID friendOfFriendId : friendOfFriendIds) {
+                if (!excludedUserIds.contains(friendOfFriendId)) {
+                    mutualFriendCounts.merge(friendOfFriendId, 1, Integer::sum);
+                }
+            }
+        }
+        return mutualFriendCounts;
+    }
+
+    // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
+    private Set<UUID> getExcludedUserIds(UUID userId) {
+        // Fetch the requesting user's friends
+        List<UUID> requestingUserFriendIds = getFriendUserIdsByUserId(userId);
+
+        // Fetch users who have already received a friend request from the user
+        List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(userId)
+                .stream()
+                .map(CreateFriendRequestDTO::getReceiverUserId)
+                .toList();
+
+        // Map mutual friends to RecommendedFriendUserDTO
+        List<UUID> receivedFriendRequestSenderUserIds = friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)
+                .stream()
+                .map(CreateFriendRequestDTO::getSenderUserId)
+                .toList();
+
+        // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
+        Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
+        excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
+        excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
+        excludedUserIds.add(userId); // Exclude self
+
+        return excludedUserIds;
+    }
+
+    @Override
+    public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
+        try {
+            List<FetchFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(requestingUserId)
+                    .stream()
+                    .filter(fr -> isQueryMatch(fr.getSenderUser(), searchQuery))
+                    .toList();
+
+            List<RecommendedFriendUserDTO> recommendedFriends;
+            List<FullFriendUserDTO> friends;
+
+            // If searchQuery is empty, return all recommended friends
+            if (searchQuery.isEmpty()) {
+                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
+                friends = getFullFriendUsersByUserId(requestingUserId);
+            } else {
+                // Get recommended mutual friends
+                recommendedFriends = getRecommendedMutuals(requestingUserId)
+                        .stream()
+                        .filter(entry -> isQueryMatch(entry, searchQuery))
+                        .collect(Collectors.toList());
+
+                // If not enough mutual friends, supplement with random recommendations
+                if (recommendedFriends.size() < recommendedFriendLimit) {
+                    List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(requestingUserId)
+                            .stream()
+                            .filter(entry -> isQueryMatch(entry, searchQuery))
+                            .limit(recommendedFriendLimit - recommendedFriends.size())
+                            .collect(Collectors.toList());
+
+                    recommendedFriends.addAll(randomRecommendations);
+                }
+
+                // Get friends who match the search query
+                friends = getFullFriendUsersByUserId(requestingUserId)
+                        .stream()
+                        .filter(user -> isQueryMatch(user, searchQuery))
+                        .collect(Collectors.toList());
+            }
+
+            return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    private boolean isQueryMatch(AbstractUserDTO recommendedFriend, String searchQuery) {
+        final String lowercaseQuery = searchQuery.toLowerCase();
+        return recommendedFriend.getFirstName().toLowerCase().contains(lowercaseQuery) ||
+                recommendedFriend.getLastName().toLowerCase().contains(lowercaseQuery) ||
+                recommendedFriend.getUsername().toLowerCase().contains(lowercaseQuery);
+    }
+
     @Override
     public List<BaseUserDTO> getParticipantsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.participating)
                     .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -528,14 +588,12 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<BaseUserDTO> getInvitedByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.invited);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.invited)
                     .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -544,14 +602,12 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<UUID> getParticipantUserIdsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.participating)
                     .map(eventUser -> eventUser.getUser().getId())
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -560,14 +616,12 @@ public class UserService implements IUserService {
         }
     }
 
-
     @Override
     public List<UUID> getInvitedUserIdsByEventId(UUID eventId) {
         try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_Id(eventId);
+            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.invited);
 
             return eventUsers.stream()
-                    .filter(eventUser -> eventUser.getStatus() == ParticipationStatus.invited)
                     .map(eventUser -> eventUser.getUser().getId())
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -575,7 +629,6 @@ public class UserService implements IUserService {
             throw new ApplicationException("Error retrieving invited user IDs for eventId " + eventId, e);
         }
     }
-
 
     @Override
     public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
@@ -686,7 +739,7 @@ public class UserService implements IUserService {
     @Override
     public List<User> getFriendUsersByUserId(UUID requestingUserId) {
         try {
-            return friendTagRepository.getFriendsFromEveryoneTagByOwnerId(requestingUserId).orElseThrow(() -> new BaseNotFoundException(EntityType.User));
+            return friendTagRepository.getFriendsFromEveryoneTagByOwnerId(requestingUserId);
         } catch (BaseNotFoundException e) {
             logger.warn("Could not find user with id: " + requestingUserId);
             throw e;
@@ -695,19 +748,6 @@ public class UserService implements IUserService {
         }
 
         return List.of();
-    }
-
-    private RecommendedFriendUserDTO recommendedFriendUserFromFullUser(FullUserDTO fullUser, int mutualFriendCount) {
-        return new RecommendedFriendUserDTO(
-                fullUser.getId(),
-                fullUser.getFirstName(),
-                fullUser.getLastName(),
-                fullUser.getEmail(),
-                fullUser.getUsername(),
-                fullUser.getBio(),
-                fullUser.getProfilePicture(),
-                mutualFriendCount
-        );
     }
 
     @Override
@@ -737,14 +777,14 @@ public class UserService implements IUserService {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-            
+
             user.setBio(bio);
             user.setUsername(username);
             user.setFirstName(firstName);
             user.setLastName(lastName);
-            
+
             user = repository.save(user);
-            
+
             return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());

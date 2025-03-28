@@ -62,4 +62,12 @@ public class ReportedContentDTO implements Serializable {
                 this.reportedUser
         );
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true; // Check if the same reference
+        if (obj == null || getClass() != obj.getClass()) return false; // Null check and class check
+        ReportedContentDTO that = (ReportedContentDTO) obj; // Safe cast
+        return id != null && id.equals(that.id); // Compare IDs
+    }
 }

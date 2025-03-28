@@ -5,13 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
-public class FullFriendTagDTO extends AbstractFriendTagDTO implements Serializable {
+public class FullFriendTagDTO extends AbstractFriendTagDTO {
     List<BaseUserDTO> friends;
     @JsonProperty("isEveryone") // Explicitly define JSON property name
     private boolean isEveryone;

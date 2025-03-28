@@ -82,7 +82,6 @@ public class FriendTagService implements IFriendTagService {
     public List<UUID> getFriendTagIdsByOwnerUserId(UUID id) {
         // Fetch FriendTag entities related to the given user (for example, by userId)
         return repository.findByOwnerId(id)
-                .orElse(Collections.emptyList())
                 .stream()
                 .filter(Objects::nonNull)
                 .map(FriendTag::getId)
@@ -95,8 +94,7 @@ public class FriendTagService implements IFriendTagService {
             // Fetch the raw data
             Map<FriendTag, UUID> ownerUserIdsMap = userService.getOwnerUserIdsMap();
             Map<FriendTag, List<UUID>> friendUserIdsMap = userService.getFriendUserIdsMap();
-            List<FriendTag> friendTags = repository.findByOwnerId(ownerId)
-                    .orElse(Collections.emptyList());
+            List<FriendTag> friendTags = repository.findByOwnerId(ownerId);
 
             // Sort the list with "Everyone" tag first
             friendTags.sort((tag1, tag2) -> {

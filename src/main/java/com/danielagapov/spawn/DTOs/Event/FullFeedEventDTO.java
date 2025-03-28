@@ -9,14 +9,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
-public class FullFeedEventDTO extends AbstractEventDTO implements Serializable {
+public class FullFeedEventDTO extends AbstractEventDTO {
     private LocationDTO location;
     private BaseUserDTO creatorUser;
     private List<BaseUserDTO> participantUsers;

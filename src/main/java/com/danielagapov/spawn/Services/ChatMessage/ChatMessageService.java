@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -15,24 +16,17 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.ChatMessage;
-import com.danielagapov.spawn.Models.ChatMessageLikes;
-import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
-import com.danielagapov.spawn.Repositories.IChatMessageRepository;
-import com.danielagapov.spawn.Repositories.IEventRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Models.*;
+import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Events.NewCommentNotificationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,10 +38,14 @@ public class ChatMessageService implements IChatMessageService {
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
+    private final IEventUserRepository eventUserRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IEventRepository eventRepository, IChatMessageLikesRepository chatMessageLikesRepository,
-                              IFriendTagService ftService, IUserRepository userRepository, ILogger logger) {
+                              IFriendTagService ftService, IUserRepository userRepository, ILogger logger,
+                              IEventUserRepository eventUserRepository,
+                              ApplicationEventPublisher eventPublisher) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.eventRepository = eventRepository;
@@ -55,6 +53,8 @@ public class ChatMessageService implements IChatMessageService {
         this.ftService = ftService;
         this.userRepository = userRepository;
         this.logger = logger;
+        this.eventUserRepository = eventUserRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -115,7 +115,20 @@ public class ChatMessageService implements IChatMessageService {
                 newChatMessageDTO.getEventId(),
                 List.of()
         );
-        return saveChatMessage(chatMessageDTO);
+
+        ChatMessageDTO savedMessage = saveChatMessage(chatMessageDTO);
+
+        // Get the event and sender details
+        Event event = eventRepository.findById(savedMessage.getEventId())
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, savedMessage.getEventId()));
+        User sender = userRepository.findById(savedMessage.getSenderUserId())
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.User, savedMessage.getSenderUserId()));
+
+        // Create and publish notification event
+        eventPublisher.publishEvent(new NewCommentNotificationEvent(
+                sender, event, savedMessage, eventUserRepository));
+
+        return savedMessage;
     }
 
     @Override
@@ -159,10 +172,6 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<UUID> getChatMessageIdsByEventId(UUID eventId) {
         try {
-            // Find the event by its ID
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
-
             // Retrieve all chat messages for the specified event
             List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
 
@@ -291,6 +300,5 @@ public class ChatMessageService implements IChatMessageService {
                 .map(this::getFullChatMessageByChatMessage)
                 .collect(Collectors.toList());
     }
-
 
 }
