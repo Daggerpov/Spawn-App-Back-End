@@ -29,7 +29,7 @@ public class FeedbackSubmissionController {
      * @return The saved feedback entity if successful, otherwise an error response.
      */
     @PostMapping
-    public ResponseEntity<FeedbackSubmission> submitFeedback(@RequestBody FeedbackSubmissionDTO dto) {
+    public ResponseEntity<FeedbackSubmissionDTO> submitFeedback(@RequestBody FeedbackSubmissionDTO dto) {
         try {
             return new ResponseEntity<>(service.submitFeedback(dto), HttpStatus.CREATED);
         } catch (BaseSaveException e) {

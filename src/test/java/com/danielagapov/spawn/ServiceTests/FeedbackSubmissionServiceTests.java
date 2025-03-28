@@ -61,7 +61,7 @@ public class FeedbackSubmissionServiceTests {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(repository.save(any(FeedbackSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        FeedbackSubmission saved = service.submitFeedback(dto);
+        FeedbackSubmissionDTO saved = service.submitFeedback(dto);
 
         assertNotNull(saved);
         assertEquals(dto.getType(), saved.getType());

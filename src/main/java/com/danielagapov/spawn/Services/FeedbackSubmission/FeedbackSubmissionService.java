@@ -35,7 +35,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FeedbackSubmission submitFeedback(FeedbackSubmissionDTO dto) {
+    public FeedbackSubmissionDTO submitFeedback(FeedbackSubmissionDTO dto) {
         try {
             UUID userId = dto.getFromUserId();
 
@@ -52,7 +52,8 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
                 feedback.setFromUserEmail(dto.getFromUserEmail());
             }
 
-            return repository.save(feedback);
+            FeedbackSubmission saved = repository.save(feedback);
+            return FeedbackSubmissionMapper.toDTO(saved);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission: " + e.getMessage());
