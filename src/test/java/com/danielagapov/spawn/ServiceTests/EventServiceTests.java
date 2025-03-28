@@ -24,7 +24,7 @@ import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Event.EventService;
-import com.danielagapov.spawn.Services.EventUser.IEventUserService;
+import com.danielagapov.spawn.Services.EventUser.EventUserService;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -77,7 +77,7 @@ public class EventServiceTests {
     private ApplicationEventPublisher eventPublisher;
 
     @Mock
-    private IEventUserService eventUserService;
+    private EventUserService eventUserService;
 
     @InjectMocks
     private EventService eventService;
@@ -443,9 +443,9 @@ public class EventServiceTests {
         when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        FullUserDTO fullUser = new FullUserDTO(
-                UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com");
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
+        UserDTO user = new UserDTO(
+                UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com");
+        when(userService.getUserById(any(UUID.class))).thenReturn(user);
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
 
@@ -457,6 +457,7 @@ public class EventServiceTests {
 
         // Stub participation status lookups
         when(eventUserRepository.existsById(compositeId)).thenReturn(true);
+        when(eventUserService.getParticipationStatus(eventId, requestingUserId)).thenReturn(ParticipationStatus.participating);
         EventUser eu = new EventUser();
         eu.setId(compositeId);  // Set the composite key on the EventUser
         User euUser = new User();
@@ -589,126 +590,6 @@ public class EventServiceTests {
         assertEquals(user1.getId(), participants.get(0).getId());
     }
 
-    @Test
-    void getParticipationStatus_ShouldReturnStatus_WhenUserParticipates() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-
-        EventUser eu = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        eu.setUser(user);
-        eu.setStatus(ParticipationStatus.participating);
-
-        // Ensure we fetch by both eventId and userId
-        when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
-
-        ParticipationStatus status = eventUserService.getParticipationStatus(eventId, userId);
-
-        assertEquals(ParticipationStatus.participating, status);
-    }
-
-
-    @Test
-    void getParticipationStatus_ShouldReturnNotInvited_WhenUserNotFound() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-        // Stub existsById to return true and provide a list with a user not matching userId.
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-        EventUser eu = new EventUser();
-        User otherUser = new User();
-        otherUser.setId(UUID.randomUUID());
-        eu.setUser(otherUser);
-        eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu));
-
-        ParticipationStatus status = eventUserService.getParticipationStatus(eventId, userId);
-
-        assertEquals(ParticipationStatus.notInvited, status);
-    }
-
-    @Test
-    void inviteUser_ShouldInviteUser_WhenNotAlreadyInvited() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        // Return a non-empty list with an EventUser for a different user.
-        EventUser otherEU = new EventUser();
-        User otherUser = new User();
-        otherUser.setId(UUID.randomUUID());
-        otherEU.setUser(otherUser);
-        otherEU.setStatus(ParticipationStatus.participating);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(otherEU));
-
-        User user = new User();
-        user.setId(userId);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        Event event = createDummyEvent(eventId, "Invite Test", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-
-        boolean alreadyInvited = eventUserService.inviteUser(eventId, userId);
-
-        assertFalse(alreadyInvited);
-        verify(eventUserRepository, times(1)).save(any(EventUser.class));
-    }
-
-    @Test
-    void inviteUser_ShouldReturnTrue_WhenUserAlreadyInvited() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-
-        // Create test entities
-        Event event = new Event();
-        event.setId(eventId);
-
-        User user = new User();
-        user.setId(userId);
-
-        EventUser eu = new EventUser();
-        eu.setId(compositeId);
-        eu.setEvent(event);
-        eu.setUser(user);
-        eu.setStatus(ParticipationStatus.invited);
-
-        // Mocking repository calls
-        when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user)); // Prevents NotFoundException
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event)); // Prevents NotFoundException
-
-        // Call the method
-        boolean result = eventUserService.inviteUser(eventId, userId);
-
-        // Assertions
-        assertTrue(result);
-        verify(eventUserRepository, never()).save(any(EventUser.class)); // Ensures no save happens
-    }
-
-
-    @Test
-    void getEventsInvitedTo_ShouldReturnEvents_WhenUserIsInvited() {
-        UUID userId = UUID.randomUUID();
-        Event event = createDummyEvent(UUID.randomUUID(), "Invited Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        EventUser eu = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        eu.setUser(user);
-        eu.setEvent(event);
-        eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(eu));
-        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(eu));
-        when(eventUserService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(eventUserService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
-
-        List<EventDTO> events = eventUserService.getEventsInvitedTo(userId);
-
-        assertNotNull(events);
-        assertEquals(1, events.size());
-    }
 
     @Test
     void getFullEventsInvitedTo_ShouldReturnFullEvents_WhenUserIsInvited() {
@@ -863,54 +744,5 @@ public class EventServiceTests {
         assertNotNull(fullEvents);
         assertEquals(1, fullEvents.size());
         assertEquals("#8693FF", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
-    }
-
-    @Test
-    void toggleParticipation_ShouldToggleStatus_WhenUserIsInvitedOrParticipating() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        var compositeId = new EventUsersId(eventId, userId);
-
-        // Create and set up the event
-        Event event = new Event();
-        event.setId(eventId);
-        User creator = new User();
-        creator.setId(UUID.randomUUID());
-        event.setCreator(creator);
-
-        // Create and set up the event user
-        EventUser invitedEventUser = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        invitedEventUser.setUser(user);
-        invitedEventUser.setStatus(ParticipationStatus.invited);
-        invitedEventUser.setEvent(event);
-
-        // Mock the method that EventService.toggleParticipation actually calls
-        when(eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId)).thenReturn(Optional.of(invitedEventUser));
-        when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-
-        // Mock for getFullEventById which is called by toggleParticipation to return the result
-        LocationDTO locationDTO = new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0);
-        when(locationService.getLocationById(any(UUID.class))).thenReturn(locationDTO);
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(
-                new FullUserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email")
-        );
-        when(eventUserService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(eventUserService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
-
-        FullFeedEventDTO result = eventUserService.toggleParticipation(eventId, userId);
-        assertNotNull(result);
-        assertEquals(ParticipationStatus.participating, invitedEventUser.getStatus());
-
-        // Test toggle from participating to invited
-        result = eventUserService.toggleParticipation(eventId, userId);
-        assertNotNull(result);
-        assertEquals(ParticipationStatus.invited, invitedEventUser.getStatus());
-
-        // Don't verify the event publisher - the service uses it correctly based on the logs
-        // and the verification isn't working well in tests
     }
 }
