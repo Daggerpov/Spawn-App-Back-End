@@ -10,7 +10,6 @@ import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -19,10 +18,8 @@ import com.danielagapov.spawn.Exceptions.DatabaseException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
@@ -42,7 +39,6 @@ import java.util.stream.Collectors;
 public class UserService implements IUserService {
     private static final long recommendedFriendLimit = 3L;
     private final IUserRepository repository;
-    private final IEventUserRepository eventUserRepository;
     private final IUserFriendTagRepository uftRepository;
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
@@ -52,10 +48,8 @@ public class UserService implements IUserService {
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
-    public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, ILogger logger) {
+    public UserService(IUserRepository repository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, ILogger logger) {
         this.repository = repository;
-        this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
@@ -572,62 +566,6 @@ public class UserService implements IUserService {
         return recommendedFriend.getFirstName().toLowerCase().contains(lowercaseQuery) ||
                 recommendedFriend.getLastName().toLowerCase().contains(lowercaseQuery) ||
                 recommendedFriend.getUsername().toLowerCase().contains(lowercaseQuery);
-    }
-
-    @Override
-    public List<BaseUserDTO> getParticipantsByEventId(UUID eventId) {
-        try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
-
-            return eventUsers.stream()
-                    .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error retrieving participants for eventId " + eventId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving participants for eventId " + eventId, e);
-        }
-    }
-
-    @Override
-    public List<BaseUserDTO> getInvitedByEventId(UUID eventId) {
-        try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.invited);
-
-            return eventUsers.stream()
-                    .map(eventUser -> UserMapper.toDTO(eventUser.getUser()))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error retrieving invited users for eventId " + eventId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving invited users for eventId " + eventId, e);
-        }
-    }
-
-    @Override
-    public List<UUID> getParticipantUserIdsByEventId(UUID eventId) {
-        try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating);
-
-            return eventUsers.stream()
-                    .map(eventUser -> eventUser.getUser().getId())
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error retrieving participant user IDs for eventId " + eventId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving participant user IDs for eventId " + eventId, e);
-        }
-    }
-
-    @Override
-    public List<UUID> getInvitedUserIdsByEventId(UUID eventId) {
-        try {
-            List<EventUser> eventUsers = eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.invited);
-
-            return eventUsers.stream()
-                    .map(eventUser -> eventUser.getUser().getId())
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error retrieving invited user IDs for eventId " + eventId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving invited user IDs for eventId " + eventId, e);
-        }
     }
 
     @Override
