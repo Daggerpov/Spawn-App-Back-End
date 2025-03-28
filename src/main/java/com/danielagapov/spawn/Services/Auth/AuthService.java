@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.Auth;
 
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.EmailAlreadyExistsException;
@@ -49,7 +50,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public FullUserDTO loginUser(AuthUserDTO authUserDTO) {
+    public BaseUserDTO loginUser(AuthUserDTO authUserDTO) {
         logger.info(String.format("Attempting to login user: { user: %s }", authUserDTO));
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -60,9 +61,9 @@ public class AuthService implements IAuthService {
         if (authentication.isAuthenticated()) {
             logger.info("Authentication successful for user: " + authUserDTO.getUsername());
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-            logger.info("Fetching full user dto");
-            FullUserDTO fullUserDTO = userService.getFullUserByUsername(username);
-            return fullUserDTO;
+            logger.info("Fetching user");
+            // Get user by username - we already know the user exists and is authenticated
+            return userService.getBaseUserById(userService.getFullUserByUsername(username).getId());
         } else {
             throw new BadCredentialsException("Invalid username or password");
         }

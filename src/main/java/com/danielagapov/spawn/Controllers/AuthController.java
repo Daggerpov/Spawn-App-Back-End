@@ -127,10 +127,10 @@ public class AuthController {
 
     // full path: /api/v1/auth/login
     @PostMapping("login")
-    public ResponseEntity<AbstractUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+    public ResponseEntity<BaseUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
             logger.info(String.format("Login request received: {user: %s}", authUserDTO));
-            FullUserDTO existingUserDTO = authService.loginUser(authUserDTO);
+            BaseUserDTO existingUserDTO = authService.loginUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
