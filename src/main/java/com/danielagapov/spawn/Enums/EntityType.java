@@ -1,19 +1,22 @@
 package com.danielagapov.spawn.Enums;
 
 public enum EntityType {
-    // Base entities
+    // Base Entities
     ChatMessage("Chat Message"),
     Event("Event"),
     FriendTag("Friend Tag"),
     User("User"),
-    ReportedContent("Reported Content"),
-    ExternalIdMap("External Id Map"),
-
-    // Relationships between entities
-    ChatMessageLike("Chat Message Like"),
     FriendRequest("Friend Request"),
+
+    // Related to Base Entities
     Location("Location"),
-    EventUser("Event User");
+    ChatMessageLike("Chat Message Like"),
+    EventUser("Event User"),
+
+    // Unrelated to Base Entities
+    ExternalIdMap("External Id Map"),
+    ReportedContent("Reported Content"),
+    FeedbackSubmission("Feedback Submission");
 
     private final String description;
 
