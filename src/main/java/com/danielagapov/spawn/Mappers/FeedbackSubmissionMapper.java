@@ -11,6 +11,7 @@ public class FeedbackSubmissionMapper {
 
     public static FeedbackSubmissionDTO toDTO(FeedbackSubmission entity) {
         return new FeedbackSubmissionDTO(
+                entity.getId(),
                 entity.getType(),
                 entity.getFromUser() != null ? entity.getFromUser().getId() : null,
                 entity.getFromUserEmail(),

@@ -1,15 +1,14 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
-import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFeedbackSubmissionRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.FeedbackSubmission.FeedbackSubmissionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +46,7 @@ public class FeedbackSubmissionServiceTests {
     public void submitFeedback_ShouldSaveFeedback_WhenValidInputProvided() {
         UUID userId = UUID.randomUUID();
         FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
+                UUID.randomUUID(),
                 FeedbackType.BUG,
                 userId,
                 "user@example.com",
@@ -73,6 +73,7 @@ public class FeedbackSubmissionServiceTests {
     public void submitFeedback_ShouldThrowException_WhenUserNotFound() {
         UUID userId = UUID.randomUUID();
         FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
+                UUID.randomUUID(),
                 FeedbackType.BUG,
                 userId,
                 "user@example.com",
@@ -89,6 +90,7 @@ public class FeedbackSubmissionServiceTests {
     @Test
     public void submitFeedback_ShouldThrowException_WhenUserIdIsNull() {
         FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
+                UUID.randomUUID(),
                 FeedbackType.BUG,
                 null,
                 "user@example.com",
