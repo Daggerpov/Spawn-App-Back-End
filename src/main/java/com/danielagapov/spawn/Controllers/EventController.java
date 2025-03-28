@@ -124,7 +124,15 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.replaceEvent(newEvent, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            // Only return 404 if user doesn't exist, not if event doesn't exist
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else if (e.entityType == EntityType.Event) {
+                // Return 404 for events too, as this is specifically looking up an event by ID
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -146,6 +154,7 @@ public class EventController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
             }
         } catch (BaseNotFoundException e) {
+            // For deletion, it makes sense to return 404 if the event doesn't exist
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -174,8 +183,12 @@ public class EventController {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } catch (BaseNotFoundException e) {
-            // user not found
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            // For endpoints that query a specific event ID, return 404 if the event doesn't exist
+            if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -194,8 +207,14 @@ public class EventController {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
-            // event or user not found
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            // Only return 404 for appropriate entity types
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -214,8 +233,14 @@ public class EventController {
                 return new ResponseEntity<>(false, HttpStatus.OK);
             }
         } catch (BaseNotFoundException e) {
-            // event or user not found
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            // Only return 404 for appropriate entity types
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -230,8 +255,17 @@ public class EventController {
             FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
             return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            // event or user not found
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            // Only return 404 for appropriate entity types
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else if (e.entityType == EntityType.Event) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else if (e.entityType == EntityType.EventUser) {
+                // If the user is not invited to the event, return 404
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -261,7 +295,7 @@ public class EventController {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } catch (BaseNotFoundException e) {
-            // user not found
+            // user not found - return 404
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -288,7 +322,7 @@ public class EventController {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } catch (BaseNotFoundException e) {
-            // user or event not found
+            // user not found - return 404
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -305,8 +339,15 @@ public class EventController {
         try {
             return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            // Event not found
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            // Event or User not found - only return 404 if it's the user that's not found
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else if (e.entityType == EntityType.Event) {
+                // Event not found for a valid user, return empty response with 200
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             // Any other exception
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
