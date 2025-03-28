@@ -5,7 +5,7 @@ import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -396,8 +396,8 @@ public class EventServiceTests {
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(new FullUserDTO(
-                UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com"));
+        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub friend tag lookup; for events without a requesting user, no friend tag is applied.
@@ -440,9 +440,9 @@ public class EventServiceTests {
         when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        FullUserDTO fullUser = new FullUserDTO(
-                UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com");
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
+        BaseUserDTO baseUser = new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg");
+        when(userService.getFullUserById(any(UUID.class))).thenReturn(baseUser);
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
 
@@ -731,8 +731,8 @@ public class EventServiceTests {
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class)))
-                .thenReturn(new FullUserDTO(UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com"));
+        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
@@ -760,9 +760,9 @@ public class EventServiceTests {
                 List.of(), List.of(), List.of());
         when(locationService.getLocationById(eventDTO.getLocationId()))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        FullUserDTO fullUser = new FullUserDTO(
-                eventDTO.getCreatorUserId(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com");
-        when(userService.getFullUserById(eventDTO.getCreatorUserId())).thenReturn(fullUser);
+        BaseUserDTO baseUser = new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg");
+        when(userService.getFullUserById(eventDTO.getCreatorUserId())).thenReturn(baseUser);
         when(userService.getParticipantsByEventId(eventDTO.getId())).thenReturn(List.of());
         when(userService.getInvitedByEventId(eventDTO.getId())).thenReturn(List.of());
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
@@ -802,9 +802,8 @@ public class EventServiceTests {
 
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class)))
-                .thenReturn(new FullUserDTO(UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg",
-                        "first", "last", "bio", List.of(), "email@example.com"));
+        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
@@ -836,8 +835,8 @@ public class EventServiceTests {
 
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class)))
-                .thenReturn(new FullUserDTO(UUID.randomUUID(), List.of(), "fullUsername", "avatar.jpg", "first", "last", "bio", List.of(), "email@example.com"));
+        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
@@ -892,7 +891,7 @@ public class EventServiceTests {
         LocationDTO locationDTO = new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0);
         when(locationService.getLocationById(any(UUID.class))).thenReturn(locationDTO);
         when(userService.getFullUserById(any(UUID.class))).thenReturn(
-            new FullUserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email")
+            new BaseUserDTO(UUID.randomUUID(), "first", "last", "email", "fullUsername", "bio", "avatar.jpg")
         );
         when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
         when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());

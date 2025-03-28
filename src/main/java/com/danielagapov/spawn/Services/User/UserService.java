@@ -7,7 +7,6 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -99,7 +98,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserById(UUID id) {
+    public BaseUserDTO getFullUserById(UUID id) {
         try {
             return getFullUserByUser(getUserById(id), new HashSet<>());
         } catch (Exception e) {
@@ -266,7 +265,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserByEmail(String email) {
+    public BaseUserDTO getFullUserByEmail(String email) {
         try {
             User user = repository.findByEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
             return getFullUserById(user.getId());
@@ -277,7 +276,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserByUserEntity(User user) {
+    public BaseUserDTO getFullUserByUserEntity(User user) {
         return getFullUserByUser(getUserDTOByEntity(user), Set.of());
     }
 
@@ -631,23 +630,21 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
+    public BaseUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
         try {
             if (visitedUsers.contains(user.getId())) {
                 return null; // Skip already visited users
             }
             visitedUsers.add(user.getId());
 
-            return new FullUserDTO(
+            return new BaseUserDTO(
                     user.getId(),
-                    getFriendsByUserId(user.getId()),
-                    user.getUsername(),
-                    user.getProfilePicture(),
                     user.getFirstName(),
                     user.getLastName(),
+                    user.getEmail(),
+                    user.getUsername(),
                     user.getBio(),
-                    friendTagService.getFriendTagsByOwnerId(user.getId()),
-                    user.getEmail()
+                    user.getProfilePicture()
             );
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -656,7 +653,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers) {
+    public List<BaseUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers) {
         try {
             return users.stream()
                     .map(user -> getFullUserByUser(user, visitedUsers))
@@ -669,7 +666,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserByUsername(String username) {
+    public BaseUserDTO getFullUserByUsername(String username) {
         try {
             User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
             return getFullUserById(user.getId());

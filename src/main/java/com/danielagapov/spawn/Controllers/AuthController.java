@@ -40,7 +40,7 @@ public class AuthController {
      * already has an existing `User` created within spawn, given their external user id, which we check
      * against our mappings of internal ids to external ones.
      * <p>
-     * If the user is already saved within Spawn -> we return its `FullUserDTO`. Otherwise, null.
+     * If the user is already saved within Spawn -> we return its `BaseUserDTO`. Otherwise, null.
      */
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
