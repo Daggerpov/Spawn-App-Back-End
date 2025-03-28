@@ -59,15 +59,6 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(eventService.getEventsByOwnerId(creatorUserId), HttpStatus.OK);
             }
-        } catch (BasesNotFoundException e) {
-            // thrown list of events not found for given user id
-            // if entities not found is Event: return response with empty list and 200 status
-            // otherwise: bad request http status
-            if (e.entityType == EntityType.Event) {
-                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
         } catch (BaseNotFoundException e) {
             // user or event not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
