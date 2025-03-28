@@ -10,7 +10,8 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FeedbackSubmissionDTO {
+public class FeedbackSubmissionDTO implements Serializable {
+    private UUID id;
     private FeedbackType type;
     private UUID fromUserId;
     private String fromUserEmail;
