@@ -96,4 +96,15 @@ public interface IUserService {
     BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 
     SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
+
+    /**
+     * Get user with friends and tags separately
+     * This replaces getFullUserById for clients that need the extra information
+     */
+    Map<String, Object> getUserWithFriendsAndTags(UUID id);
+
+    /**
+     * Get the User entity by username
+     */
+    User getUserEntityByUsername(String username);
 }

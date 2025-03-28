@@ -7,15 +7,19 @@ import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController()
@@ -24,11 +28,14 @@ public class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
     private final ILogger logger;
+    private final IFriendTagService friendTagService;
 
-    public UserController(IUserService userService, IS3Service s3Service, ILogger logger) {
+    @Autowired
+    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IFriendTagService friendTagService) {
         this.userService = userService;
         this.s3Service = s3Service;
         this.logger = logger;
+        this.friendTagService = friendTagService;
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful.
@@ -51,11 +58,11 @@ public class UserController {
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/{id}?full=full
     @GetMapping("{id}")
-    public ResponseEntity<AbstractUserDTO> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<Object> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
-                return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
+                return new ResponseEntity<>(userService.getUserWithFriendsAndTags(id), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
             }
@@ -83,11 +90,22 @@ public class UserController {
     @Deprecated(since = "Not being used on mobile currently.")
     // full path: /api/v1/users/friendTag/{tagId}?full=full
     @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends AbstractUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<Object> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
         if (tagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId), new HashSet<>()), HttpStatus.OK);
+                List<UserDTO> users = userService.getUsersByTagId(tagId);
+                List<Map<String, Object>> enrichedUsers = new ArrayList<>();
+                
+                for (UserDTO user : users) {
+                    Map<String, Object> enrichedUser = new HashMap<>();
+                    enrichedUser.put("user", user);
+                    enrichedUser.put("friends", userService.getFriendsByUserId(user.getId()));
+                    enrichedUser.put("friendTags", friendTagService.getFriendTagsByOwnerId(user.getId()));
+                    enrichedUsers.add(enrichedUser);
+                }
+                
+                return new ResponseEntity<>(enrichedUsers, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
             }

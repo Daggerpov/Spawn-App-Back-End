@@ -791,4 +791,36 @@ public class UserService implements IUserService {
             throw e;
         }
     }
+
+    @Override
+    public Map<String, Object> getUserWithFriendsAndTags(UUID id) {
+        try {
+            Map<String, Object> result = new HashMap<>();
+            
+            User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            result.put("user", UserMapper.toDTO(user));
+            
+            List<UserDTO> friends = getFriendsByUserId(id);
+            result.put("friends", friends);
+            
+            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(id);
+            result.put("friendTags", friendTags);
+            
+            return result;
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public User getUserEntityByUsername(String username) {
+        try {
+            return repository.findByUsername(username)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
 }

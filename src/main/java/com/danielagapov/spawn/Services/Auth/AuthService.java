@@ -62,8 +62,9 @@ public class AuthService implements IAuthService {
             logger.info("Authentication successful for user: " + authUserDTO.getUsername());
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
             logger.info("Fetching user");
-            // Get user by username - we already know the user exists and is authenticated
-            return userService.getBaseUserById(userService.getFullUserByUsername(username).getId());
+            
+            User user = userService.getUserEntityByUsername(username);
+            return UserMapper.toDTO(user);
         } else {
             throw new BadCredentialsException("Invalid username or password");
         }

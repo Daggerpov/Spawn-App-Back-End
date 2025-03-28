@@ -44,6 +44,8 @@ public interface IFriendTagService {
 
     void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends);
 
+    void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends);
+
     void addFriendToFriendTags(List<UUID> friendTagIds, UUID friendUserId);
 
     // full helpers:

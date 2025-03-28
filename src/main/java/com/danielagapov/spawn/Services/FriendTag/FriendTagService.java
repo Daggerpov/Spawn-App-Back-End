@@ -238,6 +238,13 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    public void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
+        for (BaseUserDTO friend : friends) {
+            saveUserToFriendTag(friendTagId, friend.getId());
+        }
+    }
+
+    @Override
     public FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag) {
         return new FullFriendTagDTO(
                 friendTag.getId(),
