@@ -43,10 +43,13 @@ public class NewCommentNotificationEvent extends NotificationEvent {
     @Override
     public void findTargetUsers() {
         UUID senderUserId = sender.getId();
+        UUID creatorId = event.getCreator().getId();
+        
+        // Check if the sender is the event creator
+        boolean senderIsCreator = senderUserId.equals(creatorId);
         
         // 1. Notify event creator if they're not the sender
-        if (!event.getCreator().getId().equals(senderUserId)) {
-            UUID creatorId = event.getCreator().getId();
+        if (!senderIsCreator) {
             addTargetUser(creatorId);
             
             // Creator gets special message
@@ -62,7 +65,7 @@ public class NewCommentNotificationEvent extends NotificationEvent {
         for (EventUser participant : participants) {
             UUID participantId = participant.getUser().getId();
             // Skip if participant is the sender or the event creator (already notified)
-            if (!participantId.equals(senderUserId) && !participantId.equals(event.getCreator().getId())) {
+            if (!participantId.equals(senderUserId) && !participantId.equals(creatorId)) {
                 addTargetUser(participantId);
                 
                 // If this is first user (no creator was added), set participant message
