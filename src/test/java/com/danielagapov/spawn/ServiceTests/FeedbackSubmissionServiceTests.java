@@ -148,34 +148,30 @@ public class FeedbackSubmissionServiceTests {
     }
 
     @Test
-    public void deleteFeedback_ShouldDeleteAndReturnDTO_WhenFeedbackExists() {
+    public void deleteFeedback_ShouldDeleteFeedback_WhenFeedbackExists() {
         UUID feedbackId = UUID.randomUUID();
 
-        FeedbackSubmission feedback = new FeedbackSubmission();
-        feedback.setId(feedbackId);
-        feedback.setMessage("Delete me!");
-        feedback.setFromUserEmail("delete@example.com");
-        feedback.setResolved(false);
-        feedback.setResolutionComment(null);
+        // Since the method now returns void, we'll just verify the deleteById method is called
+        doNothing().when(repository).deleteById(feedbackId);
 
-        when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
+        // This should not throw any exception
+        assertDoesNotThrow(() -> service.deleteFeedback(feedbackId));
 
-        FeedbackSubmissionDTO deletedDTO = service.deleteFeedback(feedbackId);
-
-        assertNotNull(deletedDTO);
-        assertEquals("Delete me!", deletedDTO.getMessage());
-        assertEquals("delete@example.com", deletedDTO.getFromUserEmail());
-        verify(repository, times(1)).delete(feedback);
+        // Verify that deleteById was called with the correct ID
+        verify(repository, times(1)).deleteById(feedbackId);
     }
 
     @Test
-    public void deleteFeedback_ShouldThrowException_WhenFeedbackNotFound() {
+    public void deleteFeedback_ShouldLogError_WhenDeletionFails() {
         UUID feedbackId = UUID.randomUUID();
 
-        when(repository.findById(feedbackId)).thenReturn(Optional.empty());
+        // Simulate an exception during deletion
+        doThrow(new RuntimeException("Deletion failed")).when(repository).deleteById(feedbackId);
 
-        assertThrows(BaseNotFoundException.class, () -> service.deleteFeedback(feedbackId));
-        verify(repository, never()).delete(any());
+        // Verify that the exception is rethrown and logged
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> service.deleteFeedback(feedbackId));
+
+        verify(logger, times(1)).error(eq("Deletion failed"));
+        verify(repository, times(1)).deleteById(feedbackId);
     }
-
 }

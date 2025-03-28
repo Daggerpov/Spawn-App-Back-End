@@ -15,7 +15,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -92,11 +91,12 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FeedbackSubmissionDTO deleteFeedback(UUID id) {
-        FeedbackSubmission feedback = repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
-
-        repository.delete(feedback);
-        return FeedbackSubmissionMapper.toDTO(feedback);
+    public void deleteFeedback(UUID id) {
+        try {
+            repository.deleteById(id);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
     }
 }

@@ -12,5 +12,5 @@ public interface IFeedbackSubmissionService {
 
     FeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment);
 
-    FeedbackSubmissionDTO deleteFeedback(UUID id);
+    void deleteFeedback(UUID id);
 }

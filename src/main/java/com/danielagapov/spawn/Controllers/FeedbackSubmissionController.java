@@ -81,15 +81,14 @@ public class FeedbackSubmissionController {
     /**
      * Endpoint for deleting a feedback submission.
      * @param id The unique ID of the feedback submission to delete.
-     * @return A success response if the feedback was deleted, otherwise an error response.
+     * @return A no content response (204--standard for deletions)
+     * if the feedback was deleted successfully, otherwise an error response.
      */
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<FeedbackSubmissionDTO> deleteFeedback(@PathVariable UUID id) {
         try {
-            FeedbackSubmissionDTO deletedFeedback = service.deleteFeedback(id);
-            return new ResponseEntity<>(deletedFeedback, HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            service.deleteFeedback(id);
+            return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
