@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -231,8 +230,15 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    public void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends) {
-        for (FullUserDTO friend : friends) {
+    public void saveUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
+        for (BaseUserDTO friend : friends) {
+            saveUserToFriendTag(friendTagId, friend.getId());
+        }
+    }
+
+    @Override
+    public void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
+        for (BaseUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.getId());
         }
     }

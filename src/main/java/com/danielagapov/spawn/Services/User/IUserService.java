@@ -3,7 +3,6 @@ package com.danielagapov.spawn.Services.User;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -20,7 +19,7 @@ public interface IUserService {
     // CRUD operations:
     UserDTO getUserById(UUID id);
 
-    FullUserDTO getFullUserById(UUID id);
+    BaseUserDTO getFullUserById(UUID id);
 
     User getUserEntityById(UUID id);
 
@@ -32,9 +31,9 @@ public interface IUserService {
 
     UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
 
-    FullUserDTO getFullUserByEmail(String email);
+    BaseUserDTO getFullUserByEmail(String email);
 
-    FullUserDTO getFullUserByUserEntity(User user);
+    BaseUserDTO getFullUserByUserEntity(User user);
 
     UserDTO getUserDTOByEntity(User user);
 
@@ -77,13 +76,13 @@ public interface IUserService {
     List<UUID> getInvitedUserIdsByEventId(UUID eventId);
 
     // Helper
-    FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers);
+    BaseUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers);
 
-    List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers);
+    List<BaseUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers);
 
     boolean existsByEmail(String email);
 
-    FullUserDTO getFullUserByUsername(String username);
+    BaseUserDTO getFullUserByUsername(String username);
 
     boolean existsByUsername(String username);
 
@@ -96,4 +95,15 @@ public interface IUserService {
     BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 
     SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
+
+    /**
+     * Get user with friends and tags separately
+     * This replaces getFullUserById for clients that need the extra information
+     */
+    Map<String, Object> getUserWithFriendsAndTags(UUID id);
+
+    /**
+     * Get the User entity by username
+     */
+    User getUserEntityByUsername(String username);
 }

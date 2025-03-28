@@ -3,7 +3,6 @@ package com.danielagapov.spawn.ServiceTests;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -301,8 +300,8 @@ public class ChatMessageServiceTests {
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(new ArrayList<>());
         when(chatMessageLikesRepository.findByChatMessage(chatMessage2)).thenReturn(new ArrayList<>());
-        FullUserDTO fullUser = new FullUserDTO(UUID.randomUUID(), List.of(), "user", "avatar.jpg", "First", "Last", "bio", List.of(), "user@example.com");
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
+        BaseUserDTO baseUser = new BaseUserDTO(UUID.randomUUID(), "First", "Last", "user@example.com", "user", "bio", "avatar.jpg");
+        when(userService.getFullUserById(any(UUID.class))).thenReturn(baseUser);
         when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.getFullChatMessagesByEventId(eventId);
         assertNotNull(result);
