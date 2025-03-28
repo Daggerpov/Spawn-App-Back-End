@@ -56,7 +56,7 @@ public class S3Service implements IS3Service {
             s3.putObject(request, RequestBody.fromBytes(file));
             return CDN_BASE + key;
         } catch (Exception e) {
-            logger.error(e.getMessage()); // TODO: decide correct behaviour
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -87,7 +87,7 @@ public class S3Service implements IS3Service {
                     user.getId(),
                     user.getFriendUserIds(),
                     user.getUsername(),
-                    file == null ? DEFAULT_PFP : putObject(file), // this line could throw
+                    file == null ? DEFAULT_PFP : putObject(file),
                     user.getFirstName(),
                     user.getLastName(),
                     user.getBio(),
@@ -110,8 +110,12 @@ public class S3Service implements IS3Service {
     @Override
     public UserDTO updateProfilePicture(byte[] file, UUID userId) {
         try {
-            User user = UserMapper.toEntity(userService.getUserById(userId));
+            User user = userService.getUserEntityById(userId);
             String urlString = user.getProfilePictureUrlString();
+            // Default pfp url string is read only, new bucket entry should be made here
+            if (urlString.equals(DEFAULT_PFP)) {
+                return putProfilePictureWithUser(file, userService.getUserDTOByEntity(user));
+            }
             String key = extractObjectKey(urlString);
             String newUrl;
             if (file == null) {
@@ -122,7 +126,7 @@ public class S3Service implements IS3Service {
             }
             user.setProfilePictureUrlString(newUrl);
             user = userService.saveEntity(user);
-            return userService.getUserById(user.getId()); // because converting user -> dto is hard
+            return userService.getUserDTOByEntity(user);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;

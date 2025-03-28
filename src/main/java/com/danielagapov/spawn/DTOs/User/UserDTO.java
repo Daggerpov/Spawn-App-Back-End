@@ -3,13 +3,12 @@ package com.danielagapov.spawn.DTOs.User;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
-public class UserDTO extends BaseUserDTO implements Serializable {
+public class UserDTO extends BaseUserDTO {
     List<UUID> friendUserIds;
     List<UUID> friendTagIds;
 

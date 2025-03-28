@@ -36,7 +36,6 @@ public class OAuthServiceTests {
     @InjectMocks
     private OAuthService oauthService;
 
-    private UserIdExternalIdMap userIdExternalIdMap;
     private User testUser;
 
     @BeforeEach
@@ -45,8 +44,6 @@ public class OAuthServiceTests {
 
         testUser = new User();
         testUser.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
-
-        userIdExternalIdMap = new UserIdExternalIdMap("externalId123", testUser, OAuthProvider.google);
     }
 
 

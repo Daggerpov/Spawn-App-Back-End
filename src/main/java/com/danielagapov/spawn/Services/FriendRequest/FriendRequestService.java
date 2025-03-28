@@ -3,6 +3,8 @@ package com.danielagapov.spawn.Services.FriendRequest;
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Events.FriendRequestAcceptedNotificationEvent;
+import com.danielagapov.spawn.Events.FriendRequestNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -13,6 +15,7 @@ import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -25,11 +28,17 @@ public class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
     private final IUserService userService;
     private final ILogger logger;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public FriendRequestService(IFriendRequestsRepository repository, IUserService userService, ILogger logger) {
+    public FriendRequestService(
+            IFriendRequestsRepository repository,
+            IUserService userService,
+            ILogger logger,
+            ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -47,6 +56,9 @@ public class FriendRequestService implements IFriendRequestService {
 
             // Save the friend request
             repository.save(friendRequest);
+
+            // Publish friend request notification event
+            eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
 
             // Return the saved friend request DTO with additional details (friends and friend tags)
             return FriendRequestMapper.toDTO(friendRequest);
@@ -73,22 +85,15 @@ public class FriendRequestService implements IFriendRequestService {
         List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
         return FriendRequestMapper.toDTOList(friendRequests);
     }
-
-    private List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
+    
+    public List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
-            List<FriendRequest> friendRequests = repository.findByReceiverId(id);
-
-            // Return an empty list if no incoming friend requests are found
-            if (friendRequests.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            return friendRequests;
+            return repository.findByReceiverId(id);
         } catch (DataAccessException e) {
             logger.error("Database access error while retrieving incoming friend requests for userId: " + id);
             throw e; // Only throw for actual database access issues
         } catch (Exception e) {
-            logger.error("Unexpected error while retrieving incoming friend requests for userId: " + id + ", Error: " + e.getMessage());
+            logger.error("Error retrieving incoming friend requests for userId: " + id);
             throw e;
         }
     }
@@ -98,6 +103,12 @@ public class FriendRequestService implements IFriendRequestService {
         try {
             FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
             userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
+
+            // Publish friend request accepted notification event
+            eventPublisher.publishEvent(
+                    new FriendRequestAcceptedNotificationEvent(fr.getReceiver(), fr.getSender().getId())
+            );
+
             deleteFriendRequest(id);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -135,21 +146,10 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
         try {
-            // Retrieve friend requests sent by the user
-            List<FriendRequest> sentRequests = repository.findBySenderId(userId);
-
-            // Return an empty list if no friend requests are found
-            if (sentRequests.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            // Convert the FriendRequest entities to DTOs before returning
-            return FriendRequestMapper.toDTOList(sentRequests);
-        } catch (DataAccessException e) {
-            logger.error("Database access error while retrieving sent friend requests for userId: " + userId);
-            throw e; // Only throw for database access issues
+            List<FriendRequest> friendRequests = repository.findBySenderId(userId);
+            return FriendRequestMapper.toDTOList(friendRequests);
         } catch (Exception e) {
-            logger.error("Unexpected error while retrieving sent friend requests for userId: " + userId + ", Error: " + e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
