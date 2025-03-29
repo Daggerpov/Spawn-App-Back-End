@@ -17,7 +17,8 @@ public class FeedbackSubmissionMapper {
                 entity.getFromUserEmail(),
                 entity.getMessage(),
                 entity.isResolved(),
-                entity.getResolutionComment()
+                entity.getResolutionComment(),
+                entity.getImageUrl()
         );
     }
 
@@ -27,6 +28,7 @@ public class FeedbackSubmissionMapper {
         feedbackSubmission.setFromUser(user);
         feedbackSubmission.setFromUserEmail(dto.getFromUserEmail());
         feedbackSubmission.setMessage(dto.getMessage());
+        feedbackSubmission.setImageUrl(dto.getImageUrl());
         return feedbackSubmission;
     }
 

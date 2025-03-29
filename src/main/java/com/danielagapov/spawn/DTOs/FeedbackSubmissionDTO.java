@@ -19,4 +19,5 @@ public class FeedbackSubmissionDTO implements Serializable {
     private String message;
     private boolean isResolved;
     private String resolutionComment;
+    private String imageUrl;
 }
