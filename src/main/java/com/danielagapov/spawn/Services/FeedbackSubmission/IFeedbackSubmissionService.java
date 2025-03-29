@@ -2,9 +2,7 @@ package com.danielagapov.spawn.Services.FeedbackSubmission;
 
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
-import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;

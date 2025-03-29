@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
-import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
@@ -11,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -48,16 +46,14 @@ public class FeedbackSubmissionController {
      * @param dto The feedback submission data with optional image
      * @return The saved feedback entity if successful, otherwise an error response.
      */
-    @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/with-image")
     public ResponseEntity<FeedbackSubmission> submitFeedbackWithImage(
-            @ModelAttribute CreateFeedbackSubmissionDTO dto
+            @RequestBody CreateFeedbackSubmissionDTO dto
     ) {
         try {
             FeedbackSubmission feedback = service.submitFeedbackWithImage(dto);
             return new ResponseEntity<>(feedback, HttpStatus.CREATED);
         } catch (BaseSaveException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
