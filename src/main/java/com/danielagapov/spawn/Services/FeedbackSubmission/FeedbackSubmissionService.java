@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.FeedbackSubmission;
 
+import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FeedbackType;
@@ -65,32 +66,33 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FeedbackSubmission submitFeedbackWithImage(FeedbackType type, UUID fromUserId, String fromUserEmail, 
-                                                    String message, MultipartFile image) throws IOException {
+    public FeedbackSubmission submitFeedbackWithImage(CreateFeedbackSubmissionDTO dto) throws IOException {
         try {
             // Upload image to S3 if present
             String imageUrl = null;
+            MultipartFile image = dto.getImage();
             if (image != null && !image.isEmpty()) {
                 imageUrl = s3Service.putObjectWithKey(image.getBytes(), "feedback/" + UUID.randomUUID());
             }
             
             // Create DTO with image URL
-            FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO();
-            dto.setType(type);
-            dto.setFromUserId(fromUserId);
-            dto.setFromUserEmail(fromUserEmail);
-            dto.setMessage(message);
-            dto.setImageUrl(imageUrl);
+            FeedbackSubmissionDTO feedbackDto = new FeedbackSubmissionDTO();
+            feedbackDto.setType(dto.getType());
+            feedbackDto.setFromUserId(dto.getFromUserId());
+            feedbackDto.setFromUserEmail(dto.getFromUserEmail());
+            feedbackDto.setMessage(dto.getMessage());
+            feedbackDto.setImageUrl(imageUrl);
             
             // Find user if ID is provided
             User user = null;
+            UUID fromUserId = dto.getFromUserId();
             if (fromUserId != null) {
                 user = userRepository.findById(fromUserId)
                         .orElse(null);
             }
             
             // Save and return the entity
-            return repository.save(FeedbackSubmissionMapper.toEntity(dto, user));
+            return repository.save(FeedbackSubmissionMapper.toEntity(feedbackDto, user));
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission with image: " + e.getMessage());

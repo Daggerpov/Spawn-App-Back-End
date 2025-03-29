@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-
+import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -45,23 +45,15 @@ public class FeedbackSubmissionController {
 
     /**
      * Endpoint for submitting user feedback with an image attachment.
-     * @param type The feedback type.
-     * @param fromUserId The user ID of the submitter.
-     * @param fromUserEmail The email of the submitter.
-     * @param message The feedback message.
-     * @param image Optional image attachment.
+     * @param dto The feedback submission data with optional image
      * @return The saved feedback entity if successful, otherwise an error response.
      */
     @PostMapping(value = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FeedbackSubmission> submitFeedbackWithImage(
-            @RequestParam("type") FeedbackType type,
-            @RequestParam(value = "fromUserId", required = false) UUID fromUserId,
-            @RequestParam(value = "fromUserEmail", required = false) String fromUserEmail,
-            @RequestParam("message") String message,
-            @RequestParam(value = "image", required = false) MultipartFile image
+            @ModelAttribute CreateFeedbackSubmissionDTO dto
     ) {
         try {
-            FeedbackSubmission feedback = service.submitFeedbackWithImage(type, fromUserId, fromUserEmail, message, image);
+            FeedbackSubmission feedback = service.submitFeedbackWithImage(dto);
             return new ResponseEntity<>(feedback, HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -73,7 +65,7 @@ public class FeedbackSubmissionController {
     }
 
     // Full path: /api/v1/feedback/resolve/{id}
-/**
+    /**
      * Endpoint for resolving a feedback submission.
      * @param id The unique ID of the feedback submission to resolve.
      * @param resolutionComment An optional comment to add when resolving the feedback.
@@ -93,7 +85,6 @@ public class FeedbackSubmissionController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * Endpoint for retrieving all feedback submissions.
