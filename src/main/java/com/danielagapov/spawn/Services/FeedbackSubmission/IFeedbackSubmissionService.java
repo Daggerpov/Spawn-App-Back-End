@@ -12,7 +12,7 @@ public interface IFeedbackSubmissionService {
      * @param dto The feedback data transfer object
      * @return The created feedback submission entity
      */
-    FeedbackSubmission submitFeedback(FeedbackSubmissionDTO dto);
+    FeedbackSubmissionDTO submitFeedback(FeedbackSubmissionDTO dto);
     
     /**
      * Marks a feedback submission as resolved with an optional resolution comment

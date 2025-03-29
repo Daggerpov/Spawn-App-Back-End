@@ -38,21 +38,15 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     public FeedbackSubmissionDTO submitFeedback(FeedbackSubmissionDTO dto) {
         try {
             UUID userId = dto.getFromUserId();
+            User user = null;
 
-            if (userId == null) {
-                throw new BaseSaveException("User ID must be provided");
+            // If we have a user ID, try to find the user
+            if (userId != null) {
+                user = userRepository.findById(userId)
+                        .orElse(null);
             }
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-
-            FeedbackSubmission feedback = FeedbackSubmissionMapper.toEntity(dto, user);
-
-            if (feedback.getFromUserEmail() == null) {
-                feedback.setFromUserEmail(dto.getFromUserEmail());
-            }
-
-            FeedbackSubmission saved = repository.save(feedback);
+            FeedbackSubmission saved = repository.save(FeedbackSubmissionMapper.toEntity(dto, user));
             return FeedbackSubmissionMapper.toDTO(saved);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
