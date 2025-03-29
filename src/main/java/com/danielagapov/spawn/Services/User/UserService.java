@@ -239,22 +239,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserByEmail(String email) {
-        try {
-            User user = repository.findByEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
-            return getFullUserById(user.getId());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public FullUserDTO getFullUserByUserEntity(User user) {
-        return getFullUserByUser(getUserDTOByEntity(user), Set.of());
-    }
-
-    @Override
     public UserDTO getUserDTOByEntity(User user) {
         List<UUID> friendUserIds = getFriendUserIdsByUserId(user.getId());
 
@@ -263,19 +247,6 @@ public class UserService implements IUserService {
 
         // Pass in the friendTagIds and friendTags as needed
         return UserMapper.toDTO(user, friendUserIds, friendTagIds);
-    }
-
-    @Override
-    public UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO userDTO, byte[] profilePicture) {
-        if (userDTO.getProfilePicture() == null) {
-            logger.info("Profile picture is null, user either chose their profile picture or has default");
-            userDTO = s3Service.putProfilePictureWithUser(profilePicture, userDTO);
-        }
-        User userEntity = UserMapper.toEntity(userDTO);
-        userEntity.setVerified(true);
-        userEntity.setDateCreated(new Date()); // current Date
-        userEntity = repository.save(userEntity);
-        return getUserById(userEntity.getId());
     }
 
     @Override

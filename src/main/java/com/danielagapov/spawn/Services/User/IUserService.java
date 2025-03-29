@@ -31,14 +31,8 @@ public interface IUserService {
     User saveEntity(User user);
 
     UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
-
-    FullUserDTO getFullUserByEmail(String email);
-
-    FullUserDTO getFullUserByUserEntity(User user);
-
+    
     UserDTO getUserDTOByEntity(User user);
-
-    UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO user, byte[] profilePicture);
 
     // For Friends:
 
