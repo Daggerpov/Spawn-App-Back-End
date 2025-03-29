@@ -7,7 +7,6 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Services.FeedbackSubmission.IFeedbackSubmissionService;
-import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +21,9 @@ import java.util.UUID;
 @RequestMapping("api/v1/feedback")
 public class FeedbackSubmissionController {
     private final IFeedbackSubmissionService service;
-    private final IS3Service s3Service;
 
-    public FeedbackSubmissionController(IFeedbackSubmissionService service, IS3Service s3Service) {
+    public FeedbackSubmissionController(IFeedbackSubmissionService service) {
         this.service = service;
-        this.s3Service = s3Service;
     }
 
     // Full path: /api/v1/feedback
@@ -64,22 +61,8 @@ public class FeedbackSubmissionController {
             @RequestParam(value = "image", required = false) MultipartFile image
     ) {
         try {
-            String imageUrl = null;
-            
-            // Upload image to S3 if present
-            if (image != null && !image.isEmpty()) {
-                imageUrl = s3Service.putObjectWithKey(image.getBytes(), "feedback/" + UUID.randomUUID());
-            }
-            
-            // Create DTO with image URL
-            FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO();
-            dto.setType(type);
-            dto.setFromUserId(fromUserId);
-            dto.setFromUserEmail(fromUserEmail);
-            dto.setMessage(message);
-            dto.setImageUrl(imageUrl);
-            
-            return new ResponseEntity<>(service.submitFeedback(dto), HttpStatus.CREATED);
+            FeedbackSubmission feedback = service.submitFeedbackWithImage(type, fromUserId, fromUserEmail, message, image);
+            return new ResponseEntity<>(feedback, HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (IOException e) {
