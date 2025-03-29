@@ -3,8 +3,6 @@ package com.danielagapov.spawn.ServiceTests;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserFriendTag.UserFriendTagService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,14 +22,7 @@ public class UserFriendTagServiceTests {
     private ILogger logger;
 
     @Mock
-    private IUserRepository userRepository;
-
-
-    @Mock
     private IUserService userService;
-
-    @Mock
-    private IFriendTagService friendTagService;
 
     @Mock
     private IUserFriendTagRepository userFriendTagRepository;
