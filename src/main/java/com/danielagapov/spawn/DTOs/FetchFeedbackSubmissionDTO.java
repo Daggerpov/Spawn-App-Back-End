@@ -11,7 +11,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FeedbackSubmissionDTO implements Serializable {
+public class FetchFeedbackSubmissionDTO implements Serializable {
     private UUID id;
     private FeedbackType type;
     private UUID fromUserId;

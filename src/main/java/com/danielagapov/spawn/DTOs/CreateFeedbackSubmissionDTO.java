@@ -14,7 +14,6 @@ import java.util.UUID;
 public class CreateFeedbackSubmissionDTO implements Serializable {
     private FeedbackType type;
     private UUID fromUserId;
-    private String fromUserEmail;
     private String message;
     private byte[] imageData;
 } 

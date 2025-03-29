@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Models.User;
 
@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 
 public class FeedbackSubmissionMapper {
 
-    public static FeedbackSubmissionDTO toDTO(FeedbackSubmission entity) {
-        return new FeedbackSubmissionDTO(
+    public static FetchFeedbackSubmissionDTO toDTO(FeedbackSubmission entity) {
+        return new FetchFeedbackSubmissionDTO(
                 entity.getId(),
                 entity.getType(),
                 entity.getFromUser() != null ? entity.getFromUser().getId() : null,
@@ -22,17 +22,17 @@ public class FeedbackSubmissionMapper {
         );
     }
 
-    public static FeedbackSubmission toEntity(FeedbackSubmissionDTO dto, User user) {
+    public static FeedbackSubmission toEntity(FetchFeedbackSubmissionDTO dto, User user) {
         FeedbackSubmission feedbackSubmission = new FeedbackSubmission();
         feedbackSubmission.setType(dto.getType());
         feedbackSubmission.setFromUser(user);
-        feedbackSubmission.setFromUserEmail(dto.getFromUserEmail());
+        feedbackSubmission.setFromUserEmail(user != null ? user.getEmail() : null);
         feedbackSubmission.setMessage(dto.getMessage());
         feedbackSubmission.setImageUrl(dto.getImageUrl());
         return feedbackSubmission;
     }
 
-    public static List<FeedbackSubmissionDTO> toDTOList(List<FeedbackSubmission> entities) {
+    public static List<FetchFeedbackSubmissionDTO> toDTOList(List<FeedbackSubmission> entities) {
         return entities.stream()
                 .map(FeedbackSubmissionMapper::toDTO)
                 .collect(Collectors.toList());

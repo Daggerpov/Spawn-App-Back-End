@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Services.FeedbackSubmission;
 
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
-import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -43,7 +43,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FeedbackSubmissionDTO submitFeedback(FeedbackSubmissionDTO dto) {
+    public FetchFeedbackSubmissionDTO submitFeedback(FetchFeedbackSubmissionDTO dto) {
         try {
             UUID userId = dto.getFromUserId();
             User user = null;
@@ -76,10 +76,9 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             }
             
             // Create DTO with image URL
-            FeedbackSubmissionDTO feedbackDto = new FeedbackSubmissionDTO();
+            FetchFeedbackSubmissionDTO feedbackDto = new FetchFeedbackSubmissionDTO();
             feedbackDto.setType(dto.getType());
             feedbackDto.setFromUserId(dto.getFromUserId());
-            feedbackDto.setFromUserEmail(dto.getFromUserEmail());
             feedbackDto.setMessage(dto.getMessage());
             feedbackDto.setImageUrl(imageUrl);
             
@@ -106,7 +105,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment) {
+    public FetchFeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment) {
         FeedbackSubmission feedback = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
 
@@ -122,7 +121,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
 
     @Override
-    public List<FeedbackSubmissionDTO> getAllFeedbacks() {
+    public List<FetchFeedbackSubmissionDTO> getAllFeedbacks() {
         try {
             List<FeedbackSubmission> feedbacks = repository.findAll();
             return feedbacks.stream()

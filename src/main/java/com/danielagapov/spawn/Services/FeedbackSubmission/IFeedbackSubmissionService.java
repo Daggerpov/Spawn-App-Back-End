@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Services.FeedbackSubmission;
 
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
-import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 
 import java.io.IOException;
@@ -15,7 +15,7 @@ public interface IFeedbackSubmissionService {
      * @param dto The feedback data transfer object
      * @return The created feedback submission entity
      */
-    FeedbackSubmissionDTO submitFeedback(FeedbackSubmissionDTO dto);
+    FetchFeedbackSubmissionDTO submitFeedback(FetchFeedbackSubmissionDTO dto);
     
     /**
      * Submits user feedback with an image attachment
@@ -30,17 +30,17 @@ public interface IFeedbackSubmissionService {
      * Marks a feedback submission as resolved with an optional resolution comment
      * 
      * @param id The ID of the feedback submission to resolve
-     * @param resolutionComment An optional comment explaining the resolution
+     * @param resolutionComment An optional comment to add when resolving the feedback
      * @return The updated feedback submission DTO
      */
-    FeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment);
+    FetchFeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment);
     
     /**
      * Retrieves all feedback submissions
      * 
      * @return A list of all feedback submission DTOs
      */
-    List<FeedbackSubmissionDTO> getAllFeedbacks();
+    List<FetchFeedbackSubmissionDTO> getAllFeedbacks();
     
     /**
      * Deletes a feedback submission
