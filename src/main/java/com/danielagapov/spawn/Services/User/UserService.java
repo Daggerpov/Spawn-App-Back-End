@@ -10,11 +10,9 @@ import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.DatabaseException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -26,6 +24,7 @@ import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
+import com.danielagapov.spawn.Services.UserFriendTag.IUserFriendTagService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -44,17 +43,19 @@ public class UserService implements IUserService {
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
     private final IFriendRequestService friendRequestService;
+    private final IUserFriendTagService userFriendTagService;
     private final ILogger logger;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
-    public UserService(IUserRepository repository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, ILogger logger) {
+    public UserService(IUserRepository repository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, IUserFriendTagService userFriendTagService, ILogger logger) {
         this.repository = repository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
         this.friendRequestService = friendRequestService;
+        this.userFriendTagService = userFriendTagService;
         this.logger = logger;
     }
 
@@ -158,7 +159,7 @@ public class UserService implements IUserService {
     public Map<FriendTag, List<UUID>> getFriendUserIdsMap() {
         try {
             // Fetch all FriendTags
-            List<FriendTag> friendTags = friendTagRepository.findAll();
+            List<FriendTag> friendTags = friendTagRepository.findAll(); // TODO: don't find by all
 
             // Create a map of FriendTag to a list of associated user IDs
             return friendTags.stream()
@@ -174,29 +175,7 @@ public class UserService implements IUserService {
 
     @Override
     public List<UserDTO> getUsersByTagId(UUID tagId) {
-        try {
-            List<UUID> userIds = uftRepository.findFriendIdsByTagId(tagId);
-
-            if (userIds.isEmpty()) {
-                throw new BasesNotFoundException(EntityType.User);
-            }
-
-            return userIds.stream()
-                    .map(this::getUserById)
-                    .collect(Collectors.toList());
-
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new DatabaseException("Error accessing database while fetching users by tag ID: " + tagId, e);
-
-        } catch (BaseNotFoundException | BasesNotFoundException e) {
-            logger.error(e.getMessage());
-            throw e;
-
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw new ApplicationException("Unexpected error occurred while fetching users by tag ID: " + tagId, e);
-        }
+        return userFriendTagService.getUsersByTagId(tagId);
     }
 
     @Override
@@ -301,25 +280,12 @@ public class UserService implements IUserService {
 
     @Override
     public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
-        try {
-            return uftRepository.findFriendIdsByTagId(friendTagId)
-                    .stream()
-                    .map(this::getUserById)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
+        return userFriendTagService.getFriendsByFriendTagId(friendTagId);
     }
 
     @Override
     public List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId) {
-        try {
-            return uftRepository.findFriendIdsByTagId(friendTagId);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
+        return userFriendTagService.getFriendUserIdsByFriendTagId(friendTagId);
     }
 
     private List<UserDTO> getUserDTOs() {
