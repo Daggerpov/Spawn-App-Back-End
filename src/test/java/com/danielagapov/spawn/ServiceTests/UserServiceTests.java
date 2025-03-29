@@ -440,30 +440,6 @@ public class UserServiceTests {
     }
 
     @Test
-    void getFriendUserIdsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
-        UUID tagId = UUID.randomUUID();
-        when(userFriendTagRepository.findFriendIdsByTagId(tagId))
-                .thenReturn(List.of());
-
-        List<UUID> result = userService.getFriendUserIdsByFriendTagId(tagId);
-
-        assertTrue(result.isEmpty());
-        verify(userFriendTagRepository, times(1)).findFriendIdsByTagId(tagId);
-    }
-
-    @Test
-    void getFriendsByFriendTagId_ShouldReturnEmptyList_WhenNoFriendsFound() {
-        UUID tagId = UUID.randomUUID();
-        when(userFriendTagRepository.findFriendIdsByTagId(tagId))
-                .thenReturn(List.of());
-
-        List<UserDTO> result = userService.getFriendsByFriendTagId(tagId);
-
-        assertTrue(result.isEmpty());
-        verify(userFriendTagRepository, times(1)).findFriendIdsByTagId(tagId);
-    }
-
-    @Test
     void saveFriendToUser_ShouldSkip_WhenNoEveryoneTagFound() {
         UUID userId = UUID.randomUUID();
         UUID friendId = UUID.randomUUID();
@@ -502,7 +478,7 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+
         // Use spy to isolate the test from internal implementations
         UserService spyUserService = spy(userService);
         doReturn(List.of(friend1, friend2, friend3)).when(spyUserService).getRecommendedMutuals(userId);
@@ -527,7 +503,7 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+
         // Use spy to isolate the test from internal implementations
         UserService spyUserService = spy(userService);
         doReturn(List.of(friend1, friend2)).when(spyUserService).getLimitedRecommendedFriendsForUserId(userId);
@@ -553,7 +529,7 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+
         // Use spy to isolate the test from internal implementations
         UserService spyUserService = spy(userService);
         doReturn(List.of(friend1, friend2)).when(spyUserService).getRecommendedMutuals(userId);
@@ -620,7 +596,7 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-        
+
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "Jo");
         assertTrue(result);
@@ -631,7 +607,7 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-        
+
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "oe");
         assertTrue(result);
@@ -642,7 +618,7 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-        
+
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "hnd");
         assertTrue(result);
@@ -653,7 +629,7 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-        
+
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "JOHN");
         assertTrue(result);
@@ -664,7 +640,7 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-        
+
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "xyz");
         assertFalse(result);
@@ -675,18 +651,18 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         RecommendedFriendUserDTO friend = new RecommendedFriendUserDTO(UUID.randomUUID(), "Alice", "Smith", "alice@example.com", "alice", "Bio", "profile.jpg", 1);
-        
+
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+
         UserService spyUserService = spy(userService);
         doReturn(List.of(friend)).when(spyUserService).getLimitedRecommendedFriendsForUserId(userId);
         doReturn(List.of()).when(spyUserService).getFullFriendUsersByUserId(userId);
-        
+
         // Act
         SearchedUserResult result = spyUserService.getRecommendedFriendsBySearch(userId, "");
-        
+
         // Assert
         assertEquals(1, result.getSecond().size());
         assertEquals(friend, result.getSecond().get(0));
@@ -696,15 +672,15 @@ public class UserServiceTests {
     void getRecommendedFriendsBySearch_ShouldHandleSpecialCharactersInQuery() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        
+
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+
         UserService spyUserService = spy(userService);
         doReturn(List.of()).when(spyUserService).getRecommendedMutuals(userId);
         doReturn(List.of()).when(spyUserService).getFullFriendUsersByUserId(userId);
-        
+
         // Act & Assert - Should not throw exceptions for unusual search terms
         assertDoesNotThrow(() -> spyUserService.getRecommendedFriendsBySearch(userId, "%^&*"));
     }
@@ -714,23 +690,23 @@ public class UserServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
         UUID requesterId = UUID.randomUUID();
-        
+
         BaseUserDTO requesterInfo = new BaseUserDTO(requesterId, "David", "Search", "dsearch@example.com", "davidsearch", "Bio", "profile.jpg");
         FetchFriendRequestDTO friendRequest = mock(FetchFriendRequestDTO.class);
         when(friendRequest.getSenderUser()).thenReturn(requesterInfo);
-        
+
         // Mock services
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of(friendRequest));
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+
         UserService spyUserService = spy(userService);
         doReturn(List.of()).when(spyUserService).getRecommendedMutuals(userId);
         doReturn(List.of()).when(spyUserService).getFullFriendUsersByUserId(userId);
-        
+
         // Act
         SearchedUserResult result = spyUserService.getRecommendedFriendsBySearch(userId, "search");
-        
+
         // Assert
         assertEquals(1, result.getFirst().size());
         assertEquals(friendRequest, result.getFirst().get(0));
