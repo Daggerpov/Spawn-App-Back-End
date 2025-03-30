@@ -439,9 +439,8 @@ public class EventServiceTests {
         when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        BaseUserDTO baseUser = new BaseUserDTO(
-                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg");
-        when(userService.getBaseUserById(any(UUID.class))).thenReturn(baseUser);
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
 
         // Stub friend tag lookup
@@ -729,9 +728,9 @@ public class EventServiceTests {
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
+        when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
         FriendTagDTO dummyTag = mock(FriendTagDTO.class);
@@ -758,12 +757,11 @@ public class EventServiceTests {
                 List.of(), List.of(), List.of());
         when(locationService.getLocationById(eventDTO.getLocationId()))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        BaseUserDTO baseUser = new BaseUserDTO(
-                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg");
-        when(userService.getFullUserById(eventDTO.getCreatorUserId())).thenReturn(baseUser);
+        when(userService.getBaseUserById(eventDTO.getCreatorUserId())).thenReturn(new BaseUserDTO(
+                UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.getParticipantsByEventId(eventDTO.getId())).thenReturn(List.of());
         when(userService.getInvitedByEventId(eventDTO.getId())).thenReturn(List.of());
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
+        when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(eventDTO.getId())).thenReturn(List.of());
 
         FullFeedEventDTO fullEvent = eventService.getFullEventByEvent(eventDTO, null, new HashSet<>());
@@ -800,11 +798,11 @@ public class EventServiceTests {
 
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
+        when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub participation: existsById true and findByEvent_Id returns a dummy EventUser not matching the requesting user.
         when(eventUserRepository.existsById(new EventUsersId(eventDTO1.getId(), requestingUserId))).thenReturn(true);
@@ -833,11 +831,11 @@ public class EventServiceTests {
 
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
+        when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
         // Stub friend tag lookup to return null (self-owned accent)
@@ -888,7 +886,7 @@ public class EventServiceTests {
         // Mock for getFullEventById which is called by toggleParticipation to return the result
         LocationDTO locationDTO = new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0);
         when(locationService.getLocationById(any(UUID.class))).thenReturn(locationDTO);
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(
             new BaseUserDTO(UUID.randomUUID(), "first", "last", "email", "fullUsername", "bio", "avatar.jpg")
         );
         when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
