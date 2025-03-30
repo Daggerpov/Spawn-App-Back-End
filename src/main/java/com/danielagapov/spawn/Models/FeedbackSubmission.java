@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Models;
 
+import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Enums.FeedbackType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -36,7 +37,8 @@ public class FeedbackSubmission implements Serializable {
     private String fromUserEmail;
     private OffsetDateTime submittedAt;
 
-    private boolean isResolved = false;
+    @Enumerated(EnumType.STRING)
+    private FeedbackStatus status = FeedbackStatus.PENDING;
 
     @Column(columnDefinition = "TEXT")
     private String resolutionComment;
@@ -52,6 +54,24 @@ public class FeedbackSubmission implements Serializable {
         if (this.submittedAt == null) {
             this.submittedAt = OffsetDateTime.now();
         }
+        if (this.status == null) {
+            this.status = FeedbackStatus.PENDING;
+        }
     }
 
+    /**
+     * Legacy support method to maintain backwards compatibility with code expecting isResolved
+     * @return true if status is RESOLVED, false otherwise
+     */
+    public boolean isResolved() {
+        return this.status == FeedbackStatus.RESOLVED;
+    }
+
+    /**
+     * Legacy support method to maintain backwards compatibility with code expecting setResolved
+     * @param resolved if true, sets status to RESOLVED, otherwise to PENDING
+     */
+    public void setResolved(boolean resolved) {
+        this.status = resolved ? FeedbackStatus.RESOLVED : FeedbackStatus.PENDING;
+    }
 }
