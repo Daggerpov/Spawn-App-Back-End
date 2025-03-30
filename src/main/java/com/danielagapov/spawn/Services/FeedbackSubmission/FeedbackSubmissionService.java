@@ -71,12 +71,6 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission: " + e.getMessage());
-        } catch (BaseNotFoundException e) {
-            logger.error(e.getMessage());
-            throw e;
-        } catch (IOException e) {
-            logger.error("Failed to process image: " + e.getMessage());
-            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
