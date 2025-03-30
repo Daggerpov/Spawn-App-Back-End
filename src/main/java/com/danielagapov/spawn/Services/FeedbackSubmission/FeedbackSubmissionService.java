@@ -103,9 +103,9 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
         feedback.setResolved(true);
 
-        if (Optional.ofNullable(resolutionComment).filter(s -> !s.isBlank()).isPresent()) {
-            feedback.setResolutionComment(resolutionComment);
-        }
+        // Always set the resolution comment, even if it's empty
+        // This ensures frontend knows a comment was provided but might be empty
+        feedback.setResolutionComment(resolutionComment != null ? resolutionComment.trim() : "");
 
         FeedbackSubmission updated = repository.save(feedback);
         return FeedbackSubmissionMapper.toDTO(updated);

@@ -23,7 +23,8 @@ public class FeedbackSubmissionMapper {
                 entity.getMessage(),
                 entity.isResolved(),
                 entity.getResolutionComment(),
-                entity.getImageUrl()
+                entity.getImageUrl(),
+                entity.getSubmittedAt()
         );
     }
 
@@ -38,6 +39,7 @@ public class FeedbackSubmissionMapper {
         );
         feedbackSubmission.setMessage(dto.getMessage());
         feedbackSubmission.setImageUrl(dto.getImageUrl());
+        feedbackSubmission.setSubmittedAt(dto.getSubmittedAt());
         return feedbackSubmission;
     }
     
