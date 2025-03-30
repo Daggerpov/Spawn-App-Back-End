@@ -15,7 +15,7 @@ public interface IFeedbackSubmissionService {
      * @param dto The feedback data transfer object
      * @return The created feedback submission entity
      */
-    FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto);
+    FetchFeedbackSubmissionDTO submitFeedback(FetchFeedbackSubmissionDTO dto);
     
     /**
      * Submits user feedback with an image attachment

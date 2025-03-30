@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Models.User;
@@ -30,16 +29,6 @@ public class FeedbackSubmissionMapper {
         feedbackSubmission.setFromUserEmail(user != null ? user.getEmail() : null);
         feedbackSubmission.setMessage(dto.getMessage());
         feedbackSubmission.setImageUrl(dto.getImageUrl());
-        return feedbackSubmission;
-    }
-    
-    public static FeedbackSubmission toEntity(CreateFeedbackSubmissionDTO dto, User user) {
-        FeedbackSubmission feedbackSubmission = new FeedbackSubmission();
-        feedbackSubmission.setType(dto.getType());
-        feedbackSubmission.setFromUser(user);
-        feedbackSubmission.setFromUserEmail(user != null ? user.getEmail() : null);
-        feedbackSubmission.setMessage(dto.getMessage());
-        // No imageUrl field in CreateDTO, it will be set separately if needed
         return feedbackSubmission;
     }
 

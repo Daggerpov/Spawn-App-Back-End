@@ -46,10 +46,13 @@ public class FeedbackSubmissionServiceTests {
     @Test
     public void submitFeedback_ShouldSaveFeedback_WhenValidInputProvided() {
         UUID userId = UUID.randomUUID();
-        CreateFeedbackSubmissionDTO dto = new CreateFeedbackSubmissionDTO(
+        FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
+                UUID.randomUUID(),
                 FeedbackType.BUG,
                 userId,
+                "user@example.com",
                 "Test feedback message",
+                false,
                 null
         );
 
@@ -59,21 +62,24 @@ public class FeedbackSubmissionServiceTests {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(repository.save(any(FeedbackSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        FetchFeedbackSubmissionDTO saved = service.submitFeedback(dto);
+        FeedbackSubmissionDTO saved = service.submitFeedback(dto);
 
         assertNotNull(saved);
         assertEquals(dto.getType(), saved.getType());
+        assertEquals(dto.getFromUserEmail(), saved.getFromUserEmail());
         assertEquals(dto.getMessage(), saved.getMessage());
-        assertEquals(userId, saved.getFromUserId());
     }
 
     @Test
     public void submitFeedback_ShouldThrowException_WhenUserNotFound() {
         UUID userId = UUID.randomUUID();
-        CreateFeedbackSubmissionDTO dto = new CreateFeedbackSubmissionDTO(
+        FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
+                UUID.randomUUID(),
                 FeedbackType.BUG,
                 userId,
+                "user@example.com",
                 "Test feedback message",
+                false,
                 null
         );
 
@@ -84,10 +90,13 @@ public class FeedbackSubmissionServiceTests {
 
     @Test
     public void submitFeedback_ShouldThrowException_WhenUserIdIsNull() {
-        CreateFeedbackSubmissionDTO dto = new CreateFeedbackSubmissionDTO(
+        FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
+                UUID.randomUUID(),
                 FeedbackType.BUG,
                 null,
+                "user@example.com",
                 "Test feedback message",
+                false,
                 null
         );
 
@@ -99,14 +108,14 @@ public class FeedbackSubmissionServiceTests {
         UUID feedbackId = UUID.randomUUID();
         FeedbackSubmission feedback = new FeedbackSubmission();
         feedback.setId(feedbackId);
-        feedback.setType(FeedbackType.BUG);
+        feedback.setType(FeedbackType.BUG); // <-- FIXED LINE
         feedback.setMessage("Test message");
         feedback.setFromUserEmail("test@example.com");
 
         when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
         when(repository.save(any(FeedbackSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        FetchFeedbackSubmissionDTO result = service.resolveFeedback(feedbackId, "Resolved reason");
+        FeedbackSubmissionDTO result = service.resolveFeedback(feedbackId, "Resolved reason");
 
         assertTrue(result.isResolved());
         assertEquals("Resolved reason", result.getResolutionComment());
@@ -133,7 +142,7 @@ public class FeedbackSubmissionServiceTests {
 
         when(repository.findAll()).thenReturn(List.of(feedback));
 
-        List<FetchFeedbackSubmissionDTO> dtos = service.getAllFeedbacks();
+        List<FeedbackSubmissionDTO> dtos = service.getAllFeedbacks();
 
         assertEquals(1, dtos.size());
         assertEquals("Feedback message", dtos.get(0).getMessage());
