@@ -12,12 +12,7 @@ import java.util.stream.Collectors;
 public class FeedbackSubmissionMapper {
 
     public static FetchFeedbackSubmissionDTO toDTO(FeedbackSubmission entity) {
-        return Optional.ofNullable(entity.getFromUser())
-                .map(user -> toDTO(entity, user))
-                .orElseGet(() -> toDTO(entity, null));
-    }
-    
-    public static FetchFeedbackSubmissionDTO toDTO(FeedbackSubmission entity, User user) {
+        User user = entity.getFromUser();
         return new FetchFeedbackSubmissionDTO(
                 entity.getId(),
                 entity.getType(),

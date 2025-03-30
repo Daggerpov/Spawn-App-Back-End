@@ -4,8 +4,6 @@ import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Mappers.FeedbackSubmissionMapper;
-import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Services.FeedbackSubmission.IFeedbackSubmissionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +25,7 @@ public class FeedbackSubmissionController {
     // Full path: /api/v1/feedback
     /**
      * Endpoint for submitting user feedback (bug reports, feature requests, general feedback).
+     * Image data is optional and can be included in the DTO.
      * @param dto The feedback details submitted by the user.
      * @return The saved feedback entity if successful, otherwise an error response.
      */
@@ -34,30 +33,6 @@ public class FeedbackSubmissionController {
     public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody CreateFeedbackSubmissionDTO dto) {
         try {
             return new ResponseEntity<>(service.submitFeedback(dto), HttpStatus.CREATED);
-        } catch (BaseSaveException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Endpoint for submitting user feedback with an image attachment.
-     * @param dto The feedback submission data with optional image
-     * @return The saved feedback entity if successful, otherwise an error response.
-     */
-    @PostMapping(value = "/with-image")
-    public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedbackWithImage(
-            @RequestBody CreateFeedbackSubmissionDTO dto
-    ) {
-        try {
-            FeedbackSubmission feedback = service.submitFeedbackWithImage(dto);
-            return new ResponseEntity<>(
-                    FeedbackSubmissionMapper.toDTO(feedback, feedback.getFromUser()),
-                    HttpStatus.CREATED
-            );
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (BaseNotFoundException e) {

@@ -10,21 +10,13 @@ import java.util.UUID;
 
 public interface IFeedbackSubmissionService {
     /**
-     * Submits user feedback
+     * Submits user feedback with or without an image attachment
      * 
      * @param dto The feedback data transfer object
      * @return The created feedback submission entity
-     */
-    FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto);
-    
-    /**
-     * Submits user feedback with an image attachment
-     * 
-     * @param dto The data transfer object containing feedback submission details and image
-     * @return The created feedback submission entity
      * @throws IOException If there is an error processing the image
      */
-    FeedbackSubmission submitFeedbackWithImage(CreateFeedbackSubmissionDTO dto) throws IOException;
+    FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) throws IOException;
     
     /**
      * Marks a feedback submission as resolved with an optional resolution comment

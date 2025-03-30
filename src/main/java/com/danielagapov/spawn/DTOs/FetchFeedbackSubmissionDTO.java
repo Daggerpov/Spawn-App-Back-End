@@ -16,6 +16,8 @@ public class FetchFeedbackSubmissionDTO implements Serializable {
     private FeedbackType type;
     private UUID fromUserId;
     private String fromUserEmail;
+    private String firstName;
+    private String lastName;
     private String message;
     private boolean isResolved;
     private String resolutionComment;
