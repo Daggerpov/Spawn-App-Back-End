@@ -3,7 +3,6 @@ package com.danielagapov.spawn.Services.FeedbackSubmission;
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -16,7 +15,6 @@ import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
