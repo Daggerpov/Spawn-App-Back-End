@@ -4,10 +4,10 @@ import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Mappers.FeedbackSubmissionMapper;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Services.FeedbackSubmission.IFeedbackSubmissionService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,11 +31,13 @@ public class FeedbackSubmissionController {
      * @return The saved feedback entity if successful, otherwise an error response.
      */
     @PostMapping
-    public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody FetchFeedbackSubmissionDTO dto) {
+    public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody CreateFeedbackSubmissionDTO dto) {
         try {
             return new ResponseEntity<>(service.submitFeedback(dto), HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -47,14 +49,21 @@ public class FeedbackSubmissionController {
      * @return The saved feedback entity if successful, otherwise an error response.
      */
     @PostMapping(value = "/with-image")
-    public ResponseEntity<FeedbackSubmission> submitFeedbackWithImage(
+    public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedbackWithImage(
             @RequestBody CreateFeedbackSubmissionDTO dto
     ) {
         try {
             FeedbackSubmission feedback = service.submitFeedbackWithImage(dto);
-            return new ResponseEntity<>(feedback, HttpStatus.CREATED);
+            return new ResponseEntity<>(
+                    FeedbackSubmissionMapper.toDTO(feedback, feedback.getFromUser()),
+                    HttpStatus.CREATED
+            );
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -41,22 +42,21 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public CreateFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) {
+    public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) {
         try {
             UUID userId = dto.getFromUserId();
-            User user = null;
-
-            // If we have a user ID, try to find the user
-            if (userId != null) {
-                user = userRepository.findById(userId)
-                        .orElse(null);
-            }
+            User user = Optional.ofNullable(userId)
+                    .flatMap(userRepository::findById)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
 
             FeedbackSubmission saved = repository.save(FeedbackSubmissionMapper.toEntity(dto, user));
-            return FeedbackSubmissionMapper.toDTO(saved);
+            return FeedbackSubmissionMapper.toDTO(saved, user);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission: " + e.getMessage());
+        } catch (BaseNotFoundException e) {
+            logger.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -73,26 +73,27 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
                 imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
             }
             
-            // Create DTO with image URL
-            FetchFeedbackSubmissionDTO feedbackDto = new FetchFeedbackSubmissionDTO();
-            feedbackDto.setType(dto.getType());
-            feedbackDto.setFromUserId(dto.getFromUserId());
-            feedbackDto.setMessage(dto.getMessage());
-            feedbackDto.setImageUrl(imageUrl);
-            
             // Find user if ID is provided
-            User user = null;
             UUID fromUserId = dto.getFromUserId();
-            if (fromUserId != null) {
-                user = userRepository.findById(fromUserId)
-                        .orElse(null);
-            }
+            User user = Optional.ofNullable(fromUserId)
+                    .flatMap(userRepository::findById)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, fromUserId));
+            
+            // Create entity from DTO
+            FeedbackSubmission feedbackSubmission = FeedbackSubmissionMapper.toEntity(dto, user);
+            feedbackSubmission.setImageUrl(imageUrl);
             
             // Save and return the entity
-            return repository.save(FeedbackSubmissionMapper.toEntity(feedbackDto, user));
+            return repository.save(feedbackSubmission);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission with image: " + e.getMessage());
+        } catch (BaseNotFoundException e) {
+            logger.error(e.getMessage());
+            throw e;
+        } catch (IOException e) {
+            logger.error("Failed to process image: " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -106,12 +107,12 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
         feedback.setResolved(true);
 
-        if (resolutionComment != null && !resolutionComment.isBlank()) {
+        if (Optional.ofNullable(resolutionComment).filter(s -> !s.isBlank()).isPresent()) {
             feedback.setResolutionComment(resolutionComment);
         }
 
         FeedbackSubmission updated = repository.save(feedback);
-        return FeedbackSubmissionMapper.toDTO(updated);
+        return FeedbackSubmissionMapper.toDTO(updated, updated.getFromUser());
     }
 
 
@@ -120,7 +121,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         try {
             List<FeedbackSubmission> feedbacks = repository.findAll();
             return feedbacks.stream()
-                    .map(FeedbackSubmissionMapper::toDTO)
+                    .map(feedback -> FeedbackSubmissionMapper.toDTO(feedback, feedback.getFromUser()))
                     .collect(Collectors.toList());
         } catch (DataAccessException e) {
             throw new RuntimeException("Error fetching feedbacks from database", e);
