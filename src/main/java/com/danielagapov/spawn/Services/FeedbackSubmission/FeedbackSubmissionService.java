@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.FeedbackSubmission;
 
-import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -10,11 +11,14 @@ import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFeedbackSubmissionRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.S3.IS3Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -24,35 +28,45 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     private final IFeedbackSubmissionRepository repository;
     private final ILogger logger;
     private final IUserRepository userRepository;
+    private final IS3Service s3Service;
 
     @Autowired
     public FeedbackSubmissionService(IFeedbackSubmissionRepository repository,
                                      IUserRepository userRepository,
-                                     ILogger logger) {
+                                     ILogger logger,
+                                     IS3Service s3Service) {
         this.repository = repository;
         this.logger = logger;
         this.userRepository = userRepository;
+        this.s3Service = s3Service;
     }
 
     @Override
-    public FeedbackSubmissionDTO submitFeedback(FeedbackSubmissionDTO dto) {
+    public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) throws IOException {
         try {
+            // Find user
             UUID userId = dto.getFromUserId();
-
-            if (userId == null) {
-                throw new BaseSaveException("User ID must be provided");
-            }
-
-            User user = userRepository.findById(userId)
+            User user = Optional.ofNullable(userId)
+                    .flatMap(userRepository::findById)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
 
-            FeedbackSubmission feedback = FeedbackSubmissionMapper.toEntity(dto, user);
-
-            if (feedback.getFromUserEmail() == null) {
-                feedback.setFromUserEmail(dto.getFromUserEmail());
+            // Upload image to S3 if present
+            String imageUrl = null;
+            byte[] imageData = dto.getImageData();
+            if (imageData != null && imageData.length > 0) {
+                imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
             }
-
-            FeedbackSubmission saved = repository.save(feedback);
+            
+            // Create entity from DTO
+            FeedbackSubmission feedbackSubmission = FeedbackSubmissionMapper.toEntity(dto, user);
+            
+            // Set image URL if we uploaded an image
+            if (imageUrl != null) {
+                feedbackSubmission.setImageUrl(imageUrl);
+            }
+            
+            // Save and return the entity
+            FeedbackSubmission saved = repository.save(feedbackSubmission);
             return FeedbackSubmissionMapper.toDTO(saved);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
@@ -64,13 +78,13 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment) {
+    public FetchFeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment) {
         FeedbackSubmission feedback = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
 
         feedback.setResolved(true);
 
-        if (resolutionComment != null && !resolutionComment.isBlank()) {
+        if (Optional.ofNullable(resolutionComment).filter(s -> !s.isBlank()).isPresent()) {
             feedback.setResolutionComment(resolutionComment);
         }
 
@@ -80,7 +94,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
 
     @Override
-    public List<FeedbackSubmissionDTO> getAllFeedbacks() {
+    public List<FetchFeedbackSubmissionDTO> getAllFeedbacks() {
         try {
             List<FeedbackSubmission> feedbacks = repository.findAll();
             return feedbacks.stream()
