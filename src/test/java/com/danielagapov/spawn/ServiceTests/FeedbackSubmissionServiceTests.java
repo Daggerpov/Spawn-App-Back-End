@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FeedbackType;
+import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -157,7 +158,7 @@ public class FeedbackSubmissionServiceTests {
     }
 
     @Test
-    public void resolveFeedback_ShouldSetResolvedFlagAndComment_WhenFeedbackExists() {
+    public void resolveFeedback_ShouldSetResolvedStatusAndComment_WhenFeedbackExists() {
         // Arrange
         UUID feedbackId = UUID.randomUUID();
         FeedbackSubmission feedback = new FeedbackSubmission();
@@ -165,13 +166,14 @@ public class FeedbackSubmissionServiceTests {
         feedback.setType(FeedbackType.BUG);
         feedback.setMessage("Test message");
         feedback.setFromUserEmail("test@example.com");
+        feedback.setStatus(FeedbackStatus.PENDING);
         
         FeedbackSubmission updatedFeedback = new FeedbackSubmission();
         updatedFeedback.setId(feedbackId);
         updatedFeedback.setType(FeedbackType.BUG);
         updatedFeedback.setMessage("Test message");
         updatedFeedback.setFromUserEmail("test@example.com");
-        updatedFeedback.setResolved(true);
+        updatedFeedback.setStatus(FeedbackStatus.RESOLVED);
         updatedFeedback.setResolutionComment("Resolved reason");
 
         when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
@@ -181,7 +183,7 @@ public class FeedbackSubmissionServiceTests {
         FetchFeedbackSubmissionDTO result = service.resolveFeedback(feedbackId, "Resolved reason");
 
         // Assert
-        assertTrue(result.isResolved());
+        assertEquals(FeedbackStatus.RESOLVED, result.getStatus());
         assertEquals("Resolved reason", result.getResolutionComment());
         verify(repository).save(feedback);
     }
@@ -209,7 +211,7 @@ public class FeedbackSubmissionServiceTests {
         feedback.setFromUser(user);
         feedback.setMessage("Feedback message");
         feedback.setFromUserEmail("user@example.com");
-        feedback.setResolved(false);
+        feedback.setStatus(FeedbackStatus.PENDING);
         feedback.setResolutionComment(null);
 
         when(repository.findAll()).thenReturn(List.of(feedback));
@@ -221,6 +223,7 @@ public class FeedbackSubmissionServiceTests {
         assertEquals(1, dtos.size());
         assertEquals("Feedback message", dtos.get(0).getMessage());
         assertEquals("user@example.com", dtos.get(0).getFromUserEmail());
+        assertEquals(FeedbackStatus.PENDING, dtos.get(0).getStatus());
     }
 
     @Test
@@ -246,5 +249,67 @@ public class FeedbackSubmissionServiceTests {
         assertEquals(exception, thrown);
         verify(logger, times(1)).error(eq("Deletion failed"));
         verify(repository, times(1)).deleteById(feedbackId);
+    }
+
+    @Test
+    public void markFeedbackInProgress_ShouldSetInProgressStatusAndComment_WhenFeedbackExists() {
+        // Arrange
+        UUID feedbackId = UUID.randomUUID();
+        FeedbackSubmission feedback = new FeedbackSubmission();
+        feedback.setId(feedbackId);
+        feedback.setType(FeedbackType.BUG);
+        feedback.setMessage("Test message");
+        feedback.setFromUserEmail("test@example.com");
+        feedback.setStatus(FeedbackStatus.PENDING);
+        
+        FeedbackSubmission updatedFeedback = new FeedbackSubmission();
+        updatedFeedback.setId(feedbackId);
+        updatedFeedback.setType(FeedbackType.BUG);
+        updatedFeedback.setMessage("Test message");
+        updatedFeedback.setFromUserEmail("test@example.com");
+        updatedFeedback.setStatus(FeedbackStatus.IN_PROGRESS);
+        updatedFeedback.setResolutionComment("Working on it");
+
+        when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
+        when(repository.save(any(FeedbackSubmission.class))).thenReturn(updatedFeedback);
+
+        // Act
+        FetchFeedbackSubmissionDTO result = service.markFeedbackInProgress(feedbackId, "Working on it");
+
+        // Assert
+        assertEquals(FeedbackStatus.IN_PROGRESS, result.getStatus());
+        assertEquals("Working on it", result.getResolutionComment());
+        verify(repository).save(feedback);
+    }
+    
+    @Test
+    public void updateFeedbackStatus_ShouldUpdateStatusAndComment_WhenFeedbackExists() {
+        // Arrange
+        UUID feedbackId = UUID.randomUUID();
+        FeedbackSubmission feedback = new FeedbackSubmission();
+        feedback.setId(feedbackId);
+        feedback.setType(FeedbackType.BUG);
+        feedback.setMessage("Test message");
+        feedback.setFromUserEmail("test@example.com");
+        feedback.setStatus(FeedbackStatus.PENDING);
+        
+        FeedbackSubmission updatedFeedback = new FeedbackSubmission();
+        updatedFeedback.setId(feedbackId);
+        updatedFeedback.setType(FeedbackType.BUG);
+        updatedFeedback.setMessage("Test message");
+        updatedFeedback.setFromUserEmail("test@example.com");
+        updatedFeedback.setStatus(FeedbackStatus.IN_PROGRESS);
+        updatedFeedback.setResolutionComment("Status update comment");
+
+        when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
+        when(repository.save(any(FeedbackSubmission.class))).thenReturn(updatedFeedback);
+
+        // Act
+        FetchFeedbackSubmissionDTO result = service.updateFeedbackStatus(feedbackId, FeedbackStatus.IN_PROGRESS, "Status update comment");
+
+        // Assert
+        assertEquals(FeedbackStatus.IN_PROGRESS, result.getStatus());
+        assertEquals("Status update comment", result.getResolutionComment());
+        verify(repository).save(feedback);
     }
 }

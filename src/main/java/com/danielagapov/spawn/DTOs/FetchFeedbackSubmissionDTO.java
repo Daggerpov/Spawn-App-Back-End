@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.DTOs;
 
+import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Enums.FeedbackType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,7 +21,7 @@ public class FetchFeedbackSubmissionDTO implements Serializable {
     private String firstName;
     private String lastName;
     private String message;
-    private boolean isResolved;
+    private FeedbackStatus status;
     private String resolutionComment;
     private String imageUrl;
     private OffsetDateTime submittedAt;

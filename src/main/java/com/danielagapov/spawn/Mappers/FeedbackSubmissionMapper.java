@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
+import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Models.User;
 
@@ -21,7 +22,7 @@ public class FeedbackSubmissionMapper {
                 Optional.ofNullable(user).map(User::getFirstName).orElse(null),
                 Optional.ofNullable(user).map(User::getLastName).orElse(null),
                 entity.getMessage(),
-                entity.isResolved(),
+                entity.getStatus(),
                 entity.getResolutionComment(),
                 entity.getImageUrl(),
                 entity.getSubmittedAt()
@@ -38,6 +39,7 @@ public class FeedbackSubmissionMapper {
                         .orElse(null)
         );
         feedbackSubmission.setMessage(dto.getMessage());
+        feedbackSubmission.setStatus(dto.getStatus());
         feedbackSubmission.setImageUrl(dto.getImageUrl());
         feedbackSubmission.setSubmittedAt(dto.getSubmittedAt());
         return feedbackSubmission;
@@ -68,6 +70,7 @@ public class FeedbackSubmissionMapper {
                         .orElse(null)
         );
         feedbackSubmission.setMessage(dto.getMessage());
+        feedbackSubmission.setStatus(FeedbackStatus.PENDING);
         return feedbackSubmission;
     }
 
