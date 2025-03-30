@@ -184,7 +184,6 @@ public class FeedbackSubmissionServiceTests {
 
         // Assert
         assertEquals(FeedbackStatus.RESOLVED, result.getStatus());
-        assertTrue(result.isResolved());
         assertEquals("Resolved reason", result.getResolutionComment());
         verify(repository).save(feedback);
     }
@@ -212,7 +211,7 @@ public class FeedbackSubmissionServiceTests {
         feedback.setFromUser(user);
         feedback.setMessage("Feedback message");
         feedback.setFromUserEmail("user@example.com");
-        feedback.setResolved(false);
+        feedback.setStatus(FeedbackStatus.PENDING);
         feedback.setResolutionComment(null);
 
         when(repository.findAll()).thenReturn(List.of(feedback));
@@ -224,6 +223,7 @@ public class FeedbackSubmissionServiceTests {
         assertEquals(1, dtos.size());
         assertEquals("Feedback message", dtos.get(0).getMessage());
         assertEquals("user@example.com", dtos.get(0).getFromUserEmail());
+        assertEquals(FeedbackStatus.PENDING, dtos.get(0).getStatus());
     }
 
     @Test
@@ -278,7 +278,6 @@ public class FeedbackSubmissionServiceTests {
 
         // Assert
         assertEquals(FeedbackStatus.IN_PROGRESS, result.getStatus());
-        assertFalse(result.isResolved());
         assertEquals("Working on it", result.getResolutionComment());
         verify(repository).save(feedback);
     }

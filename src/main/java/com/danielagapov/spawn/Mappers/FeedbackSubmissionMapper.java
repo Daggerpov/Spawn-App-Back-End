@@ -22,7 +22,6 @@ public class FeedbackSubmissionMapper {
                 Optional.ofNullable(user).map(User::getFirstName).orElse(null),
                 Optional.ofNullable(user).map(User::getLastName).orElse(null),
                 entity.getMessage(),
-                entity.isResolved(),
                 entity.getStatus(),
                 entity.getResolutionComment(),
                 entity.getImageUrl(),
