@@ -20,6 +20,8 @@ public class BetaAccessSignUpDTO implements Serializable {
     private OffsetDateTime signedUpAt;
     @JsonProperty("hasSubscribedToNewsletter") // Explicitly define JSON property name
     private Boolean hasSubscribedToNewsletter;
+    @JsonProperty("hasBeenEmailed") // Explicitly define JSON property name
+    private Boolean hasBeenEmailed;
 
     @Override
     public boolean equals(Object obj) {

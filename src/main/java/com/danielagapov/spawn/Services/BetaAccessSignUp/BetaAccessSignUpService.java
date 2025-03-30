@@ -13,6 +13,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,6 +81,32 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save beta access sign up record: " + e.getMessage());
         } catch (Exception e) { // also catches IllegalArgumentException for duplicate emails
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+    
+    /**
+     * Update the hasBeenEmailed flag for a beta access sign up
+     *
+     * @param id ID of the beta access sign up
+     * @param hasBeenEmailed The new value for hasBeenEmailed
+     * @return The updated beta access sign up DTO
+     */
+    @Override
+    public BetaAccessSignUpDTO updateEmailedStatus(UUID id, Boolean hasBeenEmailed) {
+        try {
+            BetaAccessSignUp entity = repository.findById(id)
+                .orElseThrow(() -> new BasesNotFoundException(EntityType.BetaAccessSignUp));
+            
+            entity.setHasBeenEmailed(hasBeenEmailed);
+            entity = repository.save(entity);
+            
+            return BetaAccessSignUpMapper.toDTO(entity);
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BaseSaveException("Failed to update beta access sign up emailed status: " + e.getMessage());
+        } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
         }

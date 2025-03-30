@@ -49,7 +49,9 @@ public class SecurityConfig {
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
-                                .requestMatchers("/api/v1/betaAccessSignUp/emails").authenticated()
+                                .requestMatchers("/api/v1/betaAccessSignUp/emails", 
+                                                "/api/v1/betaAccessSignUp/records", 
+                                                "/api/v1/betaAccessSignUp/{id}/emailed").authenticated()
                                 .anyRequest().permitAll()
                         //.anyRequest()
                         //.authenticated() // Comment this out if wanting to unsecure endpoints for development purposes

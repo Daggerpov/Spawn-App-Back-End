@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.BetaAccessSignUp;
 import com.danielagapov.spawn.DTOs.BetaAccessSignUpDTO;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface IBetaAccessSignUpService {
     /**
@@ -20,4 +21,8 @@ public interface IBetaAccessSignUpService {
      * @return Strings of all emails of beta access sign up records
      */
     List<String> getAllEmails();
+    /**
+     * Update the hasBeenEmailed flag for a beta access sign up
+     */
+    BetaAccessSignUpDTO updateEmailedStatus(UUID id, Boolean hasBeenEmailed);
 }

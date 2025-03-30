@@ -7,6 +7,7 @@ public enum EntityType {
     FriendTag("Friend Tag"),
     User("User"),
     FriendRequest("Friend Request"),
+    BetaAccessSignUp("Beta Access Sign Up"),
 
     // Related to Base Entities
     Location("Location"),
