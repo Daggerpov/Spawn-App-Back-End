@@ -16,16 +16,6 @@ import java.util.UUID;
 public class CreateFeedbackSubmissionDTO implements Serializable {
     private FeedbackType type;
     private UUID fromUserId;
-    private String firstName;
-    private String lastName;
     private String message;
     private byte[] imageData;
-    
-    // Constructor without firstName and lastName for backward compatibility
-    public CreateFeedbackSubmissionDTO(FeedbackType type, UUID fromUserId, String message, byte[] imageData) {
-        this.type = type;
-        this.fromUserId = fromUserId;
-        this.message = message;
-        this.imageData = imageData;
-    }
 } 
