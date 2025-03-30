@@ -49,6 +49,25 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             User user = Optional.ofNullable(userId)
                     .flatMap(userRepository::findById)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+            
+            // Update first/last name if provided in the DTO
+            boolean userUpdated = false;
+            if (dto.getFirstName() != null && !dto.getFirstName().isEmpty() && 
+                (user.getFirstName() == null || !user.getFirstName().equals(dto.getFirstName()))) {
+                user.setFirstName(dto.getFirstName());
+                userUpdated = true;
+            }
+            
+            if (dto.getLastName() != null && !dto.getLastName().isEmpty() && 
+                (user.getLastName() == null || !user.getLastName().equals(dto.getLastName()))) {
+                user.setLastName(dto.getLastName());
+                userUpdated = true;
+            }
+            
+            // Save user if updated
+            if (userUpdated) {
+                userRepository.save(user);
+            }
 
             // Upload image to S3 if present
             String imageUrl = null;
@@ -84,9 +103,9 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
         feedback.setResolved(true);
 
-        if (Optional.ofNullable(resolutionComment).filter(s -> !s.isBlank()).isPresent()) {
-            feedback.setResolutionComment(resolutionComment);
-        }
+        // Always set the resolution comment, even if it's empty
+        // This ensures frontend knows a comment was provided but might be empty
+        feedback.setResolutionComment(resolutionComment != null ? resolutionComment.trim() : "");
 
         FeedbackSubmission updated = repository.save(feedback);
         return FeedbackSubmissionMapper.toDTO(updated);

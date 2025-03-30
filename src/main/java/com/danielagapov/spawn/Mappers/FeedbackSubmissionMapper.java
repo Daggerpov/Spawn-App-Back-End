@@ -23,7 +23,8 @@ public class FeedbackSubmissionMapper {
                 entity.getMessage(),
                 entity.isResolved(),
                 entity.getResolutionComment(),
-                entity.getImageUrl()
+                entity.getImageUrl(),
+                entity.getSubmittedAt()
         );
     }
 
@@ -38,6 +39,7 @@ public class FeedbackSubmissionMapper {
         );
         feedbackSubmission.setMessage(dto.getMessage());
         feedbackSubmission.setImageUrl(dto.getImageUrl());
+        feedbackSubmission.setSubmittedAt(dto.getSubmittedAt());
         return feedbackSubmission;
     }
     
@@ -45,6 +47,21 @@ public class FeedbackSubmissionMapper {
         FeedbackSubmission feedbackSubmission = new FeedbackSubmission();
         feedbackSubmission.setType(dto.getType());
         feedbackSubmission.setFromUser(user);
+        
+        // Set user information - first try from user object, then from DTO if available
+        String firstName = Optional.ofNullable(user).map(User::getFirstName).orElse(null);
+        String lastName = Optional.ofNullable(user).map(User::getLastName).orElse(null);
+        
+        // If user object doesn't have first/last name but DTO does, update the user
+        if (user != null && (firstName == null || lastName == null)) {
+            if (firstName == null && dto.getFirstName() != null) {
+                user.setFirstName(dto.getFirstName());
+            }
+            if (lastName == null && dto.getLastName() != null) {
+                user.setLastName(dto.getLastName());
+            }
+        }
+        
         feedbackSubmission.setFromUserEmail(
                 Optional.ofNullable(user)
                         .map(User::getEmail)
