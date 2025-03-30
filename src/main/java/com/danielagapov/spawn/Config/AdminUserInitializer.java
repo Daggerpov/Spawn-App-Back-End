@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Config;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,12 @@ import java.util.UUID;
 @Configuration
 public class AdminUserInitializer {
 
+    @Value("${ADMIN_USERNAME:admin}")
+    private String adminUsername;
+
+    @Value("${ADMIN_PASSWORD:spawn-admin-secure-password}")
+    private String adminPassword;
+
     @Bean
     public CommandLineRunner initializeAdminUser(
             IUserRepository userRepository,
@@ -26,21 +33,21 @@ public class AdminUserInitializer {
         
         return args -> {
             // Check if admin user already exists
-            if (!userRepository.existsByUsername("admin")) {
+            if (!userRepository.existsByUsername(adminUsername)) {
                 try {
                     logger.info("Creating admin user");
                     
                     // Create a new admin user
                     User adminUser = new User();
                     adminUser.setId(UUID.randomUUID());
-                    adminUser.setUsername("admin");
+                    adminUser.setUsername(adminUsername);
                     adminUser.setFirstName("Admin");
                     adminUser.setLastName("User");
                     adminUser.setEmail("admin@getspawn.com");
                     adminUser.setBio("Spawn Admin Account");
                     
-                    // Encode the password for security
-                    adminUser.setPassword(passwordEncoder.encode("spawn-admin-2024"));
+                    // Encode the password from environment variable
+                    adminUser.setPassword(passwordEncoder.encode(adminPassword));
                     
                     // Set as verified and created now
                     adminUser.setVerified(true);

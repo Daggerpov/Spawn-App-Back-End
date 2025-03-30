@@ -396,15 +396,21 @@ use it to test the Spawn application. (hopefully)
 
 # Admin Dashboard Login
 
-The admin dashboard requires authentication to access protected endpoints. When you start the application for the first time, an admin user is automatically created with the following credentials:
+The admin dashboard requires authentication to access protected endpoints. When you start the application for the first time, an admin user is automatically created with credentials from environment variables.
 
-- **Username**: `admin`
-- **Password**: `spawn-admin-2024`
+### Setting Up Admin Credentials
+
+Set the following environment variables in your Railway project or local environment:
+
+- `ADMIN_USERNAME` - Username for the admin account (defaults to "admin" if not set)
+- `ADMIN_PASSWORD` - Password for the admin account (defaults to a secure password if not set)
+
+These environment variables should be added to your Railway project settings in the same way other sensitive information is stored.
 
 ### Login Process
 
 1. Navigate to the admin login page at `/admin`
-2. Enter the admin credentials
+2. Enter the admin credentials configured via environment variables
 3. Upon successful authentication, you will be redirected to the `/admin/dashboard` page
 4. JWT tokens are stored in the browser's local storage and automatically used for API requests
 5. The application handles token expiration and refresh automatically
@@ -413,11 +419,10 @@ The admin dashboard requires authentication to access protected endpoints. When 
 
 - The password is stored using BCrypt encryption in the database
 - JWT tokens have a default expiry time (24 hours for access tokens, 180 days for refresh tokens)
-- You can change the admin password in the `AdminUserInitializer` class before deploying to production
+- Credentials are configured via environment variables rather than hardcoded values
 
 For additional security in production environments, consider:
-- Using a more complex password
-- Setting up environment variables for sensitive credentials
+- Using a complex, randomly generated password
 - Implementing rate limiting for login attempts
 - Using HTTPS to secure token transmission
 
