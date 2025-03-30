@@ -389,7 +389,12 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
 Thats all! You have successfully set up the `spawn_db` database locally and populated it with sample data. You can now
 use it to test the Spawn application. (hopefully)
 
-## Admin Dashboard Login
+<details>
+  <summary>Admin Dashboard Login</summary>
+
+  </br>
+
+# Admin Dashboard Login
 
 The admin dashboard requires authentication to access protected endpoints. When you start the application for the first time, an admin user is automatically created with the following credentials:
 
