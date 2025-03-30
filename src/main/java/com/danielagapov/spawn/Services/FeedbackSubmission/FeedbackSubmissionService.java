@@ -43,7 +43,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) throws IOException {
+    public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) {
         try {
             // Find user
             UUID userId = dto.getFromUserId();
@@ -51,25 +51,6 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
                     .flatMap(userRepository::findById)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
             
-            // Update first/last name if provided in the DTO
-            boolean userUpdated = false;
-            if (dto.getFirstName() != null && !dto.getFirstName().isEmpty() && 
-                (user.getFirstName() == null || !user.getFirstName().equals(dto.getFirstName()))) {
-                user.setFirstName(dto.getFirstName());
-                userUpdated = true;
-            }
-            
-            if (dto.getLastName() != null && !dto.getLastName().isEmpty() && 
-                (user.getLastName() == null || !user.getLastName().equals(dto.getLastName()))) {
-                user.setLastName(dto.getLastName());
-                userUpdated = true;
-            }
-            
-            // Save user if updated
-            if (userUpdated) {
-                userRepository.save(user);
-            }
-
             // Upload image to S3 if present
             String imageUrl = null;
             byte[] imageData = dto.getImageData();
