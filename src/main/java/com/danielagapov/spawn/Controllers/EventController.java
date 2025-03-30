@@ -7,6 +7,7 @@ import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
@@ -148,7 +149,7 @@ public class EventController {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(eventService.getParticipatingUsersByEventId(id), new HashSet<>()), HttpStatus.OK);
+                return new ResponseEntity<>(UserMapper.toBaseDTOList(eventService.getParticipatingUsersByEventId(id)), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
             }

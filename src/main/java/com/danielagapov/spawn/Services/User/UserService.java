@@ -98,16 +98,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public BaseUserDTO getFullUserById(UUID id) {
-        try {
-            return getFullUserByUser(getUserById(id), new HashSet<>());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
             // Get all friend tags for the user
@@ -262,22 +252,6 @@ public class UserService implements IUserService {
             logger.error(e.getMessage());
             throw e;
         }
-    }
-
-    @Override
-    public BaseUserDTO getFullUserByEmail(String email) {
-        try {
-            User user = repository.findByEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
-            return getFullUserById(user.getId());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public BaseUserDTO getFullUserByUserEntity(User user) {
-        return getFullUserByUser(getUserDTOByEntity(user), Set.of());
     }
 
     @Override
@@ -626,53 +600,6 @@ public class UserService implements IUserService {
         } catch (Exception e) {
             logger.error("Error retrieving invited user IDs for eventId " + eventId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving invited user IDs for eventId " + eventId, e);
-        }
-    }
-
-    @Override
-    public BaseUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
-        try {
-            if (visitedUsers.contains(user.getId())) {
-                return null; // Skip already visited users
-            }
-            visitedUsers.add(user.getId());
-
-            return new BaseUserDTO(
-                    user.getId(),
-                    user.getFirstName(),
-                    user.getLastName(),
-                    user.getEmail(),
-                    user.getUsername(),
-                    user.getBio(),
-                    user.getProfilePicture()
-            );
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<BaseUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers) {
-        try {
-            return users.stream()
-                    .map(user -> getFullUserByUser(user, visitedUsers))
-                    .filter(Objects::nonNull) // Filter out null values (already visited users)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public BaseUserDTO getFullUserByUsername(String username) {
-        try {
-            User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
-            return getFullUserById(user.getId());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
         }
     }
 

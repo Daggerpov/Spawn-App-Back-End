@@ -396,9 +396,8 @@ public class EventServiceTests {
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub friend tag lookup; for events without a requesting user, no friend tag is applied.
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
@@ -442,8 +441,7 @@ public class EventServiceTests {
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         BaseUserDTO baseUser = new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg");
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(baseUser);
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(List.of());
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(baseUser);
         when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
 
         // Stub friend tag lookup
