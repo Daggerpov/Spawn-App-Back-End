@@ -18,6 +18,123 @@ MySQL database, which we interface with through JPA (Java Persistence API).
     - [Exporting DB Data to Excel File](#exporting-db-data-to-excel-file)
     - [**Setting Up the `spawn_db` Database Locally**](#setting-up-the-spawn_db-database-locally)
 
+## Authenticating to the Beta Access Endpoints
+
+The following endpoints require authentication:
+- `/api/v1/betaAccessSignUp/emails` - Get all beta sign up emails
+- `/api/v1/betaAccessSignUp/records` - Get all beta sign up records
+- `/api/v1/betaAccessSignUp/{id}/emailed` - Update emailed status for a specific sign up
+
+To authenticate from the admin dashboard:
+
+1. First, authenticate using the login endpoint:
+
+```javascript
+// Example login code for the admin dashboard
+const loginUser = async (username, password) => {
+  try {
+    const response = await fetch('https://spawn-app-back-end-production.up.railway.app/api/v1/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Authentication failed');
+    }
+    
+    // Extract tokens from response headers
+    const accessToken = response.headers.get('Authorization');
+    const refreshToken = response.headers.get('X-Refresh-Token');
+    
+    // Store tokens in localStorage or secure cookie
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+};
+```
+
+2. Use the access token when accessing the beta endpoints:
+
+```javascript
+// Example code to fetch beta emails
+const fetchBetaEmails = async () => {
+  const accessToken = localStorage.getItem('accessToken');
+  
+  if (!accessToken) {
+    throw new Error('Authentication required');
+  }
+  
+  try {
+    const response = await fetch('https://spawn-app-back-end-production.up.railway.app/api/v1/betaAccessSignUp/emails', {
+      method: 'GET',
+      headers: {
+        'Authorization': accessToken
+      }
+    });
+    
+    if (response.status === 401) {
+      // Token expired, try refreshing
+      await refreshAccessToken();
+      return fetchBetaEmails(); // Retry after refreshing token
+    }
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch beta emails');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching beta emails:', error);
+    throw error;
+  }
+};
+
+// Refresh token function
+const refreshAccessToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+  
+  try {
+    const response = await fetch('https://spawn-app-back-end-production.up.railway.app/api/v1/auth/refresh-token', {
+      method: 'POST',
+      headers: {
+        'Authorization': refreshToken
+      }
+    });
+    
+    if (!response.ok) {
+      // If refresh fails, redirect to login page
+      window.location.href = '/login';
+      throw new Error('Token refresh failed');
+    }
+    
+    const newAccessToken = response.headers.get('Authorization');
+    localStorage.setItem('accessToken', newAccessToken);
+    
+    return newAccessToken;
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    throw error;
+  }
+};
+```
+
+Make sure you're properly authenticating before attempting to access these endpoints.
+
 ## Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)
 
 ![diagrams-architecture-dependency-injection-dtos](diagrams/diagrams-architecture-dependency-injection-dtos.png)
@@ -272,5 +389,31 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
 Thats all! You have successfully set up the `spawn_db` database locally and populated it with sample data. You can now
 use it to test the Spawn application. (hopefully)
 
+## Admin Dashboard Login
+
+The admin dashboard requires authentication to access protected endpoints. When you start the application for the first time, an admin user is automatically created with the following credentials:
+
+- **Username**: `admin`
+- **Password**: `spawn-admin-2024`
+
+### Login Process
+
+1. Navigate to the admin login page at `/admin`
+2. Enter the admin credentials
+3. Upon successful authentication, you will be redirected to the `/admin/dashboard` page
+4. JWT tokens are stored in the browser's local storage and automatically used for API requests
+5. The application handles token expiration and refresh automatically
+
+### Security Notes
+
+- The password is stored using BCrypt encryption in the database
+- JWT tokens have a default expiry time (24 hours for access tokens, 180 days for refresh tokens)
+- You can change the admin password in the `AdminUserInitializer` class before deploying to production
+
+For additional security in production environments, consider:
+- Using a more complex password
+- Setting up environment variables for sensitive credentials
+- Implementing rate limiting for login attempts
+- Using HTTPS to secure token transmission
 
 </details>

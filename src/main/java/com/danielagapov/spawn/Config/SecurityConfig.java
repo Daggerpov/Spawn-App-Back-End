@@ -38,9 +38,10 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.setAllowedOrigins(List.of("https://getspawn.com")); // our site front-end
+                    configuration.setAllowedOrigins(List.of("https://getspawn.com", "https://admin.getspawn.com", "http://localhost:3000")); // Add all frontend origins
                     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    configuration.setAllowedHeaders(List.of("*"));
+                    configuration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Content-Type", "Accept"));
+                    configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
                     configuration.setAllowCredentials(true);
                     return configuration;
                 }))
@@ -52,6 +53,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/v1/betaAccessSignUp/emails", 
                                                 "/api/v1/betaAccessSignUp/records", 
                                                 "/api/v1/betaAccessSignUp/{id}/emailed").authenticated()
+                                .requestMatchers("/api/v1/auth/**").permitAll()
                                 .anyRequest().permitAll()
                         //.anyRequest()
                         //.authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
