@@ -14,11 +14,7 @@ import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.ChatMessageLikes;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
-import com.danielagapov.spawn.Repositories.IChatMessageRepository;
-import com.danielagapov.spawn.Repositories.IEventRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Repositories.IEventUserRepository;
+import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
@@ -63,10 +59,10 @@ public class ChatMessageServiceTests {
 
     @Mock
     private ILogger logger;
-    
+
     @Mock
     private IEventUserRepository eventUserRepository;
-    
+
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
@@ -296,7 +292,7 @@ public class ChatMessageServiceTests {
         chatMessage1.setEvent(dummyEvent);
         chatMessage2.setEvent(dummyEvent);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(messages);
+        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenReturn(messages);
         when(chatMessageRepository.findById(id1)).thenReturn(Optional.of(chatMessage1));
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(new ArrayList<>());
@@ -362,7 +358,7 @@ public class ChatMessageServiceTests {
         chatMessage1.setEvent(eventForMessages);
         chatMessage2.setEvent(eventForMessages);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(messages);
+        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenReturn(messages);
         List<UUID> ids = chatMessageService.getChatMessageIdsByEventId(eventId);
         assertNotNull(ids);
         assertEquals(2, ids.size());
@@ -479,7 +475,7 @@ public class ChatMessageServiceTests {
         chatMessage1.setEvent(dummyEvent);
         chatMessage2.setEvent(dummyEvent);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenReturn(messages);
+        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenReturn(messages);
         when(chatMessageRepository.findById(id1)).thenReturn(Optional.of(chatMessage1));
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(new ArrayList<>());
@@ -496,7 +492,7 @@ public class ChatMessageServiceTests {
         UUID eventId = UUID.randomUUID();
         DataAccessException dae = new DataAccessException("DB error") {
         };
-        when(chatMessageRepository.getChatMessagesByEventId(eventId)).thenThrow(dae);
+        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenThrow(dae);
         assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
         verify(logger, times(1)).error(dae.getMessage());
     }

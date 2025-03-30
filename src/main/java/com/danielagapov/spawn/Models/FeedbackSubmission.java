@@ -43,6 +43,9 @@ public class FeedbackSubmission implements Serializable {
 
     @Column(columnDefinition = "TEXT")
     private String message;
+    
+    @Column
+    private String imageUrl;
 
     @PrePersist
     public void prePersist() {

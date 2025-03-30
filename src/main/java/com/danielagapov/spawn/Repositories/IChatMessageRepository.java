@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface IChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
     List<ChatMessage> getChatMessagesByEventId(UUID eventId);
+
+    List<ChatMessage> getChatMessagesByEventIdOrderByTimestampDesc(UUID eventId);
 }

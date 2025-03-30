@@ -1,15 +1,15 @@
 package com.danielagapov.spawn.Controllers;
 
-
-import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Models.FeedbackSubmission;
 import com.danielagapov.spawn.Services.FeedbackSubmission.IFeedbackSubmissionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,34 +25,39 @@ public class FeedbackSubmissionController {
     // Full path: /api/v1/feedback
     /**
      * Endpoint for submitting user feedback (bug reports, feature requests, general feedback).
+     * Image data is optional and can be included in the DTO.
      * @param dto The feedback details submitted by the user.
      * @return The saved feedback entity if successful, otherwise an error response.
      */
     @PostMapping
-    public ResponseEntity<FeedbackSubmissionDTO> submitFeedback(@RequestBody FeedbackSubmissionDTO dto) {
+    public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody CreateFeedbackSubmissionDTO dto) {
         try {
             return new ResponseEntity<>(service.submitFeedback(dto), HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     // Full path: /api/v1/feedback/resolve/{id}
-/**
+    /**
      * Endpoint for resolving a feedback submission.
      * @param id The unique ID of the feedback submission to resolve.
      * @param resolutionComment An optional comment to add when resolving the feedback.
      * @return A success response if the feedback was resolved, otherwise an error response.
      */
     @PutMapping("/resolve/{id}")
-    public ResponseEntity<FeedbackSubmissionDTO> resolveFeedback(
+    public ResponseEntity<FetchFeedbackSubmissionDTO> resolveFeedback(
             @PathVariable UUID id,
             @RequestBody(required = false) String resolutionComment
     ) {
         try {
-            FeedbackSubmissionDTO resolvedFeedback = service.resolveFeedback(id, resolutionComment);
+            FetchFeedbackSubmissionDTO resolvedFeedback = service.resolveFeedback(id, resolutionComment);
             return new ResponseEntity<>(resolvedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -61,14 +66,13 @@ public class FeedbackSubmissionController {
         }
     }
 
-
     /**
      * Endpoint for retrieving all feedback submissions.
      * This endpoint should be protected somehow since it's not meant to be publicly accessible.
      * @return A list of all feedback submissions if successful, otherwise an error response.
      */
     @GetMapping
-    public ResponseEntity<List<FeedbackSubmissionDTO>> getAllFeedbacks() {
+    public ResponseEntity<List<FetchFeedbackSubmissionDTO>> getAllFeedbacks() {
         try {
             return new ResponseEntity<>(service.getAllFeedbacks(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -85,7 +89,7 @@ public class FeedbackSubmissionController {
      * if the feedback was deleted successfully, otherwise an error response.
      */
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<FeedbackSubmissionDTO> deleteFeedback(@PathVariable UUID id) {
+    public ResponseEntity<FetchFeedbackSubmissionDTO> deleteFeedback(@PathVariable UUID id) {
         try {
             service.deleteFeedback(id);
             return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
