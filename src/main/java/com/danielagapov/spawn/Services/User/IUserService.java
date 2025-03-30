@@ -19,8 +19,6 @@ public interface IUserService {
     // CRUD operations:
     UserDTO getUserById(UUID id);
 
-    BaseUserDTO getFullUserById(UUID id);
-
     User getUserEntityById(UUID id);
 
     UserDTO saveUser(UserDTO user);
@@ -30,10 +28,6 @@ public interface IUserService {
     User saveEntity(User user);
 
     UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
-
-    BaseUserDTO getFullUserByEmail(String email);
-
-    BaseUserDTO getFullUserByUserEntity(User user);
 
     UserDTO getUserDTOByEntity(User user);
 
@@ -76,13 +70,7 @@ public interface IUserService {
     List<UUID> getInvitedUserIdsByEventId(UUID eventId);
 
     // Helper
-    BaseUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers);
-
-    List<BaseUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers);
-
     boolean existsByEmail(String email);
-
-    BaseUserDTO getFullUserByUsername(String username);
 
     boolean existsByUsername(String username);
 

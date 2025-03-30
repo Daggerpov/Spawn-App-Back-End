@@ -7,7 +7,7 @@ import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController()
 @RequestMapping("api/v1/users")
@@ -24,14 +25,12 @@ public class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
     private final ILogger logger;
-    private final IFriendTagService friendTagService;
 
     @Autowired
-    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IFriendTagService friendTagService) {
+    public UserController(IUserService userService, IS3Service s3Service, ILogger logger) {
         this.userService = userService;
         this.s3Service = s3Service;
         this.logger = logger;
-        this.friendTagService = friendTagService;
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful.
@@ -41,7 +40,8 @@ public class UserController {
     public ResponseEntity<List<? extends AbstractUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers(), new HashSet<>()), HttpStatus.OK);
+                List<UserDTO> allUsers = userService.getAllUsers();
+                return new ResponseEntity<>(UserMapper.toBaseDTOList(allUsers), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
             }
@@ -94,11 +94,7 @@ public class UserController {
                 List<Map<String, Object>> enrichedUsers = new ArrayList<>();
                 
                 for (UserDTO user : users) {
-                    Map<String, Object> enrichedUser = new HashMap<>();
-                    enrichedUser.put("user", user);
-                    enrichedUser.put("friends", userService.getFriendsByUserId(user.getId()));
-                    enrichedUser.put("friendTags", friendTagService.getFriendTagsByOwnerId(user.getId()));
-                    enrichedUsers.add(enrichedUser);
+                    enrichedUsers.add(userService.getUserWithFriendsAndTags(user.getId()));
                 }
                 
                 return new ResponseEntity<>(enrichedUsers, HttpStatus.OK);
