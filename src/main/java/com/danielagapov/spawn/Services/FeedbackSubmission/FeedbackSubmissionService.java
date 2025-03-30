@@ -70,9 +70,9 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         try {
             // Upload image to S3 if present
             String imageUrl = null;
-            MultipartFile image = dto.getImage();
-            if (image != null && !image.isEmpty()) {
-                imageUrl = s3Service.putObjectWithKey(image.getBytes(), "feedback/" + UUID.randomUUID());
+            byte[] imageData = dto.getImageData();
+            if (imageData != null && imageData.length > 0) {
+                imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
             }
             
             // Create DTO with image URL
@@ -95,9 +95,6 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission with image: " + e.getMessage());
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
