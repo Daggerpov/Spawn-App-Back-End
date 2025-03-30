@@ -31,11 +31,13 @@ public class FeedbackSubmissionController {
      * @return The saved feedback entity if successful, otherwise an error response.
      */
     @PostMapping
-    public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody FetchFeedbackSubmissionDTO dto) {
+    public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody CreateFeedbackSubmissionDTO dto) {
         try {
             return new ResponseEntity<>(service.submitFeedback(dto), HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -55,6 +57,8 @@ public class FeedbackSubmissionController {
             return new ResponseEntity<>(feedback, HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

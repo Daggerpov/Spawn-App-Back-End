@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.FeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
+import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -45,13 +46,10 @@ public class FeedbackSubmissionServiceTests {
     @Test
     public void submitFeedback_ShouldSaveFeedback_WhenValidInputProvided() {
         UUID userId = UUID.randomUUID();
-        FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
-                UUID.randomUUID(),
+        CreateFeedbackSubmissionDTO dto = new CreateFeedbackSubmissionDTO(
                 FeedbackType.BUG,
                 userId,
-                "user@example.com",
                 "Test feedback message",
-                false,
                 null
         );
 
@@ -61,24 +59,21 @@ public class FeedbackSubmissionServiceTests {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(repository.save(any(FeedbackSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        FeedbackSubmissionDTO saved = service.submitFeedback(dto);
+        FetchFeedbackSubmissionDTO saved = service.submitFeedback(dto);
 
         assertNotNull(saved);
         assertEquals(dto.getType(), saved.getType());
-        assertEquals(dto.getFromUserEmail(), saved.getFromUserEmail());
         assertEquals(dto.getMessage(), saved.getMessage());
+        assertEquals(userId, saved.getFromUserId());
     }
 
     @Test
     public void submitFeedback_ShouldThrowException_WhenUserNotFound() {
         UUID userId = UUID.randomUUID();
-        FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
-                UUID.randomUUID(),
+        CreateFeedbackSubmissionDTO dto = new CreateFeedbackSubmissionDTO(
                 FeedbackType.BUG,
                 userId,
-                "user@example.com",
                 "Test feedback message",
-                false,
                 null
         );
 
@@ -89,13 +84,10 @@ public class FeedbackSubmissionServiceTests {
 
     @Test
     public void submitFeedback_ShouldThrowException_WhenUserIdIsNull() {
-        FeedbackSubmissionDTO dto = new FeedbackSubmissionDTO(
-                UUID.randomUUID(),
+        CreateFeedbackSubmissionDTO dto = new CreateFeedbackSubmissionDTO(
                 FeedbackType.BUG,
                 null,
-                "user@example.com",
                 "Test feedback message",
-                false,
                 null
         );
 
@@ -107,14 +99,14 @@ public class FeedbackSubmissionServiceTests {
         UUID feedbackId = UUID.randomUUID();
         FeedbackSubmission feedback = new FeedbackSubmission();
         feedback.setId(feedbackId);
-        feedback.setType(FeedbackType.BUG); // <-- FIXED LINE
+        feedback.setType(FeedbackType.BUG);
         feedback.setMessage("Test message");
         feedback.setFromUserEmail("test@example.com");
 
         when(repository.findById(feedbackId)).thenReturn(Optional.of(feedback));
         when(repository.save(any(FeedbackSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        FeedbackSubmissionDTO result = service.resolveFeedback(feedbackId, "Resolved reason");
+        FetchFeedbackSubmissionDTO result = service.resolveFeedback(feedbackId, "Resolved reason");
 
         assertTrue(result.isResolved());
         assertEquals("Resolved reason", result.getResolutionComment());
@@ -141,7 +133,7 @@ public class FeedbackSubmissionServiceTests {
 
         when(repository.findAll()).thenReturn(List.of(feedback));
 
-        List<FeedbackSubmissionDTO> dtos = service.getAllFeedbacks();
+        List<FetchFeedbackSubmissionDTO> dtos = service.getAllFeedbacks();
 
         assertEquals(1, dtos.size());
         assertEquals("Feedback message", dtos.get(0).getMessage());

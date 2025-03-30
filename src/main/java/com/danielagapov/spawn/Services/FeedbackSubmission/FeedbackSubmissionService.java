@@ -41,7 +41,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FetchFeedbackSubmissionDTO submitFeedback(FetchFeedbackSubmissionDTO dto) {
+    public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) {
         try {
             UUID userId = dto.getFromUserId();
             User user = null;
@@ -49,7 +49,9 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             // If we have a user ID, try to find the user
             if (userId != null) {
                 user = userRepository.findById(userId)
-                        .orElse(null);
+                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+            } else {
+                throw new BaseSaveException("User ID is required for feedback submission");
             }
 
             FeedbackSubmission saved = repository.save(FeedbackSubmissionMapper.toEntity(dto, user));
@@ -57,6 +59,9 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission: " + e.getMessage());
+        } catch (BaseNotFoundException e) {
+            logger.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -73,26 +78,28 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
                 imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
             }
             
-            // Create DTO with image URL
-            FetchFeedbackSubmissionDTO feedbackDto = new FetchFeedbackSubmissionDTO();
-            feedbackDto.setType(dto.getType());
-            feedbackDto.setFromUserId(dto.getFromUserId());
-            feedbackDto.setMessage(dto.getMessage());
-            feedbackDto.setImageUrl(imageUrl);
-            
             // Find user if ID is provided
             User user = null;
             UUID fromUserId = dto.getFromUserId();
             if (fromUserId != null) {
                 user = userRepository.findById(fromUserId)
-                        .orElse(null);
+                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, fromUserId));
+            } else {
+                throw new BaseSaveException("User ID is required for feedback submission");
             }
             
+            // Create entity from DTO
+            FeedbackSubmission feedbackSubmission = FeedbackSubmissionMapper.toEntity(dto, user);
+            feedbackSubmission.setImageUrl(imageUrl);
+            
             // Save and return the entity
-            return repository.save(FeedbackSubmissionMapper.toEntity(feedbackDto, user));
+            return repository.save(feedbackSubmission);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission with image: " + e.getMessage());
+        } catch (BaseNotFoundException e) {
+            logger.error(e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
