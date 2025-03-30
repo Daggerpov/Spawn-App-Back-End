@@ -58,20 +58,4 @@ public class FeedbackSubmission implements Serializable {
             this.status = FeedbackStatus.PENDING;
         }
     }
-
-    /**
-     * Legacy support method to maintain backwards compatibility with code expecting isResolved
-     * @return true if status is RESOLVED, false otherwise
-     */
-    public boolean isResolved() {
-        return this.status == FeedbackStatus.RESOLVED;
-    }
-
-    /**
-     * Legacy support method to maintain backwards compatibility with code expecting setResolved
-     * @param resolved if true, sets status to RESOLVED, otherwise to PENDING
-     */
-    public void setResolved(boolean resolved) {
-        this.status = resolved ? FeedbackStatus.RESOLVED : FeedbackStatus.PENDING;
-    }
 }
