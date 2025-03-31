@@ -7,7 +7,6 @@ import com.danielagapov.spawn.Mappers.BlockedUserMapper;
 import com.danielagapov.spawn.Models.BlockedUser;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IBlockedUserRepository;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
