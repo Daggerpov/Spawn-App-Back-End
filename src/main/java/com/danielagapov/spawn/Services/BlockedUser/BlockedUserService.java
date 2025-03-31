@@ -25,7 +25,7 @@ public class BlockedUserService implements IBlockedUserService {
 
     private final ILogger logger;
 
-    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendRequestService friendRequestService, ILogger logger) {
+    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;

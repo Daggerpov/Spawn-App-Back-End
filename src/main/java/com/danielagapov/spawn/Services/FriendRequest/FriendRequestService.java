@@ -28,6 +28,7 @@ import java.util.UUID;
 public class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
     private final IUserService userService;
+    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -38,6 +39,7 @@ public class FriendRequestService implements IFriendRequestService {
             ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;
+        this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.eventPublisher = eventPublisher;
     }
