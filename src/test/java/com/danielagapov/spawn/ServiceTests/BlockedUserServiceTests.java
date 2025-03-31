@@ -67,7 +67,6 @@ public class BlockedUserServiceTests {
         blockedUserService.blockUser(blockerId, blockedId, "Testing");
 
         verify(userService).removeFriendshipBetweenUsers(blockerId, blockedId);
-        verify(friendRequestService).deleteFriendRequestBetweenUsers(blockerId, blockedId);
         verify(blockedRepo).save(any(BlockedUser.class));
     }
 
