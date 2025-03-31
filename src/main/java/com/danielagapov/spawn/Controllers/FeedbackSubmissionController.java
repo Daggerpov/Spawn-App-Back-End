@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
+import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Services.FeedbackSubmission.IFeedbackSubmissionService;
@@ -59,6 +60,52 @@ public class FeedbackSubmissionController {
         try {
             FetchFeedbackSubmissionDTO resolvedFeedback = service.resolveFeedback(id, resolutionComment);
             return new ResponseEntity<>(resolvedFeedback, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    // Full path: /api/v1/feedback/in-progress/{id}
+    /**
+     * Endpoint for marking a feedback submission as in progress.
+     * @param id The unique ID of the feedback submission to mark as in progress.
+     * @param comment An optional comment to add.
+     * @return A success response if the feedback status was updated, otherwise an error response.
+     */
+    @PutMapping("/in-progress/{id}")
+    public ResponseEntity<FetchFeedbackSubmissionDTO> markFeedbackInProgress(
+            @PathVariable UUID id,
+            @RequestBody(required = false) String comment
+    ) {
+        try {
+            FetchFeedbackSubmissionDTO inProgressFeedback = service.markFeedbackInProgress(id, comment);
+            return new ResponseEntity<>(inProgressFeedback, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    // Full path: /api/v1/feedback/status/{id}
+    /**
+     * Endpoint for updating a feedback submission status.
+     * @param id The unique ID of the feedback submission to update.
+     * @param status The new status for the feedback.
+     * @param comment An optional comment to add.
+     * @return A success response if the feedback status was updated, otherwise an error response.
+     */
+    @PutMapping("/status/{id}")
+    public ResponseEntity<FetchFeedbackSubmissionDTO> updateFeedbackStatus(
+            @PathVariable UUID id,
+            @RequestParam FeedbackStatus status,
+            @RequestBody(required = false) String comment
+    ) {
+        try {
+            FetchFeedbackSubmissionDTO updatedFeedback = service.updateFeedbackStatus(id, status, comment);
+            return new ResponseEntity<>(updatedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

@@ -29,6 +29,7 @@ public class BetaAccessSignUp implements Serializable {
     private String email;
     private OffsetDateTime signedUpAt;
     private Boolean hasSubscribedToNewsletter;
+    private Boolean hasBeenEmailed = false;
 
     @PrePersist
     public void prePersist() {
