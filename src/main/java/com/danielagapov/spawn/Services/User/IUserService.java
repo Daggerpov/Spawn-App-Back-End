@@ -27,6 +27,7 @@ public interface IUserService {
     UserDTO saveUser(UserDTO user);
 
     boolean deleteUserById(UUID id);
+
     User saveEntity(User user);
 
     UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
@@ -95,4 +96,6 @@ public interface IUserService {
     BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 
     SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
+
+    List<BaseUserDTO> searchByQuery(String searchQuery);
 }

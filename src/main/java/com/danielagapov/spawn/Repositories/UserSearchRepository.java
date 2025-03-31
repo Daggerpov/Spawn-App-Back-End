@@ -6,9 +6,11 @@ import jakarta.persistence.PersistenceContext;
 import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class UserSearchRepository {
     @PersistenceContext
     private EntityManager entityManager;
