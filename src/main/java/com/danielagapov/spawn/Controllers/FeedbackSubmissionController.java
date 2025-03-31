@@ -61,7 +61,7 @@ public class FeedbackSubmissionController {
             FetchFeedbackSubmissionDTO resolvedFeedback = service.resolveFeedback(id, resolutionComment);
             return new ResponseEntity<>(resolvedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -123,7 +123,7 @@ public class FeedbackSubmissionController {
         try {
             return new ResponseEntity<>(service.getAllFeedbacks(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
