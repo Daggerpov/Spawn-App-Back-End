@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.BlockedUserDTO;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
+import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,11 @@ import java.util.UUID;
 public class BlockedUserController {
 
     private final IBlockedUserService blockedUserService;
+    private final IFriendRequestService friendRequestService;
 
-    public BlockedUserController(IBlockedUserService blockedUserService) {
+    public BlockedUserController(IBlockedUserService blockedUserService, IFriendRequestService friendRequestService) {
         this.blockedUserService = blockedUserService;
+        this.friendRequestService = friendRequestService;
     }
 
     // POST /api/v1/blocked-users/{blockerId}/block/{blockedId}
@@ -29,12 +32,16 @@ public class BlockedUserController {
         }
 
         try {
+            // Delete friend requests between users first to fix circular dependencies
+            friendRequestService.deleteFriendRequestBetweenUsers(blockerId, blockedId);
             blockedUserService.blockUser(blockerId, blockedId, reason);
+
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     // DELETE /api/v1/blocked-users/{blockerId}/unblock/{blockedId}
     @DeleteMapping("{blockerId}/unblock/{blockedId}")

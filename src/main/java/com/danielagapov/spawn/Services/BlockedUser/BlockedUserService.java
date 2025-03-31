@@ -23,13 +23,11 @@ public class BlockedUserService implements IBlockedUserService {
     private final IBlockedUserRepository repository;
     private final IUserService userService;
 
-    private final IFriendRequestService friendRequestService;
     private final ILogger logger;
 
     public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendRequestService friendRequestService, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
-        this.friendRequestService = friendRequestService;
         this.logger = logger;
     }
 
@@ -43,7 +41,6 @@ public class BlockedUserService implements IBlockedUserService {
             }
 
             userService.removeFriendshipBetweenUsers(blockerId, blockedId);
-            friendRequestService.deleteFriendRequestBetweenUsers(blockerId, blockedId);
 
             User blocker = userService.getUserEntityById(blockerId);
             User blocked = userService.getUserEntityById(blockedId);
