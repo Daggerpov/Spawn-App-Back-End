@@ -7,14 +7,15 @@ import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,6 +26,7 @@ public class UserController {
     private final IS3Service s3Service;
     private final ILogger logger;
 
+    @Autowired
     public UserController(IUserService userService, IS3Service s3Service, ILogger logger) {
         this.userService = userService;
         this.s3Service = s3Service;
@@ -38,29 +40,11 @@ public class UserController {
     public ResponseEntity<List<? extends AbstractUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
         try {
             if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getAllUsers(), new HashSet<>()), HttpStatus.OK);
+                List<UserDTO> allUsers = userService.getAllUsers();
+                return new ResponseEntity<>(UserMapper.toBaseDTOList(allUsers), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
             }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/users/{id}?full=full
-    @GetMapping("{id}")
-    public ResponseEntity<AbstractUserDTO> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (full) {
-                return new ResponseEntity<>(userService.getFullUserById(id), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
-            }
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -72,25 +56,6 @@ public class UserController {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/users/friendTag/{tagId}?full=full
-    @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<List<? extends AbstractUserDTO>> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
-        if (tagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (full) {
-                return new ResponseEntity<>(userService.convertUsersToFullUsers(userService.getUsersByTagId(tagId), new HashSet<>()), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
-            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

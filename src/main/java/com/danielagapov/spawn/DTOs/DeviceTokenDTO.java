@@ -22,4 +22,9 @@ public class DeviceTokenDTO {
         DeviceTokenDTO that = (DeviceTokenDTO) obj; // Safe cast
         return token != null && token.equals(that.token); // Compare tokens
     }
+    
+    @Override
+    public int hashCode() {
+        return token != null ? token.hashCode() : 0;
+    }
 } 
