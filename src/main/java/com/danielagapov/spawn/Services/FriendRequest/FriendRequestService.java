@@ -35,8 +35,8 @@ public class FriendRequestService implements IFriendRequestService {
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
-            @Lazy IUserService userService,
-            @Lazy IBlockedUserService blockedUserService, ILogger logger,
+            IUserService userService,
+            IBlockedUserService blockedUserService, ILogger logger,
             ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;

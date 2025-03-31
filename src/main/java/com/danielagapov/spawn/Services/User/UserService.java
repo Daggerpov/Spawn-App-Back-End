@@ -55,7 +55,7 @@ public class UserService implements IUserService {
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, @Lazy IFriendRequestService friendRequestService, @Lazy IBlockedUserService blockedUserService, ILogger logger) {
+                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, IBlockedUserService blockedUserService, ILogger logger) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -808,28 +808,6 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public void removeFriendshipBetweenUsers(UUID userAId, UUID userBId) {
-        try {
-            List<FriendTagDTO> userATags = friendTagService.getFriendTagsByOwnerId(userAId);
-            for (FriendTagDTO tag : userATags) {
-                if (tag.getFriendUserIds().contains(userBId)) {
-                    friendTagService.removeUserFromFriendTag(tag.getId(), userBId);
-                }
-            }
-
-            List<FriendTagDTO> userBTags = friendTagService.getFriendTagsByOwnerId(userBId);
-            for (FriendTagDTO tag : userBTags) {
-                if (tag.getFriendUserIds().contains(userAId)) {
-                    friendTagService.removeUserFromFriendTag(tag.getId(), userAId);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error removing friendship between users " + userAId + " and " + userBId + ": " + e.getMessage());
             throw e;
         }
     }

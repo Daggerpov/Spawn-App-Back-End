@@ -16,4 +16,6 @@ public interface IBlockedUserService {
 
     //getblockedusers returns UUID
     List<UUID> getBlockedUserIds(UUID blockerId);
+
+    void removeFriendshipBetweenUsers(UUID userAId, UUID userBId);
 }

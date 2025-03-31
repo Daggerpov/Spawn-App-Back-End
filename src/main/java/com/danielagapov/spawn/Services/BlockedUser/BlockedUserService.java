@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.BlockedUser;
 
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -7,6 +8,7 @@ import com.danielagapov.spawn.Mappers.BlockedUserMapper;
 import com.danielagapov.spawn.Models.BlockedUser;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IBlockedUserRepository;
+import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -22,12 +24,13 @@ public class BlockedUserService implements IBlockedUserService {
 
     private final IBlockedUserRepository repository;
     private final IUserService userService;
-
+    private final IFriendTagService friendTagService;
     private final ILogger logger;
 
-    public BlockedUserService(IBlockedUserRepository repository, @Lazy IUserService userService, ILogger logger) {
+    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendTagService friendTagService, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
+        this.friendTagService = friendTagService;
         this.logger = logger;
     }
 
@@ -40,7 +43,7 @@ public class BlockedUserService implements IBlockedUserService {
                 return;
             }
 
-            userService.removeFriendshipBetweenUsers(blockerId, blockedId);
+            removeFriendshipBetweenUsers(blockerId, blockedId);
 
             User blocker = userService.getUserEntityById(blockerId);
             User blocked = userService.getUserEntityById(blockedId);
@@ -111,6 +114,28 @@ public class BlockedUserService implements IBlockedUserService {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error("Error retrieving blocked users for " + blockerId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void removeFriendshipBetweenUsers(UUID userAId, UUID userBId) {
+        try {
+            List<FriendTagDTO> userATags = friendTagService.getFriendTagsByOwnerId(userAId);
+            for (FriendTagDTO tag : userATags) {
+                if (tag.getFriendUserIds().contains(userBId)) {
+                    friendTagService.removeUserFromFriendTag(tag.getId(), userBId);
+                }
+            }
+
+            List<FriendTagDTO> userBTags = friendTagService.getFriendTagsByOwnerId(userBId);
+            for (FriendTagDTO tag : userBTags) {
+                if (tag.getFriendUserIds().contains(userAId)) {
+                    friendTagService.removeUserFromFriendTag(tag.getId(), userAId);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error removing friendship between users " + userAId + " and " + userBId + ": " + e.getMessage());
             throw e;
         }
     }
