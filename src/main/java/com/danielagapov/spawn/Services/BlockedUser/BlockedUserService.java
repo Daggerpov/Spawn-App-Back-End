@@ -8,6 +8,7 @@ import com.danielagapov.spawn.Models.BlockedUser;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import com.danielagapov.spawn.DTOs.BlockedUserDTO;
@@ -24,7 +25,7 @@ public class BlockedUserService implements IBlockedUserService {
 
     private final ILogger logger;
 
-    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, ILogger logger) {
+    public BlockedUserService(IBlockedUserRepository repository, @Lazy IUserService userService, ILogger logger) {
         this.repository = repository;
         this.userService = userService;
         this.logger = logger;

@@ -17,6 +17,7 @@ import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +35,8 @@ public class FriendRequestService implements IFriendRequestService {
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
-            IUserService userService,
-            IBlockedUserService blockedUserService, ILogger logger,
+            @Lazy IUserService userService,
+            @Lazy IBlockedUserService blockedUserService, ILogger logger,
             ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;
