@@ -3,7 +3,6 @@ package com.danielagapov.spawn.Services.User;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
@@ -11,7 +10,6 @@ import com.danielagapov.spawn.Util.SearchedUserResult;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public interface IUserService {
@@ -19,8 +17,6 @@ public interface IUserService {
 
     // CRUD operations:
     UserDTO getUserById(UUID id);
-
-    FullUserDTO getFullUserById(UUID id);
 
     User getUserEntityById(UUID id);
 
@@ -32,13 +28,7 @@ public interface IUserService {
 
     UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
 
-    FullUserDTO getFullUserByEmail(String email);
-
-    FullUserDTO getFullUserByUserEntity(User user);
-
     UserDTO getUserDTOByEntity(User user);
-
-    UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO user, byte[] profilePicture);
 
     // For Friends:
 
@@ -49,8 +39,6 @@ public interface IUserService {
     List<User> getFriendUsersByUserId(UUID requestingUserId);
 
     // For Friend Tags:
-
-    List<UserDTO> getUsersByTagId(UUID tagId);
 
     Map<FriendTag, UUID> getOwnerUserIdsMap();
 
@@ -77,13 +65,7 @@ public interface IUserService {
     List<UUID> getInvitedUserIdsByEventId(UUID eventId);
 
     // Helper
-    FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers);
-
-    List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers);
-
     boolean existsByEmail(String email);
-
-    FullUserDTO getFullUserByUsername(String username);
 
     boolean existsByUsername(String username);
 
@@ -96,4 +78,9 @@ public interface IUserService {
     BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 
     SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
+
+    /**
+     * Get the User entity by username
+     */
+    User getUserEntityByUsername(String username);
 }

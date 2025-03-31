@@ -17,7 +17,7 @@ public interface IOAuthService {
      * @param externalUserId user id from external provider
      * @param profilePicture byte arr of user's pfp
      * @param provider       oauth provider that the new user used to sign in with
-     * @return FullUserDTO of the newly created user
+     * @return BaseUserDTO of the newly created user
      */
     // TODO: refactor to return UserDTO instead of Full since the new user won't have friends/events anyway
     BaseUserDTO makeUser(UserDTO user, String externalUserId, byte[] profilePicture, OAuthProvider provider);
@@ -37,7 +37,7 @@ public interface IOAuthService {
      *
      * @param externalUserId user id from external provider
      * @param email          user email
-     * @return a FullUserDTO if user exists, null otherwise
+     * @return a BaseUserDTO if user exists, null otherwise
      */
     Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email);
 }

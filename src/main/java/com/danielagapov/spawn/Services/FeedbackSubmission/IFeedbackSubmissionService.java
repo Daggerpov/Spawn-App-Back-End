@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.FeedbackSubmission;
 
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
+import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
 
 import java.io.IOException;
@@ -26,6 +27,25 @@ public interface IFeedbackSubmissionService {
      * @return The updated feedback submission DTO
      */
     FetchFeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment);
+    
+    /**
+     * Marks a feedback submission as in progress with an optional comment
+     * 
+     * @param id The ID of the feedback submission to mark as in progress
+     * @param comment An optional comment to add
+     * @return The updated feedback submission DTO
+     */
+    FetchFeedbackSubmissionDTO markFeedbackInProgress(UUID id, String comment);
+    
+    /**
+     * Updates a feedback submission status with an optional comment
+     * 
+     * @param id The ID of the feedback submission to update
+     * @param status The new status for the feedback
+     * @param comment An optional comment to add
+     * @return The updated feedback submission DTO
+     */
+    FetchFeedbackSubmissionDTO updateFeedbackStatus(UUID id, FeedbackStatus status, String comment);
     
     /**
      * Retrieves all feedback submissions

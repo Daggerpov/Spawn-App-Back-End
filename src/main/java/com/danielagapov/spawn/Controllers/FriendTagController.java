@@ -258,10 +258,10 @@ public class FriendTagController {
     // returns ResponseEntity with void or not found entity type (friendTag, user)
     // full path: /api/v1/friendTags/bulkAddFriendsToTag
     @PostMapping("bulkAddFriendsToTag")
-    public ResponseEntity<?> bulkAddFriendsToTag(@RequestBody List<FullUserDTO> friends, @RequestParam UUID friendTagId) {
+    public ResponseEntity<Void> bulkAddFriendsToTag(@RequestBody List<BaseUserDTO> friends, @RequestParam UUID friendTagId) {
         if (friendTagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            friendTagService.saveUsersToFriendTag(friendTagId, friends);
+            friendTagService.bulkAddUsersToFriendTag(friendTagId, friends);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);

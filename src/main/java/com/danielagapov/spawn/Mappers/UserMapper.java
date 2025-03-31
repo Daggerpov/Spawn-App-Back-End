@@ -78,4 +78,10 @@ public class UserMapper {
         );
     }
 
+    public static List<BaseUserDTO> toBaseDTOList(List<UserDTO> userDTOs) {
+        return userDTOs.stream()
+                .map(UserMapper::toBaseDTO)
+                .collect(Collectors.toList());
+    }
+
 }

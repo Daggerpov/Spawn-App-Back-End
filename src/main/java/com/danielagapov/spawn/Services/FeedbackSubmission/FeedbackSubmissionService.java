@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.FeedbackSubmission;
 import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -42,14 +43,14 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
-    public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) throws IOException {
+    public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) {
         try {
             // Find user
             UUID userId = dto.getFromUserId();
             User user = Optional.ofNullable(userId)
                     .flatMap(userRepository::findById)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-
+            
             // Upload image to S3 if present
             String imageUrl = null;
             byte[] imageData = dto.getImageData();
@@ -82,16 +83,47 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         FeedbackSubmission feedback = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
 
-        feedback.setResolved(true);
+        feedback.setStatus(FeedbackStatus.RESOLVED);
 
-        if (Optional.ofNullable(resolutionComment).filter(s -> !s.isBlank()).isPresent()) {
-            feedback.setResolutionComment(resolutionComment);
+        // Always set the resolution comment, even if it's empty
+        // This ensures frontend knows a comment was provided but might be empty
+        feedback.setResolutionComment(resolutionComment != null ? resolutionComment.trim() : "");
+
+        FeedbackSubmission updated = repository.save(feedback);
+        return FeedbackSubmissionMapper.toDTO(updated);
+    }
+    
+    @Override
+    public FetchFeedbackSubmissionDTO markFeedbackInProgress(UUID id, String comment) {
+        FeedbackSubmission feedback = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+
+        feedback.setStatus(FeedbackStatus.IN_PROGRESS);
+        
+        // Set comment if provided
+        if (comment != null && !comment.trim().isEmpty()) {
+            feedback.setResolutionComment(comment.trim());
         }
 
         FeedbackSubmission updated = repository.save(feedback);
         return FeedbackSubmissionMapper.toDTO(updated);
     }
 
+    @Override
+    public FetchFeedbackSubmissionDTO updateFeedbackStatus(UUID id, FeedbackStatus status, String comment) {
+        FeedbackSubmission feedback = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+
+        feedback.setStatus(status);
+        
+        // Set comment if provided
+        if (comment != null && !comment.trim().isEmpty()) {
+            feedback.setResolutionComment(comment.trim());
+        }
+
+        FeedbackSubmission updated = repository.save(feedback);
+        return FeedbackSubmissionMapper.toDTO(updated);
+    }
 
     @Override
     public List<FetchFeedbackSubmissionDTO> getAllFeedbacks() {
