@@ -3,7 +3,6 @@ package com.danielagapov.spawn.ServiceTests;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -263,7 +262,7 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
         UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
         when(userService.getUserById(any(UUID.class))).thenReturn(userDTO);
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
+        when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO result = chatMessageService.getFullChatMessageById(chatMessageId);
         assertNotNull(result);
         assertEquals(chatMessageId, result.getId());
@@ -297,9 +296,9 @@ public class ChatMessageServiceTests {
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(new ArrayList<>());
         when(chatMessageLikesRepository.findByChatMessage(chatMessage2)).thenReturn(new ArrayList<>());
-        FullUserDTO fullUser = new FullUserDTO(UUID.randomUUID(), List.of(), "user", "avatar.jpg", "First", "Last", "bio", List.of(), "user@example.com");
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(fullUser);
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
+        BaseUserDTO baseUser = new BaseUserDTO(UUID.randomUUID(), "First", "Last", "user@example.com", "user", "bio", "avatar.jpg");
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(baseUser);
+        when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.getFullChatMessagesByEventId(eventId);
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -522,7 +521,7 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
         UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
         when(userService.getUserById(senderId)).thenReturn(userDTO);
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
+        when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
         assertNotNull(fullDto);
         assertEquals(chatMessageId, fullDto.getId());
@@ -558,7 +557,7 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
         UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
         when(userService.getUserById(senderId)).thenReturn(userDTO);
-        when(userService.convertUsersToFullUsers(any(), eq(new HashSet<>()))).thenReturn(new ArrayList<>());
+        when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageDTOs);
         assertNotNull(result);
         assertEquals(1, result.size());

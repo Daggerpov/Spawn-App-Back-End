@@ -88,7 +88,7 @@ public class OAuthService implements IOAuthService {
         boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
         boolean existsByEmail = userService.existsByEmail(email);
 
-        if (existsByExternalId) { // A Spawn account exists with this external id, return the associated `FullUserDTO`
+        if (existsByExternalId) { // A Spawn account exists with this external id, return the associated `BaseUserDTO`
             User user = getMapping(externalUserId).getUser();
             return Optional.of(UserMapper.toDTO(user));
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id which indicates a sign-in with incorrect provider

@@ -5,7 +5,6 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
@@ -213,10 +212,10 @@ public class FriendTagController {
 
     // full path: /api/v1/friendTags/bulkAddFriendsToTag
     @PostMapping("bulkAddFriendsToTag")
-    public ResponseEntity<Void> bulkAddFriendsToTag(@RequestBody List<FullUserDTO> friends, @RequestParam UUID friendTagId) {
+    public ResponseEntity<Void> bulkAddFriendsToTag(@RequestBody List<BaseUserDTO> friends, @RequestParam UUID friendTagId) {
         if (friendTagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            friendTagService.saveUsersToFriendTag(friendTagId, friends);
+            friendTagService.bulkAddUsersToFriendTag(friendTagId, friends);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
