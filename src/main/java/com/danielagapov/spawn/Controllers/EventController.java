@@ -7,16 +7,14 @@ import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.EventsNotFoundException;
+import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Services.Event.IEventService;
-import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,11 +22,9 @@ import java.util.UUID;
 @RequestMapping("api/v1/events")
 public class EventController {
     private final IEventService eventService;
-    private final IUserService userService;
 
-    public EventController(IEventService eventService, IUserService userService) {
+    public EventController(IEventService eventService) {
         this.eventService = eventService;
-        this.userService = userService;
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful. 

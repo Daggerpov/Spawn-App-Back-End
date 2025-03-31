@@ -3,7 +3,6 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FriendTagAction;
@@ -263,7 +262,7 @@ public class FriendTagController {
             friendTagService.bulkAddUsersToFriendTag(friendTagId, friends);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
