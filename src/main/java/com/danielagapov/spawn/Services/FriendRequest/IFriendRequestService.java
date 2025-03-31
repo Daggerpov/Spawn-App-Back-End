@@ -20,4 +20,5 @@ public interface IFriendRequestService {
     List<FetchFriendRequestDTO> convertFriendRequestsToFetchFriendRequests(List<CreateFriendRequestDTO> friendRequests);
 
     List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId);
+    void deleteFriendRequestBetweenUsers(UUID senderId, UUID receiverId);
 }

@@ -14,6 +14,7 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
@@ -27,16 +28,18 @@ import java.util.UUID;
 public class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
     private final IUserService userService;
+    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final ApplicationEventPublisher eventPublisher;
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
             IUserService userService,
-            ILogger logger,
+            IBlockedUserService blockedUserService, ILogger logger,
             ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;
+        this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.eventPublisher = eventPublisher;
     }
@@ -74,9 +77,12 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
         List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+        List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(id);
 
         return friendRequests.stream()
-                .map(friendRequest -> FetchFriendRequestMapper.toDTO(friendRequest, userService.getMutualFriendCount(id, friendRequest.getSender().getId())))
+                .filter(fr -> !blockedUserIds.contains(fr.getSender().getId())) // Hide if sender is blocked
+                .map(fr -> FetchFriendRequestMapper.toDTO(fr,
+                        userService.getMutualFriendCount(id, fr.getSender().getId())))
                 .toList();
     }
 
@@ -122,6 +128,19 @@ public class FriendRequestService implements IFriendRequestService {
             repository.deleteById(id);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void deleteFriendRequestBetweenUsers(UUID senderId, UUID receiverId) {
+        try {
+            List<FriendRequest> requests = repository.findBySenderIdAndReceiverId(senderId, receiverId);
+            for (FriendRequest fr : requests) {
+                repository.delete(fr);
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting friend request from " + senderId + " to " + receiverId + ": " + e.getMessage());
             throw e;
         }
     }

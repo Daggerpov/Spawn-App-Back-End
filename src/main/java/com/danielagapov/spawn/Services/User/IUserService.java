@@ -95,4 +95,6 @@ public interface IUserService {
     BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 
     SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
+    void removeFriendshipBetweenUsers(UUID userAId, UUID userBId);
+
 }
