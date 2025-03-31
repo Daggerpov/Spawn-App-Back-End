@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Models;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,6 +34,9 @@ public class User implements Serializable {
     private String password;
     private boolean verified;
     private Date dateCreated;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private NotificationPreferences notificationPreferences;
+
 
     public User(UUID id, String username, String profilePictureUrlString, String firstName, String lastName, String bio, String email) {
         this.id = id;
