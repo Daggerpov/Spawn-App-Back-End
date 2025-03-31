@@ -10,7 +10,6 @@ import com.danielagapov.spawn.Util.SearchedUserResult;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public interface IUserService {
@@ -24,13 +23,12 @@ public interface IUserService {
     UserDTO saveUser(UserDTO user);
 
     boolean deleteUserById(UUID id);
+
     User saveEntity(User user);
 
     UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
 
     UserDTO getUserDTOByEntity(User user);
-
-    UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO user, byte[] profilePicture);
 
     // For Friends:
 
@@ -41,8 +39,6 @@ public interface IUserService {
     List<User> getFriendUsersByUserId(UUID requestingUserId);
 
     // For Friend Tags:
-
-    List<UserDTO> getUsersByTagId(UUID tagId);
 
     Map<FriendTag, UUID> getOwnerUserIdsMap();
 
@@ -82,12 +78,6 @@ public interface IUserService {
     BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
 
     SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
-
-    /**
-     * Get user with friends and tags separately
-     * This replaces getFullUserById for clients that need the extra information
-     */
-    Map<String, Object> getUserWithFriendsAndTags(UUID id);
 
     /**
      * Get the User entity by username

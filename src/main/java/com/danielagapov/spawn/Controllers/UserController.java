@@ -16,8 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.UUID;
 
 @RestController()
 @RequestMapping("api/v1/users")
@@ -50,57 +50,12 @@ public class UserController {
         }
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/users/{id}?full=full
-    @GetMapping("{id}")
-    public ResponseEntity<Object> getUser(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (full) {
-                return new ResponseEntity<>(userService.getUserWithFriendsAndTags(id), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
-            }
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/friends/{id}
     @GetMapping("friends/{id}")
     public ResponseEntity<List<? extends AbstractUserDTO>> getUserFriends(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/users/friendTag/{tagId}?full=full
-    @GetMapping("friendTag/{tagId}")
-    public ResponseEntity<Object> getUsersByFriendTag(@PathVariable UUID tagId, @RequestParam(value = "full", required = false) boolean full) {
-        if (tagId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (full) {
-                List<UserDTO> users = userService.getUsersByTagId(tagId);
-                List<Map<String, Object>> enrichedUsers = new ArrayList<>();
-                
-                for (UserDTO user : users) {
-                    enrichedUsers.add(userService.getUserWithFriendsAndTags(user.getId()));
-                }
-                
-                return new ResponseEntity<>(enrichedUsers, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(userService.getUsersByTagId(tagId), HttpStatus.OK);
-            }
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {

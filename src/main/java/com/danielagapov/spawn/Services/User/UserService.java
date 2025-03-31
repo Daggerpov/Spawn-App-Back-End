@@ -14,7 +14,6 @@ import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.DatabaseException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -168,33 +167,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getUsersByTagId(UUID tagId) {
-        try {
-            List<UUID> userIds = uftRepository.findFriendIdsByTagId(tagId);
-
-            if (userIds.isEmpty()) {
-                throw new BasesNotFoundException(EntityType.User);
-            }
-
-            return userIds.stream()
-                    .map(this::getUserById)
-                    .collect(Collectors.toList());
-
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new DatabaseException("Error accessing database while fetching users by tag ID: " + tagId, e);
-
-        } catch (BaseNotFoundException | BasesNotFoundException e) {
-            logger.error(e.getMessage());
-            throw e;
-
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw new ApplicationException("Unexpected error occurred while fetching users by tag ID: " + tagId, e);
-        }
-    }
-
-    @Override
     public UserDTO saveUser(UserDTO user) {
         try {
             User userEntity = UserMapper.toEntity(user);
@@ -263,19 +235,6 @@ public class UserService implements IUserService {
 
         // Pass in the friendTagIds and friendTags as needed
         return UserMapper.toDTO(user, friendUserIds, friendTagIds);
-    }
-
-    @Override
-    public UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO userDTO, byte[] profilePicture) {
-        if (userDTO.getProfilePicture() == null) {
-            logger.info("Profile picture is null, user either chose their profile picture or has default");
-            userDTO = s3Service.putProfilePictureWithUser(profilePicture, userDTO);
-        }
-        User userEntity = UserMapper.toEntity(userDTO);
-        userEntity.setVerified(true);
-        userEntity.setDateCreated(new Date()); // current Date
-        userEntity = repository.save(userEntity);
-        return getUserById(userEntity.getId());
     }
 
     @Override
@@ -521,7 +480,7 @@ public class UserService implements IUserService {
                             .stream()
                             .filter(entry -> isQueryMatch(entry, searchQuery))
                             .limit(recommendedFriendLimit - recommendedFriends.size())
-                            .collect(Collectors.toList());
+                            .toList();
 
                     recommendedFriends.addAll(randomRecommendations);
                 }
@@ -712,27 +671,6 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public Map<String, Object> getUserWithFriendsAndTags(UUID id) {
-        try {
-            Map<String, Object> result = new HashMap<>();
-            
-            User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-            result.put("user", UserMapper.toDTO(user));
-            
-            List<UserDTO> friends = getFriendsByUserId(id);
-            result.put("friends", friends);
-            
-            List<FriendTagDTO> friendTags = friendTagService.getFriendTagsByOwnerId(id);
-            result.put("friendTags", friendTags);
-            
-            return result;
-        } catch (Exception e) {
-            logger.error(e.getMessage());
             throw e;
         }
     }
