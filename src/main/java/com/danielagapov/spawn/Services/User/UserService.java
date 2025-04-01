@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -12,7 +11,6 @@ import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.DatabaseException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.EventUser;
@@ -98,16 +96,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserById(UUID id) {
-        try {
-            return getFullUserByUser(getUserById(id), new HashSet<>());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
             // Get all friend tags for the user
@@ -178,33 +166,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getUsersByTagId(UUID tagId) {
-        try {
-            List<UUID> userIds = uftRepository.findFriendIdsByTagId(tagId);
-
-            if (userIds.isEmpty()) {
-                throw new BasesNotFoundException(EntityType.User);
-            }
-
-            return userIds.stream()
-                    .map(this::getUserById)
-                    .collect(Collectors.toList());
-
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new DatabaseException("Error accessing database while fetching users by tag ID: " + tagId, e);
-
-        } catch (BaseNotFoundException | BasesNotFoundException e) {
-            logger.error(e.getMessage());
-            throw e;
-
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw new ApplicationException("Unexpected error occurred while fetching users by tag ID: " + tagId, e);
-        }
-    }
-
-    @Override
     public UserDTO saveUser(UserDTO user) {
         try {
             User userEntity = UserMapper.toEntity(user);
@@ -265,22 +226,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserByEmail(String email) {
-        try {
-            User user = repository.findByEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
-            return getFullUserById(user.getId());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public FullUserDTO getFullUserByUserEntity(User user) {
-        return getFullUserByUser(getUserDTOByEntity(user), Set.of());
-    }
-
-    @Override
     public UserDTO getUserDTOByEntity(User user) {
         List<UUID> friendUserIds = getFriendUserIdsByUserId(user.getId());
 
@@ -289,19 +234,6 @@ public class UserService implements IUserService {
 
         // Pass in the friendTagIds and friendTags as needed
         return UserMapper.toDTO(user, friendUserIds, friendTagIds);
-    }
-
-    @Override
-    public UserDTO saveNewVerifiedUserWithProfilePicture(UserDTO userDTO, byte[] profilePicture) {
-        if (userDTO.getProfilePicture() == null) {
-            logger.info("Profile picture is null, user either chose their profile picture or has default");
-            userDTO = s3Service.putProfilePictureWithUser(profilePicture, userDTO);
-        }
-        User userEntity = UserMapper.toEntity(userDTO);
-        userEntity.setVerified(true);
-        userEntity.setDateCreated(new Date()); // current Date
-        userEntity = repository.save(userEntity);
-        return getUserById(userEntity.getId());
     }
 
     @Override
@@ -470,55 +402,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public FullUserDTO getFullUserByUser(UserDTO user, Set<UUID> visitedUsers) {
-        try {
-            if (visitedUsers.contains(user.getId())) {
-                return null; // Skip already visited users
-            }
-            visitedUsers.add(user.getId());
-
-            return new FullUserDTO(
-                    user.getId(),
-                    getFriendsByUserId(user.getId()),
-                    user.getUsername(),
-                    user.getProfilePicture(),
-                    user.getFirstName(),
-                    user.getLastName(),
-                    user.getBio(),
-                    friendTagService.getFriendTagsByOwnerId(user.getId()),
-                    user.getEmail()
-            );
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<FullUserDTO> convertUsersToFullUsers(List<UserDTO> users, Set<UUID> visitedUsers) {
-        try {
-            return users.stream()
-                    .map(user -> getFullUserByUser(user, visitedUsers))
-                    .filter(Objects::nonNull) // Filter out null values (already visited users)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public FullUserDTO getFullUserByUsername(String username) {
-        try {
-            User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
-            return getFullUserById(user.getId());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
     }
@@ -627,6 +510,17 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public User getUserEntityByUsername(String username) {
+        try {
+            return repository.findByUsername(username)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
+        } catch (Exception e) {
+            logger.error(e.getMessage());
             throw e;
         }
     }

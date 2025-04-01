@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
@@ -40,7 +41,7 @@ public class AuthController {
      * already has an existing `User` created within spawn, given their external user id, which we check
      * against our mappings of internal ids to external ones.
      * <p>
-     * If the user is already saved within Spawn -> we return its `FullUserDTO`. Otherwise, null.
+     * If the user is already saved within Spawn -> we return its `BaseUserDTO`. Otherwise, null.
      */
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
@@ -56,6 +57,8 @@ public class AuthController {
             return ResponseEntity.ok().body(null);
         } catch (IncorrectProviderException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
+        } catch (BaseNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.entityType);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse(e.getMessage()));
         }
@@ -102,6 +105,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No authorization token found");
         } catch (BadTokenException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bad or expired token");
+        } catch (BaseNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity not found: " + e.entityType);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
@@ -119,6 +124,9 @@ public class AuthController {
         } catch (FieldAlreadyExistsException fae) {
             logger.warn(fae.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        } catch (BaseNotFoundException e) {
+            logger.error("Entity not found during registration: " + e.entityType);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
             logger.error("Error registering in user: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -127,14 +135,17 @@ public class AuthController {
 
     // full path: /api/v1/auth/login
     @PostMapping("login")
-    public ResponseEntity<AbstractUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+    public ResponseEntity<BaseUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
             logger.info(String.format("Login request received: {user: %s}", authUserDTO));
-            FullUserDTO existingUserDTO = authService.loginUser(authUserDTO);
+            BaseUserDTO existingUserDTO = authService.loginUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (BaseNotFoundException e) {
+            logger.error("Entity not found during login: " + e.entityType);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             logger.error(String.format("Error logging in user: {user: %s}. Error: %s", authUserDTO, e.getMessage()));
             return ResponseEntity.internalServerError().build();
@@ -152,6 +163,12 @@ public class AuthController {
             String status = isVerified ? "success" : "expired";
             modelAndView.addObject("status", status);
             modelAndView.setStatus(HttpStatus.OK);
+            return modelAndView;
+        } catch (BaseNotFoundException e) {
+            logger.info("Error verifying email: " + e.getMessage() + ", entity type: " + e.entityType);
+            modelAndView.addObject("status", "not_found");
+            modelAndView.addObject("entityType", e.entityType);
+            modelAndView.setStatus(HttpStatus.NOT_FOUND);
             return modelAndView;
         } catch (Exception e) {
             logger.info("Unexpected error while verifying email: " + e.getMessage());
@@ -174,7 +191,7 @@ public class AuthController {
             logger.info("Messaging Exception: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Messaging Exception: " + e.getMessage());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             return ResponseEntity.internalServerError().body("Internal Server Error: " + e.getMessage());
         }
     }
