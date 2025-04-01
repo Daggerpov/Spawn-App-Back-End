@@ -35,10 +35,10 @@ public class BlockedUserController {
         }
     }
 
-    // DELETE /api/v1/blocked-users/{blockerId}/unblock/{blockedId}
-    @DeleteMapping("{blockerId}/unblock/{blockedId}")
-    public ResponseEntity<Void> unblockUser(@PathVariable UUID blockerId,
-                                            @PathVariable UUID blockedId) {
+    // DELETE /api/v1/blocked-users/unblock?blockerId=...&blockedId=...
+    @DeleteMapping("unblock")
+    public ResponseEntity<Void> unblockUser(@RequestParam UUID blockerId,
+                                            @RequestParam UUID blockedId) {
         try {
             blockedUserService.unblockUser(blockerId, blockedId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
