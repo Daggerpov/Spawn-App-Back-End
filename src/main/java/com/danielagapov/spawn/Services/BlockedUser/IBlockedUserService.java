@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Services.BlockedUser;
 
-import com.danielagapov.spawn.DTOs.BlockedUserDTO;
+import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
 
 import java.util.List;
 import java.util.UUID;

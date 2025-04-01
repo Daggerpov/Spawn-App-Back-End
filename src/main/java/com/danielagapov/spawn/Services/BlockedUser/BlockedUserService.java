@@ -10,10 +10,9 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-import com.danielagapov.spawn.DTOs.BlockedUserDTO;
+import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
 
 import java.util.List;
 import java.util.UUID;

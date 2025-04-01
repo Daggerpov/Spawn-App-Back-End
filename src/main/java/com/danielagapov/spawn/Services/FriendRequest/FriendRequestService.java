@@ -134,7 +134,7 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
-    public void deleteFriendRequestBetweenUsers(UUID senderId, UUID receiverId) {
+    public void deleteFriendRequestBetweenUsersIfExists(UUID senderId, UUID receiverId) {
         try {
             List<FriendRequest> requests = repository.findBySenderIdAndReceiverId(senderId, receiverId);
             for (FriendRequest fr : requests) {

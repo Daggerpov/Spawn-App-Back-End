@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.BlockedUser;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
