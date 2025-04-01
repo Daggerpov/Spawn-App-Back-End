@@ -24,6 +24,7 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
@@ -46,12 +47,13 @@ public class UserService implements IUserService {
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
     private final IFriendRequestService friendRequestService;
+    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, ILogger logger) {
+                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, IBlockedUserService blockedUserService, ILogger logger) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -59,6 +61,7 @@ public class UserService implements IUserService {
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
         this.friendRequestService = friendRequestService;
+        this.blockedUserService = blockedUserService;
         this.logger = logger;
     }
 
@@ -443,10 +446,14 @@ public class UserService implements IUserService {
                 .map(CreateFriendRequestDTO::getSenderUserId)
                 .toList();
 
+        //Fetch users who are blocked
+        List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(userId);
+
         // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
         Set<UUID> excludedUserIds = new HashSet<>(requestingUserFriendIds);
         excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
         excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
+        excludedUserIds.addAll(blockedUserIds);
         excludedUserIds.add(userId); // Exclude self
 
         return excludedUserIds;
@@ -455,8 +462,12 @@ public class UserService implements IUserService {
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
         try {
-            List<FetchFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(requestingUserId)
+            List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(requestingUserId);
+
+            List<FetchFriendRequestDTO> incomingFriendRequests = friendRequestService
+                    .getIncomingFetchFriendRequestsByUserId(requestingUserId)
                     .stream()
+                    .filter(fr -> !blockedUserIds.contains(fr.getSenderUser().getId())) // exclude blocked
                     .filter(fr -> isQueryMatch(fr.getSenderUser(), searchQuery))
                     .toList();
 
@@ -465,13 +476,21 @@ public class UserService implements IUserService {
 
             // If searchQuery is empty, return all recommended friends
             if (searchQuery.isEmpty()) {
-                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
-                friends = getFullFriendUsersByUserId(requestingUserId);
+                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId)
+                        .stream()
+                        .filter(rf -> !blockedUserIds.contains(rf.getId()))
+                        .collect(Collectors.toList());
+                friends = getFullFriendUsersByUserId(requestingUserId)
+                        .stream()
+                        .filter(friend -> !blockedUserIds.contains(friend.getId()))
+                        .collect(Collectors.toList());
+
             } else {
                 // Get recommended mutual friends
-                recommendedFriends = getRecommendedMutuals(requestingUserId)
+                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId)
                         .stream()
-                        .filter(entry -> isQueryMatch(entry, searchQuery))
+                        .filter(rf -> !blockedUserIds.contains(rf.getId()))
+                        .filter(rf -> isQueryMatch(rf, searchQuery)) // ✅ ADD THIS
                         .collect(Collectors.toList());
 
                 // If not enough mutual friends, supplement with random recommendations
@@ -488,7 +507,8 @@ public class UserService implements IUserService {
                 // Get friends who match the search query
                 friends = getFullFriendUsersByUserId(requestingUserId)
                         .stream()
-                        .filter(user -> isQueryMatch(user, searchQuery))
+                        .filter(friend -> !blockedUserIds.contains(friend.getId()))
+                        .filter(friend -> isQueryMatch(friend, searchQuery))
                         .collect(Collectors.toList());
             }
 
