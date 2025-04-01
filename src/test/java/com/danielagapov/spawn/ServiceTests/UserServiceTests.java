@@ -16,6 +16,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
@@ -54,6 +55,9 @@ public class UserServiceTests {
     private IFriendTagService friendTagService;
     @Mock
     private IFriendRequestService friendRequestService;
+
+    @Mock
+    private IBlockedUserService blockedUserService;
 
     @InjectMocks
     private UserService userService;
@@ -502,7 +506,8 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+        when(blockedUserService.getBlockedUserIds(any())).thenReturn(List.of());
+
         // Use spy to isolate the test from internal implementations
         UserService spyUserService = spy(userService);
         doReturn(List.of(friend1, friend2, friend3)).when(spyUserService).getRecommendedMutuals(userId);
@@ -527,7 +532,9 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+        when(blockedUserService.getBlockedUserIds(any())).thenReturn(List.of());
+
+
         // Use spy to isolate the test from internal implementations
         UserService spyUserService = spy(userService);
         doReturn(List.of(friend1, friend2)).when(spyUserService).getLimitedRecommendedFriendsForUserId(userId);
@@ -553,7 +560,8 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
-        
+        when(blockedUserService.getBlockedUserIds(any())).thenReturn(List.of());
+
         // Use spy to isolate the test from internal implementations
         UserService spyUserService = spy(userService);
         doReturn(List.of(friend1, friend2)).when(spyUserService).getRecommendedMutuals(userId);
@@ -586,6 +594,7 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(blockedUserService.getBlockedUserIds(any())).thenReturn(List.of());
         when(spyUserService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
         when(spyUserService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of(user5Full));
 
@@ -608,6 +617,7 @@ public class UserServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        when(blockedUserService.getBlockedUserIds(any())).thenReturn(List.of());
         when(spyUserService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
         when(spyUserService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
 
