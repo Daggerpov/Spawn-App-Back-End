@@ -115,7 +115,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public FriendTagDTO saveFriendTag(AbstractFriendTagDTO friendTag) {
         FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
         friendTagEntity = saveFriendTagEntity(friendTagEntity);
@@ -135,7 +135,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
         return repository.findById(id).map(friendTag -> {
             friendTag.setColorHexCode(newFriendTag.getColorHexCode());
@@ -150,7 +150,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -177,7 +177,7 @@ public class FriendTagService implements IFriendTagService {
 
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public void saveUserToFriendTag(UUID id, UUID userId) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -212,7 +212,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public void removeUserFromFriendTag(UUID id, UUID userId) {
         // Check if the FriendTag exists
         if (!repository.existsById(id)) {
@@ -243,7 +243,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
         for (BaseUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.getId());
