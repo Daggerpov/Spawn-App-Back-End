@@ -154,26 +154,26 @@ public class UserController {
     public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            logger.info("Received request to update user " + id + ": " + 
-                        "username=" + updateDTO.getUsername() + ", " +
-                        "firstName=" + updateDTO.getFirstName() + ", " +
-                        "lastName=" + updateDTO.getLastName() + ", " +
-                        "bio=" + updateDTO.getBio());
-            
+            logger.info("Received request to update user " + id + ": " +
+                    "username=" + updateDTO.getUsername() + ", " +
+                    "firstName=" + updateDTO.getFirstName() + ", " +
+                    "lastName=" + updateDTO.getLastName() + ", " +
+                    "bio=" + updateDTO.getBio());
+
             BaseUserDTO updatedUser = userService.updateUser(
-                id, 
-                updateDTO.getBio(), 
-                updateDTO.getUsername(), 
-                updateDTO.getFirstName(), 
-                updateDTO.getLastName()
+                    id,
+                    updateDTO.getBio(),
+                    updateDTO.getUsername(),
+                    updateDTO.getFirstName(),
+                    updateDTO.getLastName()
             );
-            
+
             logger.info("Successfully updated user " + id + ": " +
-                        "username=" + updatedUser.getUsername() + ", " +
-                        "firstName=" + updatedUser.getFirstName() + ", " +
-                        "lastName=" + updatedUser.getLastName() + ", " +
-                        "bio=" + updatedUser.getBio());
-            
+                    "username=" + updatedUser.getUsername() + ", " +
+                    "firstName=" + updatedUser.getFirstName() + ", " +
+                    "lastName=" + updatedUser.getLastName() + ", " +
+                    "bio=" + updatedUser.getBio());
+
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for update: " + id + ", entity type: " + e.entityType);
@@ -191,6 +191,16 @@ public class UserController {
             return new ResponseEntity<>(userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<SearchedUserResult>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/search
+    @GetMapping("search")
+    public ResponseEntity<List<BaseUserDTO>> searchForUsers(@RequestBody String searchQuery) {
+        try {
+            return new ResponseEntity<>(userService.searchByQuery(searchQuery), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

@@ -84,6 +84,8 @@ public interface IUserService {
      */
     User getUserEntityByUsername(String username);
 
+    List<BaseUserDTO> searchByQuery(String searchQuery);
+
     /**
      * Get the User entity by email
      */

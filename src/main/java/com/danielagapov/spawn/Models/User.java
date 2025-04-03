@@ -24,9 +24,11 @@ public class User implements Serializable {
     @Id
     @GeneratedValue
     private UUID id;
+
     @Column(nullable = false, unique = true) // Ensures the username is unique and not null
     private String username;
     private String profilePictureUrlString;
+
     private String firstName;
     private String lastName;
     private String bio;
