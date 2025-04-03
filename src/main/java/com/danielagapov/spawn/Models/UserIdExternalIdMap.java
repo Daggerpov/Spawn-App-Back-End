@@ -26,6 +26,7 @@ public class UserIdExternalIdMap {
 
     // TODO: may need to revisit relationship type if google/apple calendars is a feature later
     @OneToOne
+    @MapsId("userId")
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
