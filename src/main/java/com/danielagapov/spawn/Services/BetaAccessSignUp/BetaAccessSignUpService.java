@@ -9,8 +9,10 @@ import com.danielagapov.spawn.Mappers.BetaAccessSignUpMapper;
 import com.danielagapov.spawn.Models.BetaAccessSignUp;
 import com.danielagapov.spawn.Repositories.IBetaAccessSignUpRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +35,7 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
      * @return all beta access sign up record DTOs
      */
     @Override
+    @Cacheable(value = "betaAccessRecords")
     public List<BetaAccessSignUpDTO> getAllBetaAccessSignUpRecords() {
         try {
             return BetaAccessSignUpMapper.toDTOList(repository.findAll());
@@ -94,6 +97,7 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
      * @return The updated beta access sign up DTO
      */
     @Override
+    @CacheEvict(value = "betaAccessRecords", allEntries = true)
     public BetaAccessSignUpDTO updateEmailedStatus(UUID id, Boolean hasBeenEmailed) {
         try {
             BetaAccessSignUp entity = repository.findById(id)

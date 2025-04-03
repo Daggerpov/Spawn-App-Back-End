@@ -10,6 +10,8 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
@@ -34,6 +36,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @CacheEvict(value = {"blockedUsers", "blockedUserIds"}, key = "#blockerId")
     public void blockUser(UUID blockerId, UUID blockedId, String reason) {
         if (blockerId.equals(blockedId)) return;
 
@@ -66,6 +69,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @CacheEvict(value = {"blockedUsers", "blockedUserIds"}, key = "#blockerId")
     public void unblockUser(UUID blockerId, UUID blockedId) {
         try {
             repository.findByBlocker_IdAndBlocked_Id(blockerId, blockedId)
@@ -80,6 +84,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @Cacheable(value = "isBlocked", key = "#blockerId.toString() + ':' + #blockedId.toString()")
     public boolean isBlocked(UUID blockerId, UUID blockedId) {
         try {
             return repository.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId);
@@ -93,6 +98,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @Cacheable(value = "blockedUsers", key = "#blockerId")
     public List<BlockedUserDTO> getBlockedUsers(UUID blockerId) {
         try {
             return repository.findAllByBlocker_Id(blockerId).stream()
@@ -105,6 +111,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @Cacheable(value = "blockedUserIds", key = "#blockerId")
     public List<UUID> getBlockedUserIds(UUID blockerId) {
         try {
             return repository.findAllByBlocker_Id(blockerId).stream()
