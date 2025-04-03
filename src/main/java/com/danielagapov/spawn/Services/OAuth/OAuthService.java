@@ -58,8 +58,16 @@ public class OAuthService implements IOAuthService {
             }
             if (userDTO.getEmail() != null && userService.existsByEmail(userDTO.getEmail())) {
                 logger.info(String.format("Existing user detected in makeUser, email already exists: {user: %s, email: %s}", userDTO.getEmail(), userDTO.getEmail()));
-                User user = getMappingByUserEmail(userDTO.getEmail()).getUser();
-                return UserMapper.toDTO(user);
+                try {
+                    UserIdExternalIdMap mapping = getMappingByUserEmail(userDTO.getEmail());
+                    return UserMapper.toDTO(mapping.getUser());
+                } catch (BaseNotFoundException e) {
+                    // If user exists but mapping doesn't, get the user and create the mapping
+                    logger.info(String.format("User exists but no mapping found for email: %s. Creating mapping.", userDTO.getEmail()));
+                    User existingUser = userService.getUserByEmail(userDTO.getEmail());
+                    createAndSaveMapping(externalUserId, UserMapper.toDTO(existingUser), provider);
+                    return UserMapper.toDTO(existingUser);
+                }
             }
 
             // user dto -> entity & save user
