@@ -153,8 +153,6 @@ class UserSearchServiceTests {
 
         // Mock the friend request service methods
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
-        when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
-        when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
 
         // Use spy to isolate the test from internal implementations
         UserSearchService spyUserSearchService = spy(userSearchService);
@@ -250,7 +248,7 @@ class UserSearchServiceTests {
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "Jo");
+        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "Jo");
         assertTrue(result);
     }
 
@@ -261,7 +259,7 @@ class UserSearchServiceTests {
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "oe");
+        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "oe");
         assertTrue(result);
     }
 
@@ -272,7 +270,7 @@ class UserSearchServiceTests {
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "hnd");
+        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "hnd");
         assertTrue(result);
     }
 
@@ -283,7 +281,7 @@ class UserSearchServiceTests {
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "JOHN");
+        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "JOHN");
         assertTrue(result);
     }
 
@@ -294,7 +292,7 @@ class UserSearchServiceTests {
         AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userService, "isQueryMatch", user, "xyz");
+        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "xyz");
         assertFalse(result);
     }
 
@@ -305,8 +303,6 @@ class UserSearchServiceTests {
         RecommendedFriendUserDTO friend = new RecommendedFriendUserDTO(UUID.randomUUID(), "Alice", "Smith", "alice@example.com", "alice", "Bio", "profile.jpg", 1);
 
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
-        when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
-        when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
 
         UserSearchService spyUserSearchService = spy(userSearchService);
         doReturn(List.of(friend)).when(spyUserSearchService).getLimitedRecommendedFriendsForUserId(userId);

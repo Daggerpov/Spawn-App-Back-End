@@ -46,7 +46,7 @@ public class UserSearchService implements IUserSearchService {
 
             // If searchQuery is empty, return all recommended friends
             if (searchQuery.isEmpty()) {
-                recommendedFriends = userService.getLimitedRecommendedFriendsForUserId(requestingUserId);
+                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
                 friends = userService.getFullFriendUsersByUserId(requestingUserId);
             } else {
                 // Get recommended mutual friends
