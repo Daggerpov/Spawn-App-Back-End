@@ -115,7 +115,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTag.id")
     public FriendTagDTO saveFriendTag(AbstractFriendTagDTO friendTag) {
         FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
         friendTagEntity = saveFriendTagEntity(friendTagEntity);
