@@ -51,7 +51,14 @@ public class UserService implements IUserService {
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, ILogger logger, UserSearchService userSearchService) {
+                       IEventUserRepository eventUserRepository,
+                       IUserFriendTagRepository uftRepository,
+                       IFriendTagService friendTagService,
+                       IFriendTagRepository friendTagRepository,
+                       IS3Service s3Service, ILogger logger,
+                       UserSearchService userSearchService,
+                       IFriendRequestService friendRequestService,
+                       IBlockedUserService blockedUserService) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
