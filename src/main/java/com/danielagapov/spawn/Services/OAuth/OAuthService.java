@@ -16,6 +16,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -65,7 +66,8 @@ public class OAuthService implements IOAuthService {
                     // If user exists but mapping doesn't, get the user and create the mapping
                     logger.info(String.format("User exists but no mapping found for email: %s. Creating mapping.", userDTO.getEmail()));
                     User existingUser = userService.getUserByEmail(userDTO.getEmail());
-                    createAndSaveMapping(externalUserId, UserMapper.toDTO(existingUser), provider);
+                    UserDTO existingUserDTO = UserMapper.toDTO(existingUser, List.of(), List.of());
+                    createAndSaveMapping(externalUserId, existingUserDTO, provider);
                     return UserMapper.toDTO(existingUser);
                 }
             }
