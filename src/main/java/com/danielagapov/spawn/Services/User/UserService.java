@@ -705,4 +705,14 @@ public class UserService implements IUserService {
             throw e;
         }
     }
+
+    public User getUserByEmail(String email) {
+        try {
+            return repository.findByEmail(email)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
 }

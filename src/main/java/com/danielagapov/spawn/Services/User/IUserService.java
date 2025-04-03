@@ -83,4 +83,9 @@ public interface IUserService {
      * Get the User entity by username
      */
     User getUserEntityByUsername(String username);
+
+    /**
+     * Get the User entity by email
+     */
+    User getUserByEmail(String email);
 }
