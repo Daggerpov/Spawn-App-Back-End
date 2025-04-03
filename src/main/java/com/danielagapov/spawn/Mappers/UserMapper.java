@@ -23,6 +23,10 @@ public class UserMapper {
         );
     }
 
+    public static List<BaseUserDTO> toDTOList(List<User> users) {
+        return users.stream().map(UserMapper::toDTO).toList();
+    }
+
     public static UserDTO toDTO(User user, List<UUID> friendUserIds, List<UUID> friendTagIds) {
 
         return new UserDTO(

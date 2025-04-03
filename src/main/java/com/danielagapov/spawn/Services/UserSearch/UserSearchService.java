@@ -11,11 +11,13 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.UserSearchRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import lombok.AllArgsConstructor;
+import org.apache.commons.text.similarity.JaroWinklerDistance;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -25,9 +27,9 @@ import java.util.stream.Collectors;
 @Service
 public class UserSearchService implements IUserSearchService {
     private static final long recommendedFriendLimit = 3L;
-    private final UserSearchRepository userSearchRepository;
     private final IFriendRequestService friendRequestService;
     private final IUserService userService;
+    private final IUserRepository userRepository;
     private final ILogger logger;
 
 
@@ -59,7 +61,7 @@ public class UserSearchService implements IUserSearchService {
                             .stream()
                             .filter(entry -> isQueryMatch(entry, searchQuery))
                             .limit(recommendedFriendLimit - recommendedFriends.size())
-                            .collect(Collectors.toList());
+                            .toList();
 
                     recommendedFriends.addAll(randomRecommendations);
                 }
@@ -208,9 +210,75 @@ public class UserSearchService implements IUserSearchService {
 
     @Override
     public List<BaseUserDTO> searchByQuery(String searchQuery) {
-        return userSearchRepository.fuzzySearchByName(searchQuery)
-                .stream()
-                .map(UserMapper::toDTO)
-                .toList();
+        final int searchLimit = 100; // Max number of results returned by database query
+        final int resultLimit = 10; // Max number of results to return
+        // If query is empty do nothing
+        if (searchQuery.isBlank()) return Collections.emptyList();
+
+        // First get users that start with the same prefix as query
+        String prefix = searchQuery.toLowerCase().substring(0, 1);
+        List<User> users = userRepository.findUsersWithPrefix(prefix, Limit.of(searchLimit));
+
+        // If no results were returned, then return early with empty list
+        if (users.isEmpty()) return Collections.emptyList();
+
+        Map<User, Double> userDistances = computeJaroWinklerDistances(searchQuery.toLowerCase(), users);
+        // Filter users that are not similar to query
+        List<User> filteredUsers = filterNonSimilarUsers(users, userDistances);
+        if (filteredUsers.isEmpty()) {
+            filteredUsers = users;
+        }
+        // Rank users by their similarity to query and collect top `resultLimit` results
+        users = rankUsers(filteredUsers, userDistances).stream().limit(resultLimit).toList();
+        // Return BaseUserDTOs
+        return UserMapper.toDTOList(users);
+    }
+
+
+    /**
+     * Computes the distances of each user (first name, last name, or username) to the query
+     *
+     * @param query the search query to compare names against
+     * @param users list of database results
+     * @return map of users => jaro-winkler distance
+     */
+    private Map<User, Double> computeJaroWinklerDistances(String query, List<User> users) {
+        JaroWinklerDistance jaroWinklerDistance = new JaroWinklerDistance();
+        return users.stream().collect(Collectors.toMap(user -> user, user ->
+                Math.max(
+                        jaroWinklerDistance.apply(query, user.getFirstName().toLowerCase()),
+                        Math.max(
+                                jaroWinklerDistance.apply(query, user.getLastName().toLowerCase()),
+                                jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
+                        )
+                )
+        ));
+    }
+
+    /**
+     * Filter for users that are "similar" to the query, where "similar" is defined as having a
+     * Jaro-Winkler distance score greater than or equal to `threshold`
+     *
+     * @param users list of database results
+     * @return filtered list of users with Jaro-Winkler distance score >= `tolerance`
+     */
+    private List<User> filterNonSimilarUsers(List<User> users, Map<User, Double> userDistMap) {
+        final double threshold = 0.6;
+        return users.stream()
+                .filter(user -> userDistMap.get(user) >= threshold)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Sorts users by their Jaro-Winkler distance in ascending order.
+     * Ascending order means the returned list will have the most similar results first, the least similar results last
+     *
+     * @param users list of database results
+     * @return sorted list of users by Jaro-Winkler distance
+     */
+    private List<User> rankUsers(List<User> users, Map<User, Double> userDistMap) {
+        return users.stream()
+                .sorted(Comparator.comparingDouble(userDistMap::get).reversed())
+                .collect(Collectors.toList());
     }
 }

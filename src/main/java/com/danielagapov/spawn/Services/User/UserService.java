@@ -20,7 +20,6 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
@@ -42,21 +41,19 @@ public class UserService implements IUserService {
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
-    private final IFriendRequestService friendRequestService;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, IFriendRequestService friendRequestService, ILogger logger, UserSearchService userSearchService) {
+                       IEventUserRepository eventUserRepository, IUserFriendTagRepository uftRepository, IFriendTagService friendTagService, IFriendTagRepository friendTagRepository, IS3Service s3Service, ILogger logger, UserSearchService userSearchService) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
-        this.friendRequestService = friendRequestService;
         this.logger = logger;
         this.userSearchService = userSearchService;
     }
@@ -342,7 +339,7 @@ public class UserService implements IUserService {
 
     @Override
     public List<BaseUserDTO> searchByQuery(String searchQuery) {
-        return List.of();
+        return userSearchService.searchByQuery(searchQuery);
     }
 
     @Override

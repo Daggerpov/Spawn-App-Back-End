@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -22,21 +20,16 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-@Indexed
 public class User implements Serializable {
     @Id
     @GeneratedValue
     private UUID id;
 
-    @FullTextField(analyzer = "nameAnalyzer")
     @Column(nullable = false, unique = true) // Ensures the username is unique and not null
     private String username;
     private String profilePictureUrlString;
 
-    @FullTextField(analyzer = "nameAnalyzer")
     private String firstName;
-
-    @FullTextField(analyzer = "nameAnalyzer")
     private String lastName;
     private String bio;
     private String email;

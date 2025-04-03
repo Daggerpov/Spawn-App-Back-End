@@ -196,6 +196,7 @@ public class UserController {
         }
     }
 
+    // full path: /api/v1/users/search?query=searchQuery
     @GetMapping("search")
     public ResponseEntity<List<BaseUserDTO>> searchForUsers(@RequestParam String searchQuery) {
         try {
