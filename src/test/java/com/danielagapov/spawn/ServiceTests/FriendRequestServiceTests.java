@@ -8,6 +8,7 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.FriendRequest;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.FriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,9 @@ class FriendRequestServiceTests {
 
     @Mock
     private IUserService userService;
+
+    @Mock
+    private IBlockedUserService blockedUserService;
 
     @Mock
     private ILogger logger;

@@ -10,6 +10,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
@@ -46,6 +47,9 @@ public class UserServiceTests {
     private IFriendTagService friendTagService;
     @Mock
     private IFriendRequestService friendRequestService;
+
+    @Mock
+    private IBlockedUserService blockedUserService;
 
     @InjectMocks
     private UserService userService;
