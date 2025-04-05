@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.Event;
 
-import com.danielagapov.spawn.Controllers.EventController;
 import com.danielagapov.spawn.DTOs.Event.*;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -58,7 +57,17 @@ public class EventService implements IEventService {
 
     @Autowired
     @Lazy
-    public EventService(IEventRepository repository, ILocationRepository locationRepository, IEventUserRepository eventUserRepository, IUserRepository userRepository, IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher, IEventUserService eventUserService, EventController eventController) {
+    public EventService(IEventRepository repository,
+                        ILocationRepository locationRepository,
+                        IEventUserRepository eventUserRepository,
+                        IUserRepository userRepository,
+                        IFriendTagService friendTagService,
+                        IUserService userService,
+                        IChatMessageService chatMessageService,
+                        ILogger logger,
+                        ILocationService locationService,
+                        ApplicationEventPublisher eventPublisher,
+                        IEventUserService eventUserService) {
         this.repository = repository;
         this.locationRepository = locationRepository;
         this.eventUserRepository = eventUserRepository;
