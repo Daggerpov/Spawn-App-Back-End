@@ -2,7 +2,7 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.LocationDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -114,8 +114,8 @@ public class EventUserServiceTests {
         // Mock for getFullEventById which is called by toggleParticipation to return the result
         LocationDTO locationDTO = new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0);
         when(locationService.getLocationById(any(UUID.class))).thenReturn(locationDTO);
-        when(userService.getFullUserById(any(UUID.class))).thenReturn(
-                new FullUserDTO(UUID.randomUUID(), List.of(), "username", "avatar.jpg", "first", "last", "bio", List.of(), "email")
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(
+                new BaseUserDTO(UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg")
         );
         when(eventUserService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
         when(eventUserService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());

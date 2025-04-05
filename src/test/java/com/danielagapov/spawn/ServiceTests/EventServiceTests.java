@@ -717,8 +717,8 @@ public class EventServiceTests {
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
