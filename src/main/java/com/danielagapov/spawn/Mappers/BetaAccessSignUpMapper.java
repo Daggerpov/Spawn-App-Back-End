@@ -13,7 +13,8 @@ public class BetaAccessSignUpMapper {
                 entity.getId(),
                 entity.getEmail(),
                 entity.getSignedUpAt(),
-                entity.getHasSubscribedToNewsletter()
+                entity.getHasSubscribedToNewsletter(),
+                entity.getHasBeenEmailed()
         );
     }
 
@@ -22,7 +23,8 @@ public class BetaAccessSignUpMapper {
                 dto.getId(),
                 dto.getEmail(),
                 dto.getSignedUpAt(),
-                dto.getHasSubscribedToNewsletter()
+                dto.getHasSubscribedToNewsletter(),
+                dto.getHasBeenEmailed()
         );
     }
 

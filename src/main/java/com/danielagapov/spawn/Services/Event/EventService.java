@@ -30,6 +30,10 @@ import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -94,6 +98,7 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Cacheable(value = "eventById", key = "#id")
     public EventDTO getEventById(UUID id) {
         Event event = repository.findById(id)
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, id));
@@ -107,11 +112,13 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Cacheable(value = "fullEventById", key = "#id.toString() + ':' + #requestingUserId.toString()")
     public FullFeedEventDTO getFullEventById(UUID id, UUID requestingUserId) {
         return getFullEventByEvent(getEventById(id), requestingUserId, new HashSet<>());
     }
 
     @Override
+    @Cacheable(value = "eventsByFriendTagId", key = "#tagId")
     public List<EventDTO> getEventsByFriendTagId(UUID tagId) {
         try {
             // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
@@ -145,6 +152,13 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "eventById", key = "#result.id"),
+            @CacheEvict(value = "fullEventById", allEntries = true),
+            @CacheEvict(value = "eventsByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "feedEvents", allEntries = true),
+            @CacheEvict(value = "filteredFeedEvents", allEntries = true)
+    })
     public AbstractEventDTO saveEvent(AbstractEventDTO event) {
         try {
             Event eventEntity;
@@ -186,6 +200,13 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "eventById", key = "#result.id"),
+            @CacheEvict(value = "fullEventById", allEntries = true),
+            @CacheEvict(value = "eventsByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "feedEvents", allEntries = true),
+            @CacheEvict(value = "filteredFeedEvents", allEntries = true)
+    })
     public AbstractEventDTO createEvent(EventCreationDTO eventCreationDTO) {
         try {
             Location location = locationService.save(LocationMapper.toEntity(eventCreationDTO.getLocation()));
@@ -233,6 +254,7 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Cacheable(value = "eventsByOwnerId", key = "#creatorUserId")
     public List<EventDTO> getEventsByOwnerId(UUID creatorUserId) {
         List<Event> events = repository.findByCreatorId(creatorUserId);
         return getEventDTOs(events);
@@ -250,6 +272,13 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "eventById", key = "#result.id"),
+            @CacheEvict(value = "fullEventById", allEntries = true),
+            @CacheEvict(value = "eventsByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "feedEvents", allEntries = true),
+            @CacheEvict(value = "filteredFeedEvents", allEntries = true)
+    })
     public EventDTO replaceEvent(EventDTO newEvent, UUID id) {
         return repository.findById(id).map(event -> {
             // Update basic event details
@@ -296,6 +325,15 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "eventById", key = "#id"),
+            @CacheEvict(value = "fullEventById", allEntries = true),
+            @CacheEvict(value = "eventsByOwnerId", allEntries = true),
+            @CacheEvict(value = "feedEvents", allEntries = true),
+            @CacheEvict(value = "filteredFeedEvents", allEntries = true),
+            @CacheEvict(value = "eventsInvitedTo", allEntries = true),
+            @CacheEvict(value = "fullEventsInvitedTo", allEntries = true)
+    })
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.Event, id);
@@ -336,6 +374,7 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Cacheable(value = "fullEventsInvitedTo", key = "#id")
     public List<FullFeedEventDTO> getFullEventsInvitedTo(UUID id) {
         List<EventUser> eventUsers = eventUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
         return convertEventsToFullFeedEvents(
@@ -345,12 +384,49 @@ public class EventService implements IEventService {
                 id);
     }
 
+    // return type boolean represents whether the user was already invited or not
+    // if false -> invites them
+    // if true -> return 400 in Controller to indicate that the user has already
+    // been invited, or it is a bad request.
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
+            @CacheEvict(value = "feedEvents", key = "#userId")
+    })
+    public boolean inviteUser(UUID eventId, UUID userId) {
+        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        Optional<EventUser> existingEventUser = eventUserRepository.findById(compositeId);
+
+        if (existingEventUser.isPresent()) {
+            // User is already invited
+            return existingEventUser.get().getStatus().equals(ParticipationStatus.invited);
+        } else {
+            // Create a new invitation.
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+            Event event = repository.findById(eventId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
+
+            EventUser newEventUser = new EventUser();
+            newEventUser.setId(compositeId);
+            newEventUser.setEvent(event);
+            newEventUser.setUser(user);
+            newEventUser.setStatus(ParticipationStatus.invited);
+
+            eventUserRepository.save(newEventUser);
+            return false;
+        }
+    }
+
     /**
      * @param requestingUserId this is the user whose feed is being loaded
      * @return This method returns the feed events for a user, with their created ones
      * first in the `universalAccentColor`, followed by events they're invited to
      */
     @Override
+    @Cacheable(value = "feedEvents", key = "#requestingUserId")
     public List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId) {
         try {
             // Retrieve events created by the user.
@@ -417,6 +493,7 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Cacheable(value = "filteredFeedEvents", key = "#friendTagFilterId")
     public List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId) {
         try {
             UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).getOwnerUserId();
@@ -478,12 +555,24 @@ public class EventService implements IEventService {
                 .orElse("#8693FF"); // Default color if no tag exists or if result is null
     }
 
+    // returns the updated event, with modified participants and invited users
+    // invited/participating
+    // if true -> change status
+    // if false -> return 400 in controller to indicate that the user is not
+    // invited/participating
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
+            @CacheEvict(value = "feedEvents", key = "#userId")
+    })
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
         return eventUserService.toggleParticipation(eventId, userId);
     }
 
     @Override
+    @Cacheable(value = "eventsInvitedTo", key = "#id")
     public List<EventDTO> getEventsInvitedTo(UUID userId) {
         return eventUserService.getEventsInvitedTo(userId);
     }

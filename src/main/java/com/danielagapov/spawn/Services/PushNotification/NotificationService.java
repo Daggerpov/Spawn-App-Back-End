@@ -206,14 +206,51 @@ public class NotificationService {
         // Send the notification to all target users
         for (UUID userId : targetUserIds) {
             try {
-                sendNotificationToUser(
-                        userId,
-                        event.getTitle(),
-                        event.getMessage(),
-                        event.getData()
-                );
+                // Check user's notification preferences
+                User user = userService.getUserEntityById(userId);
+                NotificationPreferences preferences = preferencesRepository.findByUser(user).orElse(null);
+                
+                // If no preferences exist, use default settings (send notification)
+                boolean shouldSendNotification = true;
+                
+                // Apply notification preferences if they exist
+                if (preferences != null) {
+                    switch (event.getType()) {
+                        case FRIEND_REQUEST:
+                        case FRIEND_REQUEST_ACCEPTED:
+                            shouldSendNotification = preferences.isFriendRequestsEnabled();
+                            break;
+                        case EVENT_INVITE:
+                            shouldSendNotification = preferences.isEventInvitesEnabled();
+                            break;
+                        case EVENT_UPDATE:
+                        case EVENT_PARTICIPATION:
+                        case EVENT_PARTICIPATION_REVOKED:
+                            shouldSendNotification = preferences.isEventUpdatesEnabled();
+                            break;
+                        case NEW_COMMENT:
+                            shouldSendNotification = preferences.isChatMessagesEnabled();
+                            break;
+                        default:
+                            // For other notification types, default to sending
+                            break;
+                    }
+                }
+                
+                // Only send notification if preferences allow it
+                if (shouldSendNotification) {
+                    sendNotificationToUser(
+                            userId,
+                            event.getTitle(),
+                            event.getMessage(),
+                            event.getData()
+                    );
+                } else {
+                    logger.info("Notification skipped for user " + userId + 
+                            " due to preferences setting for type " + event.getType());
+                }
             } catch (Exception e) {
-                logger.error("Error sending notification to user " + userId + ": " + e.getMessage());
+                logger.error("Error processing notification for user " + userId + ": " + e.getMessage());
             }
         }
         

@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +41,9 @@ public interface IFriendTagService {
 
     List<FullFriendTagDTO> getTagsNotAddedToFriend(UUID ownerUserId, UUID friendUserId);
 
-    void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends);
+    void saveUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends);
+
+    void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends);
 
     void addFriendToFriendTags(List<UUID> friendTagIds, UUID friendUserId);
 

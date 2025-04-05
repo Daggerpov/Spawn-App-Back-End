@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.Map;
 
 @RestController()
 @RequestMapping("api/v1/betaAccessSignUp")
@@ -50,6 +52,32 @@ public class BetaAccessSignUpController {
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/betaAccessSignUp/{id}/emailed
+    
+    /**
+     * Update the hasBeenEmailed flag for a beta access sign up
+     * 
+     * @param id The ID of the beta access sign up to update
+     * @param requestBody Map containing the hasBeenEmailed flag
+     * @return The updated beta access sign up
+     */
+    @PutMapping("{id}/emailed")
+    public ResponseEntity<BetaAccessSignUpDTO> updateEmailedStatus(@PathVariable UUID id, @RequestBody Map<String, Boolean> requestBody) {
+        try {
+            Boolean hasBeenEmailed = requestBody.get("hasBeenEmailed");
+            if (hasBeenEmailed == null) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            
+            return new ResponseEntity<>(service.updateEmailedStatus(id, hasBeenEmailed), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error updating emailed status: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

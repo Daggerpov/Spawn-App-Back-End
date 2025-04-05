@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.FullUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -19,6 +18,7 @@ import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -115,6 +115,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTag.id")
     public FriendTagDTO saveFriendTag(AbstractFriendTagDTO friendTag) {
         FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
         friendTagEntity = saveFriendTagEntity(friendTagEntity);
@@ -134,6 +135,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
         return repository.findById(id).map(friendTag -> {
             friendTag.setColorHexCode(newFriendTag.getColorHexCode());
@@ -148,6 +150,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -174,6 +177,7 @@ public class FriendTagService implements IFriendTagService {
 
 
     @Override
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public void saveUserToFriendTag(UUID id, UUID userId) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -208,6 +212,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
     public void removeUserFromFriendTag(UUID id, UUID userId) {
         // Check if the FriendTag exists
         if (!repository.existsById(id)) {
@@ -231,8 +236,16 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    public void saveUsersToFriendTag(UUID friendTagId, List<FullUserDTO> friends) {
-        for (FullUserDTO friend : friends) {
+    public void saveUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
+        for (BaseUserDTO friend : friends) {
+            saveUserToFriendTag(friendTagId, friend.getId());
+        }
+    }
+
+    @Override
+    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    public void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
+        for (BaseUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.getId());
         }
     }

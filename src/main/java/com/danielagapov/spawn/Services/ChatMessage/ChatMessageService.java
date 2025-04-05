@@ -6,7 +6,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Events.NewCommentNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -16,17 +16,22 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.*;
+import com.danielagapov.spawn.Models.ChatMessage;
+import com.danielagapov.spawn.Models.ChatMessageLikes;
+import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Events.NewCommentNotificationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -173,7 +178,7 @@ public class ChatMessageService implements IChatMessageService {
     public List<UUID> getChatMessageIdsByEventId(UUID eventId) {
         try {
             // Retrieve all chat messages for the specified event
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId);
 
             // Extract the IDs of the chat messages and return them as a list
             return chatMessages.stream()
@@ -252,7 +257,7 @@ public class ChatMessageService implements IChatMessageService {
         try {
             boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
             if (!exists) {
-                throw new BasesNotFoundException(EntityType.ChatMessage);
+                throw new BaseNotFoundException(EntityType.ChatMessage);
             }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
         } catch (Exception e) {
@@ -265,7 +270,7 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId) {
         try {
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventId(eventId);
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId);
 
             return chatMessages.stream()
                     .map(chatMessage -> {
