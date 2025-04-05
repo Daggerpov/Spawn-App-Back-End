@@ -14,6 +14,7 @@ import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.UserService;
+import com.danielagapov.spawn.Services.UserFriendTag.IUserFriendTagService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -50,6 +51,9 @@ public class UserServiceTests {
 
     @Mock
     private IBlockedUserService blockedUserService;
+
+    @Mock
+    private IUserFriendTagService userFriendTagService;
 
     @InjectMocks
     private UserService userService;
@@ -322,7 +326,7 @@ public class UserServiceTests {
         // User1's friends: mutualFriend1, mutualFriend2, uniqueFriend1
         when(friendTagRepository.findByOwnerId(user1Id))
                 .thenReturn(List.of(createEveryoneTag(user1Id)));
-        when(userFriendTagRepository.findFriendIdsByTagId(any()))
+        when(userFriendTagService.getFriendUserIdsByFriendTagId(any()))
                 .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
                 .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
 
@@ -334,7 +338,6 @@ public class UserServiceTests {
 
         assertEquals(2, result);
         verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
     }
 
     @Test
@@ -359,7 +362,6 @@ public class UserServiceTests {
 
         assertEquals(0, result);
         verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
     }
 
     @Test
@@ -383,7 +385,6 @@ public class UserServiceTests {
 
         assertEquals(0, result);
         verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
     }
 
     @Test
@@ -401,7 +402,6 @@ public class UserServiceTests {
 
         assertEquals(0, result);
         verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
     }
 
     @Test
