@@ -347,7 +347,7 @@ public class UserService implements IUserService {
 
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
-        return getRecommendedFriendsBySearch(requestingUserId, searchQuery);
+        return userSearchService.getRecommendedFriendsBySearch(requestingUserId, searchQuery);
     }
 
     @Override

@@ -49,11 +49,20 @@ public class UserSearchService implements IUserSearchService {
                 recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
                 friends = userService.getFullFriendUsersByUserId(requestingUserId);
             } else {
-                // Get recommended mutual friends
-                recommendedFriends = getRecommendedMutuals(requestingUserId)
-                        .stream()
-                        .filter(entry -> isQueryMatch(entry, searchQuery))
-                        .collect(Collectors.toList());
+                // First search with query
+                List<User> users = searchUsersByQuery(searchQuery);
+                Set<UUID> seen = users.stream().map(User::getId).collect(Collectors.toSet());
+                recommendedFriends = users.stream().map(user -> FriendUserMapper.toDTO(user, 0)).collect(Collectors.toList());
+
+                if (recommendedFriends.size() < recommendedFriendLimit) {
+                    // Get recommended mutual friends
+                    recommendedFriends.addAll(
+                            getRecommendedMutuals(requestingUserId)
+                                    .stream()
+                                    .filter(entry -> isQueryMatch(entry, searchQuery) && !seen.contains(entry.getId()))
+                                    .toList()
+                    );
+                }
 
                 // If not enough mutual friends, supplement with random recommendations
                 if (recommendedFriends.size() < recommendedFriendLimit) {
@@ -210,6 +219,12 @@ public class UserSearchService implements IUserSearchService {
 
     @Override
     public List<BaseUserDTO> searchByQuery(String searchQuery) {
+        List<User> users = searchUsersByQuery(searchQuery);
+        // Return BaseUserDTOs
+        return UserMapper.toDTOList(users);
+    }
+
+    private List<User> searchUsersByQuery(String searchQuery) {
         final int searchLimit = 100; // Max number of results returned by database query
         final int resultLimit = 10; // Max number of results to return
         // If query is empty do nothing
@@ -230,8 +245,7 @@ public class UserSearchService implements IUserSearchService {
         }
         // Rank users by their similarity to query and collect top `resultLimit` results
         users = rankUsers(filteredUsers, userDistances).stream().limit(resultLimit).toList();
-        // Return BaseUserDTOs
-        return UserMapper.toDTOList(users);
+        return users;
     }
 
 
