@@ -14,7 +14,6 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
-    private final IUserFriendTagRepository uftRepository;
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
@@ -44,14 +42,12 @@ public class UserService implements IUserService {
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IUserFriendTagRepository uftRepository,
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
                        UserSearchService userSearchService,
                        IUserFriendTagService userFriendTagService) {
         this.repository = repository;
-        this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
@@ -107,7 +103,7 @@ public class UserService implements IUserService {
 
             // If "Everyone" tag exists, get all friend IDs from it
             if (everyoneTag.isPresent()) {
-                return uftRepository.findFriendIdsByTagId(everyoneTag.get().getId());
+                return userFriendTagService.getFriendUserIdsByFriendTagId(everyoneTag.get().getId());
             }
 
             // If no "Everyone" tag, return empty list
@@ -156,7 +152,7 @@ public class UserService implements IUserService {
             return friendTags.stream()
                     .collect(Collectors.toMap(
                             friendTag -> friendTag, // Use FriendTag as the key
-                            friendTag -> uftRepository.findFriendIdsByTagId(friendTag.getId())
+                            friendTag -> userFriendTagService.getFriendUserIdsByFriendTagId(friendTag.getId())
                     ));
         } catch (Exception e) {
             logger.error(e.getMessage());
