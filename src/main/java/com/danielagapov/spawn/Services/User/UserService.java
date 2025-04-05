@@ -17,7 +17,6 @@ import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserFriendTag.IUserFriendTagService;
@@ -39,21 +38,19 @@ public class UserService implements IUserService {
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
-    private final IFriendRequestService friendRequestService;
     private final IBlockedUserService blockedUserService;
+    private final IUserFriendTagService userFriendTagService;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository,
                        IUserFriendTagRepository uftRepository,
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
                        UserSearchService userSearchService,
-                       IFriendRequestService friendRequestService,
                        IBlockedUserService blockedUserService,
                        IUserFriendTagService userFriendTagService) {
         this.repository = repository;
@@ -61,7 +58,6 @@ public class UserService implements IUserService {
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
-        this.friendRequestService = friendRequestService;
         this.userFriendTagService = userFriendTagService;
         this.blockedUserService = blockedUserService;
         this.logger = logger;

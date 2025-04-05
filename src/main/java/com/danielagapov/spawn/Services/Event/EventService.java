@@ -33,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -388,36 +387,15 @@ public class EventService implements IEventService {
     // if false -> invites them
     // if true -> return 400 in Controller to indicate that the user has already
     // been invited, or it is a bad request.
-    @Override
     @Caching(evict = {
             @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedEvents", key = "#userId")
     })
+    @Override
     public boolean inviteUser(UUID eventId, UUID userId) {
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-        Optional<EventUser> existingEventUser = eventUserRepository.findById(compositeId);
-
-        if (existingEventUser.isPresent()) {
-            // User is already invited
-            return existingEventUser.get().getStatus().equals(ParticipationStatus.invited);
-        } else {
-            // Create a new invitation.
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-            Event event = repository.findById(eventId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Event, eventId));
-
-            EventUser newEventUser = new EventUser();
-            newEventUser.setId(compositeId);
-            newEventUser.setEvent(event);
-            newEventUser.setUser(user);
-            newEventUser.setStatus(ParticipationStatus.invited);
-
-            eventUserRepository.save(newEventUser);
-            return false;
-        }
+        return eventUserService.inviteUser(eventId, userId);
     }
 
     /**
