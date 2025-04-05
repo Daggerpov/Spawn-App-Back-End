@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Models.Event;
 
 import java.util.List;
 import java.util.Set;
@@ -17,6 +18,8 @@ public interface IEventService {
     // CRUD operations:
     EventDTO getEventById(UUID id);
 
+    Event getEventEntityById(UUID id);
+
     AbstractEventDTO saveEvent(AbstractEventDTO event);
 
     AbstractEventDTO createEvent(EventCreationDTO eventCreationDTO);
@@ -25,17 +28,9 @@ public interface IEventService {
 
     boolean deleteEventById(UUID id);
 
+    EventDTO getEventDTOByEntity(Event event);
+
     // Participation-related methods:
-    List<UserDTO> getParticipatingUsersByEventId(UUID id);
-
-    ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
-
-    boolean inviteUser(UUID eventId, UUID userId);
-
-    // returns back the updated event dto, with participants and invited users updated:
-    FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId);
-
-    List<EventDTO> getEventsInvitedTo(UUID id);
 
     List<EventDTO> getEventsInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId);
 
@@ -52,6 +47,12 @@ public interface IEventService {
 
     List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId);
 
+    // return type boolean represents whether the user was already invited or not
+    // if false -> invites them
+    // if true -> return 400 in Controller to indicate that the user has already
+    // been invited, or it is a bad request.
+    boolean inviteUser(UUID eventId, UUID userId);
+
     List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId);
 
     List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId);
@@ -62,4 +63,12 @@ public interface IEventService {
     List<EventDTO> getEventsByOwnerId(UUID creatorUserId);
 
     String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
+
+    FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId);
+
+    List<EventDTO> getEventsInvitedTo(UUID userId);
+
+    ParticipationStatus getParticipationStatus(UUID eventId, UUID userId);
+
+    List<UserDTO> getParticipatingUsersByEventId(UUID id);
 }
