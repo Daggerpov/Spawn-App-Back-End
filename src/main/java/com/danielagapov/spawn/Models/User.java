@@ -20,6 +20,13 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
+@Table(
+        name = "user",
+        indexes = {
+                @Index(name = "idx_first_name", columnList = "first_name"),
+                @Index(name = "idx_last_name", columnList = "last_name")
+        }
+)
 public class User implements Serializable {
     @Id
     @GeneratedValue
@@ -32,6 +39,8 @@ public class User implements Serializable {
     private String firstName;
     private String lastName;
     private String bio;
+    
+    @Column(nullable = true, unique = true)
     private String email;
     private String password;
     private boolean verified;
