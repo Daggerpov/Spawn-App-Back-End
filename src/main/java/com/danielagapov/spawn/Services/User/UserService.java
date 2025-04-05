@@ -16,7 +16,6 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserFriendTag.IUserFriendTagService;
@@ -38,7 +37,6 @@ public class UserService implements IUserService {
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
-    private final IBlockedUserService blockedUserService;
     private final IUserFriendTagService userFriendTagService;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
@@ -51,7 +49,6 @@ public class UserService implements IUserService {
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
                        UserSearchService userSearchService,
-                       IBlockedUserService blockedUserService,
                        IUserFriendTagService userFriendTagService) {
         this.repository = repository;
         this.uftRepository = uftRepository;
@@ -59,7 +56,6 @@ public class UserService implements IUserService {
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
         this.userFriendTagService = userFriendTagService;
-        this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.userSearchService = userSearchService;
     }
@@ -327,7 +323,7 @@ public class UserService implements IUserService {
 
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
-        return getRecommendedFriendsBySearch(requestingUserId, searchQuery);
+        return userSearchService.getRecommendedFriendsBySearch(requestingUserId, searchQuery);
     }
 
     @Override
