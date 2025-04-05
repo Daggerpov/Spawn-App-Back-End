@@ -7,8 +7,6 @@ import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.Event;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 
 import java.util.List;
 import java.util.Set;
@@ -53,12 +51,6 @@ public interface IEventService {
     // if false -> invites them
     // if true -> return 400 in Controller to indicate that the user has already
     // been invited, or it is a bad request.
-    @Caching(evict = {
-            @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
-            @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
-            @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
-            @CacheEvict(value = "feedEvents", key = "#userId")
-    })
     boolean inviteUser(UUID eventId, UUID userId);
 
     List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId);

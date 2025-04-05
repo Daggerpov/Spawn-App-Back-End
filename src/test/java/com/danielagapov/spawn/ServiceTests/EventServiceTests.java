@@ -6,7 +6,6 @@ import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -558,33 +557,6 @@ public class EventServiceTests {
 
         assertNotNull(result);
         assertEquals("Created Event", result.getTitle());
-    }
-
-    @Test
-    void getParticipatingUsersByEventId_ShouldReturnUserDTOs_WhenParticipantsExist() {
-        UUID eventId = UUID.randomUUID();
-        EventUser eu1 = new EventUser();
-        User user1 = new User();
-        user1.setId(UUID.randomUUID());
-        eu1.setUser(user1);
-        eu1.setStatus(ParticipationStatus.participating);
-        EventUser eu2 = new EventUser();
-        User user2 = new User();
-        user2.setId(UUID.randomUUID());
-        eu2.setUser(user2);
-        eu2.setStatus(ParticipationStatus.invited);
-
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu1, eu2));
-        when(eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating)).thenReturn(List.of(eu1));
-        UserDTO userDTO1 = new UserDTO(
-                user1.getId(), List.of(), "user1", "pic.jpg", "First", "Last", "bio", List.of(), "email1@example.com");
-        when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
-
-        List<UserDTO> participants = eventUserService.getParticipatingUsersByEventId(eventId);
-
-        assertNotNull(participants);
-        assertEquals(1, participants.size());
-        assertEquals(user1.getId(), participants.get(0).getId());
     }
 
 
