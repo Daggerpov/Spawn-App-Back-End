@@ -72,18 +72,23 @@ public class NotificationService {
                     user.getId(), user.getFirstName(), user.getLastName(), user.getUsername(),
                     deviceTokenDTO.getDeviceType()));
 
-            // Check if token already exists
-            if (deviceTokenRepository.existsByToken(token)) {
-                logger.info("Token already exists, deleting existing record");
-                deviceTokenRepository.deleteByToken(token);
+            // Use a more reliable approach to handle existing tokens
+            List<DeviceToken> existingTokens = deviceTokenRepository.findByToken(token);
+            if (!existingTokens.isEmpty()) {
+                logger.info("Token already exists, updating existing record instead of creating new");
+                DeviceToken existingToken = existingTokens.get(0);
+                existingToken.setUser(user);
+                existingToken.setDeviceType(deviceTokenDTO.getDeviceType());
+                deviceTokenRepository.save(existingToken);
+            } else {
+                // Create new token if it doesn't exist
+                DeviceToken deviceToken = new DeviceToken();
+                deviceToken.setUser(user);
+                deviceToken.setToken(token);
+                deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
+                deviceTokenRepository.save(deviceToken);
             }
-
-            DeviceToken deviceToken = new DeviceToken();
-            deviceToken.setUser(user);
-            deviceToken.setToken(token);
-            deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
-
-            deviceTokenRepository.save(deviceToken);
+            
             logger.info("Device token saved successfully for user: " + user.getId() + " with names: "
                     + user.getFirstName() + " " + user.getLastName() + " and username: " + user.getUsername());
 

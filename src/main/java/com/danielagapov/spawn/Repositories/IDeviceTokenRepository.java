@@ -14,4 +14,6 @@ public interface IDeviceTokenRepository extends JpaRepository<DeviceToken, UUID>
     boolean existsByToken(String token);
 
     void deleteByToken(String token);
+    
+    List<DeviceToken> findByToken(String token);
 } 
