@@ -56,12 +56,16 @@ public class FriendRequestService implements IFriendRequestService {
 
             User sender = userService.getUserEntityById(senderId);
             User receiver = userService.getUserEntityById(receiverId);
+            
+            logger.info("Creating friend request from sender: " + LoggingUtils.formatUserInfo(sender) + 
+                        " to receiver: " + LoggingUtils.formatUserInfo(receiver));
 
             // Map the DTO to entity
             FriendRequest friendRequest = FriendRequestMapper.toEntity(friendRequestDTO, sender, receiver);
 
             // Save the friend request
             repository.save(friendRequest);
+            logger.info("Friend request saved successfully");
 
             // Publish friend request notification event
             eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
@@ -69,30 +73,54 @@ public class FriendRequestService implements IFriendRequestService {
             // Return the saved friend request DTO with additional details (friends and friend tags)
             return FriendRequestMapper.toDTO(friendRequest);
         } catch (DataAccessException e) {
-            logger.error(e.getMessage());
+            logger.error("Failed to save friend request from user " + LoggingUtils.formatUserIdInfo(friendRequestDTO.getSenderUserId()) + 
+                         " to user " + LoggingUtils.formatUserIdInfo(friendRequestDTO.getReceiverUserId()) + ": " + e.getMessage());
             throw new BaseSaveException("Failed to save friend request: " + e.getMessage());
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error creating friend request from user " + LoggingUtils.formatUserIdInfo(friendRequestDTO.getSenderUserId()) + 
+                         " to user " + LoggingUtils.formatUserIdInfo(friendRequestDTO.getReceiverUserId()) + ": " + e.getMessage());
             throw e;
         }
     }
 
     @Override
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
-        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
-        List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(id);
+        try {
+            User user = userService.getUserEntityById(id);
+            logger.info("Getting incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            
+            List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+            List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(id);
 
-        return friendRequests.stream()
-                .filter(fr -> !blockedUserIds.contains(fr.getSender().getId())) // Hide if sender is blocked
-                .map(fr -> FetchFriendRequestMapper.toDTO(fr,
-                        userService.getMutualFriendCount(id, fr.getSender().getId())))
-                .toList();
+            List<FetchFriendRequestDTO> result = friendRequests.stream()
+                    .filter(fr -> !blockedUserIds.contains(fr.getSender().getId())) // Hide if sender is blocked
+                    .map(fr -> FetchFriendRequestMapper.toDTO(fr,
+                            userService.getMutualFriendCount(id, fr.getSender().getId())))
+                    .toList();
+                    
+            logger.info("Found " + result.size() + " incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            return result;
+        } catch (Exception e) {
+            logger.error("Error retrieving incoming fetch friend requests for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public List<CreateFriendRequestDTO> getIncomingCreateFriendRequestsByUserId(UUID id) {
-        List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
-        return FriendRequestMapper.toDTOList(friendRequests);
+        try {
+            User user = userService.getUserEntityById(id);
+            logger.info("Getting incoming create friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            
+            List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+            List<CreateFriendRequestDTO> result = FriendRequestMapper.toDTOList(friendRequests);
+            
+            logger.info("Found " + result.size() + " incoming create friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            return result;
+        } catch (Exception e) {
+            logger.error("Error retrieving incoming create friend requests for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            throw e;
+        }
     }
     
     public List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
@@ -117,16 +145,23 @@ public class FriendRequestService implements IFriendRequestService {
     public void acceptFriendRequest(UUID id) {
         try {
             FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
-            userService.saveFriendToUser(fr.getSender().getId(), fr.getReceiver().getId());
+            User sender = fr.getSender();
+            User receiver = fr.getReceiver();
+            
+            logger.info("Accepting friend request with ID: " + id + " from sender: " + 
+                        LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));
+                        
+            userService.saveFriendToUser(sender.getId(), receiver.getId());
 
             // Publish friend request accepted notification event
             eventPublisher.publishEvent(
-                    new FriendRequestAcceptedNotificationEvent(fr.getReceiver(), fr.getSender().getId())
+                    new FriendRequestAcceptedNotificationEvent(receiver, sender.getId())
             );
 
             deleteFriendRequest(id);
+            logger.info("Friend request accepted and deleted successfully");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error accepting friend request with ID: " + id + ": " + e.getMessage());
             throw e;
         }
     }
@@ -134,9 +169,20 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public void deleteFriendRequest(UUID id) {
         try {
+            FriendRequest fr = repository.findById(id).orElse(null);
+            if (fr != null) {
+                User sender = fr.getSender();
+                User receiver = fr.getReceiver();
+                logger.info("Deleting friend request with ID: " + id + " from sender: " + 
+                            LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));
+            } else {
+                logger.info("Deleting friend request with ID: " + id + " (request details not available)");
+            }
+            
             repository.deleteById(id);
+            logger.info("Friend request deleted successfully");
         } catch (DataAccessException e) {
-            logger.error(e.getMessage());
+            logger.error("Error deleting friend request with ID: " + id + ": " + e.getMessage());
             throw e;
         }
     }
@@ -165,19 +211,29 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     public List<FetchFriendRequestDTO> convertFriendRequestsToFetchFriendRequests(List<CreateFriendRequestDTO> friendRequests) {
-        List<FetchFriendRequestDTO> fullFriendRequests = new ArrayList<>();
-        for (CreateFriendRequestDTO friendRequest : friendRequests) {
-            UUID senderId = friendRequest.getSenderUserId();
-            UUID receiverId = friendRequest.getReceiverUserId();
-            int mutualFriendCount = userService.getMutualFriendCount(receiverId, senderId);
+        try {
+            logger.info("Converting " + friendRequests.size() + " friend requests to fetch friend requests");
+            
+            List<FetchFriendRequestDTO> fullFriendRequests = new ArrayList<>();
+            for (CreateFriendRequestDTO friendRequest : friendRequests) {
+                UUID senderId = friendRequest.getSenderUserId();
+                UUID receiverId = friendRequest.getReceiverUserId();
+                int mutualFriendCount = userService.getMutualFriendCount(receiverId, senderId);
 
-            fullFriendRequests.add(new FetchFriendRequestDTO(
-                    friendRequest.getId(),
-                    UserMapper.toDTO(userService.getUserEntityById(senderId)),
-                    mutualFriendCount
-            ));
+                User sender = userService.getUserEntityById(senderId);
+                fullFriendRequests.add(new FetchFriendRequestDTO(
+                        friendRequest.getId(),
+                        UserMapper.toDTO(sender),
+                        mutualFriendCount
+                ));
+            }
+            
+            logger.info("Converted " + fullFriendRequests.size() + " friend requests successfully");
+            return fullFriendRequests;
+        } catch (Exception e) {
+            logger.error("Error converting friend requests to fetch friend requests: " + e.getMessage());
+            throw e;
         }
-        return fullFriendRequests;
     }
 
     @Override
