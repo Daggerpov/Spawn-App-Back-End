@@ -16,6 +16,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class FriendRequestService implements IFriendRequestService {
@@ -95,12 +97,18 @@ public class FriendRequestService implements IFriendRequestService {
     
     public List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
-            return repository.findByReceiverId(id);
+            User user = userService.getUserEntityById(id);
+            logger.info("Retrieving incoming friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            
+            List<FriendRequest> requests = repository.findByReceiverId(id);
+            
+            logger.info("Found " + requests.size() + " incoming friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            return requests;
         } catch (DataAccessException e) {
-            logger.error("Database access error while retrieving incoming friend requests for userId: " + id);
+            logger.error("Database access error while retrieving incoming friend requests for user: " + LoggingUtils.formatUserIdInfo(id));
             throw e; // Only throw for actual database access issues
         } catch (Exception e) {
-            logger.error("Error retrieving incoming friend requests for userId: " + id);
+            logger.error("Error retrieving incoming friend requests for user: " + LoggingUtils.formatUserIdInfo(id));
             throw e;
         }
     }
@@ -136,12 +144,21 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public void deleteFriendRequestBetweenUsersIfExists(UUID senderId, UUID receiverId) {
         try {
+            User sender = userService.getUserEntityById(senderId);
+            User receiver = userService.getUserEntityById(receiverId);
+            
+            logger.info("Deleting friend requests between sender: " + LoggingUtils.formatUserInfo(sender) + 
+                        " and receiver: " + LoggingUtils.formatUserInfo(receiver));
+                        
             List<FriendRequest> requests = repository.findBySenderIdAndReceiverId(senderId, receiverId);
             for (FriendRequest fr : requests) {
                 repository.delete(fr);
             }
+            
+            logger.info("Deleted " + requests.size() + " friend requests between users");
         } catch (Exception e) {
-            logger.error("Error deleting friend request from " + senderId + " to " + receiverId + ": " + e.getMessage());
+            logger.error("Error deleting friend request from user " + LoggingUtils.formatUserIdInfo(senderId) + 
+                         " to user " + LoggingUtils.formatUserIdInfo(receiverId) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -166,10 +183,16 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
         try {
+            User user = userService.getUserEntityById(userId);
+            logger.info("Getting sent friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
-            return FriendRequestMapper.toDTOList(friendRequests);
+            List<CreateFriendRequestDTO> dtos = FriendRequestMapper.toDTOList(friendRequests);
+            
+            logger.info("Found " + dtos.size() + " sent friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            return dtos;
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error retrieving sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }
