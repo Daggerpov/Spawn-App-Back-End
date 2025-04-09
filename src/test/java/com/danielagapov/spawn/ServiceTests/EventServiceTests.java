@@ -6,7 +6,6 @@ import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -24,11 +23,11 @@ import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Event.EventService;
+import com.danielagapov.spawn.Services.EventUser.EventUserService;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -47,10 +46,10 @@ import static org.mockito.Mockito.*;
 public class EventServiceTests {
 
     @Mock
-    private IEventRepository eventRepository;
+    private ILogger logger;
 
     @Mock
-    private ILogger logger;
+    private IEventRepository eventRepository;
 
     @Mock
     private ILocationRepository locationRepository;
@@ -72,9 +71,12 @@ public class EventServiceTests {
 
     @Mock
     private IChatMessageService chatMessageService;
-    
+
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private EventUserService eventUserService;
 
     @InjectMocks
     private EventService eventService;
@@ -107,7 +109,7 @@ public class EventServiceTests {
         );
     }
 
-    
+
     // --- Basic tests (unchanged) ---
     @Test
     void getAllEvents_ShouldReturnList_WhenEventsExist() {
@@ -119,8 +121,8 @@ public class EventServiceTests {
                 location, "Test note", dummyCreator);
 
         when(eventRepository.findAll()).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
 
         List<EventDTO> result = eventService.getAllEvents();
@@ -142,8 +144,8 @@ public class EventServiceTests {
                 location, "Test note", dummyCreator);
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(eventUserService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
 
         EventDTO result = eventService.getEventById(eventId);
@@ -281,7 +283,7 @@ public class EventServiceTests {
         when(userRepository.findById(explicitInviteId)).thenReturn(Optional.of(explicitInvitedUser));
 
         Set<UUID> expectedInvited = new HashSet<>(Arrays.asList(friendTagUserId, explicitInviteId));
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(new ArrayList<>(expectedInvited));
+        when(eventUserService.getInvitedUserIdsByEventId(eventId)).thenReturn(new ArrayList<>(expectedInvited));
 
         EventDTO eventDTO = (EventDTO) eventService.createEvent(creationDTO);
 
@@ -299,7 +301,7 @@ public class EventServiceTests {
             assertEquals(eventId, eu.getEvent().getId());
         }
         assertEquals(expectedInvited, savedInviteIds);
-        
+
         // Don't verify the event publisher - the service uses it correctly based on the logs
         // and the verification isn't working well in tests
     }
@@ -371,8 +373,8 @@ public class EventServiceTests {
         commonUser.setId(commonUserId);
         when(userRepository.findById(commonUserId)).thenReturn(Optional.of(commonUser));
 
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of(commonUserId));
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of(commonUserId));
+        when(eventUserService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
 
         EventDTO eventDTO = (EventDTO) eventService.createEvent(creationDTO);
 
@@ -382,7 +384,7 @@ public class EventServiceTests {
         assertTrue(eventDTO.getInvitedUserIds().contains(commonUserId));
 
         verify(eventUserRepository, times(1)).save(any(EventUser.class));
-        
+
         // Don't verify the event publisher - the service uses it correctly based on the logs
         // and the verification isn't working well in tests
     }
@@ -391,8 +393,8 @@ public class EventServiceTests {
     void getAllFullEvents_ShouldReturnFullFeedEvents_WhenEventsExist() {
         Event event = createDummyEvent(UUID.randomUUID(), "Full Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
         when(eventRepository.findAll()).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
@@ -434,8 +436,8 @@ public class EventServiceTests {
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
 
         // Stub various service calls
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(eventUserService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
@@ -451,6 +453,7 @@ public class EventServiceTests {
 
         // Stub participation status lookups
         when(eventUserRepository.existsById(compositeId)).thenReturn(true);
+        when(eventUserService.getParticipationStatus(eventId, requestingUserId)).thenReturn(ParticipationStatus.participating);
         EventUser eu = new EventUser();
         eu.setId(compositeId);  // Set the composite key on the EventUser
         User euUser = new User();
@@ -482,8 +485,8 @@ public class EventServiceTests {
 
         Event event = createDummyEvent(UUID.randomUUID(), "Friend Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
         when(eventRepository.findByCreatorIdIn(friendIds)).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
 
         List<EventDTO> events = eventService.getEventsByFriendTagId(tagId);
@@ -498,8 +501,8 @@ public class EventServiceTests {
         UUID ownerId = UUID.randomUUID();
         Event event = createDummyEvent(UUID.randomUUID(), "Owner Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
         when(eventRepository.findByCreatorId(ownerId)).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
 
         List<EventDTO> events = eventService.getEventsByOwnerId(ownerId);
@@ -556,153 +559,6 @@ public class EventServiceTests {
         assertEquals("Created Event", result.getTitle());
     }
 
-    @Test
-    void getParticipatingUsersByEventId_ShouldReturnUserDTOs_WhenParticipantsExist() {
-        UUID eventId = UUID.randomUUID();
-        EventUser eu1 = new EventUser();
-        User user1 = new User();
-        user1.setId(UUID.randomUUID());
-        eu1.setUser(user1);
-        eu1.setStatus(ParticipationStatus.participating);
-        EventUser eu2 = new EventUser();
-        User user2 = new User();
-        user2.setId(UUID.randomUUID());
-        eu2.setUser(user2);
-        eu2.setStatus(ParticipationStatus.invited);
-
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu1, eu2));
-        when(eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating)).thenReturn(List.of(eu1));
-        UserDTO userDTO1 = new UserDTO(
-                user1.getId(), List.of(), "user1", "pic.jpg", "First", "Last", "bio", List.of(), "email1@example.com");
-        when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
-
-        List<UserDTO> participants = eventService.getParticipatingUsersByEventId(eventId);
-
-        assertNotNull(participants);
-        assertEquals(1, participants.size());
-        assertEquals(user1.getId(), participants.get(0).getId());
-    }
-
-    @Test
-    void getParticipationStatus_ShouldReturnStatus_WhenUserParticipates() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-
-        EventUser eu = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        eu.setUser(user);
-        eu.setStatus(ParticipationStatus.participating);
-
-        // Ensure we fetch by both eventId and userId
-        when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
-
-        ParticipationStatus status = eventService.getParticipationStatus(eventId, userId);
-
-        assertEquals(ParticipationStatus.participating, status);
-    }
-
-
-    @Test
-    void getParticipationStatus_ShouldReturnNotInvited_WhenUserNotFound() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-        // Stub existsById to return true and provide a list with a user not matching userId.
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-        EventUser eu = new EventUser();
-        User otherUser = new User();
-        otherUser.setId(UUID.randomUUID());
-        eu.setUser(otherUser);
-        eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu));
-
-        ParticipationStatus status = eventService.getParticipationStatus(eventId, userId);
-
-        assertEquals(ParticipationStatus.notInvited, status);
-    }
-
-    @Test
-    void inviteUser_ShouldInviteUser_WhenNotAlreadyInvited() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        // Return a non-empty list with an EventUser for a different user.
-        EventUser otherEU = new EventUser();
-        User otherUser = new User();
-        otherUser.setId(UUID.randomUUID());
-        otherEU.setUser(otherUser);
-        otherEU.setStatus(ParticipationStatus.participating);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(otherEU));
-
-        User user = new User();
-        user.setId(userId);
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        Event event = createDummyEvent(eventId, "Invite Test", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-
-        boolean alreadyInvited = eventService.inviteUser(eventId, userId);
-
-        assertFalse(alreadyInvited);
-        verify(eventUserRepository, times(1)).save(any(EventUser.class));
-    }
-
-    @Test
-    void inviteUser_ShouldReturnTrue_WhenUserAlreadyInvited() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
-
-        // Create test entities
-        Event event = new Event();
-        event.setId(eventId);
-
-        User user = new User();
-        user.setId(userId);
-
-        EventUser eu = new EventUser();
-        eu.setId(compositeId);
-        eu.setEvent(event);
-        eu.setUser(user);
-        eu.setStatus(ParticipationStatus.invited);
-
-        // Mocking repository calls
-        when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user)); // Prevents NotFoundException
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event)); // Prevents NotFoundException
-
-        // Call the method
-        boolean result = eventService.inviteUser(eventId, userId);
-
-        // Assertions
-        assertTrue(result);
-        verify(eventUserRepository, never()).save(any(EventUser.class)); // Ensures no save happens
-    }
-
-
-    @Test
-    void getEventsInvitedTo_ShouldReturnEvents_WhenUserIsInvited() {
-        UUID userId = UUID.randomUUID();
-        Event event = createDummyEvent(UUID.randomUUID(), "Invited Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        EventUser eu = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        eu.setUser(user);
-        eu.setEvent(event);
-        eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(eu));
-        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(eu));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
-
-        List<EventDTO> events = eventService.getEventsInvitedTo(userId);
-
-        assertNotNull(events);
-        assertEquals(1, events.size());
-    }
 
     @Test
     void getFullEventsInvitedTo_ShouldReturnFullEvents_WhenUserIsInvited() {
@@ -723,8 +579,8 @@ public class EventServiceTests {
         when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(validEventUser));
         when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(validEventUser));
 
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
@@ -759,8 +615,8 @@ public class EventServiceTests {
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(eventDTO.getCreatorUserId())).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.getParticipantsByEventId(eventDTO.getId())).thenReturn(List.of());
-        when(userService.getInvitedByEventId(eventDTO.getId())).thenReturn(List.of());
+        when(eventUserService.getParticipantsByEventId(eventDTO.getId())).thenReturn(List.of());
+        when(eventUserService.getInvitedByEventId(eventDTO.getId())).thenReturn(List.of());
         when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(eventDTO.getId())).thenReturn(List.of());
 
@@ -800,8 +656,8 @@ public class EventServiceTests {
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
         // Stub participation: existsById true and findByEvent_Id returns a dummy EventUser not matching the requesting user.
@@ -833,8 +689,8 @@ public class EventServiceTests {
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "first", "last", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(eventUserService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
         when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
 
@@ -855,54 +711,5 @@ public class EventServiceTests {
         assertNotNull(fullEvents);
         assertEquals(1, fullEvents.size());
         assertEquals("#8693FF", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
-    }
-
-    @Test
-    void toggleParticipation_ShouldToggleStatus_WhenUserIsInvitedOrParticipating() {
-        UUID eventId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        var compositeId = new EventUsersId(eventId, userId);
-
-        // Create and set up the event
-        Event event = new Event();
-        event.setId(eventId);
-        User creator = new User();
-        creator.setId(UUID.randomUUID());
-        event.setCreator(creator);
-
-        // Create and set up the event user
-        EventUser invitedEventUser = new EventUser();
-        User user = new User();
-        user.setId(userId);
-        invitedEventUser.setUser(user);
-        invitedEventUser.setStatus(ParticipationStatus.invited);
-        invitedEventUser.setEvent(event);
-
-        // Mock the method that EventService.toggleParticipation actually calls
-        when(eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId)).thenReturn(Optional.of(invitedEventUser));
-        when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-        
-        // Mock for getFullEventById which is called by toggleParticipation to return the result
-        LocationDTO locationDTO = new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0);
-        when(locationService.getLocationById(any(UUID.class))).thenReturn(locationDTO);
-        when(userService.getBaseUserById(any(UUID.class))).thenReturn(
-            new BaseUserDTO(UUID.randomUUID(), "first", "last", "email", "fullUsername", "bio", "avatar.jpg")
-        );
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
-
-        FullFeedEventDTO result = eventService.toggleParticipation(eventId, userId);
-        assertNotNull(result);
-        assertEquals(ParticipationStatus.participating, invitedEventUser.getStatus());
-        
-        // Test toggle from participating to invited
-        result = eventService.toggleParticipation(eventId, userId);
-        assertNotNull(result);
-        assertEquals(ParticipationStatus.invited, invitedEventUser.getStatus());
-        
-        // Don't verify the event publisher - the service uses it correctly based on the logs
-        // and the verification isn't working well in tests
     }
 }

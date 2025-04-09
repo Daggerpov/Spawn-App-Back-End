@@ -54,16 +54,6 @@ public interface IUserService {
 
     List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId);
 
-    // For Events:
-
-    List<BaseUserDTO> getParticipantsByEventId(UUID eventId);
-
-    List<BaseUserDTO> getInvitedByEventId(UUID eventId);
-
-    List<UUID> getParticipantUserIdsByEventId(UUID eventId);
-
-    List<UUID> getInvitedUserIdsByEventId(UUID eventId);
-
     // Helper
     boolean existsByEmail(String email);
 
