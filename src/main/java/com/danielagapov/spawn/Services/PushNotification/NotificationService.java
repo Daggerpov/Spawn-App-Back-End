@@ -103,25 +103,6 @@ public class NotificationService {
     }
     
     /**
-     * Internal method to handle device token registration
-     */
-    private void registerDeviceTokenInternal(User user, String token, DeviceType deviceType) {
-        // Check if token already exists
-        if (deviceTokenRepository.existsByToken(token)) {
-            logger.info("Token already exists, deleting existing record");
-            deviceTokenRepository.deleteByToken(token);
-        }
-
-        DeviceToken deviceToken = new DeviceToken();
-        deviceToken.setUser(user);
-        deviceToken.setToken(token);
-        deviceToken.setDeviceType(deviceType);
-        
-        deviceTokenRepository.save(deviceToken);
-        logger.info("Device token saved successfully for user: " + LoggingUtils.formatUserInfo(user));
-    }
-
-    /**
      * Unregister a device token
      */
     @Transactional
