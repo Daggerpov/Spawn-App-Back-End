@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +61,7 @@ public class NotificationService {
     /**
      * Register a device token for a user
      */
+    @Transactional
     public void registerDeviceToken(DeviceTokenDTO deviceTokenDTO) {
         try {
             String token = deviceTokenDTO.getToken();
@@ -97,6 +99,7 @@ public class NotificationService {
     /**
      * Unregister a device token
      */
+    @Transactional
     public void unregisterDeviceToken(String token) {
         try {
             logger.info("Unregistering device token: " + token);
@@ -117,6 +120,7 @@ public class NotificationService {
      * 
      * @throws Exception
      */
+    @Transactional(readOnly = true)
     public NotificationPreferencesDTO getNotificationPreferences(UUID userId) throws Exception {
         try {
             User user = userService.getUserEntityById(userId);
@@ -153,6 +157,7 @@ public class NotificationService {
     /**
      * Save notification preferences for a user
      */
+    @Transactional
     public NotificationPreferencesDTO saveNotificationPreferences(NotificationPreferencesDTO preferencesDTO) {
         try {
             User user = userService.getUserEntityById(preferencesDTO.getUserId());
