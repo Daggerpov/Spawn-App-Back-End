@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -61,16 +62,37 @@ public class NotificationService {
     /**
      * Register a device token for a user
      */
+    @Transactional
     public void registerDeviceToken(DeviceTokenDTO deviceTokenDTO) throws Exception {
         try {
             String token = deviceTokenDTO.getToken();
             User user = userService.getUserEntityById(deviceTokenDTO.getUserId());
+
+            logger.info(String.format(
+                    "Registering device token for user: %s with names: %s %s and username: %s, device type: %s",
+                    user.getId(), user.getFirstName(), user.getLastName(), user.getUsername(),
+                    deviceTokenDTO.getDeviceType()));
+
+            // Use a more reliable approach to handle existing tokens
+            List<DeviceToken> existingTokens = deviceTokenRepository.findByToken(token);
+            if (!existingTokens.isEmpty()) {
+                logger.info("Token already exists, updating existing record instead of creating new");
+                DeviceToken existingToken = existingTokens.get(0);
+                existingToken.setUser(user);
+                existingToken.setDeviceType(deviceTokenDTO.getDeviceType());
+                deviceTokenRepository.save(existingToken);
+            } else {
+                // Create new token if it doesn't exist
+                DeviceToken deviceToken = new DeviceToken();
+                deviceToken.setUser(user);
+                deviceToken.setToken(token);
+                deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
+                deviceTokenRepository.save(deviceToken);
+            }
             
-            logger.info(String.format("Registering device token for user: %s, device type: %s",
-                    LoggingUtils.formatUserInfo(user), deviceTokenDTO.getDeviceType()));
-            
-            registerDeviceTokenInternal(user, token, deviceTokenDTO.getDeviceType());
-            
+            logger.info("Device token saved successfully for user: " + user.getId() + " with names: "
+                    + user.getFirstName() + " " + user.getLastName() + " and username: " + user.getUsername());
+
             // Send a test notification to confirm registration
             eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));
             logger.info("Sent test notification for token registration confirmation");
@@ -102,6 +124,7 @@ public class NotificationService {
     /**
      * Unregister a device token
      */
+    @Transactional
     public void unregisterDeviceToken(String token) throws Exception {
         try {
             logger.info("Unregistering device token: " + token);
@@ -122,6 +145,7 @@ public class NotificationService {
      * 
      * @throws Exception
      */
+    @Transactional(readOnly = true)
     public NotificationPreferencesDTO getNotificationPreferences(UUID userId) throws Exception {
         try {
             User user = userService.getUserEntityById(userId);
@@ -162,6 +186,7 @@ public class NotificationService {
     /**
      * Save notification preferences for a user
      */
+    @Transactional
     public NotificationPreferencesDTO saveNotificationPreferences(NotificationPreferencesDTO preferencesDTO) throws Exception {
         try {
             User user = userService.getUserEntityById(preferencesDTO.getUserId());
