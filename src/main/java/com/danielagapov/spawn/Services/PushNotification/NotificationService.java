@@ -69,7 +69,7 @@ public class NotificationService {
         
         // Check if token already exists
         if (deviceTokenRepository.existsByToken(token)) {
-            logger.info("Token already exists, updating existing record");
+            logger.info("Token already exists, deleting existing record");
             deviceTokenRepository.deleteByToken(token);
         }
 
@@ -79,7 +79,7 @@ public class NotificationService {
         deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
         
         deviceTokenRepository.save(deviceToken);
-        logger.info("Device token saved successfully for user: " + user.getId());
+        logger.info("Device token saved successfully for user: " + user.getId() + "with names: " + user.getFirstName() + " "+ user.getLastName() + " and username: " + user.getUsername());
         
         // Send a test notification to confirm registration
         eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));
