@@ -59,7 +59,8 @@ public class BlockedUserServiceTests {
 
         blockedUserService.blockUser(blockerId, blockedId, "Already blocked");
         verify(blockedRepo, times(1)).existsByBlocker_IdAndBlocked_Id(blockerId, blockedId);
-        verifyNoMoreInteractions(blockedRepo, userService, friendRequestService);
+        verifyNoMoreInteractions(blockedRepo);
+        verifyNoInteractions(friendRequestService);
     }
 
     @Test

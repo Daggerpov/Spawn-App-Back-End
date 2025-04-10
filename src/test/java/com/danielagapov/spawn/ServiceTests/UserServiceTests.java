@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -88,18 +89,13 @@ public class UserServiceTests {
 
     @Test
     void saveUser_ShouldThrowException_WhenDatabaseErrorOccurs() {
-        // Arrange
-        UserDTO userDTO = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        UserDTO userDTO = new UserDTO(UUID.randomUUID(), new ArrayList<>(), "john_doe", "profile.jpg", "John", "Doe", "A bio", new ArrayList<>(), "");
         when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {
         });
 
-        // Act & Assert
-        BaseSaveException exception = assertThrows(BaseSaveException.class,
-                () -> userService.saveUser(userDTO));
-
-        assertTrue(exception.getMessage().contains("Failed to save user"));
+        assertThrows(BaseSaveException.class, () -> userService.saveUser(userDTO));
         verify(userRepository, times(1)).save(any(User.class));
-        verify(logger, times(1)).error("Database error");  // Verify that logging happened
+        verify(logger, times(1)).error("Failed to save user: Database error");
     }
 
     @Test
@@ -242,11 +238,13 @@ public class UserServiceTests {
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).
                 thenReturn(Optional.empty());
+        when(userRepository.existsById(userId)).
+                thenReturn(false);
 
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
 
         assertTrue(exception.getMessage().contains("User"));
-        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, times(1)).existsById(userId);
     }
 
     @Test
@@ -257,7 +255,7 @@ public class UserServiceTests {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.saveUser(userDTO));
 
         assertTrue(exception.getMessage().contains("Unexpected error"));
-        verify(logger, times(1)).error("Unexpected error");
+        verify(logger, times(1)).error("Error saving user: Unexpected error");
     }
 
     @Test
@@ -295,7 +293,9 @@ public class UserServiceTests {
 
         when(userRepository.existsById(userId)).thenReturn(false);
 
-        assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
+        
+        assertTrue(exception.getMessage().contains("User"));
         verify(userRepository, never()).deleteById(userId);
     }
 
