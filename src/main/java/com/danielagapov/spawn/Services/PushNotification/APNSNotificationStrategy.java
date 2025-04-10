@@ -82,7 +82,6 @@ public class APNSNotificationStrategy implements NotificationStrategy {
             
         } catch (Exception e) {
             logger.error("Error initializing APNS service: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -132,15 +131,6 @@ public class APNSNotificationStrategy implements NotificationStrategy {
         try {
             logger.info("Preparing to send APNS notification to device: " + deviceToken);
             
-            // Clean the device token - remove spaces and angle brackets if present
-            deviceToken = deviceToken.replaceAll("\\s|[<>]", "");
-            
-            // Validate token format
-            if (!isValidDeviceToken(deviceToken)) {
-                logger.error("Invalid device token format: " + deviceToken);
-                return;
-            }
-            
             // Create the payload with proper structure
             String payload = constructPayload(title, message, data);
             logger.info("APNS payload created: " + payload);
@@ -160,15 +150,9 @@ public class APNSNotificationStrategy implements NotificationStrategy {
         } catch (Exception e) {
             // Log error but don't interrupt the flow
             logger.error("Error sending APNS notification: " + e.getMessage());
-            e.printStackTrace();
         }
     }
-    
-    private boolean isValidDeviceToken(String token) {
-        // Device token should be 64 hexadecimal characters
-        return token != null && token.matches("[0-9a-fA-F]{64}");
-    }
-    
+
     private String constructPayload(String title, String message, Map<String, String> data) {
         try {
             // Start with a basic payload builder
