@@ -29,7 +29,7 @@ public class APNSNotificationStrategy implements NotificationStrategy {
     @Value("${apns.certificate.password}")
     private String apnsCertificatePassword;
 
-    @Value("${apns.production:false}")
+    @Value("${apns.production}")
     private boolean apnsProduction;
     
     @Value("${apns.bundle.id:com.danielagapov.spawn}")
@@ -50,10 +50,8 @@ public class APNSNotificationStrategy implements NotificationStrategy {
             // Decode the Base64 encoded certificate from environment variable
             byte[] certificateBytes = Base64.getDecoder().decode(apnsCertificate);
             
-            logger.info("Initializing APNS service");
-            
-            // Initialize APNS with the certificate from environment variable
             if (apnsProduction) {
+                logger.info("Initializing APNS service with PRODUCTION certificate (apns.production=true)");
                 logger.info("Using production APNS destination");
                 apnsService = APNS.newService()
                         .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
@@ -61,6 +59,7 @@ public class APNSNotificationStrategy implements NotificationStrategy {
                         // Not using feedback service as it requires additional parameters
                         .build();
             } else {
+                logger.info("Initializing APNS service with DEVELOPMENT certificate (apns.production=false)");
                 logger.info("Using sandbox APNS destination");
                 apnsService = APNS.newService()
                         .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
