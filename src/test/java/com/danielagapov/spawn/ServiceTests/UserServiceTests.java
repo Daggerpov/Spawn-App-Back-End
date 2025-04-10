@@ -203,9 +203,8 @@ public class UserServiceTests {
         doThrow(new DataAccessException("Database error") {
         }).when(userRepository).deleteById(userId);
 
-        boolean result = userService.deleteUserById(userId);
+        userService.deleteUserById(userId);
 
-        assertFalse(result);
         verify(userRepository, times(1)).deleteById(userId);
         verify(logger, times(1)).error("Database error");  // Ensure logger is called
     }
@@ -281,9 +280,8 @@ public class UserServiceTests {
                                 new User(userId, "JohnDoe123", null, "John", "Doe", null, "johndoe@anon.com")));
         doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
 
-        boolean result = userService.deleteUserById(userId);
+        userService.deleteUserById(userId);
 
-        assertFalse(result);
         verify(logger, times(1)).error("Unexpected error");
     }
 
