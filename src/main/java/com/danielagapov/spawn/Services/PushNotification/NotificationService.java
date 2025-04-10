@@ -298,6 +298,8 @@ public class NotificationService {
                         }
                     }
 
+                    logger.info("Sending notification to user " + userId + " with names: " + user.getFirstName() + " " + user.getLastName() + " and username: ");
+
                     // Only send notification if preferences allow it
                     if (shouldSendNotification) {
                         sendNotificationToUser(

@@ -1,14 +1,19 @@
 package com.danielagapov.spawn.Services.PushNotification;
 
 import com.danielagapov.spawn.Enums.DeviceType;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.notnoop.apns.APNS;
+import com.notnoop.apns.ApnsNotification;
 import com.notnoop.apns.ApnsService;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -27,6 +32,13 @@ public class APNSNotificationStrategy implements NotificationStrategy {
     private boolean apnsProduction;
 
     private ApnsService apnsService;
+    
+    private final ILogger logger;
+    
+    @Autowired
+    public APNSNotificationStrategy(ILogger logger) {
+        this.logger = logger;
+    }
 
     @PostConstruct
     public void initialize() {
@@ -34,20 +46,26 @@ public class APNSNotificationStrategy implements NotificationStrategy {
             // Decode the Base64 encoded certificate from environment variable
             byte[] certificateBytes = Base64.getDecoder().decode(apnsCertificate);
             
+            logger.info("Initializing APNS service");
+            
             // Initialize APNS with the certificate from environment variable
             if (apnsProduction) {
+                logger.info("Using production APNS destination");
                 apnsService = APNS.newService()
                         .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
                         .withProductionDestination()
                         .build();
             } else {
+                logger.info("Using sandbox APNS destination");
                 apnsService = APNS.newService()
                         .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
                         .withSandboxDestination()
                         .build();
             }
+            
+            logger.info("APNS service successfully initialized");
         } catch (Exception e) {
-            System.err.println("Error initializing APNS service: " + e.getMessage());
+            logger.error("Error initializing APNS service: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -55,17 +73,31 @@ public class APNSNotificationStrategy implements NotificationStrategy {
     @Override
     public void sendNotificationToDevice(String deviceToken, String title, String message, Map<String, String> data) {
         try {
+            logger.info("Preparing to send APNS notification to device: " + deviceToken);
+            
             String payload = APNS.newPayload()
                     .alertTitle(title)
                     .alertBody(message)
                     .sound("default")
                     .customFields(data)
                     .build();
+            
+            logger.info("APNS payload created: " + payload);
 
-            apnsService.push(deviceToken, payload);
+            ApnsNotification notification = apnsService.push(deviceToken, payload);
+            
+            if (notification  != null) {
+                logger.info("APNS notification sent with ID: " + notification.getIdentifier() +
+                                ", Message ID: " + notification.getIdentifier() +
+                                ", Expiry: " + notification.getExpiry() +
+                                ", Device Token: " + Arrays.toString(notification.getDeviceToken()) +
+                                ", Payload: " + Arrays.toString(notification.getPayload()));
+            } else {
+                logger.info("No APNS response received or empty response");
+            }
         } catch (Exception e) {
             // Log error but don't interrupt the flow
-            System.err.println("Error sending APNS notification: " + e.getMessage());
+            logger.error("Error sending APNS notification: " + e.getMessage());
         }
     }
 
