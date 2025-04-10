@@ -12,6 +12,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Utils.LoggingUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -37,20 +38,23 @@ public class AuthService implements IAuthService {
 
     @Override
     public UserDTO registerUser(AuthUserDTO authUserDTO) throws FieldAlreadyExistsException {
+        logger.info("Attempting to register new user with username: " + authUserDTO.getUsername());
         checkIfUniqueCredentials(authUserDTO);
         try {
             UserDTO userDTO = createAndSaveUser(authUserDTO);
+            User user = userService.getUserEntityById(userDTO.getId());
+            logger.info("User registered successfully: " + LoggingUtils.formatUserInfo(user));
             createEmailTokenAndSendEmail(authUserDTO);
             return userDTO;
         } catch (Exception e) {
-            logger.error("Unexpected error while registering user");
+            logger.error("Unexpected error while registering user with username: " + authUserDTO.getUsername() + ": " + e.getMessage());
             throw e;
         }
     }
 
     @Override
     public BaseUserDTO loginUser(AuthUserDTO authUserDTO) {
-        logger.info(String.format("Attempting to login user: { user: %s }", authUserDTO));
+        logger.info("Attempting to login user: " + authUserDTO.getUsername());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         authUserDTO.getUsername(),
@@ -58,36 +62,48 @@ public class AuthService implements IAuthService {
                 )
         );
         if (authentication.isAuthenticated()) {
-            logger.info("Authentication successful for user: " + authUserDTO.getUsername());
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-            logger.info("Fetching user");
+            logger.info("Authentication successful for user: " + username);
             
             User user = userService.getUserEntityByUsername(username);
+            logger.info("Login successful for user: " + LoggingUtils.formatUserInfo(user));
             return UserMapper.toDTO(user);
         } else {
+            logger.warn("Failed authentication attempt for username: " + authUserDTO.getUsername());
             throw new BadCredentialsException("Invalid username or password");
         }
     }
 
     @Override
     public boolean verifyEmail(String token) {
-        if (jwtService.isValidEmailToken(token)) {
-            // The email token is valid so mark this user as verified user in database
-            final String username = jwtService.extractUsername(token);
-            userService.verifyUserByUsername(username);
-            return true;
+        try {
+            if (jwtService.isValidEmailToken(token)) {
+                // The email token is valid so mark this user as verified user in database
+                final String username = jwtService.extractUsername(token);
+                logger.info("Verifying email for user with username: " + username);
+                userService.verifyUserByUsername(username);
+                User user = userService.getUserEntityByUsername(username);
+                logger.info("Email verified successfully for user: " + LoggingUtils.formatUserInfo(user));
+                return true;
+            }
+            logger.warn("Invalid email verification token received");
+            // TODO: consider deleting user here
+            return false;
+        } catch (Exception e) {
+            logger.error("Error during email verification: " + e.getMessage());
+            return false;
         }
-        // TODO: consider deleting user here
-        return false;
     }
 
     /* ------------------------------ HELPERS ------------------------------ */
 
     private void checkIfUniqueCredentials(AuthUserDTO authUserDTO) {
         if (userService.existsByEmail(authUserDTO.getEmail())) {
+            logger.warn("Registration attempt with existing email: " + authUserDTO.getEmail());
             throw new EmailAlreadyExistsException("Email: " + authUserDTO.getEmail() + " already exists");
         }
         if (userService.existsByUsername(authUserDTO.getUsername())) {
+            logger.warn("Registration attempt with existing username: " + authUserDTO.getUsername());
             throw new UsernameAlreadyExistsException("Username: " + authUserDTO.getUsername() + " already exists");
         }
     }

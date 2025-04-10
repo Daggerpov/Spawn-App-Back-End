@@ -247,7 +247,7 @@ public class FeedbackSubmissionServiceTests {
         // Act & Assert
         RuntimeException thrown = assertThrows(RuntimeException.class, () -> service.deleteFeedback(feedbackId));
         assertEquals(exception, thrown);
-        verify(logger, times(1)).error(eq("Deletion failed"));
+        verify(logger, times(1)).error(eq("Error deleting feedback with ID: " + feedbackId + ": Deletion failed"));
         verify(repository, times(1)).deleteById(feedbackId);
     }
 

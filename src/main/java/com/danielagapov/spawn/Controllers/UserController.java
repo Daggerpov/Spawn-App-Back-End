@@ -80,14 +80,10 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            boolean isDeleted = userService.deleteUserById(id);
-            if (isDeleted) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            } else {
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+            userService.deleteUserById(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
