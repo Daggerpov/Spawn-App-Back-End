@@ -50,13 +50,7 @@ public class NotificationController {
     public ResponseEntity<?> getNotificationPreferences(@PathVariable UUID userId) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            NotificationPreferencesDTO preferences = notificationService.getNotificationPreferences(userId);
-            if (preferences == null) {
-                // Return default preferences if not found
-                preferences = new NotificationPreferencesDTO(true, true, true, true, userId);
-                notificationService.saveNotificationPreferences(preferences);
-            }
-            return new ResponseEntity<>(preferences, HttpStatus.OK);
+            return new ResponseEntity<>(notificationService.getNotificationPreferences(userId), HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching notification preferences: " + e.getMessage());
