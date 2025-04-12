@@ -146,8 +146,10 @@ public class NotificationService {
             logger.info("Retrieved notification preferences for user: " + LoggingUtils.formatUserInfo(user));
             return preferencesDTO;
         } catch (Exception e) {
-            logger.error("Error getting notification preferences for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
-            throw e;
+            // Return default preferences if not found
+            NotificationPreferencesDTO preferences = new NotificationPreferencesDTO(true, true, true, true, LoggingUtils.formatUserIdInfo(userId));
+            saveNotificationPreferences(preferences);
+            return preferences;
         }
     }
     

@@ -236,6 +236,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
     public void saveUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
         for (BaseUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.getId());
@@ -243,7 +244,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
     public void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
         for (BaseUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.getId());
