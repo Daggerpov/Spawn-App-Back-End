@@ -33,23 +33,6 @@ public class UserController {
         this.logger = logger;
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/users?full=full
-    @GetMapping
-    public ResponseEntity<List<? extends AbstractUserDTO>> getUsers(@RequestParam(value = "full", required = false) boolean full) {
-        try {
-            if (full) {
-                List<UserDTO> allUsers = userService.getAllUsers();
-                return new ResponseEntity<>(UserMapper.toBaseDTOList(allUsers), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/friends/{id}
     @GetMapping("friends/{id}")
     public ResponseEntity<List<? extends AbstractUserDTO>> getUserFriends(@PathVariable UUID id) {
@@ -58,18 +41,6 @@ public class UserController {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<List<? extends AbstractUserDTO>>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/users
-    @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestParam("user") UserDTO newUser, @RequestParam("pfp") byte[] file) {
-        try {
-            return new ResponseEntity<>(userService.saveUserWithProfilePicture(newUser, file), HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
