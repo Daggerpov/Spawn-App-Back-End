@@ -147,7 +147,7 @@ public class NotificationService {
             return preferencesDTO;
         } catch (Exception e) {
             // Return default preferences if not found
-            NotificationPreferencesDTO preferences = new NotificationPreferencesDTO(true, true, true, true, LoggingUtils.formatUserIdInfo(userId));
+            NotificationPreferencesDTO preferences = new NotificationPreferencesDTO(true, true, true, true, userId);
             saveNotificationPreferences(preferences);
             return preferences;
         }
