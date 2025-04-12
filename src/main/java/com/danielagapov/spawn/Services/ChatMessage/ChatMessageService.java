@@ -23,6 +23,8 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -111,6 +113,12 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "eventById", key = "#newChatMessageDTO.eventId"),
+            @CacheEvict(value = "fullEventById", allEntries = true),
+            @CacheEvict(value = "feedEvents", allEntries = true),
+            @CacheEvict(value = "filteredFeedEvents", allEntries = true)
+    })
     public ChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO) {
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
                 UUID.randomUUID(),
