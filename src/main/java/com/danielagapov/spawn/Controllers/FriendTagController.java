@@ -27,47 +27,6 @@ public class FriendTagController {
         this.friendTagService = friendTagService;
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/friendTags?full=full
-    @GetMapping
-    public ResponseEntity<List<? extends AbstractFriendTagDTO>> getFriendTags(@RequestParam(value = "full", required = false) boolean full) {
-        try {
-            if (full) {
-                return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getAllFriendTags()), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(friendTagService.getAllFriendTags(), HttpStatus.OK);
-            }
-        } catch (BasesNotFoundException e) {
-            if (e.entityType == EntityType.FriendTag) {
-                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/friendTags/{id}?full=full
-    @GetMapping("{id}")
-    public ResponseEntity<?> getFriendTag(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (full) {
-                return new ResponseEntity<>(friendTagService.getFullFriendTagById(id), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(friendTagService.getFriendTagById(id), HttpStatus.OK);
-            }
-        } catch (BaseNotFoundException e) {
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/friendTags
     @PostMapping
     public ResponseEntity<FriendTagDTO> createFriendTag(@RequestBody FriendTagCreationDTO newFriendTag) {

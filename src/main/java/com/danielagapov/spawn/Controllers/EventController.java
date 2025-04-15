@@ -5,17 +5,14 @@ import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @RestController()
@@ -25,22 +22,6 @@ public class EventController {
 
     public EventController(IEventService eventService) {
         this.eventService = eventService;
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/events?full=full
-    @GetMapping
-    public ResponseEntity<List<? extends AbstractEventDTO>> getEvents(@RequestParam(value = "full", required = false) boolean full) {
-        try {
-            if (full) {
-                return new ResponseEntity<>(eventService.getAllFullEvents(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(eventService.getAllEvents(), HttpStatus.OK);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful. 
@@ -149,91 +130,6 @@ public class EventController {
         }
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/events/{id}/users?full=full
-    @GetMapping("{id}/users")
-    public ResponseEntity<?> getUsersParticipatingInEvent(@PathVariable UUID id, @RequestParam(value = "full", required = false) boolean full) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (full) {
-                return new ResponseEntity<>(UserMapper.toBaseDTOList(eventService.getParticipatingUsersByEventId(id)), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(eventService.getParticipatingUsersByEventId(id), HttpStatus.OK);
-            }
-        } catch (BasesNotFoundException e) {
-            // thrown list of events not found for given user id
-            // if entities not found is Event: return response with empty list and 200 status
-            // otherwise: bad request http status
-            if (e.entityType == EntityType.Event) {
-                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-        } catch (BaseNotFoundException e) {
-            // For endpoints that query a specific event ID, return 404 if the event doesn't exist
-            if (e.entityType == EntityType.Event) {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/events/{eventId}/participating?userId={userid}
-    @GetMapping("{eventId}/participating")
-    public ResponseEntity<?> isUserParticipating(@PathVariable UUID eventId, @RequestParam UUID userId) {
-        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.participating) {
-                return new ResponseEntity<>(true, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(false, HttpStatus.OK);
-            }
-        } catch (BaseNotFoundException e) {
-            // Only return 404 for appropriate entity types
-            if (e.entityType == EntityType.User) {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else if (e.entityType == EntityType.Event) {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/events/{eventId}/invited?userId={userid}
-    @GetMapping("{eventId}/invited")
-    public ResponseEntity<?> isUserInvited(@PathVariable UUID eventId, @RequestParam UUID userId) {
-        if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (eventService.getParticipationStatus(eventId, userId) == ParticipationStatus.invited) {
-                return new ResponseEntity<>(true, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(false, HttpStatus.OK);
-            }
-        } catch (BaseNotFoundException e) {
-            // Only return 404 for appropriate entity types
-            if (e.entityType == EntityType.User) {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else if (e.entityType == EntityType.Event) {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else {
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // this corresponds to the button on the event for invited users
     // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
     @PutMapping("{eventId}/toggleStatus/{userId}")
@@ -254,37 +150,6 @@ public class EventController {
             } else {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently.")
-    // full path: /api/v1/events/invitedEvents/{userId}?full=full
-    @GetMapping("invitedEvents/{userId}")
-    // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
-    // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<?> getEventsInvitedTo(@PathVariable UUID userId, @RequestParam(required = false) boolean full) {
-        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
-            if (full) {
-                return new ResponseEntity<>(eventService.getFullEventsInvitedTo(userId), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(eventService.getEventsInvitedTo(userId), HttpStatus.OK);
-            }
-        } catch (BasesNotFoundException e) {
-            // thrown list of events not found for given user id
-            // if entities not found is Event: return response with empty list and 200 status
-            // otherwise: bad request http status
-            if (e.entityType == EntityType.Event) {
-                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-        } catch (BaseNotFoundException e) {
-            // user not found - return 404
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
