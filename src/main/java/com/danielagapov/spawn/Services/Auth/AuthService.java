@@ -42,7 +42,7 @@ public class AuthService implements IAuthService {
         checkIfUniqueCredentials(authUserDTO);
         try {
             UserDTO userDTO = createAndSaveUser(authUserDTO);
-            User user = userService.getUserEntityById(userDTO.getId());
+            User user = UserMapper.toEntity(userDTO);
             logger.info("User registered successfully: " + LoggingUtils.formatUserInfo(user));
             createEmailTokenAndSendEmail(authUserDTO);
             return userDTO;
