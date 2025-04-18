@@ -22,7 +22,7 @@ public interface IUserService {
 
     UserDTO saveUser(UserDTO user);
 
-    boolean deleteUserById(UUID id);
+    void deleteUserById(UUID id);
 
     User saveEntity(User user);
 

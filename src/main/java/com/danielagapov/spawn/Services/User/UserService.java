@@ -27,6 +27,7 @@ import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
+import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
@@ -92,6 +93,8 @@ public class UserService implements IUserService {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
+            logger.info("Retrieved user: " + LoggingUtils.formatUserInfo(user));
+
             List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
 
             // Fetch FriendTag IDs based on the user ID
@@ -100,7 +103,7 @@ public class UserService implements IUserService {
             // Pass in the friendTagIds and friendTags as needed
             return UserMapper.toDTO(user, friendUserIds, friendTagIds);
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error getting user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -108,6 +111,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
+            logger.info("Getting friend user IDs for user: " + LoggingUtils.formatUserIdInfo(id));
             // Get all friend tags for the user
             List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
 
@@ -124,7 +128,7 @@ public class UserService implements IUserService {
             // If no "Everyone" tag, return empty list
             return Collections.emptyList();
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error getting friend user IDs for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -132,10 +136,12 @@ public class UserService implements IUserService {
     @Override
     public User getUserEntityById(UUID id) {
         try {
-            return repository.findById(id)
+            User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            logger.info("Retrieved user entity: " + LoggingUtils.formatUserInfo(user));
+            return user;
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error retrieving user entity: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -178,8 +184,10 @@ public class UserService implements IUserService {
     @Override
     public UserDTO saveUser(UserDTO user) {
         try {
+            logger.info("Saving user with username: " + user.getUsername());
             User userEntity = UserMapper.toEntity(user);
             userEntity = repository.save(userEntity);
+            logger.info("User saved successfully: " + LoggingUtils.formatUserInfo(userEntity));
 
             FriendTagDTO everyoneTagDTO = new FriendTagDTO(null, "Everyone",
                     "#8693FF", userEntity.getId(), List.of(), true);
@@ -187,24 +195,24 @@ public class UserService implements IUserService {
             // id is generated when saving
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));
         } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new BaseSaveException("Failed to save user: " + e.getMessage()); // TODO: fix throwing
+            logger.error("Failed to save user: " + e.getMessage());
+            throw new BaseSaveException("Failed to save user: " + e.getMessage()); 
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error saving user: " + e.getMessage());
             throw e;
         }
     }
 
     @Override
-    public boolean deleteUserById(UUID id) {
-        User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+    public void deleteUserById(UUID id) {
         try {
+            User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            logger.info("Deleting user: " + LoggingUtils.formatUserInfo(user));
             repository.deleteById(id);
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
-            return true;
         } catch (Exception e) {
             logger.error(e.getMessage());
-            return false;
+            throw e;
         }
     }
 

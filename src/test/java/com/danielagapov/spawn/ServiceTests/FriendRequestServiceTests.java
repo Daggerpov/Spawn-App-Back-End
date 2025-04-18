@@ -97,7 +97,7 @@ class FriendRequestServiceTests {
 
         BaseSaveException exception = assertThrows(BaseSaveException.class, () -> friendRequestService.saveFriendRequest(friendRequestDTO));
         assertEquals("failed to save an entity: Failed to save friend request: DB error", exception.getMessage());
-        verify(logger, times(1)).error("DB error");
+        verify(logger, times(1)).error("Failed to save friend request from user " + senderId + " (full user info not available) to user " + receiverId + " (full user info not available): DB error");
     }
 
     @Test
@@ -114,13 +114,13 @@ class FriendRequestServiceTests {
     @Test
     void getIncomingFetchFriendRequestsByUserId_ShouldReturnEmptyList_WhenNoRequestsFound() {
         when(repository.findByReceiverId(receiverId)).thenReturn(List.of());
-
+        
         List<FetchFriendRequestDTO> requests = friendRequestService.getIncomingFetchFriendRequestsByUserId(receiverId);
 
         assertNotNull(requests);
         assertTrue(requests.isEmpty(), "Expected an empty list when no friend requests are found.");
         verify(repository, times(1)).findByReceiverId(receiverId);
-        verify(logger, times(0)).info(anyString()); // No logging since it's not an error anymore
+        // Don't verify any logger.info calls since they now occur in the implementation
     }
 
     @Test
@@ -161,9 +161,8 @@ class FriendRequestServiceTests {
                 () -> friendRequestService.getIncomingFetchFriendRequestsByUserId(receiverId));
 
         assertEquals("DB read error", exception.getMessage());
-        verify(logger, times(1)).error("Database access error while retrieving incoming friend requests for userId: " + receiverId);
+        verify(logger, times(1)).error("Database access error while retrieving incoming friend requests for user: " + receiverId + " (full user info not available)");
     }
-
 
     @Test
     void deleteFriendRequest_ShouldThrowException_WhenDataAccessExceptionOccurs() {
@@ -173,7 +172,7 @@ class FriendRequestServiceTests {
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> friendRequestService.deleteFriendRequest(friendRequestId));
         assertEquals("DB delete error", exception.getMessage());
-        verify(logger, times(1)).error("DB delete error");
+        verify(logger, times(1)).error("Error deleting friend request with ID: " + friendRequestId + ": DB delete error");
     }
 
     @Test

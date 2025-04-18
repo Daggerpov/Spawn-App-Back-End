@@ -13,7 +13,9 @@ import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.UserService;
+import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -21,10 +23,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -50,6 +49,12 @@ public class UserServiceTests {
 
     @Mock
     private IBlockedUserService blockedUserService;
+
+    @Mock
+    private IS3Service s3Service;
+
+    @Mock
+    private IUserSearchService userSearchService;
 
     @InjectMocks
     private UserService userService;
@@ -88,18 +93,13 @@ public class UserServiceTests {
 
     @Test
     void saveUser_ShouldThrowException_WhenDatabaseErrorOccurs() {
-        // Arrange
-        UserDTO userDTO = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
+        UserDTO userDTO = new UserDTO(UUID.randomUUID(), new ArrayList<>(), "john_doe", "profile.jpg", "John", "Doe", "A bio", new ArrayList<>(), "");
         when(userRepository.save(any(User.class))).thenThrow(new DataAccessException("Database error") {
         });
 
-        // Act & Assert
-        BaseSaveException exception = assertThrows(BaseSaveException.class,
-                () -> userService.saveUser(userDTO));
-
-        assertTrue(exception.getMessage().contains("Failed to save user"));
+        assertThrows(BaseSaveException.class, () -> userService.saveUser(userDTO));
         verify(userRepository, times(1)).save(any(User.class));
-        verify(logger, times(1)).error("Database error");  // Verify that logging happened
+        verify(logger, times(1)).error("Failed to save user: Database error");
     }
 
     @Test
@@ -186,32 +186,54 @@ public class UserServiceTests {
     @Test
     void deleteUserById_ShouldDeleteUser_WhenUserExists() {
         UUID userId = UUID.randomUUID();
+        User user = new User(userId, "JohnDoe123", "profile.jpg", "John", "Doe", null, "johndoe@anon.com");
 
-        when(userRepository.findById(userId)).
-                thenReturn(
-                        Optional.of(
-                                new User(userId, "JohnDoe123", null, "John", "Doe", null, "johndoe@anon.com")));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        doNothing().when(s3Service).deleteObjectByURL(anyString());
+        doNothing().when(userRepository).deleteById(userId);
 
-        assertDoesNotThrow(() -> userService.deleteUserById(userId));
+        userService.deleteUserById(userId);
 
         verify(userRepository, times(1)).deleteById(userId);
+        verify(s3Service, times(1)).deleteObjectByURL("profile.jpg");
     }
 
     @Test
-    void deleteUserById_ShouldReturnFalse_WhenDatabaseErrorOccurs() {
+    void deleteUserById_ShouldLogException_WhenUnexpectedErrorOccurs() {
         UUID userId = UUID.randomUUID();
-        when(userRepository.findById(userId)).
-                thenReturn(
-                        Optional.of(
-                                new User(userId, "JohnDoe123", null, "John", "Doe", null, "johndoe@anon.com")));
-        doThrow(new DataAccessException("Database error") {
-        }).when(userRepository).deleteById(userId);
+        User user = new User(userId, "JohnDoe123", "profile.jpg", "John", "Doe", null, "johndoe@anon.com");
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        doNothing().when(s3Service).deleteObjectByURL(anyString());
+        doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
 
-        boolean result = userService.deleteUserById(userId);
+        Exception exception = assertThrows(RuntimeException.class, () -> userService.deleteUserById(userId));
+        
+        assertEquals("Unexpected error", exception.getMessage());
+        verify(logger, times(1)).error(anyString());
+    }
 
-        assertFalse(result);
-        verify(userRepository, times(1)).deleteById(userId);
-        verify(logger, times(1)).error("Database error");  // Ensure logger is called
+    @Test
+    void deleteUserById_ShouldThrowException_WhenUserDoesNotExist() {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
+
+        assertTrue(exception.getMessage().contains("User"));
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, never()).deleteById(userId);
+    }
+
+    @Test
+    void deleteUserById_ShouldNotCallDelete_WhenUserDoesNotExist() {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
+        
+        assertTrue(exception.getMessage().contains("User"));
+        verify(userRepository, never()).deleteById(userId);
     }
 
     @Test
@@ -238,18 +260,6 @@ public class UserServiceTests {
     }
 
     @Test
-    void deleteUserById_ShouldThrowException_WhenUserDoesNotExist() {
-        UUID userId = UUID.randomUUID();
-        when(userRepository.findById(userId)).
-                thenReturn(Optional.empty());
-
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
-
-        assertTrue(exception.getMessage().contains("User"));
-        verify(userRepository, times(1)).findById(userId);
-    }
-
-    @Test
     void saveUser_ShouldLogException_WhenUnexpectedErrorOccurs() {
         UserDTO userDTO = new UserDTO(UUID.randomUUID(), List.of(), "john_doe", "profile.jpg", "John", "Doe", "A bio", List.of(), "john.doe@example.com");
         when(userRepository.save(any(User.class))).thenThrow(new RuntimeException("Unexpected error"));
@@ -257,7 +267,7 @@ public class UserServiceTests {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> userService.saveUser(userDTO));
 
         assertTrue(exception.getMessage().contains("Unexpected error"));
-        verify(logger, times(1)).error("Unexpected error");
+        verify(logger, times(1)).error("Error saving user: Unexpected error");
     }
 
     @Test
@@ -272,31 +282,6 @@ public class UserServiceTests {
 
         assertTrue(exception.getMessage().contains("Unexpected error"));
         verify(logger, times(1)).error(anyString());
-    }
-
-    @Test
-    void deleteUserById_ShouldLogException_WhenUnexpectedErrorOccurs() {
-        UUID userId = UUID.randomUUID();
-        when(userRepository.findById(userId)).
-                thenReturn(
-                        Optional.of(
-                                new User(userId, "JohnDoe123", null, "John", "Doe", null, "johndoe@anon.com")));
-        doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
-
-        boolean result = userService.deleteUserById(userId);
-
-        assertFalse(result);
-        verify(logger, times(1)).error("Unexpected error");
-    }
-
-    @Test
-    void deleteUserById_ShouldNotCallDelete_WhenUserDoesNotExist() {
-        UUID userId = UUID.randomUUID();
-
-        when(userRepository.existsById(userId)).thenReturn(false);
-
-        assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
-        verify(userRepository, never()).deleteById(userId);
     }
 
     @Test

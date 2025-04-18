@@ -13,6 +13,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IFeedbackSubmissionRepository;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.S3.IS3Service;
+import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -51,10 +52,13 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
                     .flatMap(userRepository::findById)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
             
+            logger.info("Submitting feedback from user: " + LoggingUtils.formatUserInfo(user));
+            
             // Upload image to S3 if present
             String imageUrl = null;
             byte[] imageData = dto.getImageData();
             if (imageData != null && imageData.length > 0) {
+                logger.info("Uploading feedback image for user: " + LoggingUtils.formatUserInfo(user));
                 imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
             }
             
@@ -68,71 +72,109 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             
             // Save and return the entity
             FeedbackSubmission saved = repository.save(feedbackSubmission);
+            logger.info("Feedback saved successfully from user: " + LoggingUtils.formatUserInfo(user) + 
+                       " with ID: " + saved.getId());
             return FeedbackSubmissionMapper.toDTO(saved);
         } catch (DataAccessException e) {
-            logger.error(e.getMessage());
+            logger.error("Failed to save feedback submission from user " + 
+                        LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + ": " + e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission: " + e.getMessage());
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error submitting feedback from user " + 
+                        LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + ": " + e.getMessage());
             throw e;
         }
     }
 
     @Override
     public FetchFeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment) {
-        FeedbackSubmission feedback = repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+        try {
+            FeedbackSubmission feedback = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+            
+            User submitter = feedback.getFromUser();
+            logger.info("Resolving feedback with ID: " + id + " from user: " + 
+                       LoggingUtils.formatUserInfo(submitter));
 
-        feedback.setStatus(FeedbackStatus.RESOLVED);
+            feedback.setStatus(FeedbackStatus.RESOLVED);
 
-        // Always set the resolution comment, even if it's empty
-        // This ensures frontend knows a comment was provided but might be empty
-        feedback.setResolutionComment(resolutionComment != null ? resolutionComment.trim() : "");
+            // Always set the resolution comment, even if it's empty
+            // This ensures frontend knows a comment was provided but might be empty
+            feedback.setResolutionComment(resolutionComment != null ? resolutionComment.trim() : "");
 
-        FeedbackSubmission updated = repository.save(feedback);
-        return FeedbackSubmissionMapper.toDTO(updated);
+            FeedbackSubmission updated = repository.save(feedback);
+            logger.info("Feedback with ID: " + id + " marked as resolved successfully");
+            return FeedbackSubmissionMapper.toDTO(updated);
+        } catch (Exception e) {
+            logger.error("Error resolving feedback with ID: " + id + ": " + e.getMessage());
+            throw e;
+        }
     }
     
     @Override
     public FetchFeedbackSubmissionDTO markFeedbackInProgress(UUID id, String comment) {
-        FeedbackSubmission feedback = repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+        try {
+            FeedbackSubmission feedback = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+            
+            User submitter = feedback.getFromUser();
+            logger.info("Marking feedback with ID: " + id + " from user: " + 
+                       LoggingUtils.formatUserInfo(submitter) + " as in progress");
 
-        feedback.setStatus(FeedbackStatus.IN_PROGRESS);
-        
-        // Set comment if provided
-        if (comment != null && !comment.trim().isEmpty()) {
-            feedback.setResolutionComment(comment.trim());
+            feedback.setStatus(FeedbackStatus.IN_PROGRESS);
+            
+            // Set comment if provided
+            if (comment != null && !comment.trim().isEmpty()) {
+                feedback.setResolutionComment(comment.trim());
+            }
+
+            FeedbackSubmission updated = repository.save(feedback);
+            logger.info("Feedback with ID: " + id + " marked as in progress successfully");
+            return FeedbackSubmissionMapper.toDTO(updated);
+        } catch (Exception e) {
+            logger.error("Error marking feedback with ID: " + id + " as in progress: " + e.getMessage());
+            throw e;
         }
-
-        FeedbackSubmission updated = repository.save(feedback);
-        return FeedbackSubmissionMapper.toDTO(updated);
     }
 
     @Override
     public FetchFeedbackSubmissionDTO updateFeedbackStatus(UUID id, FeedbackStatus status, String comment) {
-        FeedbackSubmission feedback = repository.findById(id)
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+        try {
+            FeedbackSubmission feedback = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+            
+            User submitter = feedback.getFromUser();
+            logger.info("Updating feedback with ID: " + id + " from user: " + 
+                       LoggingUtils.formatUserInfo(submitter) + " to status: " + status);
 
-        feedback.setStatus(status);
-        
-        // Set comment if provided
-        if (comment != null && !comment.trim().isEmpty()) {
-            feedback.setResolutionComment(comment.trim());
+            feedback.setStatus(status);
+            
+            // Set comment if provided
+            if (comment != null && !comment.trim().isEmpty()) {
+                feedback.setResolutionComment(comment.trim());
+            }
+
+            FeedbackSubmission updated = repository.save(feedback);
+            logger.info("Feedback with ID: " + id + " status updated successfully to: " + status);
+            return FeedbackSubmissionMapper.toDTO(updated);
+        } catch (Exception e) {
+            logger.error("Error updating feedback status with ID: " + id + ": " + e.getMessage());
+            throw e;
         }
-
-        FeedbackSubmission updated = repository.save(feedback);
-        return FeedbackSubmissionMapper.toDTO(updated);
     }
 
     @Override
     public List<FetchFeedbackSubmissionDTO> getAllFeedbacks() {
         try {
+            logger.info("Retrieving all feedback submissions");
             List<FeedbackSubmission> feedbacks = repository.findAll();
-            return feedbacks.stream()
+            List<FetchFeedbackSubmissionDTO> feedbackDTOs = feedbacks.stream()
                     .map(FeedbackSubmissionMapper::toDTO)
                     .collect(Collectors.toList());
+            logger.info("Retrieved " + feedbackDTOs.size() + " feedback submissions");
+            return feedbackDTOs;
         } catch (DataAccessException e) {
+            logger.error("Error fetching feedbacks from database: " + e.getMessage());
             throw new RuntimeException("Error fetching feedbacks from database", e);
         }
     }
@@ -140,9 +182,19 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     @Override
     public void deleteFeedback(UUID id) {
         try {
+            FeedbackSubmission feedback = repository.findById(id).orElse(null);
+            if (feedback != null) {
+                User submitter = feedback.getFromUser();
+                logger.info("Deleting feedback with ID: " + id + " from user: " + 
+                           LoggingUtils.formatUserInfo(submitter));
+            } else {
+                logger.info("Deleting feedback with ID: " + id + " (feedback details not available)");
+            }
+            
             repository.deleteById(id);
+            logger.info("Feedback with ID: " + id + " deleted successfully");
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error deleting feedback with ID: " + id + ": " + e.getMessage());
             throw e;
         }
     }

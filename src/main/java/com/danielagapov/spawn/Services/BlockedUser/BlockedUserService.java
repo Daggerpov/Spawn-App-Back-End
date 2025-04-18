@@ -10,6 +10,7 @@ import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
@@ -41,14 +42,19 @@ public class BlockedUserService implements IBlockedUserService {
         if (blockerId.equals(blockedId)) return;
 
         try {
+            User blocker = userService.getUserEntityById(blockerId);
+            User blocked = userService.getUserEntityById(blockedId);
+            
+            logger.info("Attempting to block user: " + LoggingUtils.formatUserInfo(blocked) + 
+                         " by blocker: " + LoggingUtils.formatUserInfo(blocker));
+            
             if (isBlocked(blockerId, blockedId)) {
+                logger.info("User " + LoggingUtils.formatUserInfo(blocked) + 
+                           " is already blocked by " + LoggingUtils.formatUserInfo(blocker));
                 return;
             }
 
             removeFriendshipBetweenUsers(blockerId, blockedId);
-
-            User blocker = userService.getUserEntityById(blockerId);
-            User blocked = userService.getUserEntityById(blockedId);
 
             BlockedUser block = new BlockedUser();
             block.setBlocker(blocker);
@@ -56,14 +62,18 @@ public class BlockedUserService implements IBlockedUserService {
             block.setReason(reason);
 
             repository.save(block);
+            logger.info("Successfully blocked user: " + LoggingUtils.formatUserInfo(blocked) + 
+                         " by blocker: " + LoggingUtils.formatUserInfo(blocker));
         } catch (DataAccessException e) {
-            logger.error("Database error while blocking user: " + e.getMessage());
+            logger.error("Database error while blocking user " + LoggingUtils.formatUserIdInfo(blockedId) + 
+                         " by blocker " + LoggingUtils.formatUserIdInfo(blockerId) + ": " + e.getMessage());
             throw new BaseSaveException("Failed to block user: " + e.getMessage());
         } catch (BaseNotFoundException e) {
-            logger.error("User not found: " + e.getMessage());
+            logger.error("User not found while blocking: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.error("Unexpected error in blockUser: " + e.getMessage());
+            logger.error("Unexpected error while blocking user " + LoggingUtils.formatUserIdInfo(blockedId) + 
+                         " by blocker " + LoggingUtils.formatUserIdInfo(blockerId) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -72,13 +82,25 @@ public class BlockedUserService implements IBlockedUserService {
     @CacheEvict(value = {"blockedUsers", "blockedUserIds"}, key = "#blockerId")
     public void unblockUser(UUID blockerId, UUID blockedId) {
         try {
+            User blocker = userService.getUserEntityById(blockerId);
+            User blocked = userService.getUserEntityById(blockedId);
+            
+            logger.info("Attempting to unblock user: " + LoggingUtils.formatUserInfo(blocked) + 
+                       " by blocker: " + LoggingUtils.formatUserInfo(blocker));
+                       
             repository.findByBlocker_IdAndBlocked_Id(blockerId, blockedId)
-                    .ifPresent(repository::delete);
+                    .ifPresent(blockEntity -> {
+                        repository.delete(blockEntity);
+                        logger.info("Successfully unblocked user: " + LoggingUtils.formatUserInfo(blocked) + 
+                                  " by blocker: " + LoggingUtils.formatUserInfo(blocker));
+                    });
         } catch (DataAccessException e) {
-            logger.error("Database error while unblocking user: " + e.getMessage());
+            logger.error("Database error while unblocking user " + LoggingUtils.formatUserIdInfo(blockedId) + 
+                         " by blocker " + LoggingUtils.formatUserIdInfo(blockerId) + ": " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.error("Unexpected error in unblockUser: " + e.getMessage());
+            logger.error("Unexpected error while unblocking user " + LoggingUtils.formatUserIdInfo(blockedId) + 
+                         " by blocker " + LoggingUtils.formatUserIdInfo(blockerId) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -87,12 +109,16 @@ public class BlockedUserService implements IBlockedUserService {
     @Cacheable(value = "isBlocked", key = "#blockerId.toString() + ':' + #blockedId.toString()")
     public boolean isBlocked(UUID blockerId, UUID blockedId) {
         try {
+            logger.info("Checking if user " + LoggingUtils.formatUserIdInfo(blockedId) + 
+                       " is blocked by " + LoggingUtils.formatUserIdInfo(blockerId));
             return repository.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId);
         } catch (DataAccessException e) {
-            logger.error("Database error while checking isBlocked: " + e.getMessage());
+            logger.error("Database error while checking if user " + LoggingUtils.formatUserIdInfo(blockedId) + 
+                         " is blocked by " + LoggingUtils.formatUserIdInfo(blockerId) + ": " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            logger.error("Unexpected error in isBlocked: " + e.getMessage());
+            logger.error("Unexpected error while checking if user " + LoggingUtils.formatUserIdInfo(blockedId) + 
+                         " is blocked by " + LoggingUtils.formatUserIdInfo(blockerId) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -101,11 +127,19 @@ public class BlockedUserService implements IBlockedUserService {
     @Cacheable(value = "blockedUsers", key = "#blockerId")
     public List<BlockedUserDTO> getBlockedUsers(UUID blockerId) {
         try {
-            return repository.findAllByBlocker_Id(blockerId).stream()
+            User blocker = userService.getUserEntityById(blockerId);
+            logger.info("Getting blocked users for blocker: " + LoggingUtils.formatUserInfo(blocker));
+            
+            List<BlockedUserDTO> blockedUsers = repository.findAllByBlocker_Id(blockerId).stream()
                     .map(BlockedUserMapper::toDTO)
                     .collect(Collectors.toList());
+                    
+            logger.info("Found " + blockedUsers.size() + " blocked users for blocker: " + 
+                       LoggingUtils.formatUserInfo(blocker));
+            return blockedUsers;
         } catch (Exception e) {
-            logger.error("Error retrieving blocked users for " + blockerId + ": " + e.getMessage());
+            logger.error("Error retrieving blocked users for blocker " + LoggingUtils.formatUserIdInfo(blockerId) + 
+                        ": " + e.getMessage());
             throw e;
         }
     }
@@ -114,12 +148,20 @@ public class BlockedUserService implements IBlockedUserService {
     @Cacheable(value = "blockedUserIds", key = "#blockerId")
     public List<UUID> getBlockedUserIds(UUID blockerId) {
         try {
-            return repository.findAllByBlocker_Id(blockerId).stream()
+            User blocker = userService.getUserEntityById(blockerId);
+            logger.info("Getting blocked user IDs for blocker: " + LoggingUtils.formatUserInfo(blocker));
+            
+            List<UUID> blockedUserIds = repository.findAllByBlocker_Id(blockerId).stream()
                     .map(BlockedUser::getBlocked)
                     .map(User::getId)
                     .collect(Collectors.toList());
+                    
+            logger.info("Found " + blockedUserIds.size() + " blocked user IDs for blocker: " + 
+                       LoggingUtils.formatUserInfo(blocker));
+            return blockedUserIds;
         } catch (Exception e) {
-            logger.error("Error retrieving blocked users for " + blockerId + ": " + e.getMessage());
+            logger.error("Error retrieving blocked user IDs for blocker " + LoggingUtils.formatUserIdInfo(blockerId) + 
+                        ": " + e.getMessage());
             throw e;
         }
     }
@@ -127,6 +169,12 @@ public class BlockedUserService implements IBlockedUserService {
     @Override
     public void removeFriendshipBetweenUsers(UUID userAId, UUID userBId) {
         try {
+            User userA = userService.getUserEntityById(userAId);
+            User userB = userService.getUserEntityById(userBId);
+            
+            logger.info("Removing friendship between users: " + LoggingUtils.formatUserInfo(userA) + 
+                       " and " + LoggingUtils.formatUserInfo(userB));
+                       
             List<FriendTagDTO> userATags = friendTagService.getFriendTagsByOwnerId(userAId);
             for (FriendTagDTO tag : userATags) {
                 if (tag.getFriendUserIds().contains(userBId)) {
@@ -140,8 +188,12 @@ public class BlockedUserService implements IBlockedUserService {
                     friendTagService.removeUserFromFriendTag(tag.getId(), userAId);
                 }
             }
+            
+            logger.info("Successfully removed friendship between users: " + LoggingUtils.formatUserInfo(userA) + 
+                       " and " + LoggingUtils.formatUserInfo(userB));
         } catch (Exception e) {
-            logger.error("Error removing friendship between users " + userAId + " and " + userBId + ": " + e.getMessage());
+            logger.error("Error removing friendship between users " + LoggingUtils.formatUserIdInfo(userAId) + 
+                        " and " + LoggingUtils.formatUserIdInfo(userBId) + ": " + e.getMessage());
             throw e;
         }
     }
