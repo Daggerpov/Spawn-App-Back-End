@@ -16,6 +16,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Implementation of NotificationStrategy for Apple Push Notification Service
@@ -32,7 +33,7 @@ public class APNSNotificationStrategy implements NotificationStrategy {
     @Value("${apns.production}")
     private boolean apnsProduction;
     
-    @Value("${apns.bundle.id:com.danielagapov.spawn}")
+    @Value("${apns.bundle.id}")
     private String appBundleId;
 
     private ApnsService apnsService;
@@ -56,7 +57,6 @@ public class APNSNotificationStrategy implements NotificationStrategy {
                 apnsService = APNS.newService()
                         .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
                         .withProductionDestination()
-                        // Not using feedback service as it requires additional parameters
                         .build();
             } else {
                 logger.info("Initializing APNS service with DEVELOPMENT certificate (apns.production=false)");
@@ -64,9 +64,11 @@ public class APNSNotificationStrategy implements NotificationStrategy {
                 apnsService = APNS.newService()
                         .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
                         .withSandboxDestination()
-                        // Not using feedback service as it requires additional parameters
                         .build();
             }
+            
+            // Log bundle ID being used
+            logger.info("APNS service initialized with bundle ID: " + appBundleId);
             
             // Validate certificate is working by checking connection
             logger.info("Validating APNS certificate and connection");
@@ -87,9 +89,9 @@ public class APNSNotificationStrategy implements NotificationStrategy {
 
     private boolean validateApnsConnection() {
         try {
-            // Try to perform a simple operation to validate connection
-            // For now, just check if service is not null
-            return apnsService != null;
+            // Improved validation - attempt to access the feedback service
+            apnsService.getInactiveDevices();
+            return true;
         } catch (Exception e) {
             logger.error("APNS connection validation failed: " + e.getMessage());
             return false;
@@ -99,8 +101,6 @@ public class APNSNotificationStrategy implements NotificationStrategy {
     private void checkForInvalidDeviceTokens() {
         try {
             // Get map of tokens and timestamps when they became invalid
-            // Note: this might not work if feedback service is not properly configured
-            // So we'll add additional error handling
             Map<String, Date> inactiveDevices;
             try {
                 inactiveDevices = apnsService.getInactiveDevices();
@@ -131,11 +131,23 @@ public class APNSNotificationStrategy implements NotificationStrategy {
         try {
             logger.info("Preparing to send APNS notification to device: " + deviceToken);
             
+            // Validate bundle ID before sending
+            if (appBundleId == null || appBundleId.trim().isEmpty()) {
+                logger.error("Bundle ID is not configured properly. Cannot send APNS notification.");
+                return;
+            }
+            
+            // Make sure data map is not null
+            Map<String, String> notificationData = data != null ? new HashMap<>(data) : new HashMap<>();
+            
+            // Add the bundle ID to the data (will be included in the payload)
+            notificationData.put("topic", appBundleId);
+            
             // Create the payload with proper structure
-            String payload = constructPayload(title, message, data);
+            String payload = constructPayload(title, message, notificationData);
             logger.info("APNS payload created: " + payload);
 
-            // Use the standard push method and handle topic within the payload
+            // Send the notification with the standard push method
             ApnsNotification notification = apnsService.push(deviceToken, payload);
             
             if (notification != null) {
@@ -160,11 +172,6 @@ public class APNSNotificationStrategy implements NotificationStrategy {
                 .alertTitle(title)
                 .alertBody(message)
                 .sound("default");
-            
-            // Add the bundle ID as a custom field to ensure proper routing
-            if (appBundleId != null && !appBundleId.isEmpty()) {
-                payloadBuilder.customField("topic", appBundleId);
-            }
             
             // Set badge number if provided
             if (data != null && data.containsKey("badge")) {
