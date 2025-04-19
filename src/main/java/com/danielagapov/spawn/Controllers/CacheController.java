@@ -31,15 +31,15 @@ public class CacheController {
      * The server responds with information about which categories need refreshing.
      *
      * @param userId The ID of the user requesting cache validation
-     * @param request A map of cache categories and their timestamps
+     * @param request DTO containing cache categories and their timestamps
      * @return A map of cache categories and their validation status
      */
     @PostMapping("/validate/{userId}")
     public ResponseEntity<Map<String, CacheValidationResponseDTO>> validateCache(
             @PathVariable UUID userId,
-            @RequestBody Map<String, String> request) {
+            @RequestBody CacheValidationRequestDTO request) {
             
-        Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, request);
+        Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, request.getTimestamps());
         return ResponseEntity.ok(response);
     }
 } 

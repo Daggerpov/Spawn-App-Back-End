@@ -1,12 +1,14 @@
 package com.danielagapov.spawn.Services;
 
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
-import com.danielagapov.spawn.DTOs.EventDTO;
-import com.danielagapov.spawn.DTOs.FullFriendUserDTO;
-import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.DTOs.Event.EventDTO;
+import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.EventRepository;
-import com.danielagapov.spawn.Repositories.UserRepository;
+import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Utils.LoggingUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,23 +18,25 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Service implementation for mobile cache validation.
  * This service compares client-side cache timestamps with server-side data
  * to determine if client caches need to be refreshed.
+ * 
+ * IMPORTANT: Notifications are deliberately excluded from caching to ensure real-time delivery.
+ * The service will always invalidate any notification cache to prevent stale notifications.
  */
 @Service
 public class CacheService implements ICacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
     
-    private final EventRepository eventRepository;
-    private final UserRepository userRepository;
+    private final IUserRepository userRepository;
     private final IUserService userService;
     private final IEventService eventService;
     private final ObjectMapper objectMapper;
@@ -43,18 +47,28 @@ public class CacheService implements ICacheService {
     
     @Autowired
     public CacheService(
-            EventRepository eventRepository,
-            UserRepository userRepository,
+            IUserRepository userRepository,
             IUserService userService,
             IEventService eventService,
             ObjectMapper objectMapper) {
-        this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.userService = userService;
         this.eventService = eventService;
         this.objectMapper = objectMapper;
     }
     
+    /**
+     * Validates client cache against server data.
+     * For each cache category in the request, determines if the client's cache is stale
+     * and needs to be refreshed.
+     * 
+     * Note: Notifications are always invalidated to ensure they are never cached on mobile devices.
+     * This guarantees users always receive the most up-to-date notifications.
+     *
+     * @param userId The user ID requesting cache validation
+     * @param clientCacheTimestamps Map of cache category names to their last update timestamps
+     * @return Map of cache category names to validation response objects
+     */
     @Override
     public Map<String, CacheValidationResponseDTO> validateCache(
             UUID userId, Map<String, String> clientCacheTimestamps) {
@@ -66,6 +80,8 @@ public class CacheService implements ICacheService {
             logger.warn("Cache validation requested for non-existent user: {}", userId);
             return response;
         }
+        
+        logger.info("Validating cache for user: " + LoggingUtils.formatUserInfo(user));
         
         // Validate friends cache
         if (clientCacheTimestamps.containsKey(FRIENDS_CACHE)) {
@@ -100,7 +116,7 @@ public class CacheService implements ICacheService {
                 // to save an extra API call from the client
                 try {
                     // Get current friends for the user
-                    List<FullFriendUserDTO> friends = userService.getFriends(user.getId());
+                    List<FullFriendUserDTO> friends = userService.getFullFriendUsersByUserId(user.getId());
                     byte[] friendsData = objectMapper.writeValueAsBytes(friends);
                     
                     // Only include the data if it's not too large (limit to ~100KB)
@@ -141,15 +157,11 @@ public class CacheService implements ICacheService {
             boolean needsUpdate = latestEventActivity.isAfter(clientTime.toInstant());
             
             if (needsUpdate) {
-                // For events, the data might be larger, but we could still try to include it
+                // For events, we'll use feed events which combines owned and invited events
                 try {
                     // Get current events for the user
-                    List<Event> userEvents = eventService.getEventsForUser(user.getId());
-                    List<EventDTO> eventDTOs = userEvents.stream()
-                            .map(event -> eventService.convertToDTO(event))
-                            .collect(Collectors.toList());
-                    
-                    byte[] eventsData = objectMapper.writeValueAsBytes(eventDTOs);
+                    List<FullFeedEventDTO> feedEvents = eventService.getFeedEvents(user.getId());
+                    byte[] eventsData = objectMapper.writeValueAsBytes(feedEvents);
                     
                     // Only include the data if it's not too large (limit to ~100KB)
                     if (eventsData.length < 100_000) {
