@@ -10,6 +10,8 @@ import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Repositories.IFriendTagRepository;
+import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
@@ -50,6 +52,8 @@ public class CacheService implements ICacheService {
     private final IEventService eventService;
     private final IFriendRequestService friendRequestService;
     private final IFriendTagService friendTagService;
+    private final IFriendTagRepository friendTagRepository;
+    private final IUserFriendTagRepository userFriendTagRepository;
     private final ObjectMapper objectMapper;
     private final CacheManager cacheManager;
     
@@ -70,6 +74,8 @@ public class CacheService implements ICacheService {
             IEventService eventService,
             IFriendRequestService friendRequestService,
             IFriendTagService friendTagService,
+            IFriendTagRepository friendTagRepository,
+            IUserFriendTagRepository userFriendTagRepository,
             ObjectMapper objectMapper,
             CacheManager cacheManager) {
         this.userRepository = userRepository;
@@ -77,6 +83,8 @@ public class CacheService implements ICacheService {
         this.eventService = eventService;
         this.friendRequestService = friendRequestService;
         this.friendTagService = friendTagService;
+        this.friendTagRepository = friendTagRepository;
+        this.userFriendTagRepository = userFriendTagRepository;
         this.objectMapper = objectMapper;
         this.cacheManager = cacheManager;
     }
@@ -507,7 +515,7 @@ public class CacheService implements ICacheService {
             Instant latestFriendRequest = friendRequestService.getLatestFriendRequestTimestamp(userId);
             
             // Get the latest profile update of any of the user's friends
-            Instant latestFriendProfileUpdate = userService.getLatestFriendProfileUpdateTimestamp(userId);
+            Instant latestFriendProfileUpdate = getLatestFriendProfileUpdate(userId);
             
             // Return the most recent of these timestamps
             if (latestFriendRequest != null && latestFriendProfileUpdate != null) {
@@ -573,6 +581,39 @@ public class CacheService implements ICacheService {
         }
     }
     
-        return Instant.now();
+    /**
+     * Gets the timestamp of the latest profile update from any of the user's friends.
+     */
+    private Instant getLatestFriendProfileUpdate(UUID userId) {
+        try {
+            return userRepository.findLatestFriendProfileUpdate(userId);
+        } catch (Exception e) {
+            logger.error("Error fetching latest friend profile update for user {}: {}", userId, e.getMessage(), e);
+            return Instant.now();
+        }
+    }
+    
+    /**
+     * Gets the timestamp of the latest tag creation or modification by the user.
+     */
+    private Instant getLatestTagActivity(UUID userId) {
+        try {
+            return friendTagRepository.findLatestTagActivity(userId);
+        } catch (Exception e) {
+            logger.error("Error fetching latest tag activity for user {}: {}", userId, e.getMessage(), e);
+            return Instant.now();
+        }
+    }
+    
+    /**
+     * Gets the timestamp of the latest change in tag-friend associations.
+     */
+    private Instant getLatestTagFriendActivity(UUID userId) {
+        try {
+            return userFriendTagRepository.findLatestTagFriendActivity(userId);
+        } catch (Exception e) {
+            logger.error("Error fetching latest tag-friend activity for user {}: {}", userId, e.getMessage(), e);
+            return Instant.now();
+        }
     }
 } 
