@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,4 +23,7 @@ public interface IFriendTagRepository extends JpaRepository<FriendTag, UUID> {
 
     @Query("SELECT u FROM User u JOIN UserFriendTag uf ON uf.friend.id = u.id WHERE uf.friendTag.ownerId = :ownerId AND uf.friendTag.isEveryone = true AND u.id != :ownerId")
     List<User> getFriendsFromEveryoneTagByOwnerId(@Param("ownerId") UUID ownerId);
+
+    @Query("SELECT MAX(ft.lastModified) FROM FriendTag ft WHERE ft.ownerId = :ownerId")
+    Instant findLatestTagActivity(@Param("ownerId") UUID ownerId);
 }
