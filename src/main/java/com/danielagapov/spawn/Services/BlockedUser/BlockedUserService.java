@@ -11,11 +11,14 @@ import com.danielagapov.spawn.Repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Utils.LoggingUtils;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,12 +31,14 @@ public class BlockedUserService implements IBlockedUserService {
     private final IUserService userService;
     private final IFriendTagService friendTagService;
     private final ILogger logger;
+    private final CacheManager cacheManager;
 
-    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendTagService friendTagService, ILogger logger) {
+    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendTagService friendTagService, ILogger logger, CacheManager cacheManager) {
         this.repository = repository;
         this.userService = userService;
         this.friendTagService = friendTagService;
         this.logger = logger;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -215,6 +220,34 @@ public class BlockedUserService implements IBlockedUserService {
             logger.error("Error removing friendship between users " + LoggingUtils.formatUserIdInfo(userAId) + 
                         " and " + LoggingUtils.formatUserIdInfo(userBId) + ": " + e.getMessage());
             throw e;
+        }
+    }
+
+    /**
+     * Helper method to evict relevant caches for the blocked user
+     */
+    private void evictBlockedUserCaches(UUID userId) {
+        try {
+            logger.info("Evicting caches for user ID: " + userId + " after being blocked/unblocked");
+
+            Cache recommendedFriendsCache = cacheManager.getCache("recommendedFriends");
+            if (recommendedFriendsCache != null) {
+                recommendedFriendsCache.evict(userId);
+            }
+
+            Cache otherProfilesCache = cacheManager.getCache("otherProfiles");
+            if (otherProfilesCache != null) {
+                otherProfilesCache.evict(userId);
+            }
+
+            Cache friendsListCache = cacheManager.getCache("friendsList");
+            if (friendsListCache != null) {
+                friendsListCache.evict(userId);
+            }
+
+        } catch (Exception e) {
+            logger.error("Error evicting caches for blocked user: " + e.getMessage());
+            // Don't throw here - this is a best-effort operation
         }
     }
 }
