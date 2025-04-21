@@ -3,16 +3,25 @@ package com.danielagapov.spawn.Services;
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Repositories.IUserRepository;
 import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
+import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Utils.LoggingUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -39,22 +48,37 @@ public class CacheService implements ICacheService {
     private final IUserRepository userRepository;
     private final IUserService userService;
     private final IEventService eventService;
+    private final IFriendRequestService friendRequestService;
+    private final IFriendTagService friendTagService;
     private final ObjectMapper objectMapper;
+    private final CacheManager cacheManager;
     
     // Define cache categories
     private static final String FRIENDS_CACHE = "friends";
     private static final String EVENTS_CACHE = "events";
+    private static final String PROFILE_PICTURE_CACHE = "profilePicture";
+    private static final String OTHER_PROFILES_CACHE = "otherProfiles";
+    private static final String RECOMMENDED_FRIENDS_CACHE = "recommendedFriends";
+    private static final String FRIEND_REQUESTS_CACHE = "friendRequests";
+    private static final String USER_TAGS_CACHE = "userTags";
+    private static final String TAG_FRIENDS_CACHE = "tagFriends";
     
     @Autowired
     public CacheService(
             IUserRepository userRepository,
             IUserService userService,
             IEventService eventService,
-            ObjectMapper objectMapper) {
+            IFriendRequestService friendRequestService,
+            IFriendTagService friendTagService,
+            ObjectMapper objectMapper,
+            CacheManager cacheManager) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.eventService = eventService;
+        this.friendRequestService = friendRequestService;
+        this.friendTagService = friendTagService;
         this.objectMapper = objectMapper;
+        this.cacheManager = cacheManager;
     }
     
     /**
@@ -91,6 +115,36 @@ public class CacheService implements ICacheService {
         // Validate events cache
         if (clientCacheTimestamps.containsKey(EVENTS_CACHE)) {
             response.put(EVENTS_CACHE, validateEventsCache(user, clientCacheTimestamps.get(EVENTS_CACHE)));
+        }
+
+        // Validate profile picture cache
+        if (clientCacheTimestamps.containsKey(PROFILE_PICTURE_CACHE)) {
+            response.put(PROFILE_PICTURE_CACHE, validateProfilePictureCache(user, clientCacheTimestamps.get(PROFILE_PICTURE_CACHE)));
+        }
+        
+        // Validate other profiles cache
+        if (clientCacheTimestamps.containsKey(OTHER_PROFILES_CACHE)) {
+            response.put(OTHER_PROFILES_CACHE, validateOtherProfilesCache(user, clientCacheTimestamps.get(OTHER_PROFILES_CACHE)));
+        }
+        
+        // Validate recommended friends cache
+        if (clientCacheTimestamps.containsKey(RECOMMENDED_FRIENDS_CACHE)) {
+            response.put(RECOMMENDED_FRIENDS_CACHE, validateRecommendedFriendsCache(user, clientCacheTimestamps.get(RECOMMENDED_FRIENDS_CACHE)));
+        }
+        
+        // Validate friend requests cache
+        if (clientCacheTimestamps.containsKey(FRIEND_REQUESTS_CACHE)) {
+            response.put(FRIEND_REQUESTS_CACHE, validateFriendRequestsCache(user, clientCacheTimestamps.get(FRIEND_REQUESTS_CACHE)));
+        }
+        
+        // Validate user tags cache
+        if (clientCacheTimestamps.containsKey(USER_TAGS_CACHE)) {
+            response.put(USER_TAGS_CACHE, validateUserTagsCache(user, clientCacheTimestamps.get(USER_TAGS_CACHE)));
+        }
+        
+        // Validate tag friends cache
+        if (clientCacheTimestamps.containsKey(TAG_FRIENDS_CACHE)) {
+            response.put(TAG_FRIENDS_CACHE, validateTagFriendsCache(user, clientCacheTimestamps.get(TAG_FRIENDS_CACHE)));
         }
         
         return response;
@@ -190,14 +244,31 @@ public class CacheService implements ICacheService {
      * This includes friend requests, acceptances, and any profile updates of friends.
      */
     private Instant getLatestFriendActivity(UUID userId) {
-        // This would typically query the database for:
-        // 1. Latest friend request involving the user
-        // 2. Latest friend request acceptance involving the user
-        // 3. Latest profile update of any of the user's friends
-        
-        // For now, returning current time if we can't determine it
-        // In a real implementation, this would query the database
-        return Instant.now();
+        try {
+            // Get the latest friend request involving this user
+            Instant latestFriendRequest = friendRequestService.getLatestFriendRequestTimestamp(userId);
+            
+            // Get the latest profile update of any of the user's friends
+            Instant latestFriendProfileUpdate = userService.getLatestFriendProfileUpdateTimestamp(userId);
+            
+            // Return the most recent of these timestamps
+            if (latestFriendRequest != null && latestFriendProfileUpdate != null) {
+                return latestFriendRequest.isAfter(latestFriendProfileUpdate) ? 
+                       latestFriendRequest : latestFriendProfileUpdate;
+            } else if (latestFriendRequest != null) {
+                return latestFriendRequest;
+            } else if (latestFriendProfileUpdate != null) {
+                return latestFriendProfileUpdate;
+            }
+            
+            // If no activity is found, return the current time to force a refresh
+            logger.debug("No friend activity found for user {}, using current time", userId);
+            return Instant.now();
+        } catch (Exception e) {
+            logger.error("Error getting latest friend activity for user {}: {}", userId, e.getMessage(), e);
+            // In case of an error, return current time to force a refresh
+            return Instant.now();
+        }
     }
     
     /**
@@ -205,13 +276,45 @@ public class CacheService implements ICacheService {
      * This includes events the user created, is participating in, or was invited to.
      */
     private Instant getLatestEventActivity(UUID userId) {
-        // This would typically query the database for:
-        // 1. Latest created event by the user
-        // 2. Latest updated event the user is participating in
-        // 3. Latest event invitation to the user
-        
-        // For now, returning current time if we can't determine it
-        // In a real implementation, this would query the database
+        try {
+            // Get the latest event created by the user
+            Instant latestCreatedEvent = eventService.getLatestCreatedEventTimestamp(userId);
+            
+            // Get the latest event the user was invited to
+            Instant latestInvitedEvent = eventService.getLatestInvitedEventTimestamp(userId);
+            
+            // Get the latest event the user is participating in that was updated
+            Instant latestUpdatedEvent = eventService.getLatestUpdatedEventTimestamp(userId);
+            
+            // Find the most recent timestamp among these three
+            Instant latestTimestamp = null;
+            
+            if (latestCreatedEvent != null) {
+                latestTimestamp = latestCreatedEvent;
+            }
+            
+            if (latestInvitedEvent != null && (latestTimestamp == null || latestInvitedEvent.isAfter(latestTimestamp))) {
+                latestTimestamp = latestInvitedEvent;
+            }
+            
+            if (latestUpdatedEvent != null && (latestTimestamp == null || latestUpdatedEvent.isAfter(latestTimestamp))) {
+                latestTimestamp = latestUpdatedEvent;
+            }
+            
+            if (latestTimestamp != null) {
+                return latestTimestamp;
+            }
+            
+            // If no activity is found, return the current time to force a refresh
+            logger.debug("No event activity found for user {}, using current time", userId);
+            return Instant.now();
+        } catch (Exception e) {
+            logger.error("Error getting latest event activity for user {}: {}", userId, e.getMessage(), e);
+            // In case of an error, return current time to force a refresh
+            return Instant.now();
+        }
+    }
+    
         return Instant.now();
     }
 } 
