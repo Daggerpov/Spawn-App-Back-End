@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -543,12 +544,23 @@ public class UserService implements IUserService {
         }
     }
 
+    @Override
     public User getUserByEmail(String email) {
         try {
             return repository.findByEmail(email)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
         } catch (Exception e) {
             logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Instant getLatestFriendProfileUpdateTimestamp(UUID userId) {
+        try {
+            return repository.findLatestFriendProfileUpdate(userId);
+        } catch (Exception e) {
+            logger.error("Error getting latest friend profile update timestamp for user: " + userId + ": " + e.getMessage());
             throw e;
         }
     }

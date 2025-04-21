@@ -335,13 +335,11 @@ public class EventService implements IEventService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventById", key = "#id"),
+            @CacheEvict(value = "eventById", key = "#result.id"),
             @CacheEvict(value = "fullEventById", allEntries = true),
-            @CacheEvict(value = "eventsByOwnerId", allEntries = true),
+            @CacheEvict(value = "eventsByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedEvents", allEntries = true),
-            @CacheEvict(value = "filteredFeedEvents", allEntries = true),
-            @CacheEvict(value = "eventsInvitedTo", allEntries = true),
-            @CacheEvict(value = "fullEventsInvitedTo", allEntries = true)
+            @CacheEvict(value = "filteredFeedEvents", allEntries = true)
     })
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {

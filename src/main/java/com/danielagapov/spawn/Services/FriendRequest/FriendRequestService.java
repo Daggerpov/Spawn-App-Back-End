@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -249,6 +250,24 @@ public class FriendRequestService implements IFriendRequestService {
             return dtos;
         } catch (Exception e) {
             logger.error("Error retrieving sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Instant getLatestFriendRequestTimestamp(UUID userId) {
+        try {
+            // This is a placeholder implementation that always returns current time
+            // In a real implementation, you would query the database for the latest timestamp
+            // of friend requests sent or received by this user
+            logger.info("Getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId));
+            return Instant.now();
+            
+            // TODO: Implement actual logic to retrieve the latest timestamp from the database
+            // This would require adding a timestamp field to the FriendRequest entity
+            // and adding a repository method to find the latest one
+        } catch (Exception e) {
+            logger.error("Error getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }
