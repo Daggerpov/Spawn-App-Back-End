@@ -35,6 +35,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -655,6 +656,42 @@ public class EventService implements IEventService {
         }
 
         return fullEvents;
+    }
+
+    @Override
+    public Instant getLatestCreatedEventTimestamp(UUID userId) {
+        try {
+            return repository.findTopByCreatorIdOrderByCreatedTimestampDesc(userId)
+                    .map(Event::getCreatedTimestamp)
+                    .orElse(null);
+        } catch (DataAccessException e) {
+            logger.error("Error fetching latest created event timestamp for user: " + userId + " - " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Instant getLatestInvitedEventTimestamp(UUID userId) {
+        try {
+            return eventUserRepository.findTopByUserIdAndStatusOrderByEventCreatedTimestampDesc(userId, ParticipationStatus.invited)
+                    .map(eventUser -> eventUser.getEvent().getCreatedTimestamp())
+                    .orElse(null);
+        } catch (DataAccessException e) {
+            logger.error("Error fetching latest invited event timestamp for user: " + userId + " - " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Instant getLatestUpdatedEventTimestamp(UUID userId) {
+        try {
+            return eventUserRepository.findTopByUserIdAndStatusOrderByEventUpdatedTimestampDesc(userId, ParticipationStatus.participating)
+                    .map(eventUser -> eventUser.getEvent().getUpdatedTimestamp())
+                    .orElse(null);
+        } catch (DataAccessException e) {
+            logger.error("Error fetching latest updated event timestamp for user: " + userId + " - " + e.getMessage());
+            throw e;
+        }
     }
 
 }

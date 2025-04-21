@@ -23,4 +23,8 @@ public interface IEventUserRepository extends JpaRepository<EventUser, EventUser
     List<EventUser> findEventsByEvent_IdAndStatus(UUID eventId, ParticipationStatus status);
 
     Optional<EventUser> findByEvent_IdAndUser_Id(UUID eventId, UUID userId);
+
+    Optional<EventUser> findTopByUserIdAndStatusOrderByEventCreatedTimestampDesc(UUID userId, ParticipationStatus status);
+
+    Optional<EventUser> findTopByUserIdAndStatusOrderByEventUpdatedTimestampDesc(UUID userId, ParticipationStatus status);
 }
