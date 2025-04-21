@@ -7,6 +7,7 @@ import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -62,4 +63,28 @@ public interface IEventService {
     List<EventDTO> getEventsByOwnerId(UUID creatorUserId);
 
     String getFriendTagColorHexCodeForRequestingUser(EventDTO eventDTO, UUID requestingUserId);
+    
+    /**
+     * Gets the timestamp of the latest event created by the user.
+     * 
+     * @param userId The user ID to get the latest created event timestamp for
+     * @return The timestamp of the latest created event, or null if none found
+     */
+    Instant getLatestCreatedEventTimestamp(UUID userId);
+    
+    /**
+     * Gets the timestamp of the latest event the user was invited to.
+     * 
+     * @param userId The user ID to get the latest invited event timestamp for
+     * @return The timestamp of the latest invited event, or null if none found
+     */
+    Instant getLatestInvitedEventTimestamp(UUID userId);
+    
+    /**
+     * Gets the timestamp of the latest update to any event the user is participating in.
+     * 
+     * @param userId The user ID to get the latest updated event timestamp for
+     * @return The timestamp of the latest updated event, or null if none found
+     */
+    Instant getLatestUpdatedEventTimestamp(UUID userId);
 }
