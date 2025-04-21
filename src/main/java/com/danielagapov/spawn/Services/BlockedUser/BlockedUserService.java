@@ -37,7 +37,13 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
-    @CacheEvict(value = {"blockedUsers", "blockedUserIds"}, key = "#blockerId")
+    @CacheEvict(value = {
+        "blockedUsers", 
+        "blockedUserIds", 
+        "recommendedFriends", 
+        "otherProfiles", 
+        "friendsList"
+    }, key = "#blockerId")
     public void blockUser(UUID blockerId, UUID blockedId, String reason) {
         if (blockerId.equals(blockedId)) return;
 
@@ -62,6 +68,10 @@ public class BlockedUserService implements IBlockedUserService {
             block.setReason(reason);
 
             repository.save(block);
+            
+            // Also evict caches for the blocked user to ensure they don't see the blocker in recommendations
+            evictBlockedUserCaches(blockedId);
+            
             logger.info("Successfully blocked user: " + LoggingUtils.formatUserInfo(blocked) + 
                          " by blocker: " + LoggingUtils.formatUserInfo(blocker));
         } catch (DataAccessException e) {
@@ -79,7 +89,13 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
-    @CacheEvict(value = {"blockedUsers", "blockedUserIds"}, key = "#blockerId")
+    @CacheEvict(value = {
+        "blockedUsers", 
+        "blockedUserIds", 
+        "recommendedFriends", 
+        "otherProfiles", 
+        "friendsList"
+    }, key = "#blockerId")
     public void unblockUser(UUID blockerId, UUID blockedId) {
         try {
             User blocker = userService.getUserEntityById(blockerId);
@@ -91,6 +107,10 @@ public class BlockedUserService implements IBlockedUserService {
             repository.findByBlocker_IdAndBlocked_Id(blockerId, blockedId)
                     .ifPresent(blockEntity -> {
                         repository.delete(blockEntity);
+                        
+                        // Also evict caches for the previously blocked user
+                        evictBlockedUserCaches(blockedId);
+                        
                         logger.info("Successfully unblocked user: " + LoggingUtils.formatUserInfo(blocked) + 
                                   " by blocker: " + LoggingUtils.formatUserInfo(blocker));
                     });
