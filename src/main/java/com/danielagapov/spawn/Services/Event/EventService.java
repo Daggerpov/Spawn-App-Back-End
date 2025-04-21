@@ -659,8 +659,8 @@ public class EventService implements IEventService {
     @Override
     public Instant getLatestCreatedEventTimestamp(UUID userId) {
         try {
-            return repository.findTopByCreatorIdOrderByCreatedTimestampDesc(userId)
-                    .map(Event::getCreatedTimestamp)
+            return repository.findTopByCreatorIdOrderByLastUpdatedDesc(userId)
+                    .map(Event::getLastUpdated)
                     .orElse(null);
         } catch (DataAccessException e) {
             logger.error("Error fetching latest created event timestamp for user: " + userId + " - " + e.getMessage());
@@ -671,8 +671,8 @@ public class EventService implements IEventService {
     @Override
     public Instant getLatestInvitedEventTimestamp(UUID userId) {
         try {
-            return eventUserRepository.findTopByUserIdAndStatusOrderByEventCreatedTimestampDesc(userId, ParticipationStatus.invited)
-                    .map(eventUser -> eventUser.getEvent().getCreatedTimestamp())
+            return eventUserRepository.findTopByUserIdAndStatusOrderByEventLastUpdatedDesc(userId, ParticipationStatus.invited)
+                    .map(eventUser -> eventUser.getEvent().getLastUpdated())
                     .orElse(null);
         } catch (DataAccessException e) {
             logger.error("Error fetching latest invited event timestamp for user: " + userId + " - " + e.getMessage());
@@ -683,8 +683,8 @@ public class EventService implements IEventService {
     @Override
     public Instant getLatestUpdatedEventTimestamp(UUID userId) {
         try {
-            return eventUserRepository.findTopByUserIdAndStatusOrderByEventUpdatedTimestampDesc(userId, ParticipationStatus.participating)
-                    .map(eventUser -> eventUser.getEvent().getUpdatedTimestamp())
+            return eventUserRepository.findTopByUserIdAndStatusOrderByEventLastUpdatedDesc(userId, ParticipationStatus.participating)
+                    .map(eventUser -> eventUser.getEvent().getLastUpdated())
                     .orElse(null);
         } catch (DataAccessException e) {
             logger.error("Error fetching latest updated event timestamp for user: " + userId + " - " + e.getMessage());

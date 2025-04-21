@@ -44,25 +44,19 @@ public class Event implements Serializable {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User creator;
     
-    @Column(name = "created_timestamp")
-    private Instant createdTimestamp;
-    
-    @Column(name = "updated_timestamp")
-    private Instant updatedTimestamp;
+    @Column(name = "last_updated")
+    private Instant lastUpdated;
     
     @PrePersist
     public void prePersist() {
-        if (this.createdTimestamp == null) {
-            this.createdTimestamp = Instant.now();
-        }
-        if (this.updatedTimestamp == null) {
-            this.updatedTimestamp = Instant.now();
+        if (this.lastUpdated == null) {
+            this.lastUpdated = Instant.now();
         }
     }
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedTimestamp = Instant.now();
+        this.lastUpdated = Instant.now();
     }
     
     public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator) {
@@ -73,7 +67,6 @@ public class Event implements Serializable {
         this.location = location;
         this.note = note;
         this.creator = creator;
-        this.createdTimestamp = Instant.now();
-        this.updatedTimestamp = Instant.now();
+        this.lastUpdated = Instant.now();
     }
 }

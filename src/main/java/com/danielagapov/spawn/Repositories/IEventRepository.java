@@ -28,5 +28,5 @@ public interface IEventRepository extends JpaRepository<Event, UUID> {
             "AND eu.user.id = :invitedUserId")
     List<Event> getEventsInvitedToWithFriendTagId(@Param("friendTagId") UUID friendTagId, @Param("invitedUserId") UUID invitedUserId);
 
-    Optional<Event> findTopByCreatorIdOrderByCreatedTimestampDesc(UUID creatorId);
+    Optional<Event> findTopByCreatorIdOrderByLastUpdatedDesc(UUID creatorId);
 }

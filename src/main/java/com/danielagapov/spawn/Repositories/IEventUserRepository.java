@@ -26,9 +26,6 @@ public interface IEventUserRepository extends JpaRepository<EventUser, EventUser
 
     Optional<EventUser> findByEvent_IdAndUser_Id(UUID eventId, UUID userId);
 
-    @Query("SELECT eu FROM EventUser eu JOIN eu.event e WHERE eu.user.id = :userId AND eu.status = :status ORDER BY e.createdTimestamp DESC")
-    Optional<EventUser> findTopByUserIdAndStatusOrderByEventCreatedTimestampDesc(@Param("userId") UUID userId, @Param("status") ParticipationStatus status);
-
-    @Query("SELECT eu FROM EventUser eu JOIN eu.event e WHERE eu.user.id = :userId AND eu.status = :status ORDER BY e.updatedTimestamp DESC")
-    Optional<EventUser> findTopByUserIdAndStatusOrderByEventUpdatedTimestampDesc(@Param("userId") UUID userId, @Param("status") ParticipationStatus status);
+    @Query("SELECT eu FROM EventUser eu JOIN eu.event e WHERE eu.user.id = :userId AND eu.status = :status ORDER BY e.lastUpdated DESC")
+    Optional<EventUser> findTopByUserIdAndStatusOrderByEventLastUpdatedDesc(@Param("userId") UUID userId, @Param("status") ParticipationStatus status);
 }
