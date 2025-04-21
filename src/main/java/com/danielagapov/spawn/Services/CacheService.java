@@ -240,6 +240,264 @@ public class CacheService implements ICacheService {
     }
     
     /**
+     * Validates the user's own profile picture cache.
+     */
+    private CacheValidationResponseDTO validateProfilePictureCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+            
+            // Check if user's profile picture has been updated since the client's cache timestamp
+            if (user.getLastUpdated() != null) {
+                ZonedDateTime lastUpdated = ZonedDateTime.ofInstant(user.getLastUpdated(), clientTime.getZone());
+                
+                // If the user was updated after the client's cache timestamp, refresh the data
+                boolean needsUpdate = lastUpdated.isAfter(clientTime);
+                
+                if (needsUpdate) {
+                    try {
+                        BaseUserDTO userProfile = userService.getBaseUserById(user.getId());
+                        byte[] profileData = objectMapper.writeValueAsBytes(userProfile);
+                        
+                        if (profileData.length < 100_000) {
+                            return new CacheValidationResponseDTO(true, profileData);
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to serialize profile picture data", e);
+                    }
+                    
+                    return new CacheValidationResponseDTO(true, null);
+                }
+                
+                return new CacheValidationResponseDTO(false, null);
+            } else {
+                // If lastUpdated is null (shouldn't happen with new entities but could with existing ones),
+                // conservatively return the current profile data
+                try {
+                    BaseUserDTO userProfile = userService.getBaseUserById(user.getId());
+                    byte[] profileData = objectMapper.writeValueAsBytes(userProfile);
+                    
+                    if (profileData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, profileData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize profile picture data", e);
+                }
+                
+                return new CacheValidationResponseDTO(true, null);
+            }
+        } catch (Exception e) {
+            logger.error("Error validating profile picture cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+    
+    /**
+     * Validates the cache for other users' profiles that this user has viewed.
+     */
+    private CacheValidationResponseDTO validateOtherProfilesCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+            
+            // Get latest timestamp for any profile updates of user's friends
+            Instant latestFriendProfileUpdate = getLatestFriendProfileUpdate(user.getId());
+            
+            boolean needsUpdate = latestFriendProfileUpdate.isAfter(clientTime.toInstant());
+            
+            // For other profiles, we'll tell the client to refresh as needed
+            // but won't include the data since it could be large with many friends
+            return new CacheValidationResponseDTO(needsUpdate, null);
+            
+        } catch (Exception e) {
+            logger.error("Error validating other profiles cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+    
+    /**
+     * Validates the recommended friends cache.
+     */
+    private CacheValidationResponseDTO validateRecommendedFriendsCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+            
+            // Get the timestamp for latest friend activity (which affects recommendations)
+            Instant latestActivity = getLatestFriendActivity(user.getId());
+            
+            boolean needsUpdate = latestActivity.isAfter(clientTime.toInstant());
+            
+            if (needsUpdate) {
+                try {
+                    List<RecommendedFriendUserDTO> recommendedFriends = 
+                            userService.getLimitedRecommendedFriendsForUserId(user.getId());
+                    byte[] recommendedData = objectMapper.writeValueAsBytes(recommendedFriends);
+                    
+                    if (recommendedData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, recommendedData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize recommended friends data", e);
+                }
+                
+                return new CacheValidationResponseDTO(true, null);
+            }
+            
+            return new CacheValidationResponseDTO(false, null);
+            
+        } catch (Exception e) {
+            logger.error("Error validating recommended friends cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+    
+    /**
+     * Validates the friend requests cache.
+     */
+    private CacheValidationResponseDTO validateFriendRequestsCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+            
+            // Friend requests should always be fresh
+            // This data is critical for UX, so we'll typically invalidate with updated data
+            
+            try {
+                List<FetchFriendRequestDTO> friendRequests = 
+                        friendRequestService.getIncomingFetchFriendRequestsByUserId(user.getId());
+                byte[] requestsData = objectMapper.writeValueAsBytes(friendRequests);
+                
+                if (requestsData.length < 100_000) {
+                    return new CacheValidationResponseDTO(true, requestsData);
+                }
+            } catch (Exception e) {
+                logger.error("Failed to serialize friend requests data", e);
+            }
+            
+            return new CacheValidationResponseDTO(true, null);
+            
+        } catch (Exception e) {
+            logger.error("Error validating friend requests cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+    
+    /**
+     * Validates the user's tags cache.
+     */
+    private CacheValidationResponseDTO validateUserTagsCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+            
+            // Get latest tag modifications
+            Instant latestTagActivity = getLatestTagActivity(user.getId());
+            
+            boolean needsUpdate = latestTagActivity.isAfter(clientTime.toInstant());
+            
+            if (needsUpdate) {
+                try {
+                    List<FriendTagDTO> tags = friendTagService.getFriendTagsByOwnerId(user.getId());
+                    byte[] tagsData = objectMapper.writeValueAsBytes(tags);
+                    
+                    if (tagsData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, tagsData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize user tags data", e);
+                }
+                
+                return new CacheValidationResponseDTO(true, null);
+            }
+            
+            return new CacheValidationResponseDTO(false, null);
+            
+        } catch (Exception e) {
+            logger.error("Error validating user tags cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+    
+    /**
+     * Validates the cache for friends inside tags.
+     */
+    private CacheValidationResponseDTO validateTagFriendsCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+            
+            // Get latest friend-tag associations
+            Instant latestTagFriendActivity = getLatestTagFriendActivity(user.getId());
+            
+            boolean needsUpdate = latestTagFriendActivity.isAfter(clientTime.toInstant());
+            
+            // For tag friends, we'll tell the client to refresh as needed
+            // but won't include the data since there could be many tags with many friends
+            return new CacheValidationResponseDTO(needsUpdate, null);
+            
+        } catch (Exception e) {
+            logger.error("Error validating tag friends cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+    
+    /**
+     * Helper method to evict relevant caches for the blocked user
+     */
+    private void evictBlockedUserCaches(UUID userId) {
+        try {
+            logger.info("Evicting caches for user ID: " + userId + " after being blocked/unblocked");
+            
+            // Evict from recommended friends cache
+            Cache recommendedFriendsCache = cacheManager.getCache(RECOMMENDED_FRIENDS_CACHE);
+            if (recommendedFriendsCache != null) {
+                recommendedFriendsCache.evict(userId);
+                logger.debug("Evicted user {} from recommendedFriends cache", userId);
+            }
+            
+            // Evict from other profiles cache
+            Cache otherProfilesCache = cacheManager.getCache(OTHER_PROFILES_CACHE);
+            if (otherProfilesCache != null) {
+                otherProfilesCache.evict(userId);
+                logger.debug("Evicted user {} from otherProfiles cache", userId);
+            }
+            
+            // Evict from friends list cache
+            Cache friendsListCache = cacheManager.getCache(FRIENDS_CACHE);
+            if (friendsListCache != null) {
+                friendsListCache.evict(userId);
+                logger.debug("Evicted user {} from friends cache", userId);
+            }
+            
+            // Evict from user tags cache
+            Cache userTagsCache = cacheManager.getCache(USER_TAGS_CACHE);
+            if (userTagsCache != null) {
+                userTagsCache.evict(userId);
+                logger.debug("Evicted user {} from userTags cache", userId);
+            }
+            
+            // Evict from tag friends cache
+            Cache tagFriendsCache = cacheManager.getCache(TAG_FRIENDS_CACHE);
+            if (tagFriendsCache != null) {
+                tagFriendsCache.evict(userId);
+                logger.debug("Evicted user {} from tagFriends cache", userId);
+            }
+            
+            // Also evict the user from any events-related caches
+            Cache eventsCache = cacheManager.getCache(EVENTS_CACHE);
+            if (eventsCache != null) {
+                eventsCache.evict(userId);
+                logger.debug("Evicted user {} from events cache", userId);
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error evicting caches for blocked user: " + e.getMessage(), e);
+            // Don't throw here - this is a best-effort operation
+        }
+    }
+    
+    /**
      * Gets the timestamp of the latest friend-related activity for a user.
      * This includes friend requests, acceptances, and any profile updates of friends.
      */
