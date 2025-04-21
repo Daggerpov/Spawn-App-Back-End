@@ -84,32 +84,6 @@ The Spawn App iOS client implements a sophisticated caching mechanism to reduce 
 2. **Cache invalidation:** Checking with the backend to determine if cached data is stale
 3. **Push notifications:** Receiving real-time updates when relevant data changes
 
-### Components
-
-#### AppCache Singleton
-
-The `AppCache` class is a singleton that manages the client-side cache:
-
-- Stores cached data in memory using `@Published` properties for reactive SwiftUI updates
-- Persists cached data to disk using `UserDefaults`
-- Validates cache with backend on app launch
-- Provides methods to refresh different data collections
-
-Example of using the AppCache:
-
-```swift
-// Access cached friends in a view
-struct FriendsListView: View {
-    @EnvironmentObject var appCache: AppCache
-    
-    var body: some View {
-        List(appCache.friends) { friend in
-            FriendRow(friend: friend)
-        }
-    }
-}
-```
-
 #### Cache Validation API
 
 The app makes a request to `/api/v1/cache/validate/:userId` on startup, sending a list of cached items and their timestamps:
@@ -168,24 +142,6 @@ When these notifications are received, the app refreshes the relevant cached dat
 - **Bandwidth:** Reduced API calls
 - **Battery:** Less network activity
 - **Offline Use:** Basic functionality without network
-
-### Testing the Cache
-
-To verify the cache is working:
-
-1. Launch the app and navigate to a screen that displays cached data (e.g., friends list)
-2. Put the device in airplane mode
-3. Close and reopen the app
-4. The data should still be displayed, loaded from the cache
-
-### Cache Limitations
-
-The current implementation has some limitations:
-
-1. Cache is stored in `UserDefaults`, which has size limitations
-2. No encryption for cached data
-3. No automatic pruning of old cached data
-4. Limited offline editing capabilities
 
 ### Backend Implementation Requirements
 
