@@ -9,6 +9,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -42,4 +43,37 @@ public class Event implements Serializable {
     @JoinColumn(name = "creator_id", referencedColumnName = "id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User creator;
+    
+    @Column(name = "created_timestamp")
+    private Instant createdTimestamp;
+    
+    @Column(name = "updated_timestamp")
+    private Instant updatedTimestamp;
+    
+    @PrePersist
+    public void prePersist() {
+        if (this.createdTimestamp == null) {
+            this.createdTimestamp = Instant.now();
+        }
+        if (this.updatedTimestamp == null) {
+            this.updatedTimestamp = Instant.now();
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedTimestamp = Instant.now();
+    }
+    
+    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator) {
+        this.id = id;
+        this.title = title;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.location = location;
+        this.note = note;
+        this.creator = creator;
+        this.createdTimestamp = Instant.now();
+        this.updatedTimestamp = Instant.now();
+    }
 }
