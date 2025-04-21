@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.CacheValidationRequestDTO;
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
-import com.danielagapov.spawn.Services.ICacheService;
+import com.danielagapov.spawn.Services.Cache.ICacheService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
