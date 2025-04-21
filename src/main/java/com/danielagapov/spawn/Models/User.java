@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
@@ -45,9 +46,24 @@ public class User implements Serializable {
     private String password;
     private boolean verified;
     private Date dateCreated;
+    
+    @Column(name = "last_updated")
+    private Instant lastUpdated;
+    
     @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private NotificationPreferences notificationPreferences;
 
+    @PrePersist
+    public void prePersist() {
+        if (this.lastUpdated == null) {
+            this.lastUpdated = Instant.now();
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.lastUpdated = Instant.now();
+    }
 
     public User(UUID id, String username, String profilePictureUrlString, String firstName, String lastName, String bio, String email) {
         this.id = id;
@@ -57,5 +73,6 @@ public class User implements Serializable {
         this.lastName = lastName;
         this.bio = bio;
         this.email = email;
+        this.lastUpdated = Instant.now();
     }
 }
