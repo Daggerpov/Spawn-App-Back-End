@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Services;
+package com.danielagapov.spawn.Services.Cache;
 
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
 

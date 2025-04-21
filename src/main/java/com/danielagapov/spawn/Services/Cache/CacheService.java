@@ -1,7 +1,6 @@
-package com.danielagapov.spawn.Services;
+package com.danielagapov.spawn.Services.Cache;
 
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
-import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
@@ -16,7 +15,6 @@ import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Utils.LoggingUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -29,7 +27,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
