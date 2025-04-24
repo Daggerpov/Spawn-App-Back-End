@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import org.apache.commons.httpclient.HttpStatus;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,61 +28,57 @@ public class JWTFilterConfig extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        try {
-            // Retrieve the Authorization header from the HTTP request
-            String authHeader = request.getHeader("Authorization");
+        // Retrieve the Authorization header from the HTTP request
+        String authHeader = request.getHeader("Authorization");
 
-            // Check if the Authorization header is missing or does not start with "Bearer "
-            // If so, skip JWT validation and proceed with the next filter in the chain
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-            logger.info("Token found");
-
-            // Extract the JWT token from the Authorization header (removing the "Bearer " prefix)
-            String jwt = authHeader.substring(7);
-            String username;
-            try {
-                username = jwtService.extractUsername(jwt);
-            } catch (Exception e) {
-                logger.warn("Failed to extract username. Invalid or expired token");
-                throw e;
-            }
-
-            // Check if the username was successfully extracted and if the user is not already authenticated
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Load the UserDetails object for the extracted username using the UserInfoService
-                UserDetails userDetails = context.getBean(UserInfoService.class).loadUserByUsername(username);
-
-                // Validate the JWT token against the UserDetails
-                if (jwtService.isValidToken(jwt, userDetails)) {
-                    logger.info("Token is valid, setting authentication");
-
-                    /*
-                     * Create an authentication token containing the user details and authorities.
-                     * UsernamePasswordAuthenticationToken is a Spring Security authentication object
-                     * that represents a successfully authenticated user.
-                     * WebAuthenticationDetailsSource is used to build additional details about the authentication request
-                     * This includes information like the remote IP address
-                     */
-                    UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                    /*
-                     * Set the authentication in SecurityContextHolder so that Spring Security
-                     * recognizes the user as authenticated for the current request.
-                     */
-                    SecurityContextHolder.getContext().setAuthentication(token);
-                } else {
-                    logger.warn("Invalid token, user is not authenticated");
-                }
-            }
-            // Proceed with the next filter in the chain
+        // Check if the Authorization header is missing or does not start with "Bearer "
+        // If so, skip JWT validation and proceed with the next filter in the chain
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            logger.warn("Authentication failed");
-            response.sendError(HttpStatus.SC_UNAUTHORIZED);
+            return;
         }
+        logger.info("Token found");
+
+        // Extract the JWT token from the Authorization header (removing the "Bearer " prefix)
+        String jwt = authHeader.substring(7);
+        String username;
+        try {
+            username = jwtService.extractUsername(jwt);
+        } catch (Exception e) {
+            logger.warn("Failed to extract username. Invalid or expired token");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Check if the username was successfully extracted and if the user is not already authenticated
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // Load the UserDetails object for the extracted username using the UserInfoService
+            UserDetails userDetails = context.getBean(UserInfoService.class).loadUserByUsername(username);
+
+            // Validate the JWT token against the UserDetails
+            if (jwtService.isValidToken(jwt, userDetails)) {
+                logger.info("Token is valid, setting authentication");
+
+                /*
+                 * Create an authentication token containing the user details and authorities.
+                 * UsernamePasswordAuthenticationToken is a Spring Security authentication object
+                 * that represents a successfully authenticated user.
+                 * WebAuthenticationDetailsSource is used to build additional details about the authentication request
+                 * This includes information like the remote IP address
+                 */
+                UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                /*
+                 * Set the authentication in SecurityContextHolder so that Spring Security
+                 * recognizes the user as authenticated for the current request.
+                 */
+                SecurityContextHolder.getContext().setAuthentication(token);
+            } else {
+                logger.warn("Invalid token, user is not authenticated");
+            }
+        }
+        // Proceed with the next filter in the chain
+        filterChain.doFilter(request, response);
     }
 }
