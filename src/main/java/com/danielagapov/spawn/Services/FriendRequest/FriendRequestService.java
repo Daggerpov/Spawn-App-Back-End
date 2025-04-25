@@ -257,15 +257,28 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public Instant getLatestFriendRequestTimestamp(UUID userId) {
         try {
-            // This is a placeholder implementation that always returns current time
-            // In a real implementation, you would query the database for the latest timestamp
-            // of friend requests sent or received by this user
             logger.info("Getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId));
-            return Instant.now();
             
-            // TODO: Implement actual logic to retrieve the latest timestamp from the database
-            // This would require adding a timestamp field to the FriendRequest entity
-            // and adding a repository method to find the latest one
+            // First check incoming friend requests
+            Instant latestIncoming = repository.findTopByReceiverIdOrderByCreatedAtDesc(userId)
+                    .map(FriendRequest::getCreatedAt)
+                    .orElse(null);
+                    
+            // Then check outgoing friend requests
+            Instant latestOutgoing = repository.findTopBySenderIdOrderByCreatedAtDesc(userId)
+                    .map(FriendRequest::getCreatedAt)
+                    .orElse(null);
+            
+            // Return the most recent timestamp, or null if no requests exist
+            if (latestIncoming == null && latestOutgoing == null) {
+                return null;
+            } else if (latestIncoming == null) {
+                return latestOutgoing;
+            } else if (latestOutgoing == null) {
+                return latestIncoming;
+            } else {
+                return latestIncoming.isAfter(latestOutgoing) ? latestIncoming : latestOutgoing;
+            }
         } catch (Exception e) {
             logger.error("Error getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;

@@ -14,4 +14,8 @@ public interface IFriendRequestsRepository extends JpaRepository<FriendRequest, 
     List<FriendRequest> findBySenderId(UUID userId);
 
     List<FriendRequest> findBySenderIdAndReceiverId(UUID senderId, UUID receiverId);
+
+    java.util.Optional<FriendRequest> findTopByReceiverIdOrderByCreatedAtDesc(UUID receiverId);
+
+    java.util.Optional<FriendRequest> findTopBySenderIdOrderByCreatedAtDesc(UUID senderId);
 }

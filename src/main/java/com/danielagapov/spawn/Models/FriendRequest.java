@@ -43,4 +43,12 @@ public class FriendRequest implements Serializable {
     @JoinColumn(name = "receiver_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User receiver;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private java.time.Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = java.time.Instant.now();
+    }
 }
