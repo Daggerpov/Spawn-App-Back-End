@@ -38,7 +38,17 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.setAllowedOrigins(List.of("https://getspawn.com", "https://admin.getspawn.com", "http://localhost:3000")); // Add all frontend origins
+                    configuration.setAllowedOrigins(List.of(
+                            "https://getspawn.com", 
+                            "https://admin.getspawn.com", 
+                            "http://localhost:3000",
+                            "http://localhost:8080",
+                            "http://localhost:4200",
+                            "http://localhost:8100", // ionic default
+                            "http://127.0.0.1:3000",
+                            "http://127.0.0.1:8080",
+                            "capacitor://localhost"
+                    ));
                     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Content-Type", "Accept"));
                     configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
