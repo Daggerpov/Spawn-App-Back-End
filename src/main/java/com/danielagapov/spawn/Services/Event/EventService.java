@@ -335,9 +335,9 @@ public class EventService implements IEventService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventById", key = "#result.id"),
+            @CacheEvict(value = "eventById", key = "#id"),
             @CacheEvict(value = "fullEventById", allEntries = true),
-            @CacheEvict(value = "eventsByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "eventsByOwnerId", allEntries = true),
             @CacheEvict(value = "feedEvents", allEntries = true),
             @CacheEvict(value = "filteredFeedEvents", allEntries = true)
     })
