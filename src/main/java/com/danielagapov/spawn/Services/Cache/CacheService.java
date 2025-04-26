@@ -607,7 +607,7 @@ public class CacheService implements ICacheService {
      */
     private Instant getLatestTagFriendActivity(UUID userId) {
         try {
-            return userFriendTagRepository.findLatestTagFriendActivity(userId);
+            return userFriendTagRepository.findTopByFriendTag_OwnerIdOrderByLastUpdatedDesc(userId);
         } catch (Exception e) {
             logger.error("Error fetching latest tag-friend activity for user {}: {}", userId, e.getMessage(), e);
             return Instant.now();
