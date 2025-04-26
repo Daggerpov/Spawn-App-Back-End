@@ -38,11 +38,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    
-                    // DEBUG: Log the origin to identify what the iOS simulator is sending
-                    String origin = request.getHeader("Origin");
-                    System.out.println("Incoming request origin: " + origin);
-                    
+                    configuration.setAllowedOrigins(List.of("https://getspawn.com", "https://admin.getspawn.com", "http://localhost:3000")); // Add all frontend origins
                     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Content-Type", "Accept"));
                     configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
