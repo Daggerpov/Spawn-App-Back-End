@@ -39,7 +39,8 @@ public class FriendTagMapper {
                 dto.getDisplayName(),
                 dto.getColorHexCode(),
                 dto.getOwnerUserId(),
-                dto.isEveryone()
+                dto.isEveryone(),
+                null // lastModified will be set in the service
         );
     }
 
@@ -49,7 +50,8 @@ public class FriendTagMapper {
                 dto.getDisplayName(),
                 dto.getColorHexCode(),
                 dto.getOwnerUserId(),
-                false
+                false,
+                null // lastModified will be set in the service
         );
     }
 

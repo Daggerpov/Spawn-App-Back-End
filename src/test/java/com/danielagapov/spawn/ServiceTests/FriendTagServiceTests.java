@@ -70,7 +70,7 @@ public class FriendTagServiceTests {
     @Test
     void getFriendTagById_ShouldReturnFriendTag_WhenFriendTagExists() {
         UUID friendTagId = UUID.randomUUID();
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false, null);
 
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag));
         when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of());
@@ -126,7 +126,7 @@ public class FriendTagServiceTests {
         UUID friendTagId = UUID.randomUUID();
         UUID ownerId = UUID.randomUUID();
         FriendTagDTO newFriendTagDTO = new FriendTagDTO(friendTagId, "Updated Tag", "#000000", ownerId, List.of(), false);
-        FriendTag existingFriendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", ownerId, false);
+        FriendTag existingFriendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", ownerId, false, null);
 
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(existingFriendTag));
         when(friendTagRepository.save(any(FriendTag.class))).thenReturn(existingFriendTag);
@@ -160,7 +160,7 @@ public class FriendTagServiceTests {
         UUID friendTagId = UUID.randomUUID();
 
         // Create a FriendTag that is NOT an "Everyone" tag
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false, null);
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
         when(friendTagRepository.findById(friendTagId)).thenReturn(Optional.of(friendTag)); // Mocking retrieval
@@ -219,7 +219,7 @@ public class FriendTagServiceTests {
     void saveUserToFriendTag_ShouldThrowException_WhenDatabaseErrorOccurs() {
         UUID friendTagId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false, null);
         User user = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
@@ -255,7 +255,7 @@ public class FriendTagServiceTests {
         UUID userFriendTagId = UUID.randomUUID();
 
         // Create a FriendTag that is NOT an "Everyone" tag
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false, null);
         UserFriendTag userFriendTag = new UserFriendTag();
         userFriendTag.setId(userFriendTagId);
 
@@ -276,7 +276,7 @@ public class FriendTagServiceTests {
         UUID userFriendTagId = UUID.randomUUID();
 
         // Create a mock FriendTag that is NOT an "Everyone" tag
-        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false);
+        FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false, null);
         UserFriendTag userFriendTag = new UserFriendTag();
         userFriendTag.setId(userFriendTagId);
 
