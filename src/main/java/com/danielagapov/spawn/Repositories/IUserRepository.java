@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +43,9 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     @Query(value = "DELETE FROM user WHERE verified = false AND date_created <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
     int deleteAllExpiredUnverifiedUsers();
 
-    @Query("SELECT MAX(u.lastUpdated) FROM User u JOIN u.friends f WHERE f.id = :userId")
+    @Query(value = "SELECT MAX(u.last_updated) FROM user u " +
+            "JOIN user_friend_tag uft ON u.id = uft.friend_id " +
+            "JOIN friend_tag ft ON uft.tag_id = ft.id " +
+            "WHERE ft.owner_id = :userId AND ft.is_everyone = true", nativeQuery = true)
     Instant findLatestFriendProfileUpdate(@Param("userId") UUID userId);
 }

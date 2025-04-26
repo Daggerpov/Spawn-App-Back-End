@@ -45,8 +45,6 @@ public class UserService implements IUserService {
     private final IFriendTagService friendTagService;
     private final IFriendTagRepository friendTagRepository;
     private final IS3Service s3Service;
-    private final IFriendRequestService friendRequestService;
-    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
 
@@ -58,17 +56,13 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService,
-                       IFriendRequestService friendRequestService,
-                       IBlockedUserService blockedUserService) {
+                       UserSearchService userSearchService){
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
         this.friendTagService = friendTagService;
         this.friendTagRepository = friendTagRepository;
         this.s3Service = s3Service;
-        this.friendRequestService = friendRequestService;
-        this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.userSearchService = userSearchService;
     }
@@ -302,7 +296,7 @@ public class UserService implements IUserService {
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         try {
             // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-            Optional<FriendTag> optionalEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+            Optional<FriendTag> optionalEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(userId);
 
             if (optionalEveryoneTag.isEmpty()) {
                 return List.of(); // empty list of friends
@@ -334,11 +328,11 @@ public class UserService implements IUserService {
                 return;
             }
 
-            Optional<FriendTag> userEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(userId);
+            Optional<FriendTag> userEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(userId);
             userEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), friendId));
 
-            Optional<FriendTag> friendEveryoneTag = friendTagRepository.findEveryoneTagByOwnerId(friendId);
+            Optional<FriendTag> friendEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(friendId);
             friendEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), userId));
         } catch (Exception e) {

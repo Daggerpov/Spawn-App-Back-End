@@ -22,9 +22,9 @@ public interface IEventRepository extends JpaRepository<Event, UUID> {
 
     @Query("SELECT e FROM Event e " +
             "JOIN e.creator c " +
-            "JOIN UserFriendTag f ON f.friend.id = c.id " +  // Get friends of the friend tag owner
+            "JOIN UserFriendTag uft ON uft.friend.id = c.id " +  // Proper entity name
             "JOIN EventUser eu ON eu.event.id = e.id " +  // Get users invited to the event
-            "WHERE f.friendTag.id = :friendTagId " +
+            "WHERE uft.friendTag.id = :friendTagId " +
             "AND eu.user.id = :invitedUserId")
     List<Event> getEventsInvitedToWithFriendTagId(@Param("friendTagId") UUID friendTagId, @Param("invitedUserId") UUID invitedUserId);
 

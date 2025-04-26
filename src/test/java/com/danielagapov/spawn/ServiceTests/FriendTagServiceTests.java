@@ -341,7 +341,7 @@ public class FriendTagServiceTests {
 
         assertDoesNotThrow(() -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
 
-        verify(userFriendTagRepository, times(1)).deleteByFriendTagIdAndUserId(friendTagId, userId);
+        verify(userFriendTagRepository, times(1)).deleteByFriendTagIdAndFriendId(friendTagId, userId);
     }
 
     @Test
@@ -355,7 +355,7 @@ public class FriendTagServiceTests {
                 () -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
 
         assertEquals("FriendTag entity not found with ID: " + friendTagId, exception.getMessage());
-        verify(userFriendTagRepository, never()).deleteByFriendTagIdAndUserId(any(), any());
+        verify(userFriendTagRepository, never()).deleteByFriendTagIdAndFriendId(any(), any());
     }
 
     @Test
@@ -370,7 +370,7 @@ public class FriendTagServiceTests {
                 () -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
 
         assertEquals("User entity not found with ID: " + userId, exception.getMessage());
-        verify(userFriendTagRepository, never()).deleteByFriendTagIdAndUserId(any(), any());
+        verify(userFriendTagRepository, never()).deleteByFriendTagIdAndFriendId(any(), any());
     }
 
     @Test
@@ -381,12 +381,12 @@ public class FriendTagServiceTests {
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
         when(userRepository.existsById(userId)).thenReturn(true);
         doThrow(new DataAccessException("Database error") {
-        }).when(userFriendTagRepository).deleteByFriendTagIdAndUserId(friendTagId, userId);
+        }).when(userFriendTagRepository).deleteByFriendTagIdAndFriendId(friendTagId, userId);
 
         BaseSaveException exception = assertThrows(BaseSaveException.class,
                 () -> friendTagService.removeUserFromFriendTag(friendTagId, userId));
 
         assertTrue(exception.getMessage().contains("Failed to remove UserFriendTag (friend from friend tag)"));
-        verify(userFriendTagRepository, times(1)).deleteByFriendTagIdAndUserId(friendTagId, userId);
+        verify(userFriendTagRepository, times(1)).deleteByFriendTagIdAndFriendId(friendTagId, userId);
     }
 }
