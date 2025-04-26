@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,8 +40,8 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
      */
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM user WHERE verified = false AND date_created <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
-    int deleteAllExpiredUnverifiedUsers();
+    @Query("DELETE FROM User u WHERE u.verified = false AND u.dateCreated <= :expirationDate")
+    int deleteAllExpiredUnverifiedUsers(@Param("expirationDate") Instant expirationDate);
 
     @Query("SELECT MAX(u.lastUpdated) FROM User u JOIN u.friends f WHERE f.id = :userId")
     Instant findLatestFriendProfileUpdate(@Param("userId") UUID userId);

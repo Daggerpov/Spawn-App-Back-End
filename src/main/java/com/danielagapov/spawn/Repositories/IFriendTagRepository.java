@@ -14,16 +14,14 @@ import java.util.UUID;
 
 @Repository
 public interface IFriendTagRepository extends JpaRepository<FriendTag, UUID> {
-    // The JpaRepository interface already includes methods like save() and findById()
-    @Query("SELECT ft FROM FriendTag ft WHERE ft.ownerId = :ownerId")
-    List<FriendTag> findByOwnerId(@Param("ownerId") UUID ownerId);
+    List<FriendTag> findByOwnerId(UUID ownerId);
 
-    @Query("SELECT ft From FriendTag ft WHERE ft.ownerId = :ownerId AND ft.isEveryone = true")
-    Optional<FriendTag> findEveryoneTagByOwnerId(@Param("ownerId") UUID ownerId);
+    Optional<FriendTag> findByOwnerIdAndIsEveryoneTrue(UUID ownerId);
 
-    @Query("SELECT u FROM User u JOIN UserFriendTag uf ON uf.friend.id = u.id WHERE uf.friendTag.ownerId = :ownerId AND uf.friendTag.isEveryone = true AND u.id != :ownerId")
+    @Query("SELECT u FROM User u JOIN UserFriendTag uf ON u.id = uf.friend.id WHERE uf.friendTag.ownerId = :ownerId AND uf.friendTag.isEveryone = true AND u.id != :ownerId")
     List<User> getFriendsFromEveryoneTagByOwnerId(@Param("ownerId") UUID ownerId);
 
+    // Spring Data JPA doesn't directly support aggregate functions in method names, so keeping JPQL
     @Query("SELECT MAX(ft.lastModified) FROM FriendTag ft WHERE ft.ownerId = :ownerId")
     Instant findLatestTagActivity(@Param("ownerId") UUID ownerId);
 }
