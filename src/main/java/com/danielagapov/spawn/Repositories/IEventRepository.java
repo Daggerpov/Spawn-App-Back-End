@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -26,4 +27,6 @@ public interface IEventRepository extends JpaRepository<Event, UUID> {
             "WHERE f.friendTag.id = :friendTagId " +
             "AND eu.user.id = :invitedUserId")
     List<Event> getEventsInvitedToWithFriendTagId(@Param("friendTagId") UUID friendTagId, @Param("invitedUserId") UUID invitedUserId);
+
+    Optional<Event> findTopByCreatorIdOrderByLastUpdatedDesc(UUID creatorId);
 }

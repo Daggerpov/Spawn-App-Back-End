@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -249,6 +250,37 @@ public class FriendRequestService implements IFriendRequestService {
             return dtos;
         } catch (Exception e) {
             logger.error("Error retrieving sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Instant getLatestFriendRequestTimestamp(UUID userId) {
+        try {
+            logger.info("Getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId));
+            
+            // First check incoming friend requests
+            Instant latestIncoming = repository.findTopByReceiverIdOrderByCreatedAtDesc(userId)
+                    .map(FriendRequest::getCreatedAt)
+                    .orElse(null);
+                    
+            // Then check outgoing friend requests
+            Instant latestOutgoing = repository.findTopBySenderIdOrderByCreatedAtDesc(userId)
+                    .map(FriendRequest::getCreatedAt)
+                    .orElse(null);
+            
+            // Return the most recent timestamp, or null if no requests exist
+            if (latestIncoming == null && latestOutgoing == null) {
+                return null;
+            } else if (latestIncoming == null) {
+                return latestOutgoing;
+            } else if (latestOutgoing == null) {
+                return latestIncoming;
+            } else {
+                return latestIncoming.isAfter(latestOutgoing) ? latestIncoming : latestOutgoing;
+            }
+        } catch (Exception e) {
+            logger.error("Error getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }

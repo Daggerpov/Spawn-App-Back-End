@@ -35,6 +35,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -338,9 +339,7 @@ public class EventService implements IEventService {
             @CacheEvict(value = "fullEventById", allEntries = true),
             @CacheEvict(value = "eventsByOwnerId", allEntries = true),
             @CacheEvict(value = "feedEvents", allEntries = true),
-            @CacheEvict(value = "filteredFeedEvents", allEntries = true),
-            @CacheEvict(value = "eventsInvitedTo", allEntries = true),
-            @CacheEvict(value = "fullEventsInvitedTo", allEntries = true)
+            @CacheEvict(value = "filteredFeedEvents", allEntries = true)
     })
     public boolean deleteEventById(UUID id) {
         if (!repository.existsById(id)) {
@@ -655,6 +654,42 @@ public class EventService implements IEventService {
         }
 
         return fullEvents;
+    }
+
+    @Override
+    public Instant getLatestCreatedEventTimestamp(UUID userId) {
+        try {
+            return repository.findTopByCreatorIdOrderByLastUpdatedDesc(userId)
+                    .map(Event::getLastUpdated)
+                    .orElse(null);
+        } catch (DataAccessException e) {
+            logger.error("Error fetching latest created event timestamp for user: " + userId + " - " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Instant getLatestInvitedEventTimestamp(UUID userId) {
+        try {
+            return eventUserRepository.findTopByUserIdAndStatusOrderByEventLastUpdatedDesc(userId, ParticipationStatus.invited)
+                    .map(eventUser -> eventUser.getEvent().getLastUpdated())
+                    .orElse(null);
+        } catch (DataAccessException e) {
+            logger.error("Error fetching latest invited event timestamp for user: " + userId + " - " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public Instant getLatestUpdatedEventTimestamp(UUID userId) {
+        try {
+            return eventUserRepository.findTopByUserIdAndStatusOrderByEventLastUpdatedDesc(userId, ParticipationStatus.participating)
+                    .map(eventUser -> eventUser.getEvent().getLastUpdated())
+                    .orElse(null);
+        } catch (DataAccessException e) {
+            logger.error("Error fetching latest updated event timestamp for user: " + userId + " - " + e.getMessage());
+            throw e;
+        }
     }
 
 }

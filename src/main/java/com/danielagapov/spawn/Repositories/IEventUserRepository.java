@@ -4,6 +4,8 @@ import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
 import com.danielagapov.spawn.Models.EventUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +25,7 @@ public interface IEventUserRepository extends JpaRepository<EventUser, EventUser
     List<EventUser> findEventsByEvent_IdAndStatus(UUID eventId, ParticipationStatus status);
 
     Optional<EventUser> findByEvent_IdAndUser_Id(UUID eventId, UUID userId);
+
+    @Query("SELECT eu FROM EventUser eu JOIN eu.event e WHERE eu.user.id = :userId AND eu.status = :status ORDER BY e.lastUpdated DESC")
+    Optional<EventUser> findTopByUserIdAndStatusOrderByEventLastUpdatedDesc(@Param("userId") UUID userId, @Param("status") ParticipationStatus status);
 }

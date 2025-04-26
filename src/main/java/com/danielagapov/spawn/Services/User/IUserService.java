@@ -8,6 +8,7 @@ import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,6 +54,14 @@ public interface IUserService {
     void saveFriendToUser(UUID userId, UUID friendId);
 
     List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId);
+
+    /**
+     * Gets the timestamp of the latest profile update from any of the user's friends.
+     * 
+     * @param userId The user ID to get the latest friend profile update for
+     * @return The timestamp of the latest friend profile update, or null if none found
+     */
+    Instant getLatestFriendProfileUpdateTimestamp(UUID userId);
 
     // For Events:
 

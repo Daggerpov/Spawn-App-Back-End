@@ -6,8 +6,10 @@ import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,4 +41,7 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     @Transactional
     @Query(value = "DELETE FROM user WHERE verified = false AND date_created <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
     int deleteAllExpiredUnverifiedUsers();
+
+    @Query("SELECT MAX(u.lastUpdated) FROM User u JOIN u.friends f WHERE f.id = :userId")
+    Instant findLatestFriendProfileUpdate(@Param("userId") UUID userId);
 }
