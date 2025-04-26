@@ -449,7 +449,7 @@ public class UserServiceTests {
         UUID userId = UUID.randomUUID();
         UUID friendId = UUID.randomUUID();
 
-        when(friendTagRepository.findEveryoneTagByOwnerId(any()))
+        when(friendTagRepository.findByOwnerIdAndIsEveryoneTrue(any()))
                 .thenReturn(Optional.empty());
 
         userService.saveFriendToUser(userId, friendId);

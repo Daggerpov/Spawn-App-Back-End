@@ -40,9 +40,12 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
      */
     @Modifying
     @Transactional
-    @Query("DELETE FROM User u WHERE u.verified = false AND u.dateCreated <= :expirationDate")
-    int deleteAllExpiredUnverifiedUsers(@Param("expirationDate") Instant expirationDate);
+    @Query(value = "DELETE FROM user WHERE verified = false AND date_created <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
+    int deleteAllExpiredUnverifiedUsers();
 
-    @Query("SELECT MAX(u.lastUpdated) FROM User u JOIN u.friends f WHERE f.id = :userId")
+    @Query(value = "SELECT MAX(u.last_updated) FROM user u " +
+            "JOIN user_friend_tag uft ON u.id = uft.friend_id " +
+            "JOIN friend_tag ft ON uft.tag_id = ft.id " +
+            "WHERE ft.owner_id = :userId AND ft.is_everyone = true", nativeQuery = true)
     Instant findLatestFriendProfileUpdate(@Param("userId") UUID userId);
 }

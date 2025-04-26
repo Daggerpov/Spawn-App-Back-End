@@ -225,7 +225,7 @@ public class FriendTagService implements IFriendTagService {
 
         try {
             // Remove the UserFriendTag entity
-            uftRepository.deleteByFriendTagIdAndUserId(id, userId);
+            uftRepository.deleteByFriendTagIdAndFriendId(id, userId);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to remove UserFriendTag (friend from friend tag)");
