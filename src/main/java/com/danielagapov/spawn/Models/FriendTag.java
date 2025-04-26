@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
 /*
@@ -32,4 +33,5 @@ public class FriendTag implements Serializable {
         private String colorHexCode;
         private UUID ownerId;
         private boolean isEveryone;
+        private Instant lastUpdated;
 }

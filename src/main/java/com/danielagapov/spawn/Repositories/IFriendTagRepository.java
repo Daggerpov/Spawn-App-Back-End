@@ -22,6 +22,6 @@ public interface IFriendTagRepository extends JpaRepository<FriendTag, UUID> {
     List<User> getFriendsFromEveryoneTagByOwnerId(@Param("ownerId") UUID ownerId);
 
     // Spring Data JPA doesn't directly support aggregate functions in method names, so keeping JPQL
-    @Query("SELECT MAX(ft.lastModified) FROM FriendTag ft WHERE ft.ownerId = :ownerId")
+    @Query("SELECT MAX(ft.lastUpdated) FROM FriendTag ft WHERE ft.ownerId = :ownerId")
     Instant findLatestTagActivity(@Param("ownerId") UUID ownerId);
 }

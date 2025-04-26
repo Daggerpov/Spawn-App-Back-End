@@ -23,6 +23,5 @@ public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, U
 
     boolean existsByFriendTagIdAndFriendId(UUID friendTagId, UUID friendId);
 
-    @Query("SELECT MAX(uft.lastModified) FROM UserFriendTag uft WHERE uft.friendTag.ownerId = :ownerId")
-    Instant findLatestTagFriendActivity(@Param("ownerId") UUID ownerId);
+    Instant findTopByFriendTag_OwnerIdOrderByLastUpdatedDesc(UUID ownerId);
 }

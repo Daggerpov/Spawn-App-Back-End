@@ -124,6 +124,8 @@ public class FriendTagService implements IFriendTagService {
 
     private FriendTag saveFriendTagEntity(FriendTag friendTag) {
         try {
+            // Set the lastModified field to the current timestamp
+            friendTag.setLastUpdated(java.time.Instant.now());
             return repository.save(friendTag);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
@@ -140,10 +142,12 @@ public class FriendTagService implements IFriendTagService {
         return repository.findById(id).map(friendTag -> {
             friendTag.setColorHexCode(newFriendTag.getColorHexCode());
             friendTag.setDisplayName(newFriendTag.getDisplayName());
+            friendTag.setLastUpdated(java.time.Instant.now());
             repository.save(friendTag);
             return FriendTagMapper.toDTO(friendTag, newFriendTag.getOwnerUserId(), List.of());
         }).orElseGet(() -> {
             FriendTag friendTagEntity = FriendTagMapper.toEntity(newFriendTag);
+            friendTagEntity.setLastUpdated(java.time.Instant.now());
             repository.save(friendTagEntity);
             return FriendTagMapper.toDTO(friendTagEntity, newFriendTag.getOwnerUserId(), List.of());
         });

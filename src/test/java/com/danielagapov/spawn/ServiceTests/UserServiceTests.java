@@ -462,7 +462,7 @@ public class UserServiceTests {
         UUID userId = UUID.randomUUID();
 
         when(friendTagRepository.findByOwnerId(userId))
-                .thenReturn(List.of(new FriendTag(UUID.randomUUID(), "Test", "#000000", userId, false)));
+                .thenReturn(List.of(new FriendTag(UUID.randomUUID(), "Test", "#000000", userId, false, null)));
 
         List<UUID> result = userService.getFriendUserIdsByUserId(userId);
 
@@ -473,6 +473,6 @@ public class UserServiceTests {
 
     // Helper method to create an "Everyone" tag
     private FriendTag createEveryoneTag(UUID ownerId) {
-        return new FriendTag(UUID.randomUUID(), "Everyone", "#000000", ownerId, true);
+        return new FriendTag(UUID.randomUUID(), "Everyone", "#000000", ownerId, true, null);
     }
 }

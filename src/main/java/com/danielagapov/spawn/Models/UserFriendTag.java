@@ -9,6 +9,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
 /*
@@ -46,4 +47,6 @@ public class UserFriendTag implements Serializable {
     @JoinColumn(name = "friend_tag_id", referencedColumnName = "id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private FriendTag friendTag;
+    
+    private Instant lastUpdated;
 }
