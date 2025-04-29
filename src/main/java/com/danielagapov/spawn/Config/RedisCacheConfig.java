@@ -17,9 +17,9 @@ public class RedisCacheConfig {
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Set default TTL of 10 minutes
+        // Set default TTL of 100 minutes
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10));
+                .entryTtl(Duration.ofMinutes(100));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)

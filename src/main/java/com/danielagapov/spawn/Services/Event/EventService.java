@@ -389,7 +389,8 @@ public class EventService implements IEventService {
             @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
-            @CacheEvict(value = "feedEvents", key = "#userId")
+            @CacheEvict(value = "feedEvents", key = "#userId"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#userId")
     })
     public boolean inviteUser(UUID eventId, UUID userId) {
         EventUsersId compositeId = new EventUsersId(eventId, userId);
@@ -427,7 +428,8 @@ public class EventService implements IEventService {
             @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
-            @CacheEvict(value = "feedEvents", key = "#userId")
+            @CacheEvict(value = "feedEvents", key = "#userId"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#userId")
     })
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
         EventUser eventUser = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.EventUser));
