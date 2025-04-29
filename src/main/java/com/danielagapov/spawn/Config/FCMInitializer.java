@@ -12,9 +12,15 @@ import java.io.IOException;
 
 @Configuration
 public class FCMInitializer {
+    private final ILogger logger;
+
+    public FCMInitializer(ILogger logger) {
+        this.logger = logger;
+    }
+
 
     @PostConstruct
-    public void initialize(ILogger logger) {
+    public void initialize() {
         try {
             String credentials = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
             FirebaseOptions options = FirebaseOptions.builder()
