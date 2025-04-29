@@ -20,10 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -36,29 +32,29 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(request -> {
-                    CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.setAllowedOrigins(List.of(
-                            "https://getspawn.com",
-                            "https://admin.getspawn.com",
-                            "http://localhost:3000",
-                            "http://localhost:8080",
-                            "http://localhost:4200",
-                            "http://localhost:8100", // ionic default
-                            "http://127.0.0.1:3000",
-                            "http://127.0.0.1:8080",
-                            "capacitor://localhost"
-                    ));
-
-                    // DEBUG: Log the origin to identify what the iOS simulator is sending
-                    String origin = request.getHeader("Origin");
-                    System.out.println("Incoming request origin: " + origin);
-                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    configuration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Content-Type", "Accept"));
-                    configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
-                    configuration.setAllowCredentials(true);
-                    return configuration;
-                }))
+//                .cors(cors -> cors.configurationSource(request -> {
+//                    CorsConfiguration configuration = new CorsConfiguration();
+//                    configuration.setAllowedOrigins(List.of(
+//                            "https://getspawn.com",
+//                            "https://admin.getspawn.com",
+//                            "http://localhost:3000",
+//                            "http://localhost:8080",
+//                            "http://localhost:4200",
+//                            "http://localhost:8100", // ionic default
+//                            "http://127.0.0.1:3000",
+//                            "http://127.0.0.1:8080",
+//                            "capacitor://localhost"
+//                    ));
+//
+//                    // DEBUG: Log the origin to identify what the iOS simulator is sending
+//                    String origin = request.getHeader("Origin");
+//                    System.out.println("Incoming request origin: " + origin);
+//                    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+//                    configuration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Content-Type", "Accept"));
+//                    configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
+//                    configuration.setAllowCredentials(true);
+//                    return configuration;
+//                }))
                 .csrf(AbstractHttpConfigurer::disable)
                 // Endpoints can be made unsecured by specifying it with requestMatchers() below and permitting
                 // that be accessed without authentication with permitAll().
