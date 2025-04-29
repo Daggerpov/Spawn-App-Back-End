@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
+import com.danielagapov.spawn.Services.PushNotification.FCMService;
 import com.danielagapov.spawn.Services.PushNotification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,10 +16,12 @@ import java.util.UUID;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final FCMService fcmService;
 
     @Autowired
-    public NotificationController(NotificationService notificationService) {
+    public NotificationController(NotificationService notificationService, FCMService fcmService) {
         this.notificationService = notificationService;
+        this.fcmService = fcmService;
     }
 
     // full path: /api/v1/notifications/device-tokens/register
@@ -44,7 +47,7 @@ public class NotificationController {
                     .body("Error unregistering device token: " + e.getMessage());
         }
     }
-    
+
     // full path: /api/v1/notifications/preferences/{userId}
     @GetMapping("/preferences/{userId}")
     public ResponseEntity<?> getNotificationPreferences(@PathVariable UUID userId) {
@@ -68,12 +71,24 @@ public class NotificationController {
             if (!userId.equals(preferencesDTO.getUserId())) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            
+
             NotificationPreferencesDTO savedPreferences = notificationService.saveNotificationPreferences(preferencesDTO);
             return new ResponseEntity<>(savedPreferences, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating notification preferences: " + e.getMessage());
+        }
+    }
+
+    // full path: /api/v1/notifications
+    @GetMapping("/notification")
+    public ResponseEntity<?> testNotification(@RequestParam String deviceToken) {
+        try {
+            fcmService.sendMessageToToken(deviceToken, "Test", "This is a test notification sent from Spawn Backend", null);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 } 
