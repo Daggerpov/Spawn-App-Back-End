@@ -64,9 +64,9 @@ public class SecurityConfig {
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/**", "/api/v1/notifications/notification").permitAll()
-                        .anyRequest()
-                        .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
+                                .requestMatchers("/api/v1/auth/**", "/api/v1/notifications/notification").permitAll()
+                        //.anyRequest()
+                        //.authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
                 )
                 // When authenticating a request fails, status code 401 (unauthorized) is returned
                 .exceptionHandling(e -> e
