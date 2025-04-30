@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
 import com.danielagapov.spawn.Services.PushNotification.FCMService;
 import com.danielagapov.spawn.Services.PushNotification.NotificationService;
+import com.danielagapov.spawn.Services.PushNotification.NotificationVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -81,10 +82,11 @@ public class NotificationController {
     }
 
     // full path: /api/v1/notifications
+    @Deprecated(since = "for testing purposes")
     @GetMapping("/notification")
     public ResponseEntity<?> testNotification(@RequestParam String deviceToken) {
         try {
-            fcmService.sendMessageToToken(deviceToken, "Test", "This is a test notification sent from Spawn Backend", null);
+            fcmService.sendMessageToToken(new NotificationVO(deviceToken, "Test", "This is a test notification sent from Spawn Backend", null));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
