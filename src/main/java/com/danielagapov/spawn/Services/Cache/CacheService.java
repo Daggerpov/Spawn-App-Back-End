@@ -112,6 +112,21 @@ public class CacheService implements ICacheService {
         
         logger.info("Validating cache for user: " + LoggingUtils.formatUserInfo(user));
         
+        // Handle null clientCacheTimestamps
+        if (clientCacheTimestamps == null) {
+            logger.warn("Client cache timestamps is null for user: {}", userId);
+            // Return response with all caches marked as needing refresh
+            response.put(FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(EVENTS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(PROFILE_PICTURE_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(OTHER_PROFILES_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(RECOMMENDED_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(FRIEND_REQUESTS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(USER_TAGS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(TAG_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
+            return response;
+        }
+        
         // Validate friends cache
         if (clientCacheTimestamps.containsKey(FRIENDS_CACHE)) {
             response.put(FRIENDS_CACHE, validateFriendsCache(user, clientCacheTimestamps.get(FRIENDS_CACHE)));
@@ -460,7 +475,50 @@ public class CacheService implements ICacheService {
         }
     }
     
-   
+    /**
+     * Validates the cache for friends associated with specific tags.
+     */
+    private CacheValidationResponseDTO validateTagFriendsCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+            
+            // Get latest tag-friend activity timestamp
+            Instant latestTagFriendActivity = getLatestTagFriendActivity(user.getId());
+            
+            boolean needsUpdate = latestTagFriendActivity.isAfter(clientTime.toInstant());
+            
+            if (needsUpdate) {
+                try {
+                    // Get the tag-friends data
+                    List<FriendTagDTO> tags = friendTagService.getFriendTagsByOwnerId(user.getId());
+                    Map<UUID, List<UUID>> tagFriendsMap = new HashMap<>();
+                    
+                    // For each tag, get the friends associated with it
+                    for (FriendTagDTO tag : tags) {
+                        List<UUID> friendsInTag = friendTagService.getFriendIdsByTagId(tag.getId());
+                        tagFriendsMap.put(tag.getId(), friendsInTag);
+                    }
+                    
+                    byte[] tagFriendsData = objectMapper.writeValueAsBytes(tagFriendsMap);
+                    
+                    if (tagFriendsData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, tagFriendsData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize tag-friends data", e);
+                }
+                
+                return new CacheValidationResponseDTO(true, null);
+            }
+            
+            return new CacheValidationResponseDTO(false, null);
+            
+        } catch (Exception e) {
+            logger.error("Error validating tag-friends cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
     
     /**
      * Gets the timestamp of the latest friend-related activity for a user.
