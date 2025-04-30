@@ -241,12 +241,10 @@ public class FriendRequestService implements IFriendRequestService {
     public List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
         try {
             User user = userService.getUserEntityById(userId);
-            logger.info("Getting sent friend requests for user: " + LoggingUtils.formatUserInfo(user));
             
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
             List<CreateFriendRequestDTO> dtos = FriendRequestMapper.toDTOList(friendRequests);
             
-            logger.info("Found " + dtos.size() + " sent friend requests for user: " + LoggingUtils.formatUserInfo(user));
             return dtos;
         } catch (Exception e) {
             logger.error("Error retrieving sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
