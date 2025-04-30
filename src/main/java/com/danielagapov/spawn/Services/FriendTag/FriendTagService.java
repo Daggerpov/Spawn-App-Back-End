@@ -361,4 +361,23 @@ public class FriendTagService implements IFriendTagService {
             saveUserToFriendTag(friendTagId, friendUserId);
         }
     }
+
+    @Override
+    public List<UUID> getFriendIdsByTagId(UUID tagId) {
+        try {
+            // Check if the tag exists
+            if (!repository.existsById(tagId)) {
+                throw new BaseNotFoundException(EntityType.FriendTag, tagId);
+            }
+            
+            // Use the repository method to get friend IDs directly
+            return uftRepository.findFriendIdsByTagId(tagId);
+        } catch (DataAccessException e) {
+            logger.error("Database error retrieving friend IDs for tag " + tagId + ": " + e.getMessage());
+            throw new RuntimeException("Error retrieving friend IDs", e);
+        } catch (Exception e) {
+            logger.error("Error retrieving friend IDs for tag " + tagId + ": " + e.getMessage());
+            throw e;
+        }
+    }
 }
