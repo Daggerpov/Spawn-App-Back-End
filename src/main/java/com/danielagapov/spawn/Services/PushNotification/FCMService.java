@@ -19,6 +19,13 @@ public class FCMService {
         this.logger = logger;
     }
 
+    /**
+     * Sends a push notification to a specific device using its FCM token.
+     *
+     * @param notification the notification payload including title, message, device token, and custom data
+     * @throws InterruptedException if the async FCM call is interrupted
+     * @throws ExecutionException   if the FCM send fails
+     */
     public void sendMessageToToken(NotificationVO notification)
             throws InterruptedException, ExecutionException {
         Message messageToSend = getPreconfiguredMessageToToken(notification);
@@ -28,17 +35,37 @@ public class FCMService {
         logger.info("Sent message to token. Device token: " + notification.getDeviceToken() + ", " + response + " msg " + jsonOutput);
     }
 
+
+    /**
+     * Sends the message asynchronously using FirebaseMessaging and returns the message ID.
+     *
+     * @param message the FCM message to send
+     * @return the message ID returned by FCM
+     */
     private String sendAndGetResponse(Message message) throws InterruptedException, ExecutionException {
         return FirebaseMessaging.getInstance().sendAsync(message).get();
     }
 
+    /**
+     * Builds the APNs (Apple Push Notification Service) configuration for iOS devices.
+     *
+     * @param topic the iOS topic, usually the app bundle ID
+     * @return the APNs configuration
+     */
     private ApnsConfig getApnsConfig(String topic) {
         return ApnsConfig.builder()
                 .setAps(Aps.builder().setCategory(topic).setThreadId(topic).build()).build();
     }
 
+
+    /**
+     * Builds the Android-specific notification configuration.
+     *
+     * @param topic a tag or category to associate with the Android notification
+     * @return the Android configuration
+     */
     private AndroidConfig getAndroidConfig(String topic) {
-        // To fully implement later
+        // To fully implement later -- e.g. extending this with priority, TTL, sound, etc., as needed
         return AndroidConfig.builder()
                 .setNotification(
                         AndroidNotification.builder()
@@ -47,6 +74,13 @@ public class FCMService {
                 .build();
     }
 
+
+    /**
+     * Builds the complete FCM message targeting a single device, including data and platform-specific settings.
+     *
+     * @param notification the notification value object
+     * @return a fully built FCM Message object
+     */
     private Message getPreconfiguredMessageToToken(NotificationVO notification) {
         return getPreconfiguredMessageBuilder(notification)
                 .setToken(notification.getDeviceToken())
@@ -54,6 +88,13 @@ public class FCMService {
                 .build();
     }
 
+    /**
+     * Constructs the base message builder with title, body, and platform configs (iOS and Android).
+     * FCM automatically applies the correct config based on the device token's platform.
+     *
+     * @param notificationVO the notification payload
+     * @return a preconfigured Message.Builder
+     */
     private Message.Builder getPreconfiguredMessageBuilder(NotificationVO notificationVO) {
         ApnsConfig apnsConfig = getApnsConfig(appBundleId);
         AndroidConfig androidConfig = getAndroidConfig("android");
