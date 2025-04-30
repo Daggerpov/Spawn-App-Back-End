@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.Models.User;
@@ -261,8 +261,9 @@ public class CacheService implements ICacheService {
                 
                 if (needsUpdate) {
                     try {
-                        BaseUserDTO userProfile = userService.getBaseUserById(user.getId());
-                        byte[] profileData = objectMapper.writeValueAsBytes(userProfile);
+                        // Just cache the profile picture data instead of the entire BaseUserDTO
+                        String profilePicture = user.getProfilePictureUrlString();
+                        byte[] profileData = objectMapper.writeValueAsBytes(profilePicture);
                         
                         if (profileData.length < 100_000) {
                             return new CacheValidationResponseDTO(true, profileData);
@@ -279,8 +280,9 @@ public class CacheService implements ICacheService {
                 // If lastUpdated is null (shouldn't happen with new entities but could with existing ones),
                 // conservatively return the current profile data
                 try {
-                    BaseUserDTO userProfile = userService.getBaseUserById(user.getId());
-                    byte[] profileData = objectMapper.writeValueAsBytes(userProfile);
+                    // Just cache the profile picture data instead of the entire BaseUserDTO
+                    String profilePicture = user.getProfilePictureUrlString();
+                    byte[] profileData = objectMapper.writeValueAsBytes(profilePicture);
                     
                     if (profileData.length < 100_000) {
                         return new CacheValidationResponseDTO(true, profileData);
@@ -310,8 +312,32 @@ public class CacheService implements ICacheService {
             
             boolean needsUpdate = latestFriendProfileUpdate.isAfter(clientTime.toInstant());
             
-            // For other profiles, we'll tell the client to refresh as needed
-            // but won't include the data since it could be large with many friends
+            if (needsUpdate) {
+                try {
+                    // Get friend user IDs
+                    List<UUID> friendIds = userService.getFriendUserIdsByUserId(user.getId());
+                    
+                    if (friendIds != null && !friendIds.isEmpty()) {
+                        // Create a map of user IDs to profile picture URLs
+                        Map<UUID, String> friendProfilePictures = new HashMap<>();
+                        for (UUID friendId : friendIds) {
+                            User friend = userRepository.findById(friendId).orElse(null);
+                            if (friend != null) {
+                                friendProfilePictures.put(friendId, friend.getProfilePictureUrlString());
+                            }
+                        }
+                        
+                        byte[] profilePicturesData = objectMapper.writeValueAsBytes(friendProfilePictures);
+                        
+                        if (profilePicturesData.length < 100_000) {
+                            return new CacheValidationResponseDTO(true, profilePicturesData);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize other profile pictures data", e);
+                }
+            }
+            
             return new CacheValidationResponseDTO(needsUpdate, null);
             
         } catch (Exception e) {
@@ -396,15 +422,25 @@ public class CacheService implements ICacheService {
             // Parse the client timestamp
             ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
             
-            // Get latest tag modifications
+            // Get latest tag modifications - need to consider both tag and tag-friend activities
             Instant latestTagActivity = getLatestTagActivity(user.getId());
+            Instant latestTagFriendActivity = getLatestTagFriendActivity(user.getId());
             
-            boolean needsUpdate = latestTagActivity.isAfter(clientTime.toInstant());
+            // Use the most recent activity timestamp
+            Instant latestActivity = latestTagActivity.isAfter(latestTagFriendActivity) ? 
+                                    latestTagActivity : latestTagFriendActivity;
+            
+            boolean needsUpdate = latestActivity.isAfter(clientTime.toInstant());
             
             if (needsUpdate) {
                 try {
+                    // Get the FriendTagDTOs
                     List<FriendTagDTO> tags = friendTagService.getFriendTagsByOwnerId(user.getId());
-                    byte[] tagsData = objectMapper.writeValueAsBytes(tags);
+                    
+                    // Convert to FullFriendTagDTOs with embedded friend data
+                    List<FullFriendTagDTO> fullTags = friendTagService.convertFriendTagsToFullFriendTags(tags);
+                    
+                    byte[] tagsData = objectMapper.writeValueAsBytes(fullTags);
                     
                     if (tagsData.length < 100_000) {
                         return new CacheValidationResponseDTO(true, tagsData);
@@ -424,83 +460,7 @@ public class CacheService implements ICacheService {
         }
     }
     
-    /**
-     * Validates the cache for friends inside tags.
-     */
-    private CacheValidationResponseDTO validateTagFriendsCache(User user, String clientTimestamp) {
-        try {
-            // Parse the client timestamp
-            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
-            
-            // Get latest friend-tag associations
-            Instant latestTagFriendActivity = getLatestTagFriendActivity(user.getId());
-            
-            boolean needsUpdate = latestTagFriendActivity.isAfter(clientTime.toInstant());
-            
-            // For tag friends, we'll tell the client to refresh as needed
-            // but won't include the data since there could be many tags with many friends
-            return new CacheValidationResponseDTO(needsUpdate, null);
-            
-        } catch (Exception e) {
-            logger.error("Error validating tag friends cache for user {}: {}", user.getId(), e.getMessage());
-            return new CacheValidationResponseDTO(true, null);
-        }
-    }
-    
-    /**
-     * Helper method to evict relevant caches for the blocked user
-     */
-    private void evictBlockedUserCaches(UUID userId) {
-        try {
-            logger.info("Evicting caches for user ID: " + userId + " after being blocked/unblocked");
-            
-            // Evict from recommended friends cache
-            Cache recommendedFriendsCache = cacheManager.getCache(RECOMMENDED_FRIENDS_CACHE);
-            if (recommendedFriendsCache != null) {
-                recommendedFriendsCache.evict(userId);
-                logger.debug("Evicted user {} from recommendedFriends cache", userId);
-            }
-            
-            // Evict from other profiles cache
-            Cache otherProfilesCache = cacheManager.getCache(OTHER_PROFILES_CACHE);
-            if (otherProfilesCache != null) {
-                otherProfilesCache.evict(userId);
-                logger.debug("Evicted user {} from otherProfiles cache", userId);
-            }
-            
-            // Evict from friends list cache
-            Cache friendsListCache = cacheManager.getCache(FRIENDS_CACHE);
-            if (friendsListCache != null) {
-                friendsListCache.evict(userId);
-                logger.debug("Evicted user {} from friends cache", userId);
-            }
-            
-            // Evict from user tags cache
-            Cache userTagsCache = cacheManager.getCache(USER_TAGS_CACHE);
-            if (userTagsCache != null) {
-                userTagsCache.evict(userId);
-                logger.debug("Evicted user {} from userTags cache", userId);
-            }
-            
-            // Evict from tag friends cache
-            Cache tagFriendsCache = cacheManager.getCache(TAG_FRIENDS_CACHE);
-            if (tagFriendsCache != null) {
-                tagFriendsCache.evict(userId);
-                logger.debug("Evicted user {} from tagFriends cache", userId);
-            }
-            
-            // Also evict the user from any events-related caches
-            Cache eventsCache = cacheManager.getCache(EVENTS_CACHE);
-            if (eventsCache != null) {
-                eventsCache.evict(userId);
-                logger.debug("Evicted user {} from events cache", userId);
-            }
-            
-        } catch (Exception e) {
-            logger.error("Error evicting caches for blocked user: " + e.getMessage(), e);
-            // Don't throw here - this is a best-effort operation
-        }
-    }
+   
     
     /**
      * Gets the timestamp of the latest friend-related activity for a user.
