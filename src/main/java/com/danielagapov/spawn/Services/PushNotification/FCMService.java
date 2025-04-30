@@ -7,12 +7,11 @@ import com.google.gson.GsonBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @Service
 public class FCMService {
-    private ILogger logger;
+    private final ILogger logger;
     @Value("${apns.bundle.id}")
     private String appBundleId;
 
@@ -20,13 +19,13 @@ public class FCMService {
         this.logger = logger;
     }
 
-    public void sendMessageToToken(String deviceToken, String title, String message, Map<String, String> data)
+    public void sendMessageToToken(NotificationVO notification)
             throws InterruptedException, ExecutionException {
-        Message messageToSend = getPreconfiguredMessageToToken(deviceToken, title, message, data);
+        Message messageToSend = getPreconfiguredMessageToToken(notification);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String jsonOutput = gson.toJson(messageToSend);
         String response = sendAndGetResponse(messageToSend);
-        logger.info("Sent message to token. Device token: " + deviceToken + ", " + response + " msg " + jsonOutput);
+        logger.info("Sent message to token. Device token: " + notification.getDeviceToken() + ", " + response + " msg " + jsonOutput);
     }
 
     private String sendAndGetResponse(Message message) throws InterruptedException, ExecutionException {
@@ -38,18 +37,33 @@ public class FCMService {
                 .setAps(Aps.builder().setCategory(topic).setThreadId(topic).build()).build();
     }
 
-    private Message getPreconfiguredMessageToToken(String deviceToken, String title, String message, Map<String, String> data) {
-        return getPreconfiguredMessageBuilder(deviceToken, title, message, data).setToken(deviceToken)
+    private AndroidConfig getAndroidConfig(String topic) {
+        // To fully implement later
+        return AndroidConfig.builder()
+                .setNotification(
+                        AndroidNotification.builder()
+                                .setTag(topic)
+                                .build())
                 .build();
     }
 
-    private Message.Builder getPreconfiguredMessageBuilder(String deviceToken, String title, String message, Map<String, String> data) {
+    private Message getPreconfiguredMessageToToken(NotificationVO notification) {
+        return getPreconfiguredMessageBuilder(notification)
+                .setToken(notification.getDeviceToken())
+                .putAllData(notification.getData())
+                .build();
+    }
+
+    private Message.Builder getPreconfiguredMessageBuilder(NotificationVO notificationVO) {
         ApnsConfig apnsConfig = getApnsConfig(appBundleId);
+        AndroidConfig androidConfig = getAndroidConfig("android");
         Notification notification = Notification.builder()
-                .setTitle(title)
-                .setBody(message)
+                .setTitle(notificationVO.getTitle())
+                .setBody(notificationVO.getMessage())
                 .build();
         return Message.builder()
-                .setApnsConfig(apnsConfig).setNotification(notification);
+                .setApnsConfig(apnsConfig)
+                .setAndroidConfig(androidConfig)
+                .setNotification(notification);
     }
 }
