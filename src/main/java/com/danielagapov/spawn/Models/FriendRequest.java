@@ -9,6 +9,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -44,11 +45,11 @@ public class FriendRequest implements Serializable {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User receiver;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private java.time.Instant createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private Instant createdAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = java.time.Instant.now();
+        createdAt = Instant.now();
     }
 }
