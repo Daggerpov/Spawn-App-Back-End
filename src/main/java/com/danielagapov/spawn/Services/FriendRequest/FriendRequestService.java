@@ -110,13 +110,9 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<CreateFriendRequestDTO> getIncomingCreateFriendRequestsByUserId(UUID id) {
         try {
-            User user = userService.getUserEntityById(id);
-            logger.info("Getting incoming create friend requests for user: " + LoggingUtils.formatUserInfo(user));
-            
             List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
             List<CreateFriendRequestDTO> result = FriendRequestMapper.toDTOList(friendRequests);
             
-            logger.info("Found " + result.size() + " incoming create friend requests for user: " + LoggingUtils.formatUserInfo(user));
             return result;
         } catch (Exception e) {
             logger.error("Error retrieving incoming create friend requests for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
@@ -126,12 +122,8 @@ public class FriendRequestService implements IFriendRequestService {
     
     public List<FriendRequest> getIncomingFriendRequestsByUserId(UUID id) {
         try {
-            User user = userService.getUserEntityById(id);
-            logger.info("Retrieving incoming friend requests for user: " + LoggingUtils.formatUserInfo(user));
-            
             List<FriendRequest> requests = repository.findByReceiverId(id);
             
-            logger.info("Found " + requests.size() + " incoming friend requests for user: " + LoggingUtils.formatUserInfo(user));
             return requests;
         } catch (DataAccessException e) {
             logger.error("Database access error while retrieving incoming friend requests for user: " + LoggingUtils.formatUserIdInfo(id));
