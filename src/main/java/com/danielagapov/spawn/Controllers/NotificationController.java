@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 @RestController
@@ -86,7 +87,7 @@ public class NotificationController {
     @GetMapping("/notification")
     public ResponseEntity<?> testNotification(@RequestParam String deviceToken) {
         try {
-            fcmService.sendMessageToToken(new NotificationVO(deviceToken, "Test", "This is a test notification sent from Spawn Backend", null));
+            fcmService.sendMessageToToken(new NotificationVO(deviceToken, "Test", "This is a test notification sent from Spawn Backend", new HashMap<>()));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
