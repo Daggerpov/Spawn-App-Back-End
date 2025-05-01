@@ -39,8 +39,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.setAllowedOrigins(List.of(
-                            "https://getspawn.com", 
-                            "https://admin.getspawn.com", 
+                            "https://getspawn.com",
+                            "https://admin.getspawn.com",
                             "http://localhost:3000",
                             "http://localhost:8080",
                             "http://localhost:4200",
@@ -64,7 +64,7 @@ public class SecurityConfig {
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/notifications/notification").permitAll()
                         .anyRequest()
                         .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
                 )
