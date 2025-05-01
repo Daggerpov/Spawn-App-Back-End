@@ -88,7 +88,6 @@ public class UserService implements IUserService {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
-            logger.info("Retrieved user: " + LoggingUtils.formatUserInfo(user));
 
             List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
 
@@ -106,7 +105,6 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
-            logger.info("Getting friend user IDs for user: " + LoggingUtils.formatUserIdInfo(id));
             // Get all friend tags for the user
             List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
 
@@ -133,7 +131,6 @@ public class UserService implements IUserService {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-            logger.info("Retrieved user entity: " + LoggingUtils.formatUserInfo(user));
             return user;
         } catch (Exception e) {
             logger.error("Error retrieving user entity: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
@@ -224,13 +221,10 @@ public class UserService implements IUserService {
     @Override
     public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
         try {
-            logger.info(String.format("Entering saveUserWithProfilePicture: {user: %s}", user));
             if (user.getProfilePicture() == null) {
-                logger.info("Profile picture is null, user either chose their profile picture or has default");
                 user = s3Service.putProfilePictureWithUser(profilePicture, user);
             }
             user = saveUser(user);
-            logger.info(String.format("Exiting saveUserWithProfilePicture: {user: %s}", user));
             return user;
         } catch (Exception e) {
             logger.error(e.getMessage());

@@ -47,6 +47,9 @@ public interface IFriendTagService {
 
     void addFriendToFriendTags(List<UUID> friendTagIds, UUID friendUserId);
 
+    // Get all friend IDs associated with a specific tag
+    List<UUID> getFriendIdsByTagId(UUID tagId);
+
     // full helpers:
     List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags);
 
