@@ -5,7 +5,7 @@ import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 
 import java.util.List;
 import java.util.Map;

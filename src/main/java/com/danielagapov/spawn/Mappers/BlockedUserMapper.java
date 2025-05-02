@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
-import com.danielagapov.spawn.Models.BlockedUser;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.BlockedUser;
+import com.danielagapov.spawn.Models.User.User;
 
 public class BlockedUserMapper {
 

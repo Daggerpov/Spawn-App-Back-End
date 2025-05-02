@@ -5,7 +5,7 @@ import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.EventUser;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
 
 import java.util.List;

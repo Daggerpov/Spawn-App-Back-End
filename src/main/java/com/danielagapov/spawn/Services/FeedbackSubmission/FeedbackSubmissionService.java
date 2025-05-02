@@ -9,16 +9,15 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FeedbackSubmissionMapper;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IFeedbackSubmissionRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

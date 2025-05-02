@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Models.FeedbackSubmission;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 
 import java.util.List;
 import java.util.Optional;

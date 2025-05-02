@@ -8,7 +8,7 @@ import com.danielagapov.spawn.Events.PushRegistrationNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.DeviceToken;
 import com.danielagapov.spawn.Models.NotificationPreferences;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IDeviceTokenRepository;
 import com.danielagapov.spawn.Repositories.INotificationPreferencesRepository;
 import com.danielagapov.spawn.Services.User.IUserService;

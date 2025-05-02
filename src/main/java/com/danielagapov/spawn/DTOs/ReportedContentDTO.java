@@ -4,7 +4,7 @@ import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
 import com.danielagapov.spawn.Enums.ResolutionStatus;
 import com.danielagapov.spawn.Models.ReportedContent;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
