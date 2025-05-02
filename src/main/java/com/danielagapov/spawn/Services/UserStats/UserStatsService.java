@@ -1,7 +1,9 @@
 package com.danielagapov.spawn.Services.UserStats;
 
 import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
@@ -34,7 +36,7 @@ public class UserStatsService implements IUserStatsService {
     @Override
     public UserStatsDTO getUserStats(UUID userId) {
         if (!userRepository.existsById(userId)) {
-            throw new RuntimeException("User not found with id: " + userId);
+            throw new BaseNotFoundException(EntityType.User, userId);
         }
 
         // Get events created by user

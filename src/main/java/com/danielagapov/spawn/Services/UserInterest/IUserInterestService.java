@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.UserInterest;
 
-import com.danielagapov.spawn.DTOs.User.Profile.CreateUserInterestDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserInterestDTO;
 
 import java.util.List;
@@ -10,14 +9,14 @@ public interface IUserInterestService {
     /**
      * Get all interests for a user
      * @param userId The ID of the user
-     * @return A list of user interests
+     * @return A list of user interest strings
      */
-    List<UserInterestDTO> getUserInterests(UUID userId);
+    List<String> getUserInterests(UUID userId);
 
     /**
      * Add a new interest for a user
-     * @param createUserInterestDTO DTO containing the user ID and interest
-     * @return The created user interest
+     * @param user id and interest name
+     * @return The created user interest string
      */
-    UserInterestDTO addUserInterest(CreateUserInterestDTO createUserInterestDTO);
+    String addUserInterest(UUID userId, String interestName);
 } 

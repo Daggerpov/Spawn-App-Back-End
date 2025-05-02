@@ -1,7 +1,5 @@
 package com.danielagapov.spawn.Services.UserInterest;
 
-import com.danielagapov.spawn.DTOs.User.Profile.CreateUserInterestDTO;
-import com.danielagapov.spawn.DTOs.User.Profile.UserInterestDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.User.Profile.UserInterest;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -26,29 +24,21 @@ public class UserInterestService implements IUserInterestService {
     }
 
     @Override
-    public List<UserInterestDTO> getUserInterests(UUID userId) {
+    public List<String> getUserInterests(UUID userId) {
         List<UserInterest> interests = userInterestRepository.findByUserId(userId);
         return interests.stream()
-                .map(interest -> new UserInterestDTO(
-                        interest.getId(),
-                        interest.getUser().getId(),
-                        interest.getInterest()
-                ))
+                .map(UserInterest::getInterest)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public UserInterestDTO addUserInterest(CreateUserInterestDTO createUserInterestDTO) {
-        User user = userRepository.findById(createUserInterestDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + createUserInterestDTO.getUserId()));
+    public String addUserInterest(UUID userId, String interestName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-        UserInterest userInterest = new UserInterest(user, createUserInterestDTO.getInterest());
+        UserInterest userInterest = new UserInterest(user, interestName);
         userInterest = userInterestRepository.save(userInterest);
 
-        return new UserInterestDTO(
-                userInterest.getId(),
-                userInterest.getUser().getId(),
-                userInterest.getInterest()
-        );
+        return userInterest.getInterest();
     }
 } 

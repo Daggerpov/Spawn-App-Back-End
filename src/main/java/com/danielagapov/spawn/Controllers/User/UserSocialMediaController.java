@@ -26,7 +26,7 @@ public class UserSocialMediaController {
         return ResponseEntity.ok(socialMedia);
     }
 
-    @PostMapping
+    @PutMapping
     public ResponseEntity<UserSocialMediaDTO> updateUserSocialMedia(
             @PathVariable UUID userId,
             @RequestBody UpdateUserSocialMediaDTO updateDTO) {
