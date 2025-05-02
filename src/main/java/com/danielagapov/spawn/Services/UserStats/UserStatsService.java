@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Services;
+package com.danielagapov.spawn.Services.UserStats;
 
 import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
-public class UserStatsService {
+public class UserStatsService implements IUserStatsService {
 
     private final IEventRepository eventRepository;
     private final IEventUserRepository eventUserRepository;
@@ -31,6 +31,7 @@ public class UserStatsService {
         this.userRepository = userRepository;
     }
 
+    @Override
     public UserStatsDTO getUserStats(UUID userId) {
         if (!userRepository.existsById(userId)) {
             throw new RuntimeException("User not found with id: " + userId);

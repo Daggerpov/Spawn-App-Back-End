@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Controllers.User;
 
-import com.danielagapov.spawn.DTOs.UpdateUserSocialMediaDTO;
-import com.danielagapov.spawn.DTOs.UserSocialMediaDTO;
-import com.danielagapov.spawn.Services.UserSocialMediaService;
+import com.danielagapov.spawn.DTOs.User.Profile.UpdateUserSocialMediaDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserSocialMediaDTO;
+import com.danielagapov.spawn.Services.UserSocialMedia.IUserSocialMediaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +13,10 @@ import java.util.UUID;
 @RequestMapping("/api/users/{userId}/social-media")
 public class UserSocialMediaController {
 
-    private final UserSocialMediaService userSocialMediaService;
+    private final IUserSocialMediaService userSocialMediaService;
 
     @Autowired
-    public UserSocialMediaController(UserSocialMediaService userSocialMediaService) {
+    public UserSocialMediaController(IUserSocialMediaService userSocialMediaService) {
         this.userSocialMediaService = userSocialMediaService;
     }
 

@@ -1,7 +1,7 @@
-package com.danielagapov.spawn.Services;
+package com.danielagapov.spawn.Services.UserSocialMedia;
 
-import com.danielagapov.spawn.DTOs.UpdateUserSocialMediaDTO;
-import com.danielagapov.spawn.DTOs.UserSocialMediaDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UpdateUserSocialMediaDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserSocialMediaDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.User.Profile.UserSocialMedia;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class UserSocialMediaService {
+public class UserSocialMediaService implements IUserSocialMediaService {
 
     private final IUserSocialMediaRepository userSocialMediaRepository;
     private final IUserRepository userRepository;
@@ -25,6 +25,7 @@ public class UserSocialMediaService {
         this.userRepository = userRepository;
     }
 
+    @Override
     public UserSocialMediaDTO getUserSocialMedia(UUID userId) {
         UserSocialMedia socialMedia = userSocialMediaRepository.findByUserId(userId)
                 .orElse(new UserSocialMedia());
@@ -32,6 +33,7 @@ public class UserSocialMediaService {
         return convertToDTO(socialMedia);
     }
 
+    @Override
     public UserSocialMediaDTO updateUserSocialMedia(UUID userId, UpdateUserSocialMediaDTO updateDTO) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));

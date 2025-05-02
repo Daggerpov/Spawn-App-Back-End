@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Controllers.User.Profile;
 
 import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
-import com.danielagapov.spawn.Services.UserStatsService;
+import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,10 +15,10 @@ import java.util.UUID;
 @RequestMapping("/api/users/{userId}/stats")
 public class UserStatsController {
 
-    private final UserStatsService userStatsService;
+    private final IUserStatsService userStatsService;
 
     @Autowired
-    public UserStatsController(UserStatsService userStatsService) {
+    public UserStatsController(IUserStatsService userStatsService) {
         this.userStatsService = userStatsService;
     }
 
