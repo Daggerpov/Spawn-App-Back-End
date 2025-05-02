@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Controllers.User.Profile;
 
-import com.danielagapov.spawn.DTOs.User.Profile.UserInterestDTO;
 import com.danielagapov.spawn.Services.UserInterest.IUserInterestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
