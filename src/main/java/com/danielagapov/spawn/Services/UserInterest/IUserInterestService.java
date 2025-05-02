@@ -1,7 +1,5 @@
 package com.danielagapov.spawn.Services.UserInterest;
 
-import com.danielagapov.spawn.DTOs.User.Profile.UserInterestDTO;
-
 import java.util.List;
 import java.util.UUID;
 
