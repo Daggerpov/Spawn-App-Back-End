@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs;
+package com.danielagapov.spawn.DTOs.User.Profile;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -2,10 +2,10 @@ package com.danielagapov.spawn.Services;
 
 import com.danielagapov.spawn.DTOs.UpdateUserSocialMediaDTO;
 import com.danielagapov.spawn.DTOs.UserSocialMediaDTO;
-import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Models.UserSocialMedia;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Repositories.IUserSocialMediaRepository;
+import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Models.User.Profile.UserSocialMedia;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.Profile.IUserSocialMediaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.Services;
 
-import com.danielagapov.spawn.DTOs.CreateUserInterestDTO;
-import com.danielagapov.spawn.DTOs.UserInterestDTO;
-import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Models.UserInterest;
-import com.danielagapov.spawn.Repositories.IUserRepository;
-import com.danielagapov.spawn.Repositories.UserInterestRepository;
+import com.danielagapov.spawn.DTOs.User.Profile.CreateUserInterestDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserInterestDTO;
+import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Models.User.Profile.UserInterest;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.Profile.UserInterestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

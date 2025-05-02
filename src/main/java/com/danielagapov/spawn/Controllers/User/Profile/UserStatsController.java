@@ -1,6 +1,6 @@
-package com.danielagapov.spawn.Controllers;
+package com.danielagapov.spawn.Controllers.User.Profile;
 
-import com.danielagapov.spawn.DTOs.UserStatsDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
 import com.danielagapov.spawn.Services.UserStatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

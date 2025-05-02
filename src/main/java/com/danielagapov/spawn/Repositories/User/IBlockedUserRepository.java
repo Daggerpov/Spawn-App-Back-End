@@ -1,6 +1,6 @@
-package com.danielagapov.spawn.Repositories;
+package com.danielagapov.spawn.Repositories.User;
 
-import com.danielagapov.spawn.Models.BlockedUser;
+import com.danielagapov.spawn.Models.User.BlockedUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

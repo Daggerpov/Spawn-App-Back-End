@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.User.UserService;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.stereotype.Service;

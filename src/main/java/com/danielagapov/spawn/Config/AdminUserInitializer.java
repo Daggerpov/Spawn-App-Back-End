@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Config;
 
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.User;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;

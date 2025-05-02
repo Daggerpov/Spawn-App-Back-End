@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.Services;
 
-import com.danielagapov.spawn.DTOs.UserStatsDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class UserStatsService {

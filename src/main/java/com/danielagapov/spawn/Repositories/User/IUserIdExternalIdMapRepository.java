@@ -1,6 +1,6 @@
-package com.danielagapov.spawn.Repositories;
+package com.danielagapov.spawn.Repositories.User;
 
-import com.danielagapov.spawn.Models.UserIdExternalIdMap;
+import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

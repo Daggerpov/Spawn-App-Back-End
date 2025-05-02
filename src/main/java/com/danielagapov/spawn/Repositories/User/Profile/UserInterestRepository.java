@@ -1,6 +1,6 @@
-package com.danielagapov.spawn.Repositories;
+package com.danielagapov.spawn.Repositories.User.Profile;
 
-import com.danielagapov.spawn.Models.UserInterest;
+import com.danielagapov.spawn.Models.User.Profile.UserInterest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

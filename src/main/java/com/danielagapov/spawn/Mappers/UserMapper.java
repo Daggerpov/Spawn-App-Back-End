@@ -2,7 +2,7 @@ package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 
 import java.util.List;
 import java.util.Map;
