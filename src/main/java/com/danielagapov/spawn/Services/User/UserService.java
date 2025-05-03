@@ -26,15 +26,20 @@ import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import com.danielagapov.spawn.Utils.LoggingUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.function.Predicate.not;
+
+@Slf4j
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
@@ -54,7 +59,7 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService){
+                       UserSearchService userSearchService) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -103,21 +108,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
-            // Get all friend tags for the user
-            List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
-
-            // Get the "Everyone" tag
-            Optional<FriendTag> everyoneTag = friendTags.stream()
-                    .filter(FriendTag::isEveryone)
-                    .findFirst();
-
-            // If "Everyone" tag exists, get all friend IDs from it
-            if (everyoneTag.isPresent()) {
-                return uftRepository.findFriendIdsByTagId(everyoneTag.get().getId());
-            }
-
-            // If no "Everyone" tag, return empty list
-            return Collections.emptyList();
+            return uftRepository.findFriendIdsByUserId(id);
         } catch (Exception e) {
             logger.error("Error getting friend user IDs for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             throw e;
@@ -186,7 +177,7 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));
         } catch (DataAccessException e) {
             logger.error("Failed to save user: " + e.getMessage());
-            throw new BaseSaveException("Failed to save user: " + e.getMessage()); 
+            throw new BaseSaveException("Failed to save user: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error saving user: " + e.getMessage());
             throw e;
@@ -537,6 +528,24 @@ public class UserService implements IUserService {
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
         } catch (Exception e) {
             logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<BaseUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId) {
+        try {
+            final int limit = 10;
+            List<UUID> pastEventIds = eventUserRepository.findPastEventIdsForUser(requestingUserId, ParticipationStatus.participating, Limit.of(limit));
+            List<UUID> pastEventParticipantIds = eventUserRepository.findOtherUserIdsByEventIds(pastEventIds, requestingUserId, ParticipationStatus.participating);
+            Set<UUID> friendIds = new HashSet<>(getFriendUserIdsByUserId(requestingUserId));
+
+            return pastEventParticipantIds.stream()
+                    .filter(not(friendIds::contains))
+                    .map(this::getBaseUserById)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error fetching recently spawned-with users for user: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ". " + e.getMessage());
             throw e;
         }
     }

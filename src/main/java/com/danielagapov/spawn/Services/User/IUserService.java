@@ -57,7 +57,7 @@ public interface IUserService {
 
     /**
      * Gets the timestamp of the latest profile update from any of the user's friends.
-     * 
+     *
      * @param userId The user ID to get the latest friend profile update for
      * @return The timestamp of the latest friend profile update, or null if none found
      */
@@ -99,4 +99,6 @@ public interface IUserService {
      * Get the User entity by email
      */
     User getUserByEmail(String email);
+
+    List<BaseUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
 }

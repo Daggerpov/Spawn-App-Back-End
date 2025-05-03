@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Repositories;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
 import com.danielagapov.spawn.Models.EventUser;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,14 +16,30 @@ public interface IEventUserRepository extends JpaRepository<EventUser, EventUser
     List<EventUser> findByEvent_Id(UUID eventId);
 
     List<EventUser> findByUser_Id(UUID userId);
-    
+
     // Find event users by event ID and participation status
     List<EventUser> findByEvent_IdAndStatus(UUID eventId, ParticipationStatus status);
-    
+
     // Find event users by user ID and participation status
     List<EventUser> findByUser_IdAndStatus(UUID userId, ParticipationStatus status);
-    
+
     List<EventUser> findEventsByEvent_IdAndStatus(UUID eventId, ParticipationStatus status);
+
+//    @Query("SELECT eu.user FROM EventUser eu " +
+//            "WHERE eu.user.id != :userId " +
+//            "AND eu.status = :status " +
+//            "AND eu.event.endTime <= current_time " +
+//            "AND eu.user.id NOT IN " +
+//            "(SELECT uf.friend.id FROM UserFriendTag uf JOIN FriendTag f WHERE f.ownerId = :userId AND f.isEveryone = true) " +
+//            "AND eu.event.id IN (SELECT subeu.event.id FROM EventUser subeu WHERE subeu.user.id = :userId AND subeu.status = :status) " +
+//            "ORDER BY eu.event.startTime DESC")
+//    List<User> findUsersRecentlySpawnedWith(UUID userId, ParticipationStatus status);
+
+    @Query("SELECT eu.event.id FROM EventUser eu WHERE eu.user.id = :userId AND eu.status = :status AND eu.event.endTime <= current_time")
+    List<UUID> findPastEventIdsForUser(UUID userId, ParticipationStatus status, Limit limit);
+
+    @Query("SELECT DISTINCT eu.user.id FROM EventUser eu WHERE eu.event.id IN :eventIds AND eu.status = :status AND eu.user.id != :userId GROUP BY eu.user.id ORDER BY MAX(eu.event.startTime) DESC")
+    List<UUID> findOtherUserIdsByEventIds(List<UUID> eventIds, UUID userId, ParticipationStatus status);
 
     Optional<EventUser> findByEvent_IdAndUser_Id(UUID eventId, UUID userId);
 

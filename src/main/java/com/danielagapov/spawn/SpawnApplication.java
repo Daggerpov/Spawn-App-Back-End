@@ -40,6 +40,24 @@ public class SpawnApplication {
         } catch (NullPointerException e) {
             System.err.println("Error: EMAIL_PASS environment variable not set. Consider setting, or adding a .env file.");
         }
+        try {
+            System.setProperty("APNS_CERTIFICATE",
+                    System.getenv("APNS_CERTIFICATE") != null ? System.getenv("APNS_CERTIFICATE") : dotenv.get("APNS_CERTIFICATE"));
+        } catch (NullPointerException e) {
+            System.err.println("Error: APNS_CERTIFICATE environment variable not set. Consider setting, or adding a .env file.");
+        }
+        try {
+            System.setProperty("CERTIFICATE_PASSWORD",
+                    System.getenv("CERTIFICATE_PASSWORD") != null ? System.getenv("CERTIFICATE_PASSWORD") : dotenv.get("CERTIFICATE_PASSWORD"));
+        } catch (NullPointerException e) {
+            System.err.println("Error: CERTIFICATE_PASSWORD environment variable not set. Consider setting, or adding a .env file.");
+        }
+        try {
+            System.setProperty("APNS_BUNDLE_ID",
+                    System.getenv("APNS_BUNDLE_ID") != null ? System.getenv("APNS_BUNDLE_ID") : dotenv.get("APNS_BUNDLE_ID"));
+        } catch (NullPointerException e) {
+            System.err.println("Error: APNS_BUNDLE_ID environment variable not set. Consider setting, or adding a .env file.");
+        }
         SpringApplication.run(SpawnApplication.class, args);
     }
 }
