@@ -25,16 +25,6 @@ public interface IEventUserRepository extends JpaRepository<EventUser, EventUser
 
     List<EventUser> findEventsByEvent_IdAndStatus(UUID eventId, ParticipationStatus status);
 
-//    @Query("SELECT eu.user FROM EventUser eu " +
-//            "WHERE eu.user.id != :userId " +
-//            "AND eu.status = :status " +
-//            "AND eu.event.endTime <= current_time " +
-//            "AND eu.user.id NOT IN " +
-//            "(SELECT uf.friend.id FROM UserFriendTag uf JOIN FriendTag f WHERE f.ownerId = :userId AND f.isEveryone = true) " +
-//            "AND eu.event.id IN (SELECT subeu.event.id FROM EventUser subeu WHERE subeu.user.id = :userId AND subeu.status = :status) " +
-//            "ORDER BY eu.event.startTime DESC")
-//    List<User> findUsersRecentlySpawnedWith(UUID userId, ParticipationStatus status);
-
     @Query("SELECT eu.event.id FROM EventUser eu WHERE eu.user.id = :userId AND eu.status = :status AND eu.event.endTime <= current_time")
     List<UUID> findPastEventIdsForUser(UUID userId, ParticipationStatus status, Limit limit);
 
