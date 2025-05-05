@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Models;
+package com.danielagapov.spawn.Models.User;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

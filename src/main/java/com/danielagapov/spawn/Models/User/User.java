@@ -1,5 +1,6 @@
-package com.danielagapov.spawn.Models;
+package com.danielagapov.spawn.Models.User;
 
+import com.danielagapov.spawn.Models.NotificationPreferences;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

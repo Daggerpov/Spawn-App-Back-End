@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Controllers;
+package com.danielagapov.spawn.Controllers.User;
 
 import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserCreationDTO;
 import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;

@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Enums.FeedbackType;
+import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

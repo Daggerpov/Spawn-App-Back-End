@@ -11,11 +11,11 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Models.FriendTag;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.UserFriendTag;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -394,6 +394,25 @@ public class FriendTagService implements IFriendTagService {
     public void addFriendToFriendTags(List<UUID> friendTagIds, UUID friendUserId) {
         for (UUID friendTagId : friendTagIds) {
             saveUserToFriendTag(friendTagId, friendUserId);
+        }
+    }
+
+    @Override
+    public List<UUID> getFriendIdsByTagId(UUID tagId) {
+        try {
+            // Check if the tag exists
+            if (!repository.existsById(tagId)) {
+                throw new BaseNotFoundException(EntityType.FriendTag, tagId);
+            }
+            
+            // Use the repository method to get friend IDs directly
+            return uftRepository.findFriendIdsByTagId(tagId);
+        } catch (DataAccessException e) {
+            logger.error("Database error retrieving friend IDs for tag " + tagId + ": " + e.getMessage());
+            throw new RuntimeException("Error retrieving friend IDs", e);
+        } catch (Exception e) {
+            logger.error("Error retrieving friend IDs for tag " + tagId + ": " + e.getMessage());
+            throw e;
         }
     }
 }

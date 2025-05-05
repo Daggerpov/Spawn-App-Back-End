@@ -2,8 +2,9 @@ package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.Models.FriendRequest;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ public class FriendRequestMapper {
         friendRequest.setId(friendRequestDTO.getId());
         friendRequest.setSender(sender);
         friendRequest.setReceiver(receiver);
+        friendRequest.setCreatedAt(Instant.now());
         return friendRequest;
     }
 

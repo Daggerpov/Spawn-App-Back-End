@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
+import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

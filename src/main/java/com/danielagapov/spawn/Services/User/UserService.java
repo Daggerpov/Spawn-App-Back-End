@@ -15,11 +15,11 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.FriendTag;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
@@ -92,7 +92,6 @@ public class UserService implements IUserService {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
-            logger.info("Retrieved user: " + LoggingUtils.formatUserInfo(user));
 
             List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
 
@@ -110,7 +109,6 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
         try {
-            logger.info("Getting friend user IDs for user: " + LoggingUtils.formatUserIdInfo(id));
             // Get all friend tags for the user
             List<FriendTag> friendTags = friendTagRepository.findByOwnerId(id);
 
@@ -137,7 +135,6 @@ public class UserService implements IUserService {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-            logger.info("Retrieved user entity: " + LoggingUtils.formatUserInfo(user));
             return user;
         } catch (Exception e) {
             logger.error("Error retrieving user entity: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
@@ -238,13 +235,10 @@ public class UserService implements IUserService {
     @Override
     public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
         try {
-            logger.info(String.format("Entering saveUserWithProfilePicture: {user: %s}", user));
             if (user.getProfilePicture() == null) {
-                logger.info("Profile picture is null, user either chose their profile picture or has default");
                 user = s3Service.putProfilePictureWithUser(profilePicture, user);
             }
             user = saveUser(user);
-            logger.info(String.format("Exiting saveUserWithProfilePicture: {user: %s}", user));
             return user;
         } catch (Exception e) {
             logger.error(e.getMessage());

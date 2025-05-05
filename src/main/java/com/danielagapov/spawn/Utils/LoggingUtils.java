@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Utils;
 
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 
 import java.util.UUID;
 

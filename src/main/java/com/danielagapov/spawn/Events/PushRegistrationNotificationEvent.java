@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.Enums.NotificationType;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 
 /**
  * Event for when a device is registered for push notifications

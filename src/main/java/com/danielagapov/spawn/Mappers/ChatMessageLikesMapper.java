@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.ChatMessageLikes;
 import com.danielagapov.spawn.Models.CompositeKeys.ChatMessageLikesId;
-import com.danielagapov.spawn.Models.User;
+import com.danielagapov.spawn.Models.User.User;
 
 public class ChatMessageLikesMapper {
 
