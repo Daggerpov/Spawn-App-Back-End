@@ -171,4 +171,14 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // full path: /api/v1/users/{userId}/recent-users
+    @GetMapping("{userId}/recent-users")
+    public ResponseEntity<List<BaseUserDTO>> getRecentlySpawnedWithUsers(@PathVariable UUID userId) {
+        try {
+            return new ResponseEntity<>(userService.getRecentlySpawnedWithUsers(userId), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
