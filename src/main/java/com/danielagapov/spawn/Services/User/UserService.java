@@ -337,7 +337,9 @@ public class UserService implements IUserService {
     // Adds friend bidirectionally
     @Caching(evict = {
             @CacheEvict(value = "friendsByUserId", key = "#userId"),
-            @CacheEvict(value = "friendsByUserId", key = "#friendId")
+            @CacheEvict(value = "friendsByUserId", key = "#friendId"),
+            @CacheEvict(value = "recommendedFriends", key = "#userId"),
+            @CacheEvict(value = "recommendedFriends", key = "#friendId")
     })
     @Override
     public void saveFriendToUser(UUID userId, UUID friendId) {

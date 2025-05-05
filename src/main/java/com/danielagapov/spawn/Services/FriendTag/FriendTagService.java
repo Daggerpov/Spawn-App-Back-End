@@ -123,7 +123,8 @@ public class FriendTagService implements IFriendTagService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "eventsByFriendTagId", key = "#friendTag.id", condition = "#friendTag.id != null"),
-            @CacheEvict(value = "filteredFeedEvents", key = "#friendTag.ownerUserId")
+            @CacheEvict(value = "filteredFeedEvents", key = "#friendTag.ownerUserId"),
+            @CacheEvict(value = "friendTagsByOwnerId", key = "#friendTag.ownerUserId")
     })
     public FriendTagDTO saveFriendTag(AbstractFriendTagDTO friendTag) {
         FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
@@ -148,7 +149,8 @@ public class FriendTagService implements IFriendTagService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "eventsByFriendTagId", key = "#id"),
-            @CacheEvict(value = "filteredFeedEvents", key = "#newFriendTag.ownerUserId")
+            @CacheEvict(value = "filteredFeedEvents", key = "#newFriendTag.ownerUserId"),
+            @CacheEvict(value = "friendTagsByOwnerId", key = "#newFriendTag.ownerUserId")
     })
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
         return repository.findById(id).map(friendTag -> {
@@ -178,6 +180,10 @@ public class FriendTagService implements IFriendTagService {
             // Alter to check if the tag is an "Everyone" tag before deleting
             FriendTagDTO friendTag = getFriendTagById(id);
             UUID ownerId = friendTag.getOwnerUserId();
+
+            if (cacheManager.getCache("friendTagsByOwnerId") != null) {
+                cacheManager.getCache("friendTagsByOwnerId").evict(ownerId);
+            }
 
             if (friendTag.isEveryone()) {
                 logger.warn("Cannot delete the 'Everyone' tag");

@@ -468,6 +468,7 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Cacheable(value = "eventsInvitedToByFriendTagId", key = "#friendTagId.toString() + ':' + #requestingUserId")
     public List<EventDTO> getEventsInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId) {
         try {
             List<Event> events = repository.getEventsInvitedToWithFriendTagId(friendTagId, requestingUserId);
