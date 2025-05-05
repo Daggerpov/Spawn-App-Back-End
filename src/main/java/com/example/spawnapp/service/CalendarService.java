@@ -1,6 +1,7 @@
 package com.example.spawnapp.service;
 
 import com.example.spawnapp.dto.CalendarActivityDTO;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -10,9 +11,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class CalendarService {
+public class CalendarService implements ICalendarService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private final ILogger logger;
+
+    public CalendarService(ILogger logger) {
+        this.logger = logger;
+    }
 
     /**
      * Get all calendar activities for a specific month and year
@@ -26,17 +32,21 @@ public class CalendarService {
     /**
      * Get calendar activities for a specific user, month, and year
      */
+    @Override
     public List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, String userId) {
         // In a real implementation, we would:
         // 1. Find events the user is hosting
         // 2. Find events the user is attending
         // 3. Combine them into activities
         
+        logger.info("Getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
+        
         // For now, return mock data
         UUID userUuid;
         try {
             userUuid = UUID.fromString(userId);
         } catch (IllegalArgumentException e) {
+            logger.error("Invalid user ID format: " + userId);
             return Collections.emptyList();
         }
         
@@ -84,6 +94,8 @@ public class CalendarService {
      */
     private List<CalendarActivityDTO> generateMockActivitiesForUser(int month, int year, UUID userId) {
         List<CalendarActivityDTO> activities = generateMockActivities(month, year);
+        
+        logger.info("Generated " + activities.size() + " potential activities for user: " + userId);
         
         // Filter to only ~50% of activities and assign the user ID
         return activities.stream()
