@@ -36,7 +36,6 @@ public class FriendTagService implements IFriendTagService {
     private final IUserRepository userRepository;
     private final ILogger logger;
     private final CacheManager cacheManager;
-
     @Autowired
     public FriendTagService(IFriendTagRepository repository, IUserService userService,
                             IUserFriendTagRepository uftRepository, IUserRepository userRepository, ILogger logger, CacheManager cacheManager) {

@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
@@ -43,6 +45,12 @@ class FriendRequestServiceTests {
     
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache mockCache;
 
     @InjectMocks
     private FriendRequestService friendRequestService;
@@ -73,6 +81,8 @@ class FriendRequestServiceTests {
         friendRequest.setReceiver(receiver);
 
         friendRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), senderId, receiverId);
+        when(cacheManager.getCache("filteredFeedEvents")).thenReturn(mockCache);
+        when(cacheManager.getCache("friendTagsByOwnerId")).thenReturn(mockCache);
     }
 
     @Test
