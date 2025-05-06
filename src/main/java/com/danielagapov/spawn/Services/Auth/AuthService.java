@@ -81,16 +81,46 @@ public class AuthService implements IAuthService {
                 // The email token is valid so mark this user as verified user in database
                 final String username = jwtService.extractUsername(token);
                 logger.info("Verifying email for user with username: " + username);
-                userService.verifyUserByUsername(username);
+                
                 User user = userService.getUserEntityByUsername(username);
+                user.setVerified(true);
+                userService.saveEntity(user);
+                
                 logger.info("Email verified successfully for user: " + LoggingUtils.formatUserInfo(user));
                 return true;
             }
             logger.warn("Invalid email verification token received");
-            // TODO: consider deleting user here
             return false;
         } catch (Exception e) {
             logger.error("Error during email verification: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean changePassword(String username, String currentPassword, String newPassword) {
+        try {
+            logger.info("Attempting to change password for user: " + username);
+            
+            // Verify current password by attempting authentication
+            try {
+                authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, currentPassword)
+                );
+            } catch (BadCredentialsException e) {
+                logger.warn("Current password verification failed for user: " + username);
+                return false;
+            }
+            
+            // Get user and update password
+            User user = userService.getUserEntityByUsername(username);
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userService.saveEntity(user);
+            
+            logger.info("Password successfully changed for user: " + username);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error changing password for user: " + username + ": " + e.getMessage());
             return false;
         }
     }

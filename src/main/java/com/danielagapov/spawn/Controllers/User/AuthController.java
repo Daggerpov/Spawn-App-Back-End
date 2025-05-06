@@ -178,6 +178,44 @@ public class AuthController {
         }
     }
 
+    // full path: /api/v1/auth/change-password
+    @PostMapping("change-password")
+    public ResponseEntity<?> changePassword(@RequestBody PasswordChangeDTO passwordChangeDTO, HttpServletRequest request) {
+        try {
+            logger.info("Password change request received");
+            
+            // Extract username from JWT token
+            final String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Authentication required"));
+            }
+            
+            final String token = authHeader.substring(7);
+            final String username = jwtService.extractUsername(token);
+            
+            if (username == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid token"));
+            }
+            
+            boolean success = authService.changePassword(
+                username, 
+                passwordChangeDTO.getCurrentPassword(), 
+                passwordChangeDTO.getNewPassword()
+            );
+            
+            if (success) {
+                logger.info("Password changed successfully for user: " + username);
+                return ResponseEntity.ok().build();
+            } else {
+                logger.warn("Password change failed for user: " + username);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Current password is incorrect"));
+            }
+        } catch (Exception e) {
+            logger.error("Error changing password: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to change password"));
+        }
+    }
+
     /* ------------------------------ HELPERS ------------------------------ */
 
     @Deprecated(since = "For testing purposes")

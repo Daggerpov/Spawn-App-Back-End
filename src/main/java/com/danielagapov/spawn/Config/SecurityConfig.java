@@ -52,7 +52,6 @@ public class SecurityConfig {
 
                     // DEBUG: Log the origin to identify what the iOS simulator is sending
                     String origin = request.getHeader("Origin");
-                    System.out.println("Incoming request origin: " + origin);
                     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Content-Type", "Accept"));
                     configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
