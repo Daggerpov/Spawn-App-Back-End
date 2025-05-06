@@ -17,6 +17,10 @@ import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Utils.LoggingUtils;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -33,17 +37,19 @@ public class FriendRequestService implements IFriendRequestService {
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final ApplicationEventPublisher eventPublisher;
+    private final CacheManager cacheManager;
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
             IUserService userService,
             IBlockedUserService blockedUserService, ILogger logger,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher, CacheManager cacheManager) {
         this.repository = repository;
         this.userService = userService;
         this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.eventPublisher = eventPublisher;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -83,6 +89,7 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
+    @Cacheable(value = "incomingFetchFriendRequests", key = "#id")
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
         try {
             User user = userService.getUserEntityById(id);
@@ -150,6 +157,19 @@ public class FriendRequestService implements IFriendRequestService {
             );
 
             deleteFriendRequest(id);
+
+            if (cacheManager.getCache("filteredFeedEvents") != null) {
+                cacheManager.getCache("filteredFeedEvents").evict(sender.getId());
+                cacheManager.getCache("filteredFeedEvents").evict(receiver.getId());
+            }
+            if (cacheManager.getCache("incomingFriendRequests") != null)
+                cacheManager.getCache("incomingFriendRequests").evict(receiver.getId());
+
+            if (cacheManager.getCache("friendsByUserId") != null) {
+                cacheManager.getCache("friendsByUserId").evict(sender.getId());
+                cacheManager.getCache("friendsByUserId").evict(receiver.getId());
+            }
+
             logger.info("Friend request accepted and deleted successfully");
         } catch (Exception e) {
             logger.error("Error accepting friend request with ID: " + id + ": " + e.getMessage());

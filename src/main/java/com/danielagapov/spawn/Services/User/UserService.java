@@ -27,6 +27,10 @@ import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -45,6 +49,7 @@ public class UserService implements IUserService {
     private final IS3Service s3Service;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
+    private final CacheManager cacheManager;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
@@ -54,7 +59,7 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService){
+                       UserSearchService userSearchService, CacheManager cacheManager){
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -63,6 +68,7 @@ public class UserService implements IUserService {
         this.s3Service = s3Service;
         this.logger = logger;
         this.userSearchService = userSearchService;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -193,11 +199,21 @@ public class UserService implements IUserService {
         }
     }
 
+    @CacheEvict(value = "friendsByUserId", key = "#id")
     @Override
     public void deleteUserById(UUID id) {
         try {
             User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
             logger.info("Deleting user: " + LoggingUtils.formatUserInfo(user));
+
+            List<UUID> friendIds = getFriendUserIdsByUserId(id);
+            for (UUID friendId : friendIds) {
+                if (cacheManager.getCache("friendsByUserId") != null) {
+                    cacheManager.getCache("friendsByUserId").evict(friendId);
+                    cacheManager.getCache("recommendedFriends").evict(friendId);
+                }
+            }
+
             repository.deleteById(id);
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
         } catch (Exception e) {
@@ -285,6 +301,7 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @Cacheable(value = "friendsByUserId", key = "#userId")
     public List<UserDTO> getFriendsByUserId(UUID userId) {
         try {
             // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
@@ -312,6 +329,12 @@ public class UserService implements IUserService {
     }
 
     // Adds friend bidirectionally
+    @Caching(evict = {
+            @CacheEvict(value = "friendsByUserId", key = "#userId"),
+            @CacheEvict(value = "friendsByUserId", key = "#friendId"),
+            @CacheEvict(value = "recommendedFriends", key = "#userId"),
+            @CacheEvict(value = "recommendedFriends", key = "#friendId")
+    })
     @Override
     public void saveFriendToUser(UUID userId, UUID friendId) {
         try {
@@ -327,6 +350,7 @@ public class UserService implements IUserService {
             Optional<FriendTag> friendEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(friendId);
             friendEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), userId));
+
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -336,6 +360,7 @@ public class UserService implements IUserService {
     // returns top x (specified by limit) friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
     @Override
+    @Cacheable(value = "recommendedFriends", key = "#userId")
     public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
         return userSearchService.getLimitedRecommendedFriendsForUserId(userId);
     }
