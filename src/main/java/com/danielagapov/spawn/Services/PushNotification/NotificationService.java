@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
 import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Events.NotificationEvent;
-import com.danielagapov.spawn.Events.PushRegistrationNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.DeviceToken;
 import com.danielagapov.spawn.Models.NotificationPreferences;
@@ -84,10 +83,6 @@ public class NotificationService {
 
             logger.info("Device token saved successfully for user: " + user.getId() + " with names: "
                     + user.getFirstName() + " " + user.getLastName() + " and username: " + user.getUsername());
-
-            // Send a test notification to confirm registration
-            eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));
-            logger.info("Sent test notification for token registration confirmation");
         } catch (Exception e) {
             logger.error("Error registering device token: " + e.getMessage());
             throw e;
