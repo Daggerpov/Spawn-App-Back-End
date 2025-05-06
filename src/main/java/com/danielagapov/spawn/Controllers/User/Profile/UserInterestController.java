@@ -23,6 +23,9 @@ public class UserInterestController {
     @GetMapping
     public ResponseEntity<List<String>> getUserInterests(@PathVariable UUID userId) {
         List<String> interests = userInterestService.getUserInterests(userId);
+        interests = interests.stream()
+                .map(interest -> interest.replaceAll("^\"|\"$", ""))
+                .toList();
         return ResponseEntity.ok(interests);
     }
 
@@ -30,6 +33,7 @@ public class UserInterestController {
     public ResponseEntity<String> addUserInterest(
             @PathVariable UUID userId,
             @RequestBody String userInterestName) {
+        userInterestName = userInterestName.replaceAll("^\"|\"$", "");
         return new ResponseEntity<>(userInterestService.addUserInterest(userId, userInterestName), HttpStatus.CREATED);
     }
 } 
