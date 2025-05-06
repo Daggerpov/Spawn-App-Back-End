@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users/{userId}/social-media")
+@RequestMapping("/api/v1/users/{userId}/social-media")
 public class UserSocialMediaController {
 
     private final IUserSocialMediaService userSocialMediaService;

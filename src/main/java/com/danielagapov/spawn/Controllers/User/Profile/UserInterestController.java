@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users/{userId}/interests")
+@RequestMapping("/api/v1/users/{userId}/interests")
 public class UserInterestController {
 
     private final IUserInterestService userInterestService;

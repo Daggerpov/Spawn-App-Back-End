@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users/{userId}/stats")
+@RequestMapping("/api/v1/users/{userId}/stats")
 public class UserStatsController {
 
     private final IUserStatsService userStatsService;
