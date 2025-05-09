@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.DTOs.Event;
 
+import com.danielagapov.spawn.Enums.EventCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,4 +20,5 @@ public abstract class AbstractEventDTO implements Serializable {
     OffsetDateTime endTime;
     String note;
     String icon;
+    EventCategory category;
 }

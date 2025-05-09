@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Enums.EventCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,6 +35,9 @@ public class Event implements Serializable {
     private OffsetDateTime startTime;
     private OffsetDateTime endTime;
     private String icon;
+    
+    @Enumerated(EnumType.STRING)
+    private EventCategory category;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "location_id", referencedColumnName = "id", nullable = false)
@@ -61,7 +65,7 @@ public class Event implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon) {
+    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, EventCategory category) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -71,5 +75,6 @@ public class Event implements Serializable {
         this.creator = creator;
         this.lastUpdated = Instant.now();
         this.icon = icon;
+        this.category = category;
     }
 }
