@@ -33,6 +33,7 @@ public class Event implements Serializable {
     private String title;
     private OffsetDateTime startTime;
     private OffsetDateTime endTime;
+    private String icon;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "location_id", referencedColumnName = "id", nullable = false)
@@ -60,7 +61,7 @@ public class Event implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator) {
+    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -69,5 +70,6 @@ public class Event implements Serializable {
         this.note = note;
         this.creator = creator;
         this.lastUpdated = Instant.now();
+        this.icon = icon;
     }
 }

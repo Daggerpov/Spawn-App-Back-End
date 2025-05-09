@@ -18,4 +18,5 @@ public abstract class AbstractEventDTO implements Serializable {
     OffsetDateTime startTime;
     OffsetDateTime endTime;
     String note;
+    String icon;
 }
