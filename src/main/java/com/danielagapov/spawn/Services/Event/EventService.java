@@ -603,6 +603,8 @@ public class EventService implements IEventService {
                     event.getEndTime(),
                     location,
                     event.getNote(),
+                    event.getIcon(),
+                    event.getCategory(),
                     creator,
                     userService.getParticipantsByEventId(event.getId()),
                     userService.getInvitedByEventId(event.getId()),

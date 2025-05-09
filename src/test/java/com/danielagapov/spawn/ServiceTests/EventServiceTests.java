@@ -7,6 +7,7 @@ import com.danielagapov.spawn.DTOs.Event.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Enums.EventCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -88,7 +89,7 @@ public class EventServiceTests {
         Location loc = new Location(UUID.randomUUID(), "Dummy Location", 0.0, 0.0);
         User creator = new User();
         creator.setId(UUID.randomUUID());
-        return new Event(eventId, title, start, end, loc, "Note", creator);
+        return new Event(eventId, title, start, end, loc, "Note", creator, "icon", EventCategory.ACTIVE);
     }
 
     private EventDTO dummyEventDTO(UUID eventId, String title) {
@@ -99,6 +100,8 @@ public class EventServiceTests {
                 OffsetDateTime.now().plusHours(1),
                 UUID.randomUUID(),
                 "Note",
+                "icon",
+                EventCategory.ACTIVE,
                 UUID.randomUUID(),
                 List.of(),
                 List.of(),
