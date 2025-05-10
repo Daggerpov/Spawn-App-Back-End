@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Mappers;
 import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.Enums.EventCategory;
 import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
@@ -23,6 +24,8 @@ public class EventMapper {
                 entity.getEndTime(),
                 entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).getId() : null, // Map Location to LocationDTO
                 entity.getNote(),
+                entity.getIcon(),
+                entity.getCategory(),
                 creatorUserId,
                 participantUserIds,
                 invitedUserIds,
@@ -39,7 +42,9 @@ public class EventMapper {
                 dto.getEndTime(),
                 location, // Assign the full Location entity
                 dto.getNote(),
-                creator
+                creator,
+                dto.getIcon(),
+                dto.getCategory()
         );
     }
 
@@ -87,6 +92,8 @@ public class EventMapper {
         event.setTitle(dto.getTitle()); // Set the title
         event.setStartTime(dto.getStartTime()); // Set the start time
         event.setEndTime(dto.getEndTime()); // Set the end time
+        event.setIcon(dto.getIcon()); // Set the icon
+        event.setCategory(dto.getCategory()); // Set the category
 
         // Convert LocationDTO to Location entity (assuming a similar method exists)
         Location location = LocationMapper.toEntity(dto.getLocation());
@@ -109,6 +116,8 @@ public class EventMapper {
         event.setLocation(location); // Use the saved/persisted location.
         event.setNote(dto.getNote());
         event.setCreator(creator);
+        event.setIcon(dto.getIcon());
+        event.setCategory(dto.getCategory());
         return event;
     }
 }

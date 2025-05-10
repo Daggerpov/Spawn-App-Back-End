@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.DTOs.Event;
 
 
+import com.danielagapov.spawn.Enums.EventCategory;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,22 +17,25 @@ public class EventDTO extends AbstractEventDTO {
     List<UUID> participantUserIds;
     List<UUID> invitedUserIds;
     List<UUID> chatMessageIds;
-    public EventDTO(    UUID id,
-                                String title,
-                                OffsetDateTime startTime,
-                                OffsetDateTime endTime,
-                                UUID locationId,
-                                String note,
-                                UUID creatorUserId,
-                                List<UUID> participantUserIds,
-                                List<UUID> invitedUserIds,
-                                List<UUID> chatMessageIds) {
-        super(id, title, startTime, endTime, note);
+    
+    public EventDTO(
+            UUID id,
+            String title,
+            OffsetDateTime startTime,
+            OffsetDateTime endTime,
+            UUID locationId,
+            String note,
+            String icon,
+            EventCategory category,
+            UUID creatorUserId,
+            List<UUID> participantUserIds,
+            List<UUID> invitedUserIds,
+            List<UUID> chatMessageIds) {
+        super(id, title, startTime, endTime, note, icon, category);
         this.creatorUserId = creatorUserId;
         this.locationId = locationId;
         this.participantUserIds = participantUserIds;
         this.invitedUserIds = invitedUserIds;
         this.chatMessageIds = chatMessageIds;
     }
-
 }

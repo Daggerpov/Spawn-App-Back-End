@@ -3,6 +3,7 @@ package com.danielagapov.spawn.DTOs.Event;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.Enums.EventCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,13 +36,16 @@ public class FullFeedEventDTO extends AbstractEventDTO {
                             OffsetDateTime endTime,
                             LocationDTO location,
                             String note,
+                            String icon,
+                            EventCategory category,
                             BaseUserDTO creatorUser,
                             List<BaseUserDTO> participantUsers,
                             List<BaseUserDTO> invitedUsers,
                             List<FullEventChatMessageDTO> chatMessages,
                             String eventFriendTagColorHexCodeForRequestingUser,
-                            ParticipationStatus participationStatus, boolean isSelfOwned) {
-        super(id, title, startTime, endTime, note);
+                            ParticipationStatus participationStatus, 
+                            boolean isSelfOwned) {
+        super(id, title, startTime, endTime, note, icon, category);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;

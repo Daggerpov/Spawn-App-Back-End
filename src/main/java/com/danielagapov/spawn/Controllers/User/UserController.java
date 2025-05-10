@@ -39,7 +39,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<List<? extends AbstractUserDTO>>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -143,7 +143,7 @@ public class UserController {
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for update: " + id + ", entity type: " + e.entityType);
-            return new ResponseEntity<BaseUserDTO>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -156,7 +156,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<SearchedUserResult>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
