@@ -186,16 +186,10 @@ public class AuthController {
             
             // Extract username from JWT token
             final String authHeader = request.getHeader("Authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Authentication required"));
-            }
             
             final String token = authHeader.substring(7);
             final String username = jwtService.extractUsername(token);
             
-            if (username == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid token"));
-            }
             
             boolean success = authService.changePassword(
                 username, 
