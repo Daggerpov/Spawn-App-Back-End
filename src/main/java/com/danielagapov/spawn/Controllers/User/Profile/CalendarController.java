@@ -26,14 +26,34 @@ public class CalendarController {
     @GetMapping()
     public ResponseEntity<List<CalendarActivityDTO>> getCalendarActivities(
             @PathVariable UUID userId,
-            @RequestParam(required = true) int month,
-            @RequestParam(required = true) int year) {
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
         
-        logger.info("Fetching calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
+        // If month and year are provided, get activities for that specific month
+        if (month != null && year != null) {
+            logger.info("Fetching calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
+            List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesForUser(month, year, userId);
+            logger.info("Found " + activities.size() + " activities for user: " + userId);
+            return ResponseEntity.ok(activities);
+        } 
+        // Otherwise, get all activities
+        else {
+            logger.info("Fetching all calendar activities for user: " + userId);
+            List<CalendarActivityDTO> activities = calendarService.getAllCalendarActivitiesForUser(userId);
+            logger.info("Found " + activities.size() + " total activities for user: " + userId);
+            return ResponseEntity.ok(activities);
+        }
+    }
+    
+    @GetMapping("/all")
+    public ResponseEntity<List<CalendarActivityDTO>> getAllCalendarActivities(
+            @PathVariable UUID userId) {
         
-        List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesForUser(month, year, userId);
+        logger.info("Fetching all calendar activities for user: " + userId);
         
-        logger.info("Found " + activities.size() + " activities for user: " + userId);
+        List<CalendarActivityDTO> activities = calendarService.getAllCalendarActivitiesForUser(userId);
+        
+        logger.info("Found " + activities.size() + " total activities for user: " + userId);
         
         return ResponseEntity.ok(activities);
     }

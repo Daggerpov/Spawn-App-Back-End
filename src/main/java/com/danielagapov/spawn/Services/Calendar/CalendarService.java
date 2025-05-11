@@ -8,6 +8,8 @@ import com.danielagapov.spawn.Models.Event;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Repositories.IEventRepository;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -24,17 +26,29 @@ public class CalendarService implements ICalendarService {
     private final ILogger logger;
     private final IEventRepository eventRepository;
     private final IEventUserRepository eventUserRepository;
+    private final CacheManager cacheManager;
+    
+    // Cache names
+    private static final String CALENDAR_ACTIVITIES_CACHE = "calendarActivities";
+    private static final String ALL_CALENDAR_ACTIVITIES_CACHE = "allCalendarActivities";
 
-    public CalendarService(ILogger logger, IEventRepository eventRepository, IEventUserRepository eventUserRepository) {
+    public CalendarService(
+        ILogger logger, 
+        IEventRepository eventRepository, 
+        IEventUserRepository eventUserRepository,
+        CacheManager cacheManager
+    ) {
         this.logger = logger;
         this.eventRepository = eventRepository;
         this.eventUserRepository = eventUserRepository;
+        this.cacheManager = cacheManager;
     }
 
     /**
      * Get calendar activities for a specific user, month, and year
      */
     @Override
+    @Cacheable(value = CALENDAR_ACTIVITIES_CACHE, key = "{#userId, #month, #year}")
     public List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, UUID userId) {
         logger.info("Getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
         
@@ -81,6 +95,62 @@ public class CalendarService implements ICalendarService {
             logger.error("Error retrieving calendar activities: " + e.getMessage());
             return new ArrayList<>();
         }
+    }
+    
+    /**
+     * Get all calendar activities for a specific user
+     */
+    @Override
+    @Cacheable(value = ALL_CALENDAR_ACTIVITIES_CACHE, key = "#userId")
+    public List<CalendarActivityDTO> getAllCalendarActivitiesForUser(UUID userId) {
+        logger.info("Getting all calendar activities for user: " + userId);
+        
+        List<CalendarActivityDTO> activities = new ArrayList<>();
+        
+        try {
+            // 1. Get all events the user created
+            List<Event> createdEvents = eventRepository.findByCreatorId(userId);
+            
+            // 2. Get all events the user is participating in
+            List<EventUser> participatingEvents = eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
+            
+            // Process events created by the user
+            for (Event event : createdEvents) {
+                activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
+            }
+            
+            // Process events the user is participating in
+            for (EventUser eventUser : participatingEvents) {
+                Event event = eventUser.getEvent();
+                // Avoid adding duplicate entries for events the user both created and is participating in
+                if (!event.getCreator().getId().equals(userId)) {
+                    activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
+                }
+            }
+            
+            logger.info("Found " + activities.size() + " calendar activities for user: " + userId);
+            return activities;
+            
+        } catch (Exception e) {
+            logger.error("Error retrieving all calendar activities: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Clear the calendar cache for a specific user
+     * This should be called when events are created, updated, or deleted,
+     * or when a user's participation status changes.
+     */
+    public void clearCalendarCache(UUID userId) {
+        logger.info("Clearing calendar cache for user: " + userId);
+        
+        // Clear the cache for all calendar activities
+        cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE).evict(userId);
+        
+        // Clear the specific month/year caches by evicting all entries
+        // This is a simple approach - for more targeted clearing we'd need to track which months need updating
+        cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE).clear();
     }
     
     /**
