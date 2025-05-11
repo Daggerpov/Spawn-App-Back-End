@@ -4,5 +4,6 @@ public enum EventCategory {
     GENERAL,
     FOOD_AND_DRINK,
     ACTIVE,
-    STUDY
+    GRIND,
+    CHILL
 } 
