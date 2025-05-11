@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Controllers.User;
+package com.danielagapov.spawn.Controllers.User.Profile;
 
 import com.danielagapov.spawn.DTOs.User.Profile.UpdateUserSocialMediaDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserSocialMediaDTO;
