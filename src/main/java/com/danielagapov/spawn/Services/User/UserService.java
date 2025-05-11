@@ -258,12 +258,12 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
+    public List<BaseUserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
-            return uftRepository.findFriendIdsByTagId(friendTagId)
+            return UserMapper.toBaseDTOList(uftRepository.findFriendIdsByTagId(friendTagId)
                     .stream()
                     .map(this::getUserById)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -294,34 +294,6 @@ public class UserService implements IUserService {
                             user -> friendTagService.getFriendTagIdsByOwnerUserId(user.getId())
                     ));
             return UserMapper.toDTOList(users, friendUserIdsMap, friendTagIdsMap);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    @Cacheable(value = "friendsByUserId", key = "#userId")
-    public List<UserDTO> getFriendsByUserId(UUID userId) {
-        try {
-            // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-            Optional<FriendTag> optionalEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(userId);
-
-            if (optionalEveryoneTag.isEmpty()) {
-                return List.of(); // empty list of friends
-            }
-
-            FriendTag everyoneTag = optionalEveryoneTag.get();
-
-            // Retrieve the friends for each FriendTag and return as a flattened list
-            List<UserDTO> friends = getFriendsByFriendTagId(everyoneTag.getId());
-
-            // Filter out the friend whose ID matches the userId
-            // Exclude the user themselves
-
-            return friends.stream()
-                    .filter(friend -> !friend.getId().equals(userId)) // Exclude the user themselves
-                    .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;

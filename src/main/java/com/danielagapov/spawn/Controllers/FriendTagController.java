@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
@@ -9,6 +8,7 @@ import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,9 +22,11 @@ import java.util.UUID;
 public class FriendTagController {
 
     private final IFriendTagService friendTagService;
+    private final IUserService userService;
 
-    public FriendTagController(IFriendTagService friendTagService) {
+    public FriendTagController(IFriendTagService friendTagService, IUserService userService) {
         this.friendTagService = friendTagService;
+        this.userService = userService;
     }
 
     // full path: /api/v1/friendTags
@@ -224,6 +226,26 @@ public class FriendTagController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             // this also catches `BaseSaveException`, which we're treating the same way with a 500 error below
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // returns ResponseEntity with list of UserDTOs (can be empty) or not found entity type (friendTag)
+    // full path: /api/v1/friendTags/{id}/friends
+    @GetMapping("{id}/friends")
+    public ResponseEntity<?> getFriendsByFriendTagId(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            return new ResponseEntity<>(userService.getFriendsByFriendTagId(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

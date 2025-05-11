@@ -45,11 +45,9 @@ public interface IUserService {
 
     Map<FriendTag, List<UUID>> getFriendUserIdsMap();
 
-    List<UserDTO> getFriendsByFriendTagId(UUID friendTagId);
+    List<BaseUserDTO> getFriendsByFriendTagId(UUID friendTagId);
 
     List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId);
-
-    List<UserDTO> getFriendsByUserId(UUID userId);
 
     void saveFriendToUser(UUID userId, UUID friendId);
 
