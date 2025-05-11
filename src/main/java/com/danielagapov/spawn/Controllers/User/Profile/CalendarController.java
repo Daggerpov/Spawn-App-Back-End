@@ -60,9 +60,6 @@ public class CalendarController {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             List<CalendarActivityDTO> activities = calendarService.getAllCalendarActivitiesForUser(userId);
-
-            logger.info("Found " + activities.size() + " total activities for user: " + userId);
-
             return ResponseEntity.ok(activities);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
