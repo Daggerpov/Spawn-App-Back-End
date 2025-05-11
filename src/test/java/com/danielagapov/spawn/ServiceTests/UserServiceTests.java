@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -438,7 +439,7 @@ public class UserServiceTests {
         when(userFriendTagRepository.findFriendIdsByTagId(tagId))
                 .thenReturn(List.of());
 
-        List<UserDTO> result = userService.getFriendsByFriendTagId(tagId);
+        List<BaseUserDTO> result = userService.getFriendsByFriendTagId(tagId);
 
         assertTrue(result.isEmpty());
         verify(userFriendTagRepository, times(1)).findFriendIdsByTagId(tagId);
