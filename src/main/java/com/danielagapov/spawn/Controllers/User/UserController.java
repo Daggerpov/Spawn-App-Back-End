@@ -46,6 +46,19 @@ public class UserController {
     }
 
     // full path: /api/v1/users/{id}
+    @GetMapping("{id}")
+    public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            return new ResponseEntity<>(userService.getBaseUserById(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
