@@ -1,7 +1,7 @@
-package com.example.spawnapp.controller;
+package com.danielagapov.spawn.Controllers.User.Profile;
 
-import com.example.spawnapp.dto.CalendarActivityDTO;
-import com.example.spawnapp.service.CalendarService;
+import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
+import com.danielagapov.spawn.Services.Calendar.CalendarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/calendar")
+@RequestMapping("/api/v1/users/{userId}/calendar")
 public class CalendarController {
 
     private final CalendarService calendarService;
@@ -22,7 +22,7 @@ public class CalendarController {
         this.calendarService = calendarService;
     }
 
-    @GetMapping("/activities")
+    @GetMapping()
     public ResponseEntity<List<CalendarActivityDTO>> getCalendarActivities(
             @RequestParam(required = true) int month,
             @RequestParam(required = true) int year,

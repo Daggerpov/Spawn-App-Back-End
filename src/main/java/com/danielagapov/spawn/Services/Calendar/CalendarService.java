@@ -1,10 +1,9 @@
-package com.example.spawnapp.service;
+package com.danielagapov.spawn.Services.Calendar;
 
-import com.example.spawnapp.dto.CalendarActivityDTO;
+import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.*;

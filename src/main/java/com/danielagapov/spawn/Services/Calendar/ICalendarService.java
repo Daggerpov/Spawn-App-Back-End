@@ -1,6 +1,6 @@
-package com.example.spawnapp.service;
+package com.danielagapov.spawn.Services.Calendar;
 
-import com.example.spawnapp.dto.CalendarActivityDTO;
+import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
 import java.util.List;
 
 /**
