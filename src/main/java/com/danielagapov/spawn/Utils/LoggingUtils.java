@@ -10,7 +10,7 @@ import java.util.UUID;
 public class LoggingUtils {
     
     /**
-     * Format user information for logging, including ID, first name, last name, and username
+     * Format user information for logging, including ID, name, and username
      * 
      * @param user The user entity
      * @return Formatted string with user details
@@ -19,8 +19,8 @@ public class LoggingUtils {
         if (user == null) {
             return "null user";
         }
-        return String.format("%s with names: %s %s and username: %s", 
-            user.getId(), user.getFirstName(), user.getLastName(), user.getUsername());
+        return String.format("%s with name: %s and username: %s", 
+            user.getId(), user.getName(), user.getUsername());
     }
     
     /**

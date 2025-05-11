@@ -13,8 +13,7 @@ import java.util.UUID;
 // Abstract class since interface describes behaviours
 public abstract class AbstractUserDTO implements Serializable {
     private UUID id;
-    private String firstName;
-    private String lastName;
+    private String name;
     private String email;
     private String username;
     private String bio;

@@ -250,7 +250,7 @@ public class UserSearchService implements IUserSearchService {
 
 
     /**
-     * Computes the distances of each user (first name, last name, or username) to the query
+     * Computes the distances of each user (name or username) to the query
      *
      * @param query the search query to compare names against
      * @param users list of database results
@@ -260,11 +260,8 @@ public class UserSearchService implements IUserSearchService {
         JaroWinklerDistance jaroWinklerDistance = new JaroWinklerDistance();
         return users.stream().collect(Collectors.toMap(user -> user, user ->
                 Math.max(
-                        jaroWinklerDistance.apply(query, user.getFirstName().toLowerCase()),
-                        Math.max(
-                                jaroWinklerDistance.apply(query, user.getLastName().toLowerCase()),
-                                jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
-                        )
+                        jaroWinklerDistance.apply(query, user.getName().toLowerCase()),
+                        jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
                 )
         ));
     }
