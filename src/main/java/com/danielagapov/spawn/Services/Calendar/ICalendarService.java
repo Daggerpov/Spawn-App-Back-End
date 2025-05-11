@@ -1,7 +1,8 @@
-package com.example.spawnapp.service;
+package com.danielagapov.spawn.Services.Calendar;
 
-import com.example.spawnapp.dto.CalendarActivityDTO;
+import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service for handling calendar activities
@@ -15,5 +16,5 @@ public interface ICalendarService {
      * @param userId User ID to get activities for
      * @return List of calendar activities for the user
      */
-    List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, String userId);
+    List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, UUID userId);
 } 
