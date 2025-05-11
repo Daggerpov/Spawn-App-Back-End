@@ -49,7 +49,7 @@ public class UserController {
     @GetMapping("{id}")
     public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try {
+        try { 
             return new ResponseEntity<>(userService.getBaseUserById(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
