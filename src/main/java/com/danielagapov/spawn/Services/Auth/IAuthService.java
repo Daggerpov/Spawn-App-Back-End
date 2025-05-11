@@ -13,4 +13,13 @@ public interface IAuthService {
     BaseUserDTO loginUser(AuthUserDTO authUserDTO);
 
     boolean verifyEmail(String token);
+    
+    /**
+     * Changes a user's password after verifying the current password
+     * @param username the username of the user
+     * @param currentPassword the current password
+     * @param newPassword the new password
+     * @return true if password change was successful
+     */
+    boolean changePassword(String username, String currentPassword, String newPassword);
 }
