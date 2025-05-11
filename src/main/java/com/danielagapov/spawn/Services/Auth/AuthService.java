@@ -12,7 +12,7 @@ import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Utils.LoggingUtils;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -64,7 +64,7 @@ public class AuthService implements IAuthService {
         if (authentication.isAuthenticated()) {
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
             logger.info("Authentication successful for user: " + username);
-            
+
             User user = userService.getUserEntityByUsername(username);
             logger.info("Login successful for user: " + LoggingUtils.formatUserInfo(user));
             return UserMapper.toDTO(user);

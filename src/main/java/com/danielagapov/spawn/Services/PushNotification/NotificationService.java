@@ -11,7 +11,7 @@ import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IDeviceTokenRepository;
 import com.danielagapov.spawn.Repositories.INotificationPreferencesRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Utils.LoggingUtils;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;

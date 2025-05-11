@@ -24,8 +24,8 @@ import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
-import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -59,7 +59,7 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService, CacheManager cacheManager){
+                       UserSearchService userSearchService, CacheManager cacheManager) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -192,7 +192,7 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));
         } catch (DataAccessException e) {
             logger.error("Failed to save user: " + e.getMessage());
-            throw new BaseSaveException("Failed to save user: " + e.getMessage()); 
+            throw new BaseSaveException("Failed to save user: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error saving user: " + e.getMessage());
             throw e;
