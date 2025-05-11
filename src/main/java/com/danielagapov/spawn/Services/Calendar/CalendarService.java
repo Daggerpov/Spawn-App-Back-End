@@ -52,49 +52,17 @@ public class CalendarService implements ICalendarService {
     public List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, UUID userId) {
         logger.info("Getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
         
-        List<CalendarActivityDTO> activities = new ArrayList<>();
-        
-        // Define the month range
+        // Define the month range for filtering
         YearMonth yearMonth = YearMonth.of(year, month);
         LocalDate startOfMonth = yearMonth.atDay(1);
         LocalDate endOfMonth = yearMonth.atEndOfMonth();
         
-        try {
-            // 1. Get events the user created during this month
-            List<Event> createdEvents = eventRepository.findByCreatorId(userId);
-            
-            // 2. Get events the user is participating in
-            List<EventUser> participatingEvents = eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
-            
-            // Process events created by the user
-            for (Event event : createdEvents) {
-                // Check if the event falls within the requested month
-                LocalDate eventDate = event.getStartTime().toLocalDate();
-                if (isDateInMonth(eventDate, startOfMonth, endOfMonth)) {
-                    activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
-                }
-            }
-            
-            // Process events the user is participating in
-            for (EventUser eventUser : participatingEvents) {
-                Event event = eventUser.getEvent();
-                // Check if the event falls within the requested month
-                LocalDate eventDate = event.getStartTime().toLocalDate();
-                if (isDateInMonth(eventDate, startOfMonth, endOfMonth)) {
-                    // Avoid adding duplicate entries for events the user both created and is participating in
-                    if (!event.getCreator().getId().equals(userId)) {
-                        activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
-                    }
-                }
-            }
-            
-            logger.info("Found " + activities.size() + " calendar activities for user: " + userId);
-            return activities;
-            
-        } catch (Exception e) {
-            logger.error("Error retrieving calendar activities: " + e.getMessage());
-            return new ArrayList<>();
-        }
+        // Call the helper method with month/year filtering
+        List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, startOfMonth, endOfMonth);
+        
+        logger.info("Found " + activities.size() + " calendar activities for user: " + userId + 
+                   " in month: " + month + ", year: " + year);
+        return activities;
     }
     
     /**
@@ -105,34 +73,59 @@ public class CalendarService implements ICalendarService {
     public List<CalendarActivityDTO> getAllCalendarActivitiesForUser(UUID userId) {
         logger.info("Getting all calendar activities for user: " + userId);
         
+        // Call the helper method with no date filtering
+        List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, null, null);
+        
+        logger.info("Found " + activities.size() + " total calendar activities for user: " + userId);
+        return activities;
+    }
+    
+    /**
+     * Helper method to fetch calendar activities with optional date filtering
+     * 
+     * @param userId User ID to get activities for
+     * @param startDate Start date for filtering (inclusive), or null for no start date filter
+     * @param endDate End date for filtering (inclusive), or null for no end date filter
+     * @return List of calendar activities matching the criteria
+     */
+    private List<CalendarActivityDTO> fetchCalendarActivities(UUID userId, LocalDate startDate, LocalDate endDate) {
         List<CalendarActivityDTO> activities = new ArrayList<>();
         
         try {
-            // 1. Get all events the user created
+            // 1. Get events the user created
             List<Event> createdEvents = eventRepository.findByCreatorId(userId);
             
-            // 2. Get all events the user is participating in
+            // 2. Get events the user is participating in
             List<EventUser> participatingEvents = eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
             
             // Process events created by the user
             for (Event event : createdEvents) {
-                activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
+                LocalDate eventDate = event.getStartTime().toLocalDate();
+                
+                // Apply date filtering if specified
+                if (isDateInRange(eventDate, startDate, endDate)) {
+                    activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
+                }
             }
             
             // Process events the user is participating in
             for (EventUser eventUser : participatingEvents) {
                 Event event = eventUser.getEvent();
-                // Avoid adding duplicate entries for events the user both created and is participating in
-                if (!event.getCreator().getId().equals(userId)) {
-                    activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
+                LocalDate eventDate = event.getStartTime().toLocalDate();
+                
+                // Apply date filtering if specified
+                if (isDateInRange(eventDate, startDate, endDate)) {
+                    // Avoid adding duplicate entries for events the user both created and is participating in
+                    if (!event.getCreator().getId().equals(userId)) {
+                        activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
+                    }
                 }
             }
             
-            logger.info("Found " + activities.size() + " calendar activities for user: " + userId);
             return activities;
             
         } catch (Exception e) {
-            logger.error("Error retrieving all calendar activities: " + e.getMessage());
+            logger.error("Error retrieving calendar activities: " + e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -154,10 +147,26 @@ public class CalendarService implements ICalendarService {
     }
     
     /**
-     * Check if a date falls within a specific month range
+     * Check if a date falls within the specified range
+     * 
+     * @param date The date to check
+     * @param startDate Start of the range (inclusive), or null for no lower bound
+     * @param endDate End of the range (inclusive), or null for no upper bound
+     * @return true if the date is within the range, false otherwise
      */
-    private boolean isDateInMonth(LocalDate date, LocalDate startOfMonth, LocalDate endOfMonth) {
-        return !date.isBefore(startOfMonth) && !date.isAfter(endOfMonth);
+    private boolean isDateInRange(LocalDate date, LocalDate startDate, LocalDate endDate) {
+        // If no date range is specified, include all dates
+        if (startDate == null && endDate == null) {
+            return true;
+        }
+        
+        // Check lower bound if specified
+        boolean afterStart = (startDate == null || !date.isBefore(startDate));
+        
+        // Check upper bound if specified
+        boolean beforeEnd = (endDate == null || !date.isAfter(endDate));
+        
+        return afterStart && beforeEnd;
     }
     
     /**
