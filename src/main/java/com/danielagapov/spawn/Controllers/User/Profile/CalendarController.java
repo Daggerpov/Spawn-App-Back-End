@@ -1,42 +1,39 @@
 package com.danielagapov.spawn.Controllers.User.Profile;
 
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
-import com.danielagapov.spawn.Services.Calendar.CalendarService;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Services.Calendar.ICalendarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/calendar")
 public class CalendarController {
 
-    private final CalendarService calendarService;
+    private final ICalendarService calendarService;
+    private final ILogger logger;
 
     @Autowired
-    public CalendarController(CalendarService calendarService) {
+    public CalendarController(ICalendarService calendarService, ILogger logger) {
         this.calendarService = calendarService;
+        this.logger = logger;
     }
 
     @GetMapping()
     public ResponseEntity<List<CalendarActivityDTO>> getCalendarActivities(
+            @PathVariable UUID userId,
             @RequestParam(required = true) int month,
-            @RequestParam(required = true) int year,
-            @RequestParam(required = false) String userId) {
+            @RequestParam(required = true) int year) {
         
-        List<CalendarActivityDTO> activities;
+        logger.info("Fetching calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
         
-        if (userId != null && !userId.isEmpty()) {
-            // Get activities for a specific user if userId is provided
-            activities = calendarService.getCalendarActivitiesForUser(month, year, userId);
-        } else {
-            // Get all activities for the month/year if no userId is provided
-            activities = calendarService.getCalendarActivities(month, year);
-        }
+        List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesForUser(month, year, userId);
+        
+        logger.info("Found " + activities.size() + " activities for user: " + userId);
         
         return ResponseEntity.ok(activities);
     }

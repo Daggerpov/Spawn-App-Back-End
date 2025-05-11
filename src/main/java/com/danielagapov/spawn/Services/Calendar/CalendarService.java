@@ -1,10 +1,17 @@
 package com.danielagapov.spawn.Services.Calendar;
 
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.EventUser;
+import com.danielagapov.spawn.Repositories.IEventRepository;
+import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,9 +21,13 @@ public class CalendarService implements ICalendarService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final ILogger logger;
+    private final IEventRepository eventRepository;
+    private final IEventUserRepository eventUserRepository;
 
-    public CalendarService(ILogger logger) {
+    public CalendarService(ILogger logger, IEventRepository eventRepository, IEventUserRepository eventUserRepository) {
         this.logger = logger;
+        this.eventRepository = eventRepository;
+        this.eventUserRepository = eventUserRepository;
     }
 
     /**
@@ -32,24 +43,97 @@ public class CalendarService implements ICalendarService {
      * Get calendar activities for a specific user, month, and year
      */
     @Override
-    public List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, String userId) {
-        // In a real implementation, we would:
-        // 1. Find events the user is hosting
-        // 2. Find events the user is attending
-        // 3. Combine them into activities
-        
+    public List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, UUID userId) {
         logger.info("Getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
         
-        // For now, return mock data
-        UUID userUuid;
+        List<CalendarActivityDTO> activities = new ArrayList<>();
+        
+        // Define the month range
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate startOfMonth = yearMonth.atDay(1);
+        LocalDate endOfMonth = yearMonth.atEndOfMonth();
+        
         try {
-            userUuid = UUID.fromString(userId);
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid user ID format: " + userId);
-            return Collections.emptyList();
+            // 1. Get events the user created during this month
+            List<Event> createdEvents = eventRepository.findByCreatorId(userId);
+            
+            // 2. Get events the user is participating in
+            List<EventUser> participatingEvents = eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
+            
+            // Process events created by the user
+            for (Event event : createdEvents) {
+                // Check if the event falls within the requested month
+                LocalDate eventDate = event.getStartTime().toLocalDate();
+                if (isDateInMonth(eventDate, startOfMonth, endOfMonth)) {
+                    activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
+                }
+            }
+            
+            // Process events the user is participating in
+            for (EventUser eventUser : participatingEvents) {
+                Event event = eventUser.getEvent();
+                // Check if the event falls within the requested month
+                LocalDate eventDate = event.getStartTime().toLocalDate();
+                if (isDateInMonth(eventDate, startOfMonth, endOfMonth)) {
+                    // Avoid adding duplicate entries for events the user both created and is participating in
+                    if (!event.getCreator().getId().equals(userId)) {
+                        activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
+                    }
+                }
+            }
+            
+            logger.info("Found " + activities.size() + " calendar activities for user: " + userId);
+            return activities;
+            
+        } catch (Exception e) {
+            logger.error("Error retrieving calendar activities: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Check if a date falls within a specific month range
+     */
+    private boolean isDateInMonth(LocalDate date, LocalDate startOfMonth, LocalDate endOfMonth) {
+        return !date.isBefore(startOfMonth) && !date.isAfter(endOfMonth);
+    }
+    
+    /**
+     * Create a CalendarActivityDTO from an Event
+     */
+    private CalendarActivityDTO createCalendarActivityFromEvent(Event event, UUID userId, String role) {
+        // Map event category to activity type
+        String activityType = "other";
+        
+        if (event.getCategory() != null) {
+            switch (event.getCategory()) {
+                case FOOD_AND_DRINK:
+                    activityType = "food";
+                    break;
+                case ACTIVE:
+                    activityType = "sports";
+                    break;
+                case GRIND:
+                    activityType = "work";
+                    break;
+                case CHILL:
+                    activityType = "leisure";
+                    break;
+                case GENERAL:
+                default:
+                    activityType = "general";
+                    break;
+            }
         }
         
-        return generateMockActivitiesForUser(month, year, userUuid);
+        return CalendarActivityDTO.builder()
+                .id(event.getId())
+                .title(event.getTitle())
+                .date(event.getStartTime().toLocalDate().format(DATE_FORMATTER))
+                .activityType(activityType)
+                .eventId(event.getId())
+                .userId(userId)
+                .build();
     }
 
     /**
