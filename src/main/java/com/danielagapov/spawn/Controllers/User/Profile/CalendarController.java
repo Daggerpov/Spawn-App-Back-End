@@ -1,9 +1,12 @@
 package com.danielagapov.spawn.Controllers.User.Profile;
 
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Calendar.ICalendarService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,33 +31,43 @@ public class CalendarController {
             @PathVariable UUID userId,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
-        
-        // If month and year are provided, get activities for that specific month
-        if (month != null && year != null) {
-            logger.info("Fetching calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
-            List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesForUser(month, year, userId);
-            logger.info("Found " + activities.size() + " activities for user: " + userId);
-            return ResponseEntity.ok(activities);
-        } 
-        // Otherwise, get all activities
-        else {
-            logger.info("Fetching all calendar activities for user: " + userId);
-            List<CalendarActivityDTO> activities = calendarService.getAllCalendarActivitiesForUser(userId);
-            logger.info("Found " + activities.size() + " total activities for user: " + userId);
-            return ResponseEntity.ok(activities);
+        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            // If month and year are provided, get activities for that specific month
+            if (month != null && year != null) {
+                logger.info("Fetching calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
+                List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesForUser(month, year, userId);
+                logger.info("Found " + activities.size() + " activities for user: " + userId);
+                return ResponseEntity.ok(activities);
+            }
+            // Otherwise, get all activities
+            else {
+                logger.info("Fetching all calendar activities for user: " + userId);
+                List<CalendarActivityDTO> activities = calendarService.getAllCalendarActivitiesForUser(userId);
+                logger.info("Found " + activities.size() + " total activities for user: " + userId);
+                return ResponseEntity.ok(activities);
+            }
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
     
     @GetMapping("/all")
     public ResponseEntity<List<CalendarActivityDTO>> getAllCalendarActivities(
             @PathVariable UUID userId) {
-        
-        logger.info("Fetching all calendar activities for user: " + userId);
-        
-        List<CalendarActivityDTO> activities = calendarService.getAllCalendarActivitiesForUser(userId);
-        
-        logger.info("Found " + activities.size() + " total activities for user: " + userId);
-        
-        return ResponseEntity.ok(activities);
+        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            List<CalendarActivityDTO> activities = calendarService.getAllCalendarActivitiesForUser(userId);
+
+            logger.info("Found " + activities.size() + " total activities for user: " + userId);
+
+            return ResponseEntity.ok(activities);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 } 
