@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.Calendar;
 
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
+import com.danielagapov.spawn.Enums.EventCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.Event;
@@ -102,35 +103,12 @@ public class CalendarService implements ICalendarService {
      * Create a CalendarActivityDTO from an Event
      */
     private CalendarActivityDTO createCalendarActivityFromEvent(Event event, UUID userId, String role) {
-        // Map event category to activity type
-        String activityType = "other";
-        
-        if (event.getCategory() != null) {
-            switch (event.getCategory()) {
-                case FOOD_AND_DRINK:
-                    activityType = "food";
-                    break;
-                case ACTIVE:
-                    activityType = "sports";
-                    break;
-                case GRIND:
-                    activityType = "work";
-                    break;
-                case CHILL:
-                    activityType = "leisure";
-                    break;
-                case GENERAL:
-                default:
-                    activityType = "general";
-                    break;
-            }
-        }
-        
         return CalendarActivityDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .date(event.getStartTime().toLocalDate().format(DATE_FORMATTER))
-                .activityType(activityType)
+                .eventCategory(event.getCategory())
+                .icon(event.getIcon())
                 .eventId(event.getId())
                 .userId(userId)
                 .build();
@@ -144,9 +122,12 @@ public class CalendarService implements ICalendarService {
         YearMonth yearMonth = YearMonth.of(year, month);
         int daysInMonth = yearMonth.lengthOfMonth();
         
-        // Activity types for variety
-        String[] activityTypes = {"music", "sports", "food", "travel", "gaming", "outdoors"};
+        // Event categories for variety
+        EventCategory[] categories = EventCategory.values();
         Random random = new Random();
+        
+        // Sample icons
+        String[] icons = {"🎮", "🍔", "⚽", "🎵", "✨", "🧠"};
         
         // Generate some random activities throughout the month
         for (int day = 1; day <= daysInMonth; day++) {
@@ -157,13 +138,15 @@ public class CalendarService implements ICalendarService {
                 // Create 1-3 activities for this day
                 int activitiesForDay = random.nextInt(3) + 1;
                 for (int i = 0; i < activitiesForDay; i++) {
-                    String activityType = activityTypes[random.nextInt(activityTypes.length)];
+                    EventCategory category = categories[random.nextInt(categories.length)];
+                    String icon = icons[random.nextInt(icons.length)];
                     
                     activities.add(CalendarActivityDTO.builder()
                             .id(UUID.randomUUID())
                             .title("Activity " + day + "-" + (i + 1))
                             .date(date)
-                            .activityType(activityType)
+                            .eventCategory(category)
+                            .icon(icon)
                             .build());
                 }
             }
