@@ -32,15 +32,6 @@ public class CalendarService implements ICalendarService {
     }
 
     /**
-     * Get all calendar activities for a specific month and year
-     */
-    public List<CalendarActivityDTO> getCalendarActivities(int month, int year) {
-        // This would typically query events from the database
-        // For now, we're generating mock data
-        return generateMockActivities(month, year);
-    }
-
-    /**
      * Get calendar activities for a specific user, month, and year
      */
     @Override
@@ -105,12 +96,10 @@ public class CalendarService implements ICalendarService {
     private CalendarActivityDTO createCalendarActivityFromEvent(Event event, UUID userId, String role) {
         return CalendarActivityDTO.builder()
                 .id(event.getId())
-                .title(event.getTitle())
                 .date(event.getStartTime().toLocalDate().format(DATE_FORMATTER))
                 .eventCategory(event.getCategory())
                 .icon(event.getIcon())
                 .eventId(event.getId())
-                .userId(userId)
                 .build();
     }
 
@@ -153,23 +142,5 @@ public class CalendarService implements ICalendarService {
         }
         
         return activities;
-    }
-    
-    /**
-     * Generate mock activities specific to a user
-     */
-    private List<CalendarActivityDTO> generateMockActivitiesForUser(int month, int year, UUID userId) {
-        List<CalendarActivityDTO> activities = generateMockActivities(month, year);
-        
-        logger.info("Generated " + activities.size() + " potential activities for user: " + userId);
-        
-        // Filter to only ~50% of activities and assign the user ID
-        return activities.stream()
-                .filter(a -> new Random().nextBoolean())
-                .map(activity -> {
-                    activity.setUserId(userId);
-                    return activity;
-                })
-                .collect(Collectors.toList());
     }
 } 
