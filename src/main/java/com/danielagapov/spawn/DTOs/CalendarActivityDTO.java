@@ -16,7 +16,7 @@ public class CalendarActivityDTO {
     private UUID id;
     private String title;
     private String date; // ISO format: YYYY-MM-DD
-    private EventCategory eventCategory; // Replacing activityType with eventCategory
+    private EventCategory eventCategory; 
     private String icon; // Icon for the calendar event (emoji)
     private UUID eventId; // Optional, if the activity is linked to a spawn event
     private UUID userId; // Optional, user associated with this activity
