@@ -37,6 +37,7 @@ public class User implements Serializable {
     private String username;
     private String profilePictureUrlString;
 
+    @Column(nullable = false)
     private String name;
     private String bio;
     
