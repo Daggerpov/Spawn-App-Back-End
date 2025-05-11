@@ -102,45 +102,4 @@ public class CalendarService implements ICalendarService {
                 .eventId(event.getId())
                 .build();
     }
-
-    /**
-     * Generate mock activities for testing the calendar
-     */
-    private List<CalendarActivityDTO> generateMockActivities(int month, int year) {
-        List<CalendarActivityDTO> activities = new ArrayList<>();
-        YearMonth yearMonth = YearMonth.of(year, month);
-        int daysInMonth = yearMonth.lengthOfMonth();
-        
-        // Event categories for variety
-        EventCategory[] categories = EventCategory.values();
-        Random random = new Random();
-        
-        // Sample icons
-        String[] icons = {"🎮", "🍔", "⚽", "🎵", "✨", "🧠"};
-        
-        // Generate some random activities throughout the month
-        for (int day = 1; day <= daysInMonth; day++) {
-            // Only create activities for ~30% of days
-            if (random.nextDouble() > 0.7) {
-                String date = String.format("%04d-%02d-%02d", year, month, day);
-                
-                // Create 1-3 activities for this day
-                int activitiesForDay = random.nextInt(3) + 1;
-                for (int i = 0; i < activitiesForDay; i++) {
-                    EventCategory category = categories[random.nextInt(categories.length)];
-                    String icon = icons[random.nextInt(icons.length)];
-                    
-                    activities.add(CalendarActivityDTO.builder()
-                            .id(UUID.randomUUID())
-                            .title("Activity " + day + "-" + (i + 1))
-                            .date(date)
-                            .eventCategory(category)
-                            .icon(icon)
-                            .build());
-                }
-            }
-        }
-        
-        return activities;
-    }
-} 
+}
