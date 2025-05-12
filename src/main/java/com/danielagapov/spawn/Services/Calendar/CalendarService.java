@@ -66,7 +66,7 @@ public class CalendarService implements ICalendarService {
             return activities;
         } catch (Exception e) {
             logger.error("Error getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year + 
-                         ". Error: " + e.getMessage(), e);
+                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
             throw e;
         }
     }
@@ -86,7 +86,8 @@ public class CalendarService implements ICalendarService {
             logger.info("Found " + activities.size() + " total calendar activities for user: " + userId);
             return activities;
         } catch (Exception e) {
-            logger.error("Error getting all calendar activities for user: " + userId + ". Error: " + e.getMessage(), e);
+            logger.error("Error getting all calendar activities for user: " + userId + 
+                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
             throw e;
         }
     }
@@ -126,7 +127,7 @@ public class CalendarService implements ICalendarService {
                     }
                 } catch (Exception e) {
                     logger.error("Error processing created event: " + event.getId() + " for user: " + userId + 
-                                ". Error: " + e.getMessage(), e);
+                                ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
                     // Continue processing other events
                 }
             }
@@ -147,7 +148,8 @@ public class CalendarService implements ICalendarService {
                 } catch (Exception e) {
                     logger.error("Error processing participating event: " + 
                                 (eventUser.getEvent() != null ? eventUser.getEvent().getId() : "null") + 
-                                " for user: " + userId + ". Error: " + e.getMessage(), e);
+                                " for user: " + userId + ". Error: " + e.getMessage() + 
+                                ", Stack trace: " + Arrays.toString(e.getStackTrace()));
                     // Continue processing other events
                 }
             }
@@ -156,7 +158,7 @@ public class CalendarService implements ICalendarService {
             
         } catch (Exception e) {
             logger.error("Error fetching calendar activities for user: " + userId + 
-                        ". Error: " + e.getMessage(), e);
+                        ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
             return new ArrayList<>();
         }
     }
@@ -186,7 +188,8 @@ public class CalendarService implements ICalendarService {
                 logger.warn("Cache " + CALENDAR_ACTIVITIES_CACHE + " not found when clearing");
             }
         } catch (Exception e) {
-            logger.error("Error clearing calendar cache for user: " + userId + ". Error: " + e.getMessage(), e);
+            logger.error("Error clearing calendar cache for user: " + userId + 
+                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
         }
     }
     
@@ -215,7 +218,7 @@ public class CalendarService implements ICalendarService {
         } catch (Exception e) {
             logger.error("Error checking if date is in range. Date: " + date + 
                         ", startDate: " + startDate + ", endDate: " + endDate + 
-                        ". Error: " + e.getMessage(), e);
+                        ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
             return false;
         }
     }
@@ -235,7 +238,7 @@ public class CalendarService implements ICalendarService {
         } catch (Exception e) {
             logger.error("Error creating calendar activity from event: " + event.getId() + 
                         " for user: " + userId + ", role: " + role + 
-                        ". Error: " + e.getMessage(), e);
+                        ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
             throw e;
         }
     }
