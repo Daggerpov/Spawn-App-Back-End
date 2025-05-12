@@ -31,6 +31,7 @@ public class CalendarService implements ICalendarService {
     // Cache names
     private static final String CALENDAR_ACTIVITIES_CACHE = "calendarActivities";
     private static final String ALL_CALENDAR_ACTIVITIES_CACHE = "allCalendarActivities";
+    private static final String FILTERED_CALENDAR_ACTIVITIES_CACHE = "filteredCalendarActivities";
 
     public CalendarService(
         ILogger logger, 
@@ -42,6 +43,41 @@ public class CalendarService implements ICalendarService {
         this.eventRepository = eventRepository;
         this.eventUserRepository = eventUserRepository;
         this.cacheManager = cacheManager;
+    }
+
+    /**
+     * Get calendar activities for a user based on optional month and year filters
+     */
+    @Override
+    @Cacheable(value = FILTERED_CALENDAR_ACTIVITIES_CACHE, key = "{#userId, #month, #year}")
+    public List<CalendarActivityDTO> getCalendarActivitiesWithFilters(UUID userId, Integer month, Integer year) {
+        logger.info("Getting calendar activities with filters for user: " + userId + 
+                   (month != null ? ", month: " + month : "") + 
+                   (year != null ? ", year: " + year : ""));
+        
+        try {
+            // If month and year are provided, get activities for that specific month
+            if (month != null && year != null) {
+                logger.info("Using month/year filter for user: " + userId);
+                List<CalendarActivityDTO> activities = getCalendarActivitiesForUser(month, year, userId);
+                logger.info("Found " + activities.size() + " activities with month/year filter for user: " + userId);
+                return activities;
+            }
+            // Otherwise, get all activities
+            else {
+                logger.info("No filters provided, getting all activities for user: " + userId);
+                List<CalendarActivityDTO> activities = getAllCalendarActivitiesForUser(userId);
+                logger.info("Found " + activities.size() + " total activities (no filters) for user: " + userId);
+                return activities;
+            }
+        } catch (Exception e) {
+            logger.error("Error getting calendar activities with filters for user: " + userId + 
+                        (month != null ? ", month: " + month : "") + 
+                        (year != null ? ", year: " + year : "") + 
+                        ". Error: " + e.getMessage() + 
+                        ", Stack trace: " + Arrays.toString(e.getStackTrace()));
+            throw e;
+        }
     }
 
     /**
@@ -178,6 +214,14 @@ public class CalendarService implements ICalendarService {
                 logger.info("Cleared ALL_CALENDAR_ACTIVITIES_CACHE for user: " + userId);
             } else {
                 logger.warn("Cache " + ALL_CALENDAR_ACTIVITIES_CACHE + " not found when clearing for user: " + userId);
+            }
+            
+            // Clear the filtered calendar activities cache
+            if (cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE) != null) {
+                cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE).clear();
+                logger.info("Cleared FILTERED_CALENDAR_ACTIVITIES_CACHE for all users");
+            } else {
+                logger.warn("Cache " + FILTERED_CALENDAR_ACTIVITIES_CACHE + " not found when clearing");
             }
             
             // Clear the specific month/year caches by evicting all entries
