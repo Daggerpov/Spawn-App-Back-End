@@ -36,10 +36,8 @@ public class CalendarController {
         try {
             return ResponseEntity.ok(calendarService.getCalendarActivitiesWithFilters(userId, month, year));
         } catch (BaseNotFoundException e) {
-            logger.error("User not found for calendar activities: " + userId);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            logger.error("Error fetching calendar activities for user " + userId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -52,10 +50,8 @@ public class CalendarController {
         try {
             return ResponseEntity.ok(calendarService.getCalendarActivitiesWithFilters(userId, null, null));
         } catch (BaseNotFoundException e) {
-            logger.error("User not found for all calendar activities: " + userId);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            logger.error("Error fetching all calendar activities for user " + userId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

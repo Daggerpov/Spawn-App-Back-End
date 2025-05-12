@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Services.Calendar;
 
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
-import com.danielagapov.spawn.Enums.EventCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.Event;
@@ -14,10 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class CalendarService implements ICalendarService {
@@ -195,7 +192,7 @@ public class CalendarService implements ICalendarService {
         } catch (Exception e) {
             logger.error("Error fetching calendar activities for user: " + userId + 
                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
-            return new ArrayList<>();
+            throw e;
         }
     }
     
@@ -234,6 +231,7 @@ public class CalendarService implements ICalendarService {
         } catch (Exception e) {
             logger.error("Error clearing calendar cache for user: " + userId + 
                          ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
+            throw e;
         }
     }
     
@@ -263,7 +261,7 @@ public class CalendarService implements ICalendarService {
             logger.error("Error checking if date is in range. Date: " + date + 
                         ", startDate: " + startDate + ", endDate: " + endDate + 
                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
-            return false;
+            throw e;
         }
     }
     
