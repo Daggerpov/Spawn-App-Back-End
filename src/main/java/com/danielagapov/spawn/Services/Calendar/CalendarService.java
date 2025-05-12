@@ -52,17 +52,23 @@ public class CalendarService implements ICalendarService {
     public List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, UUID userId) {
         logger.info("Getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
         
-        // Define the month range for filtering
-        YearMonth yearMonth = YearMonth.of(year, month);
-        LocalDate startOfMonth = yearMonth.atDay(1);
-        LocalDate endOfMonth = yearMonth.atEndOfMonth();
-        
-        // Call the helper method with month/year filtering
-        List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, startOfMonth, endOfMonth);
-        
-        logger.info("Found " + activities.size() + " calendar activities for user: " + userId + 
-                   " in month: " + month + ", year: " + year);
-        return activities;
+        try {
+            // Define the month range for filtering
+            YearMonth yearMonth = YearMonth.of(year, month);
+            LocalDate startOfMonth = yearMonth.atDay(1);
+            LocalDate endOfMonth = yearMonth.atEndOfMonth();
+            
+            // Call the helper method with month/year filtering
+            List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, startOfMonth, endOfMonth);
+            
+            logger.info("Found " + activities.size() + " calendar activities for user: " + userId + 
+                       " in month: " + month + ", year: " + year);
+            return activities;
+        } catch (Exception e) {
+            logger.error("Error getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year + 
+                         ". Error: " + e.getMessage(), e);
+            throw e;
+        }
     }
     
     /**
@@ -73,11 +79,16 @@ public class CalendarService implements ICalendarService {
     public List<CalendarActivityDTO> getAllCalendarActivitiesForUser(UUID userId) {
         logger.info("Getting all calendar activities for user: " + userId);
         
-        // Call the helper method with no date filtering
-        List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, null, null);
-        
-        logger.info("Found " + activities.size() + " total calendar activities for user: " + userId);
-        return activities;
+        try {
+            // Call the helper method with no date filtering
+            List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, null, null);
+            
+            logger.info("Found " + activities.size() + " total calendar activities for user: " + userId);
+            return activities;
+        } catch (Exception e) {
+            logger.error("Error getting all calendar activities for user: " + userId + ". Error: " + e.getMessage(), e);
+            throw e;
+        }
     }
     
     /**
@@ -92,40 +103,60 @@ public class CalendarService implements ICalendarService {
         List<CalendarActivityDTO> activities = new ArrayList<>();
         
         try {
+            logger.info("Fetching calendar activities for user: " + userId + 
+                       (startDate != null ? ", startDate: " + startDate : "") + 
+                       (endDate != null ? ", endDate: " + endDate : ""));
+            
             // 1. Get events the user created
             List<Event> createdEvents = eventRepository.findByCreatorId(userId);
+            logger.info("Found " + createdEvents.size() + " events created by user: " + userId);
             
             // 2. Get events the user is participating in
             List<EventUser> participatingEvents = eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
+            logger.info("Found " + participatingEvents.size() + " events user is participating in, userId: " + userId);
             
             // Process events created by the user
             for (Event event : createdEvents) {
-                LocalDate eventDate = event.getStartTime().toLocalDate();
-                
-                // Apply date filtering if specified
-                if (isDateInRange(eventDate, startDate, endDate)) {
-                    activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
+                try {
+                    LocalDate eventDate = event.getStartTime().toLocalDate();
+                    
+                    // Apply date filtering if specified
+                    if (isDateInRange(eventDate, startDate, endDate)) {
+                        activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
+                    }
+                } catch (Exception e) {
+                    logger.error("Error processing created event: " + event.getId() + " for user: " + userId + 
+                                ". Error: " + e.getMessage(), e);
+                    // Continue processing other events
                 }
             }
             
             // Process events the user is participating in
             for (EventUser eventUser : participatingEvents) {
-                Event event = eventUser.getEvent();
-                LocalDate eventDate = event.getStartTime().toLocalDate();
-                
-                // Apply date filtering if specified
-                if (isDateInRange(eventDate, startDate, endDate)) {
-                    // Avoid adding duplicate entries for events the user both created and is participating in
-                    if (!event.getCreator().getId().equals(userId)) {
-                        activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
+                try {
+                    Event event = eventUser.getEvent();
+                    LocalDate eventDate = event.getStartTime().toLocalDate();
+                    
+                    // Apply date filtering if specified
+                    if (isDateInRange(eventDate, startDate, endDate)) {
+                        // Avoid adding duplicate entries for events the user both created and is participating in
+                        if (!event.getCreator().getId().equals(userId)) {
+                            activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
+                        }
                     }
+                } catch (Exception e) {
+                    logger.error("Error processing participating event: " + 
+                                (eventUser.getEvent() != null ? eventUser.getEvent().getId() : "null") + 
+                                " for user: " + userId + ". Error: " + e.getMessage(), e);
+                    // Continue processing other events
                 }
             }
             
             return activities;
             
         } catch (Exception e) {
-            logger.error("Error retrieving calendar activities: " + e.getMessage());
+            logger.error("Error fetching calendar activities for user: " + userId + 
+                        ". Error: " + e.getMessage(), e);
             return new ArrayList<>();
         }
     }
@@ -136,14 +167,27 @@ public class CalendarService implements ICalendarService {
      * or when a user's participation status changes.
      */
     public void clearCalendarCache(UUID userId) {
-        logger.info("Clearing calendar cache for user: " + userId);
-        
-        // Clear the cache for all calendar activities
-        cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE).evict(userId);
-        
-        // Clear the specific month/year caches by evicting all entries
-        // This is a simple approach - for more targeted clearing we'd need to track which months need updating
-        cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE).clear();
+        try {
+            logger.info("Clearing calendar cache for user: " + userId);
+            
+            // Clear the cache for all calendar activities
+            if (cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE) != null) {
+                cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE).evict(userId);
+                logger.info("Cleared ALL_CALENDAR_ACTIVITIES_CACHE for user: " + userId);
+            } else {
+                logger.warn("Cache " + ALL_CALENDAR_ACTIVITIES_CACHE + " not found when clearing for user: " + userId);
+            }
+            
+            // Clear the specific month/year caches by evicting all entries
+            if (cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE) != null) {
+                cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE).clear();
+                logger.info("Cleared CALENDAR_ACTIVITIES_CACHE for all users");
+            } else {
+                logger.warn("Cache " + CALENDAR_ACTIVITIES_CACHE + " not found when clearing");
+            }
+        } catch (Exception e) {
+            logger.error("Error clearing calendar cache for user: " + userId + ". Error: " + e.getMessage(), e);
+        }
     }
     
     /**
@@ -155,30 +199,44 @@ public class CalendarService implements ICalendarService {
      * @return true if the date is within the range, false otherwise
      */
     private boolean isDateInRange(LocalDate date, LocalDate startDate, LocalDate endDate) {
-        // If no date range is specified, include all dates
-        if (startDate == null && endDate == null) {
-            return true;
+        try {
+            // If no date range is specified, include all dates
+            if (startDate == null && endDate == null) {
+                return true;
+            }
+            
+            // Check lower bound if specified
+            boolean afterStart = (startDate == null || !date.isBefore(startDate));
+            
+            // Check upper bound if specified
+            boolean beforeEnd = (endDate == null || !date.isAfter(endDate));
+            
+            return afterStart && beforeEnd;
+        } catch (Exception e) {
+            logger.error("Error checking if date is in range. Date: " + date + 
+                        ", startDate: " + startDate + ", endDate: " + endDate + 
+                        ". Error: " + e.getMessage(), e);
+            return false;
         }
-        
-        // Check lower bound if specified
-        boolean afterStart = (startDate == null || !date.isBefore(startDate));
-        
-        // Check upper bound if specified
-        boolean beforeEnd = (endDate == null || !date.isAfter(endDate));
-        
-        return afterStart && beforeEnd;
     }
     
     /**
      * Create a CalendarActivityDTO from an Event
      */
     private CalendarActivityDTO createCalendarActivityFromEvent(Event event, UUID userId, String role) {
-        return CalendarActivityDTO.builder()
-                .id(event.getId())
-                .date(event.getStartTime().toLocalDate().format(DATE_FORMATTER))
-                .eventCategory(event.getCategory())
-                .icon(event.getIcon())
-                .eventId(event.getId())
-                .build();
+        try {
+            return CalendarActivityDTO.builder()
+                    .id(event.getId())
+                    .date(event.getStartTime().toLocalDate().format(DATE_FORMATTER))
+                    .eventCategory(event.getCategory())
+                    .icon(event.getIcon())
+                    .eventId(event.getId())
+                    .build();
+        } catch (Exception e) {
+            logger.error("Error creating calendar activity from event: " + event.getId() + 
+                        " for user: " + userId + ", role: " + role + 
+                        ". Error: " + e.getMessage(), e);
+            throw e;
+        }
     }
 }
