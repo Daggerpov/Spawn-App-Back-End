@@ -3,6 +3,7 @@ package com.danielagapov.spawn.DTOs;
 import com.danielagapov.spawn.Enums.EventCategory;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 @Data
@@ -10,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
-public class CalendarActivityDTO {
+public class CalendarActivityDTO implements Serializable {
     private UUID id;
     private String date; // ISO format: YYYY-MM-DD
     private EventCategory eventCategory;
