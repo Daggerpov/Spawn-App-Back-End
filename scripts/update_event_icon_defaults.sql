@@ -36,18 +36,3 @@ WHERE icon = '⭐️'
 
 -- Commit transaction
 COMMIT;
-
--- Output summary
-SELECT COUNT(*) AS 'Total Events',
-    COUNT(
-        CASE
-            WHEN icon = '⭐️' THEN 1
-            ELSE NULL
-        END
-    ) AS 'Events with Default Icon',
-    COUNT(
-        CASE
-            WHEN color_hex_code IN ('#00A676', '#FF7620', '#06AED5', '#FE5E6E') THEN 1
-            ELSE NULL
-        END
-    ) AS 'Events with Default Colors';
