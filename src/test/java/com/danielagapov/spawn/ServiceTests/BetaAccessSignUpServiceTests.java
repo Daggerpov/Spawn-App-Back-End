@@ -7,6 +7,7 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.BetaAccessSignUp;
 import com.danielagapov.spawn.Repositories.IBetaAccessSignUpRepository;
 import com.danielagapov.spawn.Services.BetaAccessSignUp.BetaAccessSignUpService;
+import com.danielagapov.spawn.Services.Email.IEmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -27,6 +28,9 @@ public class BetaAccessSignUpServiceTests {
 
     @Mock
     private ILogger logger;
+
+    @Mock
+    private IEmailService emailService;
 
     @InjectMocks
     private BetaAccessSignUpService service;

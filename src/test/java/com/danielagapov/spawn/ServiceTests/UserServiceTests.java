@@ -2,6 +2,7 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -112,9 +113,10 @@ public class UserServiceTests {
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class))).thenReturn(updatedUser);
+        UserUpdateDTO updateDTO = new UserUpdateDTO("New bio", "new_username", "NewFirst", "NewLast");
 
         // Act
-        var result = userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast");
+        var result = userService.updateUser(userId, updateDTO);
 
         // Assert
         assertEquals("new_username", result.getUsername());
@@ -136,9 +138,10 @@ public class UserServiceTests {
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class))).thenReturn(updatedUser);
 
-        // Act - only updating bio and lastName, keeping other fields the same
-        var result = userService.updateUser(userId, "New bio", null, null, "NewLast");
+        UserUpdateDTO updateDTO = new UserUpdateDTO("New bio", "new_username", "NewFirst", "NewLast");
 
+        // Act
+        var result = userService.updateUser(userId, updateDTO);
         // Assert
         assertEquals("old_username", result.getUsername());  // unchanged
         assertEquals("OldFirst", result.getFirstName());     // unchanged
@@ -157,7 +160,7 @@ public class UserServiceTests {
 
         // Act & Assert
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+                () -> userService.updateUser(userId, new UserUpdateDTO("New bio", "new_username", "NewFirst", "NewLast")));
 
         assertTrue(exception.getMessage().contains("User"));
         verify(userRepository, times(1)).findById(userId);
@@ -176,7 +179,7 @@ public class UserServiceTests {
 
         // Act & Assert
         Exception exception = assertThrows(DataAccessException.class,
-                () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+                () -> userService.updateUser(userId, new UserUpdateDTO("New bio", "new_username", "NewFirst", "NewLast")));
 
         assertTrue(exception.getMessage().contains("Database error"));
         verify(userRepository, times(1)).findById(userId);
@@ -279,7 +282,7 @@ public class UserServiceTests {
 
         // Act & Assert
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> userService.updateUser(userId, "New bio", "new_username", "NewFirst", "NewLast"));
+                () -> userService.updateUser(userId, new UserUpdateDTO("New bio", "new_username", "NewFirst", "NewLast")));
 
         assertTrue(exception.getMessage().contains("Unexpected error"));
         verify(logger, times(1)).error(anyString());
