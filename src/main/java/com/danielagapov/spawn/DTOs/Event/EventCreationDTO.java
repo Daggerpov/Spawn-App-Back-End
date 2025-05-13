@@ -29,7 +29,7 @@ public class EventCreationDTO extends AbstractEventDTO {
     List<UUID> invitedFriendTagIds,
     List<UUID> invitedFriendUserIds,
     String colorHexCode) {
-        super(id, title, startTime, endTime, note, icon, category);
+        super(id, title, startTime, endTime, note, icon, category, colorHexCode);
         this.location = location;
         this.creatorUserId = creatorUserId;
         this.invitedFriendTagIds = invitedFriendTagIds;
