@@ -1,9 +1,12 @@
 package com.danielagapov.spawn.Controllers.User.Profile;
 
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Calendar.ICalendarService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,15 +29,30 @@ public class CalendarController {
     @GetMapping()
     public ResponseEntity<List<CalendarActivityDTO>> getCalendarActivities(
             @PathVariable UUID userId,
-            @RequestParam(required = true) int month,
-            @RequestParam(required = true) int year) {
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
+        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         
-        logger.info("Fetching calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
+        try {
+            return ResponseEntity.ok(calendarService.getCalendarActivitiesWithFilters(userId, month, year));
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    @GetMapping("/all")
+    public ResponseEntity<List<CalendarActivityDTO>> getAllCalendarActivities(
+            @PathVariable UUID userId) {
+        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         
-        List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesForUser(month, year, userId);
-        
-        logger.info("Found " + activities.size() + " activities for user: " + userId);
-        
-        return ResponseEntity.ok(activities);
+        try {
+            return ResponseEntity.ok(calendarService.getCalendarActivitiesWithFilters(userId, null, null));
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 } 
