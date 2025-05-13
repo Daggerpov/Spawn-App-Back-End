@@ -275,6 +275,7 @@ public class CalendarService implements ICalendarService {
                     .date(event.getStartTime().toLocalDate().format(DATE_FORMATTER))
                     .eventCategory(event.getCategory())
                     .icon(event.getIcon())
+                    .colorHexCode(event.getColorHexCode())
                     .eventId(event.getId())
                     .build();
         } catch (Exception e) {
