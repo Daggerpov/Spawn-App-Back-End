@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Util.SearchedUserResult;
@@ -82,7 +83,7 @@ public interface IUserService {
 
     BaseUserDTO getBaseUserById(UUID id);
 
-    BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName);
+    BaseUserDTO updateUser(UUID id, UserUpdateDTO updateUserDTO);
 
     SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery);
 

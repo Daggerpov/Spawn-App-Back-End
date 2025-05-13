@@ -129,25 +129,10 @@ public class UserController {
     public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            logger.info("Received request to update user " + id + ": " +
-                    "username=" + updateDTO.getUsername() + ", " +
-                    "firstName=" + updateDTO.getFirstName() + ", " +
-                    "lastName=" + updateDTO.getLastName() + ", " +
-                    "bio=" + updateDTO.getBio());
-
             BaseUserDTO updatedUser = userService.updateUser(
                     id,
-                    updateDTO.getBio(),
-                    updateDTO.getUsername(),
-                    updateDTO.getFirstName(),
-                    updateDTO.getLastName()
+                    updateDTO
             );
-
-            logger.info("Successfully updated user " + id + ": " +
-                    "username=" + updatedUser.getUsername() + ", " +
-                    "firstName=" + updatedUser.getFirstName() + ", " +
-                    "lastName=" + updatedUser.getLastName() + ", " +
-                    "bio=" + updatedUser.getBio());
 
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (BaseNotFoundException e) {

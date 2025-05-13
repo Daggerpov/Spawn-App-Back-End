@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -497,15 +498,15 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName) {
+    public BaseUserDTO updateUser(UUID id, UserUpdateDTO updateDTO) {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
-            user.setBio(bio);
-            user.setUsername(username);
-            user.setFirstName(firstName);
-            user.setLastName(lastName);
+            user.setBio(updateDTO.getBio());
+            user.setUsername(updateDTO.getUsername());
+            user.setFirstName(updateDTO.getFirstName());
+            user.setLastName(updateDTO.getLastName());
 
             user = repository.save(user);
 
