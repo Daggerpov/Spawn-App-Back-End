@@ -35,6 +35,7 @@ public class Event implements Serializable {
     private OffsetDateTime startTime;
     private OffsetDateTime endTime;
     private String icon;
+    private String colorHexCode;
     
     @Enumerated(EnumType.STRING)
     private EventCategory category;
@@ -65,7 +66,7 @@ public class Event implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, EventCategory category) {
+    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, EventCategory category, String colorHexCode) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -76,5 +77,6 @@ public class Event implements Serializable {
         this.lastUpdated = Instant.now();
         this.icon = icon;
         this.category = category;
+        this.colorHexCode = colorHexCode;
     }
 }

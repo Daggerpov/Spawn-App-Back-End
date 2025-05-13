@@ -18,5 +18,6 @@ public class CalendarActivityDTO implements Serializable {
     private String date; // ISO format: YYYY-MM-DD
     private EventCategory eventCategory; 
     private String icon; // Icon for the calendar event (emoji)
+    private String colorHexCode; // Color for the calendar event
     private UUID eventId; // Optional, if the activity is linked to a spawn event
 } 
