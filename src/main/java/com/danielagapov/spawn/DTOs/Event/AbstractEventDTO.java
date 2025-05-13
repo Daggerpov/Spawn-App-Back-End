@@ -27,4 +27,5 @@ public abstract class AbstractEventDTO implements Serializable {
      */
     String icon;
     EventCategory category;
+    String colorHexCode;
 }

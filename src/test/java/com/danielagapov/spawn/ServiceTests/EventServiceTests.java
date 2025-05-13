@@ -89,7 +89,7 @@ public class EventServiceTests {
         Location loc = new Location(UUID.randomUUID(), "Dummy Location", 0.0, 0.0);
         User creator = new User();
         creator.setId(UUID.randomUUID());
-        return new Event(eventId, title, start, end, loc, "Note", creator, "icon", EventCategory.ACTIVE);
+        return new Event(eventId, title, start, end, loc, "Note", creator, "icon", EventCategory.ACTIVE, "123434");
     }
 
     private EventDTO dummyEventDTO(UUID eventId, String title) {
@@ -105,7 +105,8 @@ public class EventServiceTests {
                 UUID.randomUUID(),
                 List.of(),
                 List.of(),
-                List.of()
+                List.of(),
+                "asdfasdf"
         );
     }
 
@@ -118,7 +119,7 @@ public class EventServiceTests {
         dummyCreator.setId(UUID.randomUUID());
         Event event = new Event(UUID.randomUUID(), "Test Event",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", EventCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon", EventCategory.ACTIVE, "asdfasdf");
 
         when(eventRepository.findAll()).thenReturn(List.of(event));
         when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
@@ -141,7 +142,7 @@ public class EventServiceTests {
         dummyCreator.setId(UUID.randomUUID());
         Event event = new Event(eventId, "Test Event",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", EventCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon", EventCategory.ACTIVE, "asdfasdf");
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
         when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
@@ -172,7 +173,7 @@ public class EventServiceTests {
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         EventDTO eventDTO = new EventDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", EventCategory.ACTIVE, UUID.randomUUID(),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), "asdfasdf");
         User creator = new User(
                 UUID.randomUUID(),
                 "username",
@@ -197,7 +198,7 @@ public class EventServiceTests {
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         EventDTO eventDTO = new EventDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", EventCategory.ACTIVE, UUID.randomUUID(),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), "asdfasdf");
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
         when(eventRepository.save(any(Event.class))).thenThrow(new DataAccessException("Database error") {
@@ -252,7 +253,8 @@ public class EventServiceTests {
                 EventCategory.ACTIVE,
                 creatorId,
                 List.of(friendTagId),
-                List.of(explicitInviteId)
+                List.of(explicitInviteId),
+                "asdfasdf"
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -322,7 +324,8 @@ public class EventServiceTests {
                 EventCategory.ACTIVE,
                 creatorId,
                 List.of(),
-                List.of()
+                List.of(),
+                "asdfasdf"
         );
 
         when(locationService.save(any(Location.class))).thenThrow(new DataAccessException("Location save error") {
@@ -351,7 +354,8 @@ public class EventServiceTests {
                 EventCategory.ACTIVE,
                 creatorId,
                 List.of(friendTagId),
-                List.of(commonUserId)
+                List.of(commonUserId),
+                "asdfasdf"
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -764,7 +768,7 @@ public class EventServiceTests {
                 "icon",
                 EventCategory.ACTIVE,
                 UUID.randomUUID(),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), "asdfasdf");
         when(locationService.getLocationById(eventDTO.getLocationId()))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(eventDTO.getCreatorUserId())).thenReturn(new BaseUserDTO(
@@ -788,7 +792,7 @@ public class EventServiceTests {
         UUID creatorId = UUID.randomUUID();
         EventDTO eventDTO = new EventDTO(
                 UUID.randomUUID(), "Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                UUID.randomUUID(), "Note", "icon", EventCategory.ACTIVE, creatorId, List.of(), List.of(), List.of());
+                UUID.randomUUID(), "Note", "icon", EventCategory.ACTIVE, creatorId, List.of(), List.of(), List.of(), "asdfasdf");
         UUID requestingUserId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");

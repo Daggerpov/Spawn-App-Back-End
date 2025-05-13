@@ -29,7 +29,8 @@ public class EventMapper {
                 creatorUserId,
                 participantUserIds,
                 invitedUserIds,
-                chatMessageIds
+                chatMessageIds,
+                entity.getColorHexCode()
         );
     }
 
@@ -44,7 +45,8 @@ public class EventMapper {
                 dto.getNote(),
                 creator,
                 dto.getIcon(),
-                dto.getCategory()
+                dto.getCategory(),
+                dto.getColorHexCode()
         );
     }
 
