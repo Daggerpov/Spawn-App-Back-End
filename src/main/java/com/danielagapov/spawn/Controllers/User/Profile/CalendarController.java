@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Controllers.User.Profile;
 
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
-import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Calendar.ICalendarService;
@@ -32,21 +31,22 @@ public class CalendarController {
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        
+
         try {
             return ResponseEntity.ok(calendarService.getCalendarActivitiesWithFilters(userId, month, year));
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error getting calendar activities: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     @GetMapping("/all")
     public ResponseEntity<List<CalendarActivityDTO>> getAllCalendarActivities(
             @PathVariable UUID userId) {
         if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        
+
         try {
             return ResponseEntity.ok(calendarService.getCalendarActivitiesWithFilters(userId, null, null));
         } catch (BaseNotFoundException e) {
