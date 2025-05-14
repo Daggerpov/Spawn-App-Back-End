@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Repositories;
 
+import com.danielagapov.spawn.DTOs.UserIdEventTimeDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
 import com.danielagapov.spawn.Models.EventUser;
@@ -28,8 +29,8 @@ public interface IEventUserRepository extends JpaRepository<EventUser, EventUser
     @Query("SELECT eu.event.id FROM EventUser eu WHERE eu.user.id = :userId AND eu.status = :status AND eu.event.endTime <= current_time")
     List<UUID> findPastEventIdsForUser(UUID userId, ParticipationStatus status, Limit limit);
 
-    @Query("SELECT DISTINCT eu.user.id FROM EventUser eu WHERE eu.event.id IN :eventIds AND eu.status = :status AND eu.user.id != :userId GROUP BY eu.user.id ORDER BY MAX(eu.event.startTime) DESC")
-    List<UUID> findOtherUserIdsByEventIds(List<UUID> eventIds, UUID userId, ParticipationStatus status);
+    @Query("SELECT DISTINCT new com.danielagapov.spawn.DTOs.UserIdEventTimeDTO(eu.user.id, eu.event.startTime) FROM EventUser eu WHERE eu.event.id IN :eventIds AND eu.status = :status AND eu.user.id != :userId GROUP BY eu.user.id ORDER BY MAX(eu.event.startTime) DESC")
+    List<UserIdEventTimeDTO> findOtherUserIdsByEventIds(List<UUID> eventIds, UUID userId, ParticipationStatus status);
 
     Optional<EventUser> findByEvent_IdAndUser_Id(UUID eventId, UUID userId);
 

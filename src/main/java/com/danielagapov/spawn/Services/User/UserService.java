@@ -1,11 +1,14 @@
 package com.danielagapov.spawn.Services.User;
 
+import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
+import com.danielagapov.spawn.DTOs.UserIdEventTimeDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -21,13 +24,13 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
-import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -42,8 +45,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.function.Predicate.not;
-
 
 @Service
 public class UserService implements IUserService {
@@ -56,6 +57,7 @@ public class UserService implements IUserService {
     private final ILogger logger;
     private final IUserSearchService userSearchService;
     private final CacheManager cacheManager;
+    private final IFriendRequestService friendRequestService;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
@@ -65,7 +67,7 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService, CacheManager cacheManager) {
+                       UserSearchService userSearchService, CacheManager cacheManager, IFriendRequestService friendRequestService) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -75,6 +77,7 @@ public class UserService implements IUserService {
         this.logger = logger;
         this.userSearchService = userSearchService;
         this.cacheManager = cacheManager;
+        this.friendRequestService = friendRequestService;
     }
 
     @Override
@@ -531,16 +534,24 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<BaseUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId) {
+    public List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId) {
         try {
-            final int limit = 10;
-            List<UUID> pastEventIds = eventUserRepository.findPastEventIdsForUser(requestingUserId, ParticipationStatus.participating, Limit.of(limit));
-            List<UUID> pastEventParticipantIds = eventUserRepository.findOtherUserIdsByEventIds(pastEventIds, requestingUserId, ParticipationStatus.participating);
+            final int eventLimit = 10;
+            final int userLimit = 40;
+            List<UUID> pastEventIds = eventUserRepository.findPastEventIdsForUser(requestingUserId, ParticipationStatus.participating, Limit.of(eventLimit));
+            List<UserIdEventTimeDTO> pastEventParticipantIds = eventUserRepository.findOtherUserIdsByEventIds(pastEventIds, requestingUserId, ParticipationStatus.participating);
             Set<UUID> friendIds = new HashSet<>(getFriendUserIdsByUserId(requestingUserId));
+            friendIds.addAll(
+                    friendRequestService.getSentFriendRequestsByUserId(requestingUserId)
+                            .stream()
+                            .map(CreateFriendRequestDTO::getReceiverUserId)
+                            .collect(Collectors.toSet())
+            ); // Include users with outgoing friend requests
 
             return pastEventParticipantIds.stream()
-                    .filter(not(friendIds::contains))
-                    .map(this::getBaseUserById)
+                    .filter(e -> !friendIds.contains(e.getUserId()))
+                    .map(e -> new RecentlySpawnedUserDTO(getBaseUserById(e.getUserId()), e.getStartTime()))
+                    .limit(userLimit)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error("Error fetching recently spawned-with users for user: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ". " + e.getMessage());

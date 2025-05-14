@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.User;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Models.FriendTag;
@@ -99,5 +100,5 @@ public interface IUserService {
      */
     User getUserByEmail(String email);
 
-    List<BaseUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
+    List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
 }
