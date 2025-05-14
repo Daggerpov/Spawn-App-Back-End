@@ -24,19 +24,15 @@ public class EventController {
         this.eventService = eventService;
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful. 
+    // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently." +
             "This may become a feature, as Owen has suggested, " +
             "with showing a friend's recent events.")
-    // full path: /api/v1/events/user/{creatorUserId}?full=full
+    // full path: /api/v1/events/user/{creatorUserId}
     @GetMapping("user/{creatorUserId}")
-    public ResponseEntity<?> getEventsCreatedByUserId(@PathVariable UUID creatorUserId, @RequestParam(value = "full", required = false) boolean full) {
+    public ResponseEntity<?> getEventsCreatedByUserId(@PathVariable UUID creatorUserId) {
         try {
-            if (full) {
-                return new ResponseEntity<>(eventService.convertEventsToFullFeedSelfOwnedEvents(eventService.getEventsByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(eventService.getEventsByOwnerId(creatorUserId), HttpStatus.OK);
-            }
+            return new ResponseEntity<>(eventService.convertEventsToFullFeedSelfOwnedEvents(eventService.getEventsByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // user or event not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);

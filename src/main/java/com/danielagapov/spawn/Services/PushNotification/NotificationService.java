@@ -12,7 +12,7 @@ import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IDeviceTokenRepository;
 import com.danielagapov.spawn.Repositories.INotificationPreferencesRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Utils.LoggingUtils;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -67,22 +67,21 @@ public class NotificationService {
 
             // Use a more reliable approach to handle existing tokens
             List<DeviceToken> existingTokens = deviceTokenRepository.findByToken(token);
-            if (!existingTokens.isEmpty()) {
-                logger.info("Token already exists, updating existing record instead of creating new");
-                DeviceToken existingToken = existingTokens.get(0);
-                existingToken.setUser(user);
-                existingToken.setDeviceType(deviceTokenDTO.getDeviceType());
-                deviceTokenRepository.save(existingToken);
-            } else {
-                // Create new token if it doesn't exist
-                DeviceToken deviceToken = new DeviceToken();
-                deviceToken.setUser(user);
-                deviceToken.setToken(token);
-                deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
-                deviceTokenRepository.save(deviceToken);
+            for (DeviceToken existingToken : existingTokens) {
+                // already have this exact token
+                if (existingToken.getToken().equals(deviceTokenDTO.getToken())) {
+                    return;
+                }
             }
 
-            logger.info("Device token saved successfully for user: " + user.getId() + " with names: "
+            // Add token to this user
+            DeviceToken deviceToken = new DeviceToken();
+            deviceToken.setUser(user);
+            deviceToken.setToken(token);
+            deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
+            deviceTokenRepository.save(deviceToken);
+
+            logger.info("New device token added successfully for user: " + user.getId() + " with names: "
                     + user.getFirstName() + " " + user.getLastName() + " and username: " + user.getUsername());
 
             // Send a test notification to confirm registration

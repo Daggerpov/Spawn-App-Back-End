@@ -60,9 +60,7 @@ public class AdminUserInitializer {
                 } catch (Exception e) {
                     logger.error("Failed to create admin user: " + e.getMessage());
                 }
-            } else {
-                logger.info("Admin user already exists");
-            }
+            } 
         };
     }
 } 

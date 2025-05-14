@@ -39,7 +39,20 @@ public class UserController {
         try {
             return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<List<? extends AbstractUserDTO>>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/{id}
+    @GetMapping("{id}")
+    public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {
+        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try { 
+            return new ResponseEntity<>(userService.getBaseUserById(id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -77,9 +90,7 @@ public class UserController {
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            logger.info("Received request to update profile picture for user " + id + " (file size: " + file.length + " bytes)");
             UserDTO updatedUser = s3Service.updateProfilePicture(file, id);
-            logger.info("Successfully updated profile picture for user " + id + ": " + updatedUser.getProfilePicture());
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error updating profile picture for user " + id + ": " + e.getMessage());
@@ -91,9 +102,7 @@ public class UserController {
     @GetMapping("default-pfp")
     public ResponseEntity<String> getDefaultProfilePicture() {
         try {
-            logger.info("Received request for default profile picture");
             String defaultPfp = s3Service.getDefaultProfilePicture();
-            logger.info("Returning default profile picture: " + defaultPfp);
             return new ResponseEntity<>(defaultPfp, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error retrieving default profile picture: " + e.getMessage());
@@ -120,30 +129,15 @@ public class UserController {
     public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            logger.info("Received request to update user " + id + ": " +
-                    "username=" + updateDTO.getUsername() + ", " +
-                    "firstName=" + updateDTO.getFirstName() + ", " +
-                    "lastName=" + updateDTO.getLastName() + ", " +
-                    "bio=" + updateDTO.getBio());
-
             BaseUserDTO updatedUser = userService.updateUser(
                     id,
-                    updateDTO.getBio(),
-                    updateDTO.getUsername(),
-                    updateDTO.getFirstName(),
-                    updateDTO.getLastName()
+                    updateDTO
             );
-
-            logger.info("Successfully updated user " + id + ": " +
-                    "username=" + updatedUser.getUsername() + ", " +
-                    "firstName=" + updatedUser.getFirstName() + ", " +
-                    "lastName=" + updatedUser.getLastName() + ", " +
-                    "bio=" + updatedUser.getBio());
 
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for update: " + id + ", entity type: " + e.entityType);
-            return new ResponseEntity<BaseUserDTO>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error updating user " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -156,7 +150,7 @@ public class UserController {
         try {
             return new ResponseEntity<>(userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            return new ResponseEntity<SearchedUserResult>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

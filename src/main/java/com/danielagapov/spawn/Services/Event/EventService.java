@@ -389,7 +389,8 @@ public class EventService implements IEventService {
             @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
-            @CacheEvict(value = "feedEvents", key = "#userId")
+            @CacheEvict(value = "feedEvents", key = "#userId"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#userId")
     })
     public boolean inviteUser(UUID eventId, UUID userId) {
         EventUsersId compositeId = new EventUsersId(eventId, userId);
@@ -427,7 +428,8 @@ public class EventService implements IEventService {
             @CacheEvict(value = "eventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventsInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullEventById", key = "#eventId.toString() + ':' + #userId.toString()"),
-            @CacheEvict(value = "feedEvents", key = "#userId")
+            @CacheEvict(value = "feedEvents", key = "#userId"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#userId")
     })
     public FullFeedEventDTO toggleParticipation(UUID eventId, UUID userId) {
         EventUser eventUser = eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.EventUser));
@@ -466,6 +468,7 @@ public class EventService implements IEventService {
     }
 
     @Override
+    @Cacheable(value = "eventsInvitedToByFriendTagId", key = "#friendTagId.toString() + ':' + #requestingUserId")
     public List<EventDTO> getEventsInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId) {
         try {
             List<Event> events = repository.getEventsInvitedToWithFriendTagId(friendTagId, requestingUserId);
@@ -600,13 +603,16 @@ public class EventService implements IEventService {
                     event.getEndTime(),
                     location,
                     event.getNote(),
+                    event.getIcon(),
+                    event.getCategory(),
                     creator,
                     userService.getParticipantsByEventId(event.getId()),
                     userService.getInvitedByEventId(event.getId()),
                     chatMessageService.getFullChatMessagesByEventId(event.getId()),
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(event, requestingUserId) : null,
                     requestingUserId != null ? getParticipationStatus(event.getId(), requestingUserId) : null,
-                    event.getCreatorUserId().equals(requestingUserId)
+                    event.getCreatorUserId().equals(requestingUserId),
+                    event.getColorHexCode()
             );
         } catch (BaseNotFoundException e) {
             return null;

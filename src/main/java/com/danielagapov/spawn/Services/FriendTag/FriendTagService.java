@@ -18,7 +18,10 @@ import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -32,15 +35,16 @@ public class FriendTagService implements IFriendTagService {
     private final IUserFriendTagRepository uftRepository;
     private final IUserRepository userRepository;
     private final ILogger logger;
-
+    private final CacheManager cacheManager;
     @Autowired
     public FriendTagService(IFriendTagRepository repository, IUserService userService,
-                            IUserFriendTagRepository uftRepository, IUserRepository userRepository, ILogger logger) {
+                            IUserFriendTagRepository uftRepository, IUserRepository userRepository, ILogger logger, CacheManager cacheManager) {
         this.repository = repository;
         this.userService = userService;
         this.uftRepository = uftRepository;
         this.userRepository = userRepository;
         this.logger = logger;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -89,6 +93,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
+    @Cacheable(value = "friendTagsByOwnerId", key = "#ownerId")
     public List<FriendTagDTO> getFriendTagsByOwnerId(UUID ownerId) {
         try {
             // Fetch the raw data
@@ -115,7 +120,11 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTag.id", condition = "#friendTag.id != null")
+    @Caching(evict = {
+            @CacheEvict(value = "eventsByFriendTagId", key = "#friendTag.id", condition = "#friendTag.id != null"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#friendTag.ownerUserId"),
+            @CacheEvict(value = "friendTagsByOwnerId", key = "#friendTag.ownerUserId")
+    })
     public FriendTagDTO saveFriendTag(AbstractFriendTagDTO friendTag) {
         FriendTag friendTagEntity = FriendTagMapper.toEntity(friendTag);
         friendTagEntity = saveFriendTagEntity(friendTagEntity);
@@ -137,7 +146,11 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "eventsByFriendTagId", key = "#id"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#newFriendTag.ownerUserId"),
+            @CacheEvict(value = "friendTagsByOwnerId", key = "#newFriendTag.ownerUserId")
+    })
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
         return repository.findById(id).map(friendTag -> {
             friendTag.setColorHexCode(newFriendTag.getColorHexCode());
@@ -154,7 +167,9 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    })
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -163,6 +178,11 @@ public class FriendTagService implements IFriendTagService {
         try {
             // Alter to check if the tag is an "Everyone" tag before deleting
             FriendTagDTO friendTag = getFriendTagById(id);
+            UUID ownerId = friendTag.getOwnerUserId();
+
+            if (cacheManager.getCache("friendTagsByOwnerId") != null) {
+                cacheManager.getCache("friendTagsByOwnerId").evict(ownerId);
+            }
 
             if (friendTag.isEveryone()) {
                 logger.warn("Cannot delete the 'Everyone' tag");
@@ -171,6 +191,10 @@ public class FriendTagService implements IFriendTagService {
 
             uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
+
+            if (cacheManager.getCache("filteredFeedEvents") != null) {
+                cacheManager.getCache("filteredFeedEvents").evict(ownerId);
+            }
 
             return true;
         } catch (Exception e) {
@@ -181,7 +205,10 @@ public class FriendTagService implements IFriendTagService {
 
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "eventsByFriendTagId", key = "#id"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#id")
+    })
     public void saveUserToFriendTag(UUID id, UUID userId) {
         if (!repository.existsById(id)) {
             throw new BaseNotFoundException(EntityType.FriendTag, id);
@@ -216,7 +243,10 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "eventsByFriendTagId", key = "#id"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#id")
+    })
     public void removeUserFromFriendTag(UUID id, UUID userId) {
         // Check if the FriendTag exists
         if (!repository.existsById(id)) {
@@ -240,7 +270,10 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @Caching(evict = {
+            @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId"),
+            @CacheEvict(value = "filteredFeedEvents", key = "#friendTagId")
+    })
     public void saveUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
         for (BaseUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.getId());
@@ -273,6 +306,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     /// this function takes the owner user id of a friend tag, and the friend's user id
+    /// it will return precisely one of the friend tags that the owner has placed this
     /// it will return precisely one of the friend tags that the owner has placed this
     /// friend inside, even if they've placed them in multiple friend tags
     /// -> currently, on the product side, we don't specify a rule for which should take precedence.

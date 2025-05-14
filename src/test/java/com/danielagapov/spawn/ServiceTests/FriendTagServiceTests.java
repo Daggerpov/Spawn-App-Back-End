@@ -19,6 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
 
 import java.util.ArrayList;
@@ -47,12 +50,25 @@ public class FriendTagServiceTests {
     @Mock
     private ILogger logger;
 
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache friendTagsByOwnerIdCache;
+
+    @Mock
+    private Cache filteredFeedEventsCache;
+
+    @Spy
     @InjectMocks
     private FriendTagService friendTagService;
 
+
     @BeforeEach
     void setup() {
-        MockitoAnnotations.openMocks(this); // Initialize mocks
+        MockitoAnnotations.openMocks(this);
+        when(cacheManager.getCache("friendTagsByOwnerId")).thenReturn(friendTagsByOwnerIdCache);
+        when(cacheManager.getCache("filteredFeedEvents")).thenReturn(filteredFeedEventsCache);
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -24,10 +25,14 @@ import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import com.danielagapov.spawn.Utils.LoggingUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Limit;
@@ -39,7 +44,7 @@ import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 
-@Slf4j
+
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
@@ -50,6 +55,7 @@ public class UserService implements IUserService {
     private final IS3Service s3Service;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
+    private final CacheManager cacheManager;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
@@ -59,7 +65,7 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService) {
+                       UserSearchService userSearchService, CacheManager cacheManager) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -68,6 +74,7 @@ public class UserService implements IUserService {
         this.s3Service = s3Service;
         this.logger = logger;
         this.userSearchService = userSearchService;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -184,11 +191,21 @@ public class UserService implements IUserService {
         }
     }
 
+    @CacheEvict(value = "friendsByUserId", key = "#id")
     @Override
     public void deleteUserById(UUID id) {
         try {
             User user = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
             logger.info("Deleting user: " + LoggingUtils.formatUserInfo(user));
+
+            List<UUID> friendIds = getFriendUserIdsByUserId(id);
+            for (UUID friendId : friendIds) {
+                if (cacheManager.getCache("friendsByUserId") != null) {
+                    cacheManager.getCache("friendsByUserId").evict(friendId);
+                    cacheManager.getCache("recommendedFriends").evict(friendId);
+                }
+            }
+
             repository.deleteById(id);
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
         } catch (Exception e) {
@@ -233,12 +250,12 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
+    public List<BaseUserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
-            return uftRepository.findFriendIdsByTagId(friendTagId)
+            return UserMapper.toBaseDTOList(uftRepository.findFriendIdsByTagId(friendTagId)
                     .stream()
                     .map(this::getUserById)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -275,34 +292,13 @@ public class UserService implements IUserService {
         }
     }
 
-    @Override
-    public List<UserDTO> getFriendsByUserId(UUID userId) {
-        try {
-            // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-            Optional<FriendTag> optionalEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(userId);
-
-            if (optionalEveryoneTag.isEmpty()) {
-                return List.of(); // empty list of friends
-            }
-
-            FriendTag everyoneTag = optionalEveryoneTag.get();
-
-            // Retrieve the friends for each FriendTag and return as a flattened list
-            List<UserDTO> friends = getFriendsByFriendTagId(everyoneTag.getId());
-
-            // Filter out the friend whose ID matches the userId
-            // Exclude the user themselves
-
-            return friends.stream()
-                    .filter(friend -> !friend.getId().equals(userId)) // Exclude the user themselves
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
     // Adds friend bidirectionally
+    @Caching(evict = {
+            @CacheEvict(value = "friendsByUserId", key = "#userId"),
+            @CacheEvict(value = "friendsByUserId", key = "#friendId"),
+            @CacheEvict(value = "recommendedFriends", key = "#userId"),
+            @CacheEvict(value = "recommendedFriends", key = "#friendId")
+    })
     @Override
     public void saveFriendToUser(UUID userId, UUID friendId) {
         try {
@@ -318,6 +314,7 @@ public class UserService implements IUserService {
             Optional<FriendTag> friendEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(friendId);
             friendEveryoneTag.ifPresent(tag ->
                     friendTagService.saveUserToFriendTag(tag.getId(), userId));
+
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -327,6 +324,7 @@ public class UserService implements IUserService {
     // returns top x (specified by limit) friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
     @Override
+    @Cacheable(value = "recommendedFriends", key = "#userId")
     public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
         return userSearchService.getLimitedRecommendedFriendsForUserId(userId);
     }
@@ -491,15 +489,15 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName) {
+    public BaseUserDTO updateUser(UUID id, UserUpdateDTO updateDTO) {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
-            user.setBio(bio);
-            user.setUsername(username);
-            user.setFirstName(firstName);
-            user.setLastName(lastName);
+            user.setBio(updateDTO.getBio());
+            user.setUsername(updateDTO.getUsername());
+            user.setFirstName(updateDTO.getFirstName());
+            user.setLastName(updateDTO.getLastName());
 
             user = repository.save(user);
 

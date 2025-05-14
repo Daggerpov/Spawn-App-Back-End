@@ -13,7 +13,7 @@ import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IFeedbackSubmissionRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.S3.IS3Service;
-import com.danielagapov.spawn.Utils.LoggingUtils;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -50,9 +50,9 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             User user = Optional.ofNullable(userId)
                     .flatMap(userRepository::findById)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-            
+
             logger.info("Submitting feedback from user: " + LoggingUtils.formatUserInfo(user));
-            
+
             // Upload image to S3 if present
             String imageUrl = null;
             byte[] imageData = dto.getImageData();
@@ -60,27 +60,27 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
                 logger.info("Uploading feedback image for user: " + LoggingUtils.formatUserInfo(user));
                 imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
             }
-            
+
             // Create entity from DTO
             FeedbackSubmission feedbackSubmission = FeedbackSubmissionMapper.toEntity(dto, user);
-            
+
             // Set image URL if we uploaded an image
             if (imageUrl != null) {
                 feedbackSubmission.setImageUrl(imageUrl);
             }
-            
+
             // Save and return the entity
             FeedbackSubmission saved = repository.save(feedbackSubmission);
-            logger.info("Feedback saved successfully from user: " + LoggingUtils.formatUserInfo(user) + 
-                       " with ID: " + saved.getId());
+            logger.info("Feedback saved successfully from user: " + LoggingUtils.formatUserInfo(user) +
+                    " with ID: " + saved.getId());
             return FeedbackSubmissionMapper.toDTO(saved);
         } catch (DataAccessException e) {
-            logger.error("Failed to save feedback submission from user " + 
-                        LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + ": " + e.getMessage());
+            logger.error("Failed to save feedback submission from user " +
+                    LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + ": " + e.getMessage());
             throw new BaseSaveException("Failed to save feedback submission: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Error submitting feedback from user " + 
-                        LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + ": " + e.getMessage());
+            logger.error("Error submitting feedback from user " +
+                    LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -90,10 +90,10 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         try {
             FeedbackSubmission feedback = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
-            
+
             User submitter = feedback.getFromUser();
-            logger.info("Resolving feedback with ID: " + id + " from user: " + 
-                       LoggingUtils.formatUserInfo(submitter));
+            logger.info("Resolving feedback with ID: " + id + " from user: " +
+                    LoggingUtils.formatUserInfo(submitter));
 
             feedback.setStatus(FeedbackStatus.RESOLVED);
 
@@ -109,19 +109,19 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             throw e;
         }
     }
-    
+
     @Override
     public FetchFeedbackSubmissionDTO markFeedbackInProgress(UUID id, String comment) {
         try {
             FeedbackSubmission feedback = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
-            
+
             User submitter = feedback.getFromUser();
-            logger.info("Marking feedback with ID: " + id + " from user: " + 
-                       LoggingUtils.formatUserInfo(submitter) + " as in progress");
+            logger.info("Marking feedback with ID: " + id + " from user: " +
+                    LoggingUtils.formatUserInfo(submitter) + " as in progress");
 
             feedback.setStatus(FeedbackStatus.IN_PROGRESS);
-            
+
             // Set comment if provided
             if (comment != null && !comment.trim().isEmpty()) {
                 feedback.setResolutionComment(comment.trim());
@@ -141,13 +141,13 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
         try {
             FeedbackSubmission feedback = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
-            
+
             User submitter = feedback.getFromUser();
-            logger.info("Updating feedback with ID: " + id + " from user: " + 
-                       LoggingUtils.formatUserInfo(submitter) + " to status: " + status);
+            logger.info("Updating feedback with ID: " + id + " from user: " +
+                    LoggingUtils.formatUserInfo(submitter) + " to status: " + status);
 
             feedback.setStatus(status);
-            
+
             // Set comment if provided
             if (comment != null && !comment.trim().isEmpty()) {
                 feedback.setResolutionComment(comment.trim());
@@ -184,12 +184,12 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             FeedbackSubmission feedback = repository.findById(id).orElse(null);
             if (feedback != null) {
                 User submitter = feedback.getFromUser();
-                logger.info("Deleting feedback with ID: " + id + " from user: " + 
-                           LoggingUtils.formatUserInfo(submitter));
+                logger.info("Deleting feedback with ID: " + id + " from user: " +
+                        LoggingUtils.formatUserInfo(submitter));
             } else {
                 logger.info("Deleting feedback with ID: " + id + " (feedback details not available)");
             }
-            
+
             repository.deleteById(id);
             logger.info("Feedback with ID: " + id + " deleted successfully");
         } catch (Exception e) {
