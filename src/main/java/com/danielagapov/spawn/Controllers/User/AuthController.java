@@ -47,7 +47,6 @@ public class AuthController {
     @GetMapping("sign-in")
     public ResponseEntity<?> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
         try {
-            logger.info(String.format("Received sign-in request: {externalUserId: %s, email: %s}", externalUserId, email));
             Optional<BaseUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
@@ -81,8 +80,6 @@ public class AuthController {
                                                 @RequestParam("externalUserId") String externalUserId,
                                                 @RequestParam(value = "provider") OAuthProvider provider) {
         try {
-            logger.info(String.format("Received make-user request: {userDTO: %s, externalUserId: %s, provider: %s}",
-                    userCreationDTO, externalUserId, provider));
             BaseUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
@@ -95,8 +92,6 @@ public class AuthController {
     @PostMapping("refresh-token")
     public ResponseEntity<String> refreshToken(HttpServletRequest request) {
         try {
-            logger.info(String.format("Refresh token request received: {token: %s}",
-                    request.getHeader("Authorization")));
             HttpHeaders headers = new HttpHeaders();
             String token = jwtService.refreshAccessToken(request);
             headers.add("Authorization", "Bearer " + token);
@@ -116,10 +111,8 @@ public class AuthController {
     @PostMapping("register")
     public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
         try {
-            logger.info(String.format("Account registration request received: {user: %s}", authUserDTO));
             UserDTO newUserDTO = authService.registerUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
-            logger.info(String.format("User successfully registered: {user: %s}", newUserDTO));
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
             logger.warn(fae.getMessage());
@@ -137,7 +130,6 @@ public class AuthController {
     @PostMapping("login")
     public ResponseEntity<BaseUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
-            logger.info(String.format("Login request received: {user: %s}", authUserDTO));
             BaseUserDTO existingUserDTO = authService.loginUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
@@ -165,13 +157,13 @@ public class AuthController {
             modelAndView.setStatus(HttpStatus.OK);
             return modelAndView;
         } catch (BaseNotFoundException e) {
-            logger.info("Error verifying email: " + e.getMessage() + ", entity type: " + e.entityType);
+            logger.error("Error verifying email: " + e.getMessage() + ", entity type: " + e.entityType);
             modelAndView.addObject("status", "not_found");
             modelAndView.addObject("entityType", e.entityType);
             modelAndView.setStatus(HttpStatus.NOT_FOUND);
             return modelAndView;
         } catch (Exception e) {
-            logger.info("Unexpected error while verifying email: " + e.getMessage());
+            logger.error("Unexpected error while verifying email: " + e.getMessage());
             modelAndView.addObject("status", "error");
             modelAndView.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             return modelAndView;

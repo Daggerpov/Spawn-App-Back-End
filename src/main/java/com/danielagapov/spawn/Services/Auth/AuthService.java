@@ -54,7 +54,6 @@ public class AuthService implements IAuthService {
 
     @Override
     public BaseUserDTO loginUser(AuthUserDTO authUserDTO) {
-        logger.info("Attempting to login user: " + authUserDTO.getUsername());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         authUserDTO.getUsername(),
@@ -63,10 +62,8 @@ public class AuthService implements IAuthService {
         );
         if (authentication.isAuthenticated()) {
             String username = ((UserDetails) authentication.getPrincipal()).getUsername();
-            logger.info("Authentication successful for user: " + username);
 
             User user = userService.getUserEntityByUsername(username);
-            logger.info("Login successful for user: " + LoggingUtils.formatUserInfo(user));
             return UserMapper.toDTO(user);
         } else {
             logger.warn("Failed authentication attempt for username: " + authUserDTO.getUsername());

@@ -39,8 +39,6 @@ public class JWTFilterConfig extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            logger.info("Token found: " + authHeader);
-
             // Extract the JWT token from the Authorization header (removing the "Bearer " prefix)
             String jwt = authHeader.substring(7);
             String username;
@@ -60,8 +58,6 @@ public class JWTFilterConfig extends OncePerRequestFilter {
 
                     // Validate the JWT token against the UserDetails
                     if (jwtService.isValidToken(jwt, userDetails)) {
-                        logger.info("Token is valid, setting authentication");
-
                         /*
                          * Create an authentication token containing the user details and authorities.
                          * UsernamePasswordAuthenticationToken is a Spring Security authentication object
