@@ -50,13 +50,7 @@ public class FeedbackSubmissionMapper {
         feedbackSubmission.setType(dto.getType());
         feedbackSubmission.setFromUser(user);
         
-        // Set user information - first try from user object, then from DTO if available
-        String firstName = Optional.ofNullable(user).map(User::getFirstName).orElse(null);
-        String lastName = Optional.ofNullable(user).map(User::getLastName).orElse(null);
-
-        if (firstName != null) user.setFirstName(firstName);
-        if (lastName != null) user.setLastName(lastName);
-
+        // Set email from user if available
         feedbackSubmission.setFromUserEmail(
                 Optional.ofNullable(user)
                         .map(User::getEmail)

@@ -17,5 +17,5 @@ public class CreateFeedbackSubmissionDTO implements Serializable {
     private FeedbackType type;
     private UUID fromUserId;
     private String message;
-    private byte[] imageData;
+    private String imageData;
 } 
