@@ -44,9 +44,8 @@ public class FullFeedEventDTO extends AbstractEventDTO {
                             List<FullEventChatMessageDTO> chatMessages,
                             String eventFriendTagColorHexCodeForRequestingUser,
                             ParticipationStatus participationStatus, 
-                            boolean isSelfOwned,
-                            String colorHexCode) {
-        super(id, title, startTime, endTime, note, icon, category, colorHexCode);
+                            boolean isSelfOwned) {
+        super(id, title, startTime, endTime, note, icon, category);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
