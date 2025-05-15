@@ -26,6 +26,14 @@ public interface IFriendTagService {
 
     List<UUID> getFriendTagIdsByOwnerUserId(UUID id);
 
+    /**
+     * Optimized method to get all friend tags with their friends for a user in a single database query
+     *
+     * @param ownerId The ID of the user who owns the friend tags
+     * @return List of FullFriendTagDTO objects with all friend data included
+     */
+    List<FullFriendTagDTO> getFullFriendTagsWithFriendsByOwnerId(UUID ownerId);
+
     // friend-related:
     Optional<FriendTagDTO> getPertainingFriendTagBetweenUsers(UUID ownerUserId, UUID friendUserId);
 
