@@ -13,9 +13,11 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.Models.UserFriendTag;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
@@ -437,26 +439,112 @@ public class UserService implements IUserService {
     @Override
     public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
         try {
-            List<User> userFriends = getFriendUsersByUserId(requestingUserId);
-
-            List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<>();
-            for (User user : userFriends) {
-                FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO(
-                        user.getId(),
-                        user.getUsername(),
-                        user.getProfilePictureUrlString(),
-                        user.getFirstName(),
-                        user.getLastName(),
-                        user.getBio(),
-                        user.getEmail(),
-                        friendTagService.getPertainingFriendTagsForFriend(requestingUserId, user.getId())
-                );
-                fullFriendUserDTOList.add(fullFriendUserDTO);
+            // Retrieve all UserFriendTag entries for this owner in a single query
+            List<UserFriendTag> userFriendTags = uftRepository.findAllFriendsWithTagsByOwnerId(requestingUserId);
+            
+            // If no entries were found, we might still have friends in the "Everyone" tag
+            if (userFriendTags.isEmpty()) {
+                return getFallbackFriendsList(requestingUserId);
             }
-
-            return fullFriendUserDTOList;
+            
+            // Create a map to efficiently group tags by user
+            Map<UUID, List<FriendTagDTO>> friendToTagsMap = new HashMap<>();
+            Map<UUID, User> friendUsersMap = new HashMap<>();
+            
+            // Process all UserFriendTag entries to build our maps
+            for (UserFriendTag uft : userFriendTags) {
+                User friend = uft.getFriend();
+                FriendTag tag = uft.getFriendTag();
+                
+                // Skip if this is the owner (not a friend)
+                if (friend.getId().equals(requestingUserId)) {
+                    continue;
+                }
+                
+                // Add user to our map if not already there
+                friendUsersMap.putIfAbsent(friend.getId(), friend);
+                
+                // Add this tag to the user's tag list
+                friendToTagsMap.computeIfAbsent(friend.getId(), k -> new ArrayList<>())
+                               .add(FriendTagMapper.toDTO(tag, requestingUserId, List.of()));
+            }
+            
+            // Create FullFriendUserDTO objects for each unique friend
+            List<FullFriendUserDTO> result = new ArrayList<>();
+            for (User friend : friendUsersMap.values()) {
+                List<FriendTagDTO> tags = friendToTagsMap.getOrDefault(friend.getId(), List.of());
+                
+                FullFriendUserDTO dto = new FullFriendUserDTO(
+                    friend.getId(),
+                    friend.getUsername(),
+                    friend.getProfilePictureUrlString(),
+                    friend.getFirstName(),
+                    friend.getLastName(),
+                    friend.getBio(),
+                    friend.getEmail(),
+                    tags
+                );
+                
+                result.add(dto);
+            }
+            
+            // If no friends were found, try the fallback method
+            if (result.isEmpty()) {
+                return getFallbackFriendsList(requestingUserId);
+            }
+            
+            return result;
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error retrieving full friend users: " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    /**
+     * Fallback method to get friends from the "Everyone" tag when the optimized query returns no results
+     */
+    private List<FullFriendUserDTO> getFallbackFriendsList(UUID requestingUserId) {
+        try {
+            // Get friends from the "Everyone" tag using the existing method
+            List<User> userFriends = getFriendUsersByUserId(requestingUserId);
+            
+            // Try to get the "Everyone" tag
+            UUID everyoneTagId = friendTagRepository.getEveryoneTagIdByOwnerId(requestingUserId);
+            FriendTagDTO everyoneTag = null;
+            
+            if (everyoneTagId != null) {
+                FriendTag tag = friendTagRepository.findById(everyoneTagId)
+                    .orElse(null);
+                if (tag != null) {
+                    everyoneTag = FriendTagMapper.toDTO(tag, requestingUserId, List.of());
+                }
+            }
+            
+            // Create DTO list
+            List<FullFriendUserDTO> result = new ArrayList<>();
+            for (User friend : userFriends) {
+                List<FriendTagDTO> tags = new ArrayList<>();
+                if (everyoneTag != null) {
+                    tags.add(everyoneTag);
+                }
+                
+                FullFriendUserDTO dto = new FullFriendUserDTO(
+                    friend.getId(),
+                    friend.getUsername(),
+                    friend.getProfilePictureUrlString(),
+                    friend.getFirstName(),
+                    friend.getLastName(),
+                    friend.getBio(),
+                    friend.getEmail(),
+                    tags
+                );
+                
+                result.add(dto);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            logger.error("Error in fallback friends list: " + e.getMessage());
             throw e;
         }
     }
