@@ -48,7 +48,7 @@ public class Logger implements ILogger {
         Map<String, String> output = new HashMap<>();
         output.put("message", message);
         output.put("level", "error");
-        ObjectWriter writer = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        ObjectWriter writer = new ObjectMapper().writer();
         try {
             return writer.writeValueAsString(output);
         } catch (JsonProcessingException e) {
