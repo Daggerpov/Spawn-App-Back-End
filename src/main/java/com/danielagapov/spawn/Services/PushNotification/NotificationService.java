@@ -61,8 +61,8 @@ public class NotificationService {
             User user = userService.getUserEntityById(deviceTokenDTO.getUserId());
 
             logger.info(String.format(
-                    "Registering device token for user: %s with names: %s %s and username: %s, device type: %s",
-                    user.getId(), user.getFirstName(), user.getLastName(), user.getUsername(),
+                    "Registering device token for user: %s with name: %s and username: %s, device type: %s",
+                    user.getId(), user.getName(), user.getUsername(),
                     deviceTokenDTO.getDeviceType()));
 
             // Use a more reliable approach to handle existing tokens
@@ -81,8 +81,8 @@ public class NotificationService {
             deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
             deviceTokenRepository.save(deviceToken);
 
-            logger.info("New device token added successfully for user: " + user.getId() + " with names: "
-                    + user.getFirstName() + " " + user.getLastName() + " and username: " + user.getUsername());
+            logger.info("New device token added successfully for user: " + user.getId() + " with name: "
+                    + user.getName() + " and username: " + user.getUsername());
 
             // Send a test notification to confirm registration
             eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));

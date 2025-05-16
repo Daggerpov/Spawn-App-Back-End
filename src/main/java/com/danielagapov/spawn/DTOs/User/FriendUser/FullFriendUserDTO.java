@@ -13,9 +13,9 @@ import java.util.UUID;
 public class FullFriendUserDTO extends BaseUserDTO {
     private List<FriendTagDTO> associatedFriendTagsToOwner;
 
-    public FullFriendUserDTO(UUID id, String username, String profilePicture, String firstName,
-                             String lastName, String bio, String email, List<FriendTagDTO> associatedFriendTagsToOwner) {
-        super(id, firstName, lastName, email, username, bio, profilePicture);
+    public FullFriendUserDTO(UUID id, String username, String profilePicture, String name,
+                             String bio, String email, List<FriendTagDTO> associatedFriendTagsToOwner) {
+        super(id, name, email, username, bio, profilePicture);
         this.associatedFriendTagsToOwner = associatedFriendTagsToOwner;
     }
 
