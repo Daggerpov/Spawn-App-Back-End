@@ -10,7 +10,7 @@ public class Logger implements ILogger {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Logger.class);
 
     public void info(String message) {
-        logger.info(testLogLevel(message).toString());
+        System.out.println(testLogLevel(message).toString());
     }
 
     public void warn(String message) {
