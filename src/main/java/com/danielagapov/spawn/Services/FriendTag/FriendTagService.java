@@ -302,7 +302,7 @@ public class FriendTagService implements IFriendTagService {
     @Override
     public List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags) {
         // For large number of tags, use the optimized method instead
-        if (friendTags.size() > 0 && !friendTags.isEmpty()) {
+        if (friendTags.size() > 0) {
             try {
                 // Get the owner ID from the first tag to use with the optimized method
                 UUID ownerId = friendTags.get(0).getOwnerUserId();
