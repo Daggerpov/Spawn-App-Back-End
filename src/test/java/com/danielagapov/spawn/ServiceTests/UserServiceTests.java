@@ -482,10 +482,12 @@ public class UserServiceTests {
         UUID friendId1 = UUID.randomUUID();
         UUID friendId2 = UUID.randomUUID();
         UUID nonFriendId = UUID.randomUUID();
+        UUID blockedId = UUID.randomUUID();
         UserIdEventTimeDTO friendIdEventTime1 = new UserIdEventTimeDTO(friendId1, OffsetDateTime.now());
         UserIdEventTimeDTO friendIdEventTime2 = new UserIdEventTimeDTO(friendId2, OffsetDateTime.now());
         UserIdEventTimeDTO nonfriendIdEventTime = new UserIdEventTimeDTO(nonFriendId, OffsetDateTime.now());
-        List<UserIdEventTimeDTO> pastEventParticipants = Arrays.asList(friendIdEventTime1, friendIdEventTime2, nonfriendIdEventTime);
+        UserIdEventTimeDTO blockedIdEventTime = new UserIdEventTimeDTO(blockedId, OffsetDateTime.now());
+        List<UserIdEventTimeDTO> pastEventParticipants = Arrays.asList(friendIdEventTime1, friendIdEventTime2, nonfriendIdEventTime, blockedIdEventTime);
         List<UUID> friendIds = Arrays.asList(friendId1, friendId2);
 
         // Mock the repository methods
@@ -495,6 +497,7 @@ public class UserServiceTests {
                 .thenReturn(pastEventParticipants);
         when(userService.getFriendUserIdsByUserId(eq(requestingUserId)))
                 .thenReturn(friendIds);
+        when(blockedUserService.getBlockedUserIds(requestingUserId)).thenReturn(List.of(blockedId));
 
         // Mock the getBaseUserById method (if necessary, return a mocked BaseUserDTO)
         BaseUserDTO mockBaseUserDTO = new BaseUserDTO();
