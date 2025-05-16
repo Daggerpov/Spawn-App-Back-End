@@ -55,17 +55,10 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
             // Upload image to S3 if present
             String imageUrl = null;
-            String base64ImageData = dto.getImageData();
-            if (base64ImageData != null && !base64ImageData.isEmpty()) {
-                try {
-                    // Decode base64 string to byte array
-                    byte[] imageData = java.util.Base64.getDecoder().decode(base64ImageData);
-                    logger.info("Uploading feedback image for user: " + LoggingUtils.formatUserInfo(user));
-                    imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
-                } catch (IllegalArgumentException e) {
-                    logger.error("Failed to decode base64 image data: " + e.getMessage());
-                    // Continue without image if decoding fails
-                }
+            byte[] imageData = dto.getImageData();
+            if (imageData != null && imageData.length > 0) {
+                logger.info("Uploading feedback image for user: " + LoggingUtils.formatUserInfo(user));
+                imageUrl = s3Service.putObjectWithKey(imageData, "feedback/" + UUID.randomUUID());
             }
 
             // Create entity from DTO

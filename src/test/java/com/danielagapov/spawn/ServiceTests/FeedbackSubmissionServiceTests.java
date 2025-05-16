@@ -119,12 +119,12 @@ public class FeedbackSubmissionServiceTests {
     public void submitFeedback_ShouldUploadImage_WhenImageProvided() throws IOException {
         // Arrange
         UUID userId = UUID.randomUUID();
-        String base64ImageData = "dGVzdCBpbWFnZSBkYXRh"; // Base64 encoded "test image data"
+        byte[] imageData = "test image data".getBytes();
         CreateFeedbackSubmissionDTO dto = new CreateFeedbackSubmissionDTO(
                 FeedbackType.BUG,
                 userId,
                 "Test feedback message",
-                base64ImageData
+                imageData
         );
 
         User user = new User();
@@ -142,7 +142,7 @@ public class FeedbackSubmissionServiceTests {
         savedFeedback.setImageUrl(imageUrl);
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(s3Service.putObjectWithKey(any(byte[].class), anyString())).thenReturn(imageUrl);
+        when(s3Service.putObjectWithKey(eq(imageData), anyString())).thenReturn(imageUrl);
         when(repository.save(any(FeedbackSubmission.class))).thenReturn(savedFeedback);
 
         // Act
@@ -151,7 +151,7 @@ public class FeedbackSubmissionServiceTests {
         // Assert
         assertNotNull(result);
         assertEquals(imageUrl, result.getImageUrl());
-        verify(s3Service).putObjectWithKey(any(byte[].class), anyString());
+        verify(s3Service).putObjectWithKey(eq(imageData), anyString());
     }
 
     @Test
