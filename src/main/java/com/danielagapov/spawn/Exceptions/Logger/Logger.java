@@ -1,5 +1,8 @@
 package com.danielagapov.spawn.Exceptions.Logger;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -45,6 +48,11 @@ public class Logger implements ILogger {
         Map<String, String> output = new HashMap<>();
         output.put("message", message);
         output.put("level", "error");
-        return output;
+        ObjectWriter writer = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        try {
+            return writer.writeValueAsString(output);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
