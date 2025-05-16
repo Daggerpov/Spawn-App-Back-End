@@ -186,9 +186,18 @@ public class UserSearchService implements IUserSearchService {
 
     private boolean isQueryMatch(AbstractUserDTO recommendedFriend, String searchQuery) {
         final String lowercaseQuery = searchQuery.toLowerCase();
-        return recommendedFriend.getFirstName().toLowerCase().contains(lowercaseQuery) ||
-                recommendedFriend.getLastName().toLowerCase().contains(lowercaseQuery) ||
-                recommendedFriend.getUsername().toLowerCase().contains(lowercaseQuery);
+        boolean nameMatch = false;
+        if (recommendedFriend.getName() != null) {
+            String[] nameParts = recommendedFriend.getName().toLowerCase().split(" ");
+            for (String part : nameParts) {
+                if (part.contains(lowercaseQuery)) {
+                    nameMatch = true;
+                    break;
+                }
+            }
+        }
+        boolean usernameMatch = recommendedFriend.getUsername() != null && recommendedFriend.getUsername().toLowerCase().contains(lowercaseQuery);
+        return nameMatch || usernameMatch;
     }
 
     // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
