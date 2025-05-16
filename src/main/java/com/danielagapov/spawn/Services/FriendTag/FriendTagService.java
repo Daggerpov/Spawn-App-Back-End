@@ -10,6 +10,7 @@ import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendTagMapper;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.UserFriendTag;
@@ -300,9 +301,87 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     public List<FullFriendTagDTO> convertFriendTagsToFullFriendTags(List<FriendTagDTO> friendTags) {
+        // For large number of tags, use the optimized method instead
+        if (friendTags.size() > 0) {
+            try {
+                // Get the owner ID from the first tag to use with the optimized method
+                UUID ownerId = friendTags.get(0).getOwnerUserId();
+                return getFullFriendTagsWithFriendsByOwnerId(ownerId);
+            } catch (Exception e) {
+                logger.warn("Failed to use optimized method, falling back to standard conversion: " + e.getMessage());
+                // Fall back to the original implementation if there's an error
+            }
+        }
+        
+        // Original implementation as fallback
         return friendTags.stream()
                 .map(this::getFullFriendTagByFriendTag)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Optimized method to get all friend tags with their friends for a user in a single database query
+     * This replaces the need to do separate queries for each tag's friends
+     *
+     * @param ownerId The ID of the user who owns the friend tags
+     * @return List of FullFriendTagDTO objects with all friend data included
+     */
+    @Override
+    public List<FullFriendTagDTO> getFullFriendTagsWithFriendsByOwnerId(UUID ownerId) {
+        try {
+            // Fetch all tags for this owner first (empty friends will be populated later)
+            List<FriendTag> allTags = repository.findByOwnerId(ownerId);
+            
+            // If no tags found, return empty list
+            if (allTags.isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            // Sort with "Everyone" tag first for consistency
+            allTags.sort((tag1, tag2) -> {
+                if (tag1.isEveryone()) return -1;
+                if (tag2.isEveryone()) return 1;
+                return 0;
+            });
+            
+            // Create map of empty FullFriendTagDTOs keyed by their ID
+            Map<UUID, FullFriendTagDTO> tagDtoMap = new HashMap<>();
+            for (FriendTag tag : allTags) {
+                tagDtoMap.put(tag.getId(), new FullFriendTagDTO(
+                    tag.getId(),
+                    tag.getDisplayName(),
+                    tag.getColorHexCode(),
+                    new ArrayList<>(),  // Empty friends list to be populated
+                    tag.isEveryone()
+                ));
+            }
+            
+            // Fetch all UserFriendTag entries in a single optimized query
+            List<UserFriendTag> userFriendTags = uftRepository.findAllTagsWithFriendsByOwnerId(ownerId);
+            
+            // Populate friend data into the appropriate tag DTOs
+            for (UserFriendTag uft : userFriendTags) {
+                UUID tagId = uft.getFriendTag().getId();
+                User friend = uft.getFriend();
+                
+                // Skip if this is the owner (not a friend) or tag doesn't exist in map (shouldn't happen)
+                if (friend.getId().equals(ownerId) || !tagDtoMap.containsKey(tagId)) {
+                    continue;
+                }
+                
+                // Add friend to the appropriate tag's friends list
+                FullFriendTagDTO tagDto = tagDtoMap.get(tagId);
+                tagDto.getFriends().add(UserMapper.toDTO(friend));
+            }
+            
+            // Return list of fully populated DTOs, maintaining the sort order
+            return allTags.stream()
+                .map(tag -> tagDtoMap.get(tag.getId()))
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error retrieving full friend tags with friends: " + e.getMessage());
+            throw e;
+        }
     }
 
     /// this function takes the owner user id of a friend tag, and the friend's user id
