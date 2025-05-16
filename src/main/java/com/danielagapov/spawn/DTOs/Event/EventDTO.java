@@ -30,9 +30,8 @@ public class EventDTO extends AbstractEventDTO {
             UUID creatorUserId,
             List<UUID> participantUserIds,
             List<UUID> invitedUserIds,
-            List<UUID> chatMessageIds,
-            String colorHexCode) {
-        super(id, title, startTime, endTime, note, icon, category, colorHexCode);
+            List<UUID> chatMessageIds) {
+        super(id, title, startTime, endTime, note, icon, category);
         this.creatorUserId = creatorUserId;
         this.locationId = locationId;
         this.participantUserIds = participantUserIds;

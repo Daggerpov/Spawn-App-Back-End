@@ -66,7 +66,7 @@ public class Event implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, EventCategory category, String colorHexCode) {
+    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, EventCategory category) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -77,6 +77,5 @@ public class Event implements Serializable {
         this.lastUpdated = Instant.now();
         this.icon = icon;
         this.category = category;
-        this.colorHexCode = colorHexCode;
     }
 }
