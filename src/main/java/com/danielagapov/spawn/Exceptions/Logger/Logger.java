@@ -2,12 +2,15 @@ package com.danielagapov.spawn.Exceptions.Logger;
 
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 public class Logger implements ILogger {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Logger.class);
 
     public void info(String message) {
-        logger.info(formatMessageWithCallerInfo(message));
+        logger.info(testLogLevel(message).toString());
     }
 
     public void warn(String message) {
@@ -17,7 +20,7 @@ public class Logger implements ILogger {
     public void error(String message) {
         logger.error(formatMessageWithCallerInfo(message));
     }
-    
+
     /**
      * Formats a message with caller information (file name, line number, and method name)
      *
@@ -36,5 +39,12 @@ public class Logger implements ILogger {
 
         // Format the message with caller information: [FileName:LineNumber] MethodName - Message
         return String.format("[%s:%d] %s - %s", fileName, lineNumber, methodName, message);
+    }
+
+    private Object testLogLevel(String message) {
+        Map<String, String> output = new HashMap<>();
+        output.put("message", message);
+        output.put("level", "error");
+        return output;
     }
 }
