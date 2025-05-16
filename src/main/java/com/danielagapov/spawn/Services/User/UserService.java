@@ -478,8 +478,7 @@ public class UserService implements IUserService {
                     friend.getId(),
                     friend.getUsername(),
                     friend.getProfilePictureUrlString(),
-                    friend.getFirstName(),
-                    friend.getLastName(),
+                    friend.getName(),
                     friend.getBio(),
                     friend.getEmail(),
                     tags
@@ -532,8 +531,7 @@ public class UserService implements IUserService {
                     friend.getId(),
                     friend.getUsername(),
                     friend.getProfilePictureUrlString(),
-                    friend.getFirstName(),
-                    friend.getLastName(),
+                    friend.getName(),
                     friend.getBio(),
                     friend.getEmail(),
                     tags
@@ -593,8 +591,7 @@ public class UserService implements IUserService {
 
             user.setBio(updateDTO.getBio());
             user.setUsername(updateDTO.getUsername());
-            user.setFirstName(updateDTO.getFirstName());
-            user.setLastName(updateDTO.getLastName());
+            user.setName(updateDTO.getName());
 
             user = repository.save(user);
 

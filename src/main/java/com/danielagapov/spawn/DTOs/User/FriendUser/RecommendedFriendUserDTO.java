@@ -11,8 +11,8 @@ import java.util.UUID;
 public class RecommendedFriendUserDTO extends BaseUserDTO {
     int mutualFriendCount;
 
-    public RecommendedFriendUserDTO(UUID id, String firstName, String lastName, String email, String username, String bio, String profilePicture, int mutualFriendCount) {
-        super(id, firstName, lastName, email, username, bio, profilePicture);
+    public RecommendedFriendUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture, int mutualFriendCount) {
+        super(id, name, email, username, bio, profilePicture);
         this.mutualFriendCount = mutualFriendCount;
     }
 }

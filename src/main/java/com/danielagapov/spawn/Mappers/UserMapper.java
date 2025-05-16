@@ -14,8 +14,7 @@ public class UserMapper {
     public static BaseUserDTO toDTO(User user) {
         return new BaseUserDTO(
                 user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
+                user.getName(),
                 user.getEmail(),
                 user.getUsername(),
                 user.getBio(),
@@ -34,8 +33,7 @@ public class UserMapper {
                 friendUserIds,
                 user.getUsername(),
                 user.getProfilePictureUrlString(),
-                user.getFirstName(),
-                user.getLastName(),
+                user.getName(),
                 user.getBio(),
                 friendTagIds,
                 user.getEmail()
@@ -47,8 +45,7 @@ public class UserMapper {
                 dto.getId(),
                 dto.getUsername(),
                 dto.getProfilePicture(),
-                dto.getFirstName(),
-                dto.getLastName(),
+                dto.getName(),
                 dto.getBio(),
                 dto.getEmail()
         );
@@ -73,8 +70,7 @@ public class UserMapper {
     public static BaseUserDTO toBaseDTO(UserDTO user) {
         return new BaseUserDTO(
                 user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
+                user.getName(),
                 user.getEmail(),
                 user.getUsername(),
                 user.getBio(),

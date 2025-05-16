@@ -113,8 +113,8 @@ public class BlockedUserServiceTests {
 
     @Test
     void getBlockedUsers_ShouldMapEntitiesToDTOs() {
-        BlockedUser user1 = new BlockedUser(UUID.randomUUID(), blocker, new User(UUID.randomUUID(), "a", "", "", "", "", ""), "r1");
-        BlockedUser user2 = new BlockedUser(UUID.randomUUID(), blocker, new User(UUID.randomUUID(), "b", "", "", "", "", ""), "r2");
+        BlockedUser user1 = new BlockedUser(UUID.randomUUID(), blocker, new User(UUID.randomUUID(), "a", "", "", "", ""), "r1");
+        BlockedUser user2 = new BlockedUser(UUID.randomUUID(), blocker, new User(UUID.randomUUID(), "b", "", "", "", ""), "r2");
 
         when(blockedRepo.findAllByBlocker_Id(blockerId)).thenReturn(List.of(user1, user2));
         List<BlockedUserDTO> result = blockedUserService.getBlockedUsers(blockerId);
@@ -124,8 +124,8 @@ public class BlockedUserServiceTests {
 
     @Test
     void getBlockedUserIds_ShouldReturnBlockedUserIds() {
-        User u1 = new User(UUID.randomUUID(), "x", "", "", "", "", "");
-        User u2 = new User(UUID.randomUUID(), "y", "", "", "", "", "");
+        User u1 = new User(UUID.randomUUID(), "x", ",", "", "", "");
+        User u2 = new User(UUID.randomUUID(), "y", "", "", "", "");
 
         BlockedUser b1 = new BlockedUser(UUID.randomUUID(), blocker, u1, "why");
         BlockedUser b2 = new BlockedUser(UUID.randomUUID(), blocker, u2, "bc");

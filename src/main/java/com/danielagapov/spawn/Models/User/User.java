@@ -25,8 +25,7 @@ import java.util.UUID;
 @Table(
         name = "user",
         indexes = {
-                @Index(name = "idx_first_name", columnList = "first_name"),
-                @Index(name = "idx_last_name", columnList = "last_name")
+                @Index(name = "idx_name", columnList = "name")
         }
 )
 public class User implements Serializable {
@@ -38,8 +37,8 @@ public class User implements Serializable {
     private String username;
     private String profilePictureUrlString;
 
-    private String firstName;
-    private String lastName;
+    @Column(nullable = false)
+    private String name;
     private String bio;
     
     @Column(nullable = true, unique = true)
@@ -66,12 +65,11 @@ public class User implements Serializable {
         this.lastUpdated = Instant.now();
     }
 
-    public User(UUID id, String username, String profilePictureUrlString, String firstName, String lastName, String bio, String email) {
+    public User(UUID id, String username, String profilePictureUrlString, String name, String bio, String email) {
         this.id = id;
         this.username = username;
         this.profilePictureUrlString = profilePictureUrlString;
-        this.firstName = firstName;
-        this.lastName = lastName;
+        this.name = name;
         this.bio = bio;
         this.email = email;
         this.lastUpdated = Instant.now();

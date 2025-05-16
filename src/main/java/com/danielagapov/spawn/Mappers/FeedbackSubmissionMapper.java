@@ -19,8 +19,7 @@ public class FeedbackSubmissionMapper {
                 entity.getType(),
                 Optional.ofNullable(user).map(User::getId).orElse(null),
                 entity.getFromUserEmail(),
-                Optional.ofNullable(user).map(User::getFirstName).orElse(null),
-                Optional.ofNullable(user).map(User::getLastName).orElse(null),
+                Optional.ofNullable(user).map(User::getName).orElse(null),
                 entity.getMessage(),
                 entity.getStatus(),
                 entity.getResolutionComment(),
@@ -50,12 +49,9 @@ public class FeedbackSubmissionMapper {
         feedbackSubmission.setType(dto.getType());
         feedbackSubmission.setFromUser(user);
         
-        // Set user information - first try from user object, then from DTO if available
-        String firstName = Optional.ofNullable(user).map(User::getFirstName).orElse(null);
-        String lastName = Optional.ofNullable(user).map(User::getLastName).orElse(null);
-
-        if (firstName != null) user.setFirstName(firstName);
-        if (lastName != null) user.setLastName(lastName);
+        // Set user information
+        String name = Optional.ofNullable(user).map(User::getName).orElse(null);
+        if (name != null) user.setName(name);
 
         feedbackSubmission.setFromUserEmail(
                 Optional.ofNullable(user)

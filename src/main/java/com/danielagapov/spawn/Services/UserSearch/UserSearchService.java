@@ -186,9 +186,18 @@ public class UserSearchService implements IUserSearchService {
 
     private boolean isQueryMatch(AbstractUserDTO recommendedFriend, String searchQuery) {
         final String lowercaseQuery = searchQuery.toLowerCase();
-        return recommendedFriend.getFirstName().toLowerCase().contains(lowercaseQuery) ||
-                recommendedFriend.getLastName().toLowerCase().contains(lowercaseQuery) ||
-                recommendedFriend.getUsername().toLowerCase().contains(lowercaseQuery);
+        boolean nameMatch = false;
+        if (recommendedFriend.getName() != null) {
+            String[] nameParts = recommendedFriend.getName().toLowerCase().split(" ");
+            for (String part : nameParts) {
+                if (part.contains(lowercaseQuery)) {
+                    nameMatch = true;
+                    break;
+                }
+            }
+        }
+        boolean usernameMatch = recommendedFriend.getUsername() != null && recommendedFriend.getUsername().toLowerCase().contains(lowercaseQuery);
+        return nameMatch || usernameMatch;
     }
 
     // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
@@ -250,7 +259,7 @@ public class UserSearchService implements IUserSearchService {
 
 
     /**
-     * Computes the distances of each user (first name, last name, or username) to the query
+     * Computes the distances of each user (name or username) to the query
      *
      * @param query the search query to compare names against
      * @param users list of database results
@@ -260,11 +269,8 @@ public class UserSearchService implements IUserSearchService {
         JaroWinklerDistance jaroWinklerDistance = new JaroWinklerDistance();
         return users.stream().collect(Collectors.toMap(user -> user, user ->
                 Math.max(
-                        jaroWinklerDistance.apply(query, user.getFirstName().toLowerCase()),
-                        Math.max(
-                                jaroWinklerDistance.apply(query, user.getLastName().toLowerCase()),
-                                jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
-                        )
+                        jaroWinklerDistance.apply(query, user.getName().toLowerCase()),
+                        jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
                 )
         ));
     }

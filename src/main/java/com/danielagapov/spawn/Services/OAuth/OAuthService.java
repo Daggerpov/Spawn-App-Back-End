@@ -38,8 +38,7 @@ public class OAuthService implements IOAuthService {
                 null,
                 userCreationDTO.getUsername(),
                 null, // going to set within `makeUser()`
-                userCreationDTO.getFirstName(),
-                userCreationDTO.getLastName(),
+                userCreationDTO.getName(),
                 userCreationDTO.getBio(),
                 null,
                 userCreationDTO.getEmail()
