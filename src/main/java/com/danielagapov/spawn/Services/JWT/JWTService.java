@@ -6,9 +6,12 @@ import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
 import com.danielagapov.spawn.Services.User.IUserService;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -43,13 +46,32 @@ public class JWTService implements IJWTService {
 
     @Override
     public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+        try {
+            return extractClaim(token, Claims::getSubject);
+        } catch (ExpiredJwtException e) {
+            logger.warn("Token has expired: " + e.getMessage());
+            throw e;
+        } catch (SignatureException e) {
+            logger.warn("Invalid token signature: " + e.getMessage());
+            throw e;
+        } catch (JwtException e) {
+            logger.warn("JWT parsing error: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error extracting username: " + e.getMessage());
+            throw e;
+        }
     }
 
     @Override
     public boolean isValidToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.ACCESS);
+        try {
+            final String username = extractUsername(token);
+            return username.equals(userDetails.getUsername()) && isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.ACCESS);
+        } catch (Exception e) {
+            logger.warn("Token validation failed: " + e.getMessage());
+            return false;
+        }
     }
 
 
@@ -105,7 +127,12 @@ public class JWTService implements IJWTService {
 
     @Override
     public boolean isValidEmailToken(String token) {
-        return isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.EMAIL);
+        try {
+            return isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.EMAIL);
+        } catch (Exception e) {
+            logger.warn("Email token validation failed: " + e.getMessage());
+            return false;
+        }
     }
 
 
@@ -141,25 +168,48 @@ public class JWTService implements IJWTService {
      * Extracts the entire payload (i.e. all claims) from the JWT which involves parsing the token
      */
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(getKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser()
+                    .verifyWith(getKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (JwtException e) {
+            logger.warn("JWT parsing error in extractAllClaims: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error in extractAllClaims: " + e.getMessage());
+            throw e;
+        }
     }
 
     private TokenType extractTokenType(String token) {
-        Claims claims = extractAllClaims(token);
-        String typeAsString = (String) claims.get("type");
-        return TokenType.valueOf(typeAsString); // returns "type" claim as TokenType
-
+        try {
+            Claims claims = extractAllClaims(token);
+            String typeAsString = (String) claims.get("type");
+            return TokenType.valueOf(typeAsString); // returns "type" claim as TokenType
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid token type value: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.warn("Error extracting token type: " + e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * Returns whether the token is expired
      */
     private boolean isTokenNonExpired(String token) {
-        return !extractClaim(token, Claims::getExpiration).before(new Date());
+        try {
+            return !extractClaim(token, Claims::getExpiration).before(new Date());
+        } catch (ExpiredJwtException e) {
+            logger.warn("Token has expired");
+            return false;
+        } catch (Exception e) {
+            logger.warn("Error checking token expiration: " + e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -167,8 +217,13 @@ public class JWTService implements IJWTService {
      * into a cryptographic key using HMAC-SHA
      */
     private SecretKey getKey() {
-        final byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            final byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            logger.error("Error generating signing key: " + e.getMessage());
+            throw e;
+        }
     }
 
     private Map<String, Object> makeClaims(TokenType type) {
@@ -178,8 +233,12 @@ public class JWTService implements IJWTService {
     }
 
     private boolean isMatchingTokenType(String token, TokenType tokenType) {
-        final TokenType type = extractTokenType(token);
-        return type == tokenType;
-
+        try {
+            final TokenType type = extractTokenType(token);
+            return type == tokenType;
+        } catch (Exception e) {
+            logger.warn("Error matching token type: " + e.getMessage());
+            return false;
+        }
     }
 }

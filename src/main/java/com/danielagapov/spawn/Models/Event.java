@@ -35,6 +35,7 @@ public class Event implements Serializable {
     private OffsetDateTime startTime;
     private OffsetDateTime endTime;
     private String icon;
+    private String colorHexCode;
     
     @Enumerated(EnumType.STRING)
     private EventCategory category;

@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -12,9 +13,11 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.FriendTagMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.EventUser;
 import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.Models.UserFriendTag;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
@@ -24,8 +27,8 @@ import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
-import com.danielagapov.spawn.Utils.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -59,7 +62,7 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService, CacheManager cacheManager){
+                       UserSearchService userSearchService, CacheManager cacheManager) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -192,7 +195,7 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(userEntity, List.of(), List.of(everyoneTagDTOAfterPersisting.getId()));
         } catch (DataAccessException e) {
             logger.error("Failed to save user: " + e.getMessage());
-            throw new BaseSaveException("Failed to save user: " + e.getMessage()); 
+            throw new BaseSaveException("Failed to save user: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error saving user: " + e.getMessage());
             throw e;
@@ -258,12 +261,12 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<UserDTO> getFriendsByFriendTagId(UUID friendTagId) {
+    public List<BaseUserDTO> getFriendsByFriendTagId(UUID friendTagId) {
         try {
-            return uftRepository.findFriendIdsByTagId(friendTagId)
+            return UserMapper.toBaseDTOList(uftRepository.findFriendIdsByTagId(friendTagId)
                     .stream()
                     .map(this::getUserById)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -294,34 +297,6 @@ public class UserService implements IUserService {
                             user -> friendTagService.getFriendTagIdsByOwnerUserId(user.getId())
                     ));
             return UserMapper.toDTOList(users, friendUserIdsMap, friendTagIdsMap);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    @Cacheable(value = "friendsByUserId", key = "#userId")
-    public List<UserDTO> getFriendsByUserId(UUID userId) {
-        try {
-            // Get the FriendTags associated with the user (assuming userId represents the owner of friend tags)
-            Optional<FriendTag> optionalEveryoneTag = friendTagRepository.findByOwnerIdAndIsEveryoneTrue(userId);
-
-            if (optionalEveryoneTag.isEmpty()) {
-                return List.of(); // empty list of friends
-            }
-
-            FriendTag everyoneTag = optionalEveryoneTag.get();
-
-            // Retrieve the friends for each FriendTag and return as a flattened list
-            List<UserDTO> friends = getFriendsByFriendTagId(everyoneTag.getId());
-
-            // Filter out the friend whose ID matches the userId
-            // Exclude the user themselves
-
-            return friends.stream()
-                    .filter(friend -> !friend.getId().equals(userId)) // Exclude the user themselves
-                    .collect(Collectors.toList());
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -464,26 +439,112 @@ public class UserService implements IUserService {
     @Override
     public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
         try {
-            List<User> userFriends = getFriendUsersByUserId(requestingUserId);
-
-            List<FullFriendUserDTO> fullFriendUserDTOList = new ArrayList<>();
-            for (User user : userFriends) {
-                FullFriendUserDTO fullFriendUserDTO = new FullFriendUserDTO(
-                        user.getId(),
-                        user.getUsername(),
-                        user.getProfilePictureUrlString(),
-                        user.getFirstName(),
-                        user.getLastName(),
-                        user.getBio(),
-                        user.getEmail(),
-                        friendTagService.getPertainingFriendTagsForFriend(requestingUserId, user.getId())
-                );
-                fullFriendUserDTOList.add(fullFriendUserDTO);
+            // Retrieve all UserFriendTag entries for this owner in a single query
+            List<UserFriendTag> userFriendTags = uftRepository.findAllFriendsWithTagsByOwnerId(requestingUserId);
+            
+            // If no entries were found, we might still have friends in the "Everyone" tag
+            if (userFriendTags.isEmpty()) {
+                return getFallbackFriendsList(requestingUserId);
             }
-
-            return fullFriendUserDTOList;
+            
+            // Create a map to efficiently group tags by user
+            Map<UUID, List<FriendTagDTO>> friendToTagsMap = new HashMap<>();
+            Map<UUID, User> friendUsersMap = new HashMap<>();
+            
+            // Process all UserFriendTag entries to build our maps
+            for (UserFriendTag uft : userFriendTags) {
+                User friend = uft.getFriend();
+                FriendTag tag = uft.getFriendTag();
+                
+                // Skip if this is the owner (not a friend)
+                if (friend.getId().equals(requestingUserId)) {
+                    continue;
+                }
+                
+                // Add user to our map if not already there
+                friendUsersMap.putIfAbsent(friend.getId(), friend);
+                
+                // Add this tag to the user's tag list
+                friendToTagsMap.computeIfAbsent(friend.getId(), k -> new ArrayList<>())
+                               .add(FriendTagMapper.toDTO(tag, requestingUserId, List.of()));
+            }
+            
+            // Create FullFriendUserDTO objects for each unique friend
+            List<FullFriendUserDTO> result = new ArrayList<>();
+            for (User friend : friendUsersMap.values()) {
+                List<FriendTagDTO> tags = friendToTagsMap.getOrDefault(friend.getId(), List.of());
+                
+                FullFriendUserDTO dto = new FullFriendUserDTO(
+                    friend.getId(),
+                    friend.getUsername(),
+                    friend.getProfilePictureUrlString(),
+                    friend.getFirstName(),
+                    friend.getLastName(),
+                    friend.getBio(),
+                    friend.getEmail(),
+                    tags
+                );
+                
+                result.add(dto);
+            }
+            
+            // If no friends were found, try the fallback method
+            if (result.isEmpty()) {
+                return getFallbackFriendsList(requestingUserId);
+            }
+            
+            return result;
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error retrieving full friend users: " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    /**
+     * Fallback method to get friends from the "Everyone" tag when the optimized query returns no results
+     */
+    private List<FullFriendUserDTO> getFallbackFriendsList(UUID requestingUserId) {
+        try {
+            // Get friends from the "Everyone" tag using the existing method
+            List<User> userFriends = getFriendUsersByUserId(requestingUserId);
+            
+            // Try to get the "Everyone" tag
+            UUID everyoneTagId = friendTagRepository.getEveryoneTagIdByOwnerId(requestingUserId);
+            FriendTagDTO everyoneTag = null;
+            
+            if (everyoneTagId != null) {
+                FriendTag tag = friendTagRepository.findById(everyoneTagId)
+                    .orElse(null);
+                if (tag != null) {
+                    everyoneTag = FriendTagMapper.toDTO(tag, requestingUserId, List.of());
+                }
+            }
+            
+            // Create DTO list
+            List<FullFriendUserDTO> result = new ArrayList<>();
+            for (User friend : userFriends) {
+                List<FriendTagDTO> tags = new ArrayList<>();
+                if (everyoneTag != null) {
+                    tags.add(everyoneTag);
+                }
+                
+                FullFriendUserDTO dto = new FullFriendUserDTO(
+                    friend.getId(),
+                    friend.getUsername(),
+                    friend.getProfilePictureUrlString(),
+                    friend.getFirstName(),
+                    friend.getLastName(),
+                    friend.getBio(),
+                    friend.getEmail(),
+                    tags
+                );
+                
+                result.add(dto);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            logger.error("Error in fallback friends list: " + e.getMessage());
             throw e;
         }
     }
@@ -525,15 +586,15 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public BaseUserDTO updateUser(UUID id, String bio, String username, String firstName, String lastName) {
+    public BaseUserDTO updateUser(UUID id, UserUpdateDTO updateDTO) {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
-            user.setBio(bio);
-            user.setUsername(username);
-            user.setFirstName(firstName);
-            user.setLastName(lastName);
+            user.setBio(updateDTO.getBio());
+            user.setUsername(updateDTO.getUsername());
+            user.setFirstName(updateDTO.getFirstName());
+            user.setLastName(updateDTO.getLastName());
 
             user = repository.save(user);
 

@@ -8,6 +8,8 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.BetaAccessSignUpMapper;
 import com.danielagapov.spawn.Models.BetaAccessSignUp;
 import com.danielagapov.spawn.Repositories.IBetaAccessSignUpRepository;
+import com.danielagapov.spawn.Services.Email.IEmailService;
+import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataAccessException;
@@ -17,16 +19,25 @@ import org.springframework.cache.annotation.Cacheable;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Arrays;
 
 @Service
 public class BetaAccessSignUpService implements IBetaAccessSignUpService {
     private final IBetaAccessSignUpRepository repository;
     private final ILogger logger;
+    private final IEmailService emailService;
+    private final List<String> notificationEmails = Arrays.asList(
+            "spawnappmarketing@gmail.com",
+            "danielagapov1@gmail.com",
+            "shane.mander31@gmail.com",
+            "danieluhlee@gmail.com"
+    );
 
     @Autowired
-    public BetaAccessSignUpService(IBetaAccessSignUpRepository repository, ILogger logger) {
+    public BetaAccessSignUpService(IBetaAccessSignUpRepository repository, ILogger logger, IEmailService emailService) {
         this.repository = repository;
         this.logger = logger;
+        this.emailService = emailService;
     }
 
     /**
@@ -79,6 +90,10 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
 
             BetaAccessSignUp entity = BetaAccessSignUpMapper.toEntity(dto);
             entity = repository.save(entity);
+            
+            // Send email notifications to the team members
+            notifyTeamAboutNewSignUp(dto.getEmail());
+            
             return BetaAccessSignUpMapper.toDTO(entity);
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
@@ -86,6 +101,27 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
         } catch (Exception e) { // also catches IllegalArgumentException for duplicate emails
             logger.error(e.getMessage());
             throw e;
+        }
+    }
+    
+    /**
+     * Send email notifications to team members about a new beta access sign up
+     * 
+     * @param signupEmail The email that just signed up for beta access
+     */
+    private void notifyTeamAboutNewSignUp(String signupEmail) {
+        String subject = "New Beta Access Sign Up";
+        String content = "<h1>New Beta Access Sign Up</h1>" +
+                         "<p>A new user has signed up for beta access with the email: <strong>" + signupEmail + "</strong></p>" +
+                         "<p>Check out the admin dashboard for more information: <a href='https://getspawn.com/admin/dashboard'>Admin Dashboard</a></p>";
+        
+        for (String recipient : notificationEmails) {
+            try {
+                emailService.sendEmail(recipient, subject, content);
+            } catch (MessagingException e) {
+                logger.error("Failed to send notification email to " + recipient + ": " + e.getMessage());
+                // Continue with other emails even if one fails
+            }
         }
     }
     
