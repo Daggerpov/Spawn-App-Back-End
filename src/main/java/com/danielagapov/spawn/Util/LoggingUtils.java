@@ -19,8 +19,8 @@ public class LoggingUtils {
         if (user == null) {
             return "null user";
         }
-        return String.format("%s with names: %s %s and username: %s",
-                user.getId(), user.getFirstName(), user.getLastName(), user.getUsername());
+        return String.format("%s with name: %s and username: %s",
+                user.getId(), user.getName(), user.getUsername());
     }
 
     /**
