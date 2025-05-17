@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
 import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.Event.ProfileEventDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -38,6 +39,24 @@ public class EventController {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             // any other exception
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    // full path: /api/v1/events/profile/{profileUserId}?requestingUserId={requestingUserId}
+    @GetMapping("profile/{profileUserId}")
+    public ResponseEntity<?> getProfileEvents(@PathVariable UUID profileUserId, @RequestParam UUID requestingUserId) {
+        if (profileUserId == null || requestingUserId == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        try {
+            return new ResponseEntity<>(eventService.getProfileEvents(profileUserId, requestingUserId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            // User not found - return 404
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // Any other exception
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
