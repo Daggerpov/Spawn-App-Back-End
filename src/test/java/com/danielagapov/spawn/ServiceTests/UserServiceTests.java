@@ -1,14 +1,18 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
+import com.danielagapov.spawn.DTOs.UserIdEventTimeDTO;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -23,8 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.dao.DataAccessException;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -58,6 +64,10 @@ public class UserServiceTests {
     @Mock
     private IUserSearchService userSearchService;
 
+    @Mock
+    private IEventUserRepository eventUserRepository;
+
+    @Spy
     @InjectMocks
     private UserService userService;
 
@@ -204,13 +214,13 @@ public class UserServiceTests {
     void deleteUserById_ShouldLogException_WhenUnexpectedErrorOccurs() {
         UUID userId = UUID.randomUUID();
         User user = new User(userId, "JohnDoe123", "profile.jpg", "John Doe", null, "johndoe@anon.com");
-        
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         doNothing().when(s3Service).deleteObjectByURL(anyString());
         doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
 
         Exception exception = assertThrows(RuntimeException.class, () -> userService.deleteUserById(userId));
-        
+
         assertEquals("Unexpected error", exception.getMessage());
         verify(logger, times(1)).error(anyString());
     }
@@ -231,9 +241,9 @@ public class UserServiceTests {
     void deleteUserById_ShouldNotCallDelete_WhenUserDoesNotExist() {
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        
+
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> userService.deleteUserById(userId));
-        
+
         assertTrue(exception.getMessage().contains("User"));
         verify(userRepository, never()).deleteById(userId);
     }
@@ -307,21 +317,16 @@ public class UserServiceTests {
         UUID uniqueFriend2Id = UUID.randomUUID();
 
         // User1's friends: mutualFriend1, mutualFriend2, uniqueFriend1
-        when(friendTagRepository.findByOwnerId(user1Id))
-                .thenReturn(List.of(createEveryoneTag(user1Id)));
-        when(userFriendTagRepository.findFriendIdsByTagId(any()))
+        when(userFriendTagRepository.findFriendIdsByUserId(any()))
                 .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
                 .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
 
         // User2's friends: mutualFriend1, mutualFriend2, uniqueFriend2
-        when(friendTagRepository.findByOwnerId(user2Id))
-                .thenReturn(List.of(createEveryoneTag(user2Id)));
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(2, result);
-        verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
     }
 
     @Test
@@ -345,8 +350,7 @@ public class UserServiceTests {
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
     }
 
     @Test
@@ -369,8 +373,7 @@ public class UserServiceTests {
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
     }
 
     @Test
@@ -387,8 +390,7 @@ public class UserServiceTests {
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, times(2)).findFriendIdsByTagId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
     }
 
     @Test
@@ -403,8 +405,7 @@ public class UserServiceTests {
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
     }
 
     @Test
@@ -418,8 +419,7 @@ public class UserServiceTests {
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(friendTagRepository, times(2)).findByOwnerId(any());
-        verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
+        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
     }
 
     @Test
@@ -469,12 +469,98 @@ public class UserServiceTests {
         List<UUID> result = userService.getFriendUserIdsByUserId(userId);
 
         assertTrue(result.isEmpty());
-        verify(friendTagRepository, times(1)).findByOwnerId(userId);
-        verify(userFriendTagRepository, never()).findFriendIdsByTagId(any());
+        verify(userFriendTagRepository, times(1)).findFriendIdsByUserId(any());
+    }
+
+    @Test
+    void testGetRecentlySpawnedWithUsers() {
+        // Setup mock data for the repository methods
+        UUID requestingUserId = UUID.randomUUID();
+        List<UUID> pastEventIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
+        UUID friendId1 = UUID.randomUUID();
+        UUID friendId2 = UUID.randomUUID();
+        UUID nonFriendId = UUID.randomUUID();
+        UUID blockedId = UUID.randomUUID();
+        UserIdEventTimeDTO friendIdEventTime1 = new UserIdEventTimeDTO(friendId1, OffsetDateTime.now());
+        UserIdEventTimeDTO friendIdEventTime2 = new UserIdEventTimeDTO(friendId2, OffsetDateTime.now());
+        UserIdEventTimeDTO nonfriendIdEventTime = new UserIdEventTimeDTO(nonFriendId, OffsetDateTime.now());
+        UserIdEventTimeDTO blockedIdEventTime = new UserIdEventTimeDTO(blockedId, OffsetDateTime.now());
+        List<UserIdEventTimeDTO> pastEventParticipants = Arrays.asList(friendIdEventTime1, friendIdEventTime2, nonfriendIdEventTime, blockedIdEventTime);
+        List<UUID> friendIds = Arrays.asList(friendId1, friendId2);
+
+        // Mock the repository methods
+        when(eventUserRepository.findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+                .thenReturn(pastEventIds);
+        when(eventUserRepository.findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
+                .thenReturn(pastEventParticipants);
+        when(userSearchService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of(blockedId, requestingUserId, friendId1, friendId2));
+
+        // Mock the getBaseUserById method (if necessary, return a mocked BaseUserDTO)
+        BaseUserDTO mockBaseUserDTO = new BaseUserDTO();
+        mockBaseUserDTO.setId(UUID.randomUUID());
+        doReturn(mockBaseUserDTO).when(userService).getBaseUserById(nonFriendId);
+
+        // Call the method
+        List<RecentlySpawnedUserDTO> result = userService.getRecentlySpawnedWithUsers(requestingUserId);
+
+        // Verify repository method interactions
+        verify(eventUserRepository, times(1)).findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
+        verify(eventUserRepository, times(1)).findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating));
+        verify(userService, times(1)).getBaseUserById(any(UUID.class));
+
+        // Assert the results
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertTrue(result.stream().allMatch(recentUser -> !friendIds.contains(recentUser.getUser().getId())));
+    }
+
+    @Test
+    void testGetRecentlySpawnedWithUsers_NoParticipants() {
+        // Setup mock data for no participants
+        UUID requestingUserId = UUID.randomUUID();
+        List<UUID> pastEventIds = Collections.emptyList();
+        List<UserIdEventTimeDTO> pastEventParticipantIds = Collections.emptyList();
+        List<UUID> friendIds = new ArrayList<>();
+
+        // Mock the repository methods
+        when(eventUserRepository.findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+                .thenReturn(pastEventIds);
+        when(eventUserRepository.findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
+                .thenReturn(pastEventParticipantIds);
+        when(userService.getFriendUserIdsByUserId(eq(requestingUserId)))
+                .thenReturn(friendIds);
+
+        // Call the method
+        List<RecentlySpawnedUserDTO> result = userService.getRecentlySpawnedWithUsers(requestingUserId);
+
+        // Assert the results (should be an empty list)
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testGetRecentlySpawnedWithUsers_ExceptionHandling() {
+        // Simulate an exception being thrown in the repository method
+        UUID requestingUserId = UUID.randomUUID();
+        when(eventUserRepository.findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // Call the method and assert it handles the exception
+        try {
+            userService.getRecentlySpawnedWithUsers(requestingUserId);
+            fail("Expected an exception to be thrown");
+        } catch (RuntimeException e) {
+            assertEquals("Database error", e.getMessage());
+        }
+
+        // Verify the repository interaction
+        verify(eventUserRepository, times(1)).findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
     }
 
     // Helper method to create an "Everyone" tag
     private FriendTag createEveryoneTag(UUID ownerId) {
         return new FriendTag(UUID.randomUUID(), "Everyone", "#000000", ownerId, true, null);
     }
+
+
 }

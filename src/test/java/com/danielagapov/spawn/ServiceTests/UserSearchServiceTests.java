@@ -9,6 +9,7 @@ import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
@@ -43,6 +44,9 @@ class UserSearchServiceTests {
 
     @Mock
     private ILogger logger;
+
+    @Mock
+    private IBlockedUserService blockedUserService;
 
     @InjectMocks
     private UserSearchService userSearchService; // Injected service to test

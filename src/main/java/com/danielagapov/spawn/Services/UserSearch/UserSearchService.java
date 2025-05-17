@@ -12,6 +12,7 @@ import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
@@ -30,6 +31,7 @@ public class UserSearchService implements IUserSearchService {
     private final IFriendRequestService friendRequestService;
     private final IUserService userService;
     private final IUserRepository userRepository;
+    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
 
 
@@ -201,7 +203,7 @@ public class UserSearchService implements IUserSearchService {
     }
 
     // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
-    private Set<UUID> getExcludedUserIds(UUID userId) {
+    public Set<UUID> getExcludedUserIds(UUID userId) {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = userService.getFriendUserIdsByUserId(userId);
 
@@ -222,6 +224,7 @@ public class UserSearchService implements IUserSearchService {
         excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
         excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
         excludedUserIds.add(userId); // Exclude self
+        excludedUserIds.addAll(blockedUserService.getBlockedUserIds(userId));
 
         return excludedUserIds;
     }
