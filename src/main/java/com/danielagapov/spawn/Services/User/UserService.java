@@ -641,11 +641,8 @@ public class UserService implements IUserService {
     @Override
     public boolean isUserFriendOfUser(UUID userId, UUID potentialFriendId) {
         try {
-            // Get the friend IDs
-            List<UUID> friendIds = getFriendUserIdsByUserId(userId);
-            
-            // Check if the potential friend ID exists in the list
-            return friendIds.contains(potentialFriendId);
+            // Use the direct query method
+            return uftRepository.isUserFriendOfUser(userId, potentialFriendId);
         } catch (Exception e) {
             logger.error("Error checking if user is friend of user: " + 
                          LoggingUtils.formatUserIdInfo(userId) + " and " + 
