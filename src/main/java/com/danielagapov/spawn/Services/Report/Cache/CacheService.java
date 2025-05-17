@@ -7,6 +7,7 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
@@ -62,6 +63,7 @@ public class CacheService implements ICacheService {
     private static final String FRIEND_REQUESTS_CACHE = "friendRequests";
     private static final String USER_TAGS_CACHE = "userTags";
     private static final String TAG_FRIENDS_CACHE = "tagFriends";
+    private static final String RECENTLY_SPAWNED_CACHE = "recentlySpawned";
 
     @Autowired
     public CacheService(
@@ -164,6 +166,11 @@ public class CacheService implements ICacheService {
         // Validate tag friends cache
         if (clientCacheTimestamps.containsKey(TAG_FRIENDS_CACHE)) {
             response.put(TAG_FRIENDS_CACHE, validateTagFriendsCache(user, clientCacheTimestamps.get(TAG_FRIENDS_CACHE)));
+        }
+
+        // Validate recently-spawned cache
+        if (clientCacheTimestamps.containsKey(RECENTLY_SPAWNED_CACHE)) {
+            response.put(RECENTLY_SPAWNED_CACHE, validateRecentlySpawnedCache(user, clientCacheTimestamps.get(RECENTLY_SPAWNED_CACHE)));
         }
 
         return response;
@@ -515,6 +522,34 @@ public class CacheService implements ICacheService {
 
         } catch (Exception e) {
             logger.error("Error validating tag-friends cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+
+    private CacheValidationResponseDTO validateRecentlySpawnedCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+
+            Instant latestFriendActivity = getLatestFriendActivity(user.getId());
+
+            boolean needsUpdate = latestFriendActivity.isAfter(clientTime.toInstant());
+
+            if (needsUpdate) {
+                try {
+                    List<RecentlySpawnedUserDTO> recentlySpawnedUsers = userService.getRecentlySpawnedWithUsers(user.getId());
+                    byte[] recentlySpawnedData = objectMapper.writeValueAsBytes(recentlySpawnedUsers);
+                    if (recentlySpawnedData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, recentlySpawnedData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize recently spawned data", e);
+                }
+                return new CacheValidationResponseDTO(true, null);
+            }
+            return new CacheValidationResponseDTO(false, null);
+        } catch (Exception e) {
+            logger.error("Error validating recently-spawned cache for user {}: {}", user.getId(), e.getMessage());
             return new CacheValidationResponseDTO(true, null);
         }
     }

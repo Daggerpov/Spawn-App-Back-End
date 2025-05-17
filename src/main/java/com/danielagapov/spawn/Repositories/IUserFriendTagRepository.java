@@ -24,11 +24,14 @@ public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, U
     boolean existsByFriendTagIdAndFriendId(UUID friendTagId, UUID friendId);
 
     Instant findTopByFriendTag_OwnerIdOrderByLastUpdatedDesc(UUID ownerId);
-    
+
+    @Query("SELECT uft.friend.id FROM UserFriendTag uft WHERE uft.friendTag.isEveryone = true AND uft.friendTag.ownerId = :ownerId")
+    List<UUID> findFriendIdsByUserId(UUID ownerId);
+
     /**
      * Retrieves all UserFriendTag entries for a specific owner's friends in a single query.
      * This query fetches all the data needed to build FullFriendUserDTOs efficiently.
-     * 
+     *
      * @param ownerId The ID of the user who owns the friend tags
      * @return List of UserFriendTag objects with their associated User and FriendTag data
      */
