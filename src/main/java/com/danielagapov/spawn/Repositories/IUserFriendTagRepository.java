@@ -55,4 +55,17 @@ public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, U
            "WHERE uft.friendTag.ownerId = :ownerId " +
            "ORDER BY uft.friendTag.id, uft.friend.id")
     List<UserFriendTag> findAllTagsWithFriendsByOwnerId(@Param("ownerId") UUID ownerId);
+    
+    /**
+     * Directly checks if a potential friend is in a user's "Everyone" tag (i.e., is a friend)
+     * 
+     * @param userId The ID of the user
+     * @param potentialFriendId The ID of the potential friend
+     * @return true if the users are friends, false otherwise
+     */
+    @Query("SELECT COUNT(uft) > 0 FROM UserFriendTag uft " +
+           "WHERE uft.friendTag.ownerId = :userId " +
+           "AND uft.friendTag.isEveryone = true " +
+           "AND uft.friend.id = :potentialFriendId")
+    boolean isUserFriendOfUser(@Param("userId") UUID userId, @Param("potentialFriendId") UUID potentialFriendId);
 }

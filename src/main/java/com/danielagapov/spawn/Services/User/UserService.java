@@ -544,15 +544,19 @@ public class UserService implements IUserService {
     @Override
     public List<User> getFriendUsersByUserId(UUID requestingUserId) {
         try {
-            return friendTagRepository.getFriendsFromEveryoneTagByOwnerId(requestingUserId);
-        } catch (BaseNotFoundException e) {
-            logger.warn("Could not find user with id: " + requestingUserId);
-            throw e;
+            // Get the friend IDs
+            List<UUID> friendIds = getFriendUserIdsByUserId(requestingUserId);
+            
+            // Fetch and return the user entities
+            if (!friendIds.isEmpty()) {
+                return repository.findAllById(friendIds);
+            }
+            
+            return List.of();
         } catch (Exception e) {
-            logger.error("Unexpected error: " + e.getMessage());
+            logger.error("Error retrieving friend users by user ID: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ": " + e.getMessage());
+            throw e;
         }
-
-        return List.of();
     }
 
     @Override
@@ -644,6 +648,19 @@ public class UserService implements IUserService {
             return repository.findLatestFriendProfileUpdate(userId);
         } catch (Exception e) {
             logger.error("Error getting latest friend profile update timestamp for user: " + userId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean isUserFriendOfUser(UUID userId, UUID potentialFriendId) {
+        try {
+            // Use the direct query method
+            return uftRepository.isUserFriendOfUser(userId, potentialFriendId);
+        } catch (Exception e) {
+            logger.error("Error checking if user is friend of user: " + 
+                         LoggingUtils.formatUserIdInfo(userId) + " and " + 
+                         LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
             throw e;
         }
     }

@@ -335,9 +335,9 @@ public class EventService implements IEventService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventById", key = "#id"),
+            @CacheEvict(value = "eventById", key = "#result.id"),
             @CacheEvict(value = "fullEventById", allEntries = true),
-            @CacheEvict(value = "eventsByOwnerId", allEntries = true),
+            @CacheEvict(value = "eventsByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedEvents", allEntries = true),
             @CacheEvict(value = "filteredFeedEvents", allEntries = true)
     })
@@ -693,6 +693,75 @@ public class EventService implements IEventService {
                     .orElse(null);
         } catch (DataAccessException e) {
             logger.error("Error fetching latest updated event timestamp for user: " + userId + " - " + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Gets past events where the specified user invited the requesting user
+     * 
+     * @param inviterUserId The user ID of the person who invited the requesting user
+     * @param requestingUserId The user ID of the user viewing the profile
+     * @return List of past events where inviterUserId invited requestingUserId
+     */
+    @Override
+    public List<ProfileEventDTO> getPastEventsWhereUserInvited(UUID inviterUserId, UUID requestingUserId) {
+        try {
+            OffsetDateTime now = OffsetDateTime.now();
+            List<Event> pastEvents = repository.getPastEventsWhereUserInvited(inviterUserId, requestingUserId, now);
+            List<EventDTO> pastEventDTOs = getEventDTOs(pastEvents);
+            
+            // Convert to FullFeedEventDTOs then to ProfileEventDTOs and mark them as past events
+            List<FullFeedEventDTO> fullFeedEvents = convertEventsToFullFeedEvents(pastEventDTOs, requestingUserId);
+            List<ProfileEventDTO> result = new ArrayList<>();
+            
+            // Convert each FullFeedEventDTO to ProfileEventDTO with isPastEvent set to true
+            for (FullFeedEventDTO fullFeedEvent : fullFeedEvents) {
+                result.add(ProfileEventDTO.fromFullFeedEventDTO(fullFeedEvent, true));
+            }
+            
+            return result;
+        } catch (Exception e) {
+            logger.error("Error fetching past events where user " + inviterUserId + " invited user " + requestingUserId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    /**
+     * Gets feed events for a profile. If the profile user has no upcoming events, returns past events
+     * that the profile user invited the requesting user to, with a flag indicating they are past events.
+     *
+     * @param profileUserId The user ID of the profile being viewed
+     * @param requestingUserId The user ID of the user viewing the profile
+     * @return List of events with a flag indicating if they are past events
+     */
+    @Override
+    public List<ProfileEventDTO> getProfileEvents(UUID profileUserId, UUID requestingUserId) {
+        try {
+            // Get upcoming events created by the profile user
+            List<EventDTO> upcomingEvents = getEventsByOwnerId(profileUserId);
+            List<FullFeedEventDTO> upcomingFullEvents = convertEventsToFullFeedSelfOwnedEvents(upcomingEvents, requestingUserId);
+            
+            // Remove expired events
+            List<FullFeedEventDTO> nonExpiredEvents = removeExpiredEvents(upcomingFullEvents);
+            
+            // Convert to ProfileEventDTO
+            List<ProfileEventDTO> result = new ArrayList<>();
+            
+            // If there are upcoming events, return them as ProfileEventDTOs with isPastEvent = false
+            if (!nonExpiredEvents.isEmpty()) {
+                sortEventsByStartTime(nonExpiredEvents);
+                for (FullFeedEventDTO event : nonExpiredEvents) {
+                    result.add(ProfileEventDTO.fromFullFeedEventDTO(event, false));
+                }
+                return result;
+            }
+            
+            // If no upcoming events, get past events where the profile user invited the requesting user
+            return getPastEventsWhereUserInvited(profileUserId, requestingUserId);
+        } catch (Exception e) {
+            logger.error("Error fetching profile events for user " + profileUserId + 
+                         " requested by " + requestingUserId + ": " + e.getMessage());
             throw e;
         }
     }

@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
 import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
 import com.danielagapov.spawn.DTOs.Event.EventDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.Event.ProfileEventDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
@@ -54,6 +55,25 @@ public interface IEventService {
     List<FullFeedEventDTO> convertEventsToFullFeedSelfOwnedEvents(List<EventDTO> events, UUID requestingUserId);
 
     List<FullFeedEventDTO> getFeedEvents(UUID requestingUserId);
+    
+    /**
+     * Gets feed events for a profile. If the profile user has no upcoming events, returns past events
+     * that the profile user invited the requesting user to, with a flag indicating they are past events.
+     *
+     * @param profileUserId The user ID of the profile being viewed
+     * @param requestingUserId The user ID of the user viewing the profile
+     * @return List of events with a flag indicating if they are past events
+     */
+    List<ProfileEventDTO> getProfileEvents(UUID profileUserId, UUID requestingUserId);
+    
+    /**
+     * Gets past events where the specified user invited the requesting user
+     * 
+     * @param inviterUserId The user ID of the person who invited the requesting user
+     * @param requestingUserId The user ID of the user viewing the profile
+     * @return List of past events where inviterUserId invited requestingUserId
+     */
+    List<ProfileEventDTO> getPastEventsWhereUserInvited(UUID inviterUserId, UUID requestingUserId);
 
     List<FullFeedEventDTO> getFilteredFeedEventsByFriendTagId(UUID friendTagFilterId);
 

@@ -41,6 +41,15 @@ public interface IUserService {
 
     List<User> getFriendUsersByUserId(UUID requestingUserId);
 
+    /**
+     * Checks if a user is a friend of another user.
+     *
+     * @param userId The ID of the user to check
+     * @param potentialFriendId The ID of the potential friend
+     * @return True if the users are friends, false otherwise
+     */
+    boolean isUserFriendOfUser(UUID userId, UUID potentialFriendId);
+
     // For Friend Tags:
 
     Map<FriendTag, UUID> getOwnerUserIdsMap();
