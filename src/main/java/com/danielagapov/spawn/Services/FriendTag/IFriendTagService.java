@@ -64,4 +64,12 @@ public interface IFriendTagService {
     FullFriendTagDTO getFullFriendTagById(UUID id);
 
     FullFriendTagDTO getFullFriendTagByFriendTag(FriendTagDTO friendTag);
+
+    /**
+     * Get suggested friends for a specific tag
+     * @param tagId The ID of the friend tag
+     * @param userId The ID of the user who owns the tag
+     * @return List of BaseUserDTO representing suggested friends for the tag
+     */
+    List<BaseUserDTO> getSuggestedFriendsForTag(UUID tagId, UUID userId);
 }

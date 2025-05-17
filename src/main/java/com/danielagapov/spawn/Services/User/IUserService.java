@@ -40,6 +40,14 @@ public interface IUserService {
 
     List<User> getFriendUsersByUserId(UUID requestingUserId);
 
+    /**
+     * Get all friends for a user as BaseUserDTO objects
+     * 
+     * @param userId The user ID to get friends for
+     * @return List of BaseUserDTO representing the user's friends
+     */
+    List<BaseUserDTO> getFriendsByUserId(UUID userId);
+
     // For Friend Tags:
 
     Map<FriendTag, UUID> getOwnerUserIdsMap();

@@ -562,6 +562,25 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public List<BaseUserDTO> getFriendsByUserId(UUID userId) {
+        try {
+            // Get the User entities of all friends
+            List<User> friendUsers = getFriendUsersByUserId(userId);
+            
+            // Convert to BaseUserDTO objects
+            return friendUsers.stream()
+                .map(UserMapper::toDTO)
+                .collect(Collectors.toList());
+        } catch (BaseNotFoundException e) {
+            logger.warn("Could not find user with id: " + userId);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error getting friends for user " + userId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public int getMutualFriendCount(UUID userId1, UUID userId2) {
         List<UUID> user1Friends = new ArrayList<>(getFriendUserIdsByUserId(userId1));
         List<UUID> user2Friends = getFriendUserIdsByUserId(userId2);
