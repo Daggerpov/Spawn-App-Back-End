@@ -480,43 +480,4 @@ public class FriendTagService implements IFriendTagService {
         List<UUID> friendIds = userService.getFriendUserIdsByFriendTagId(tagId);
         return friendIds != null ? friendIds : new ArrayList<>();
     }
-    
-    @Override
-    public List<BaseUserDTO> getSuggestedFriendsForTag(UUID tagId, UUID userId) {
-        try {
-            // Get the tag to verify its existence and ownership
-            FriendTagDTO tag = getFriendTagById(tagId);
-            if (!tag.getOwnerUserId().equals(userId)) {
-                throw new BaseNotFoundException(EntityType.FriendTag, tagId);
-            }
-            
-            // Get all friends of the user
-            List<BaseUserDTO> allUserFriends = userService.getFriendsByUserId(userId);
-            if (allUserFriends == null || allUserFriends.isEmpty()) {
-                return new ArrayList<>();
-            }
-            
-            // Get friends already in this tag
-            List<BaseUserDTO> friendsInTag = userService.getFriendsByFriendTagId(tagId);
-            
-            // If no friends in tag, return all friends as suggestions
-            if (friendsInTag == null || friendsInTag.isEmpty()) {
-                return allUserFriends;
-            }
-            
-            // Filter out friends who are already in the tag
-            Set<UUID> friendsInTagIds = friendsInTag.stream()
-                .map(BaseUserDTO::getId)
-                .collect(Collectors.toSet());
-                
-            return allUserFriends.stream()
-                .filter(friend -> !friendsInTagIds.contains(friend.getId()))
-                .collect(Collectors.toList());
-        } catch (BaseNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error getting suggested friends for tag: " + e.getMessage());
-            throw new BasesNotFoundException(EntityType.User);
-        }
-    }
 }
