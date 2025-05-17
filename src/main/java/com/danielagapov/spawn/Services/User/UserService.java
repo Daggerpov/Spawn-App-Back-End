@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
@@ -26,7 +25,6 @@ import com.danielagapov.spawn.Repositories.IEventUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
@@ -61,7 +59,6 @@ public class UserService implements IUserService {
     private final IUserSearchService userSearchService;
     private final CacheManager cacheManager;
     private final IFriendRequestService friendRequestService;
-    private final IBlockedUserService blockedUserService;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
@@ -71,7 +68,9 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService, CacheManager cacheManager, IFriendRequestService friendRequestService, IBlockedUserService blockedUserService) {
+                       UserSearchService userSearchService,
+                       CacheManager cacheManager,
+                       IFriendRequestService friendRequestService) {
         this.repository = repository;
         this.eventUserRepository = eventUserRepository;
         this.uftRepository = uftRepository;
@@ -82,7 +81,6 @@ public class UserService implements IUserService {
         this.userSearchService = userSearchService;
         this.cacheManager = cacheManager;
         this.friendRequestService = friendRequestService;
-        this.blockedUserService = blockedUserService;
     }
 
     @Override
@@ -472,13 +470,13 @@ public class UserService implements IUserService {
                 List<FriendTagDTO> tags = friendToTagsMap.getOrDefault(friend.getId(), List.of());
 
                 FullFriendUserDTO dto = new FullFriendUserDTO(
-                    friend.getId(),
-                    friend.getUsername(),
-                    friend.getProfilePictureUrlString(),
-                    friend.getName(),
-                    friend.getBio(),
-                    friend.getEmail(),
-                    tags
+                        friend.getId(),
+                        friend.getUsername(),
+                        friend.getProfilePictureUrlString(),
+                        friend.getName(),
+                        friend.getBio(),
+                        friend.getEmail(),
+                        tags
                 );
 
                 result.add(dto);
@@ -525,13 +523,13 @@ public class UserService implements IUserService {
                 }
 
                 FullFriendUserDTO dto = new FullFriendUserDTO(
-                    friend.getId(),
-                    friend.getUsername(),
-                    friend.getProfilePictureUrlString(),
-                    friend.getName(),
-                    friend.getBio(),
-                    friend.getEmail(),
-                    tags
+                        friend.getId(),
+                        friend.getUsername(),
+                        friend.getProfilePictureUrlString(),
+                        friend.getName(),
+                        friend.getBio(),
+                        friend.getEmail(),
+                        tags
                 );
 
                 result.add(dto);
@@ -628,14 +626,7 @@ public class UserService implements IUserService {
             final int userLimit = 40;
             List<UUID> pastEventIds = eventUserRepository.findPastEventIdsForUser(requestingUserId, ParticipationStatus.participating, Limit.of(eventLimit));
             List<UserIdEventTimeDTO> pastEventParticipantIds = eventUserRepository.findOtherUserIdsByEventIds(pastEventIds, requestingUserId, ParticipationStatus.participating);
-            Set<UUID> excludedIds = new HashSet<>(getFriendUserIdsByUserId(requestingUserId));
-            excludedIds.addAll(
-                    friendRequestService.getSentFriendRequestsByUserId(requestingUserId)
-                            .stream()
-                            .map(CreateFriendRequestDTO::getReceiverUserId)
-                            .collect(Collectors.toSet())
-            ); // Exclude users with outgoing friend requests
-            excludedIds.addAll(blockedUserService.getBlockedUserIds(requestingUserId)); // Exclude blocked users
+            Set<UUID> excludedIds = userSearchService.getExcludedUserIds(requestingUserId);
 
             return pastEventParticipantIds.stream()
                     .filter(e -> !excludedIds.contains(e.getUserId()))
