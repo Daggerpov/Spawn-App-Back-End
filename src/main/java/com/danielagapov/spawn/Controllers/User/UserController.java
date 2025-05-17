@@ -3,7 +3,6 @@ package com.danielagapov.spawn.Controllers.User;
 import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.IsFriendResponseDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -169,7 +168,7 @@ public class UserController {
 
     // full path: /api/v1/users/{userId}/is-friend/{potentialFriendId}
     @GetMapping("{userId}/is-friend/{potentialFriendId}")
-    public ResponseEntity<IsFriendResponseDTO> isUserFriendOfUser(
+    public ResponseEntity<Boolean> isUserFriendOfUser(
             @PathVariable UUID userId,
             @PathVariable UUID potentialFriendId) {
         if (userId == null || potentialFriendId == null) {
@@ -178,7 +177,7 @@ public class UserController {
         
         try {
             boolean isFriend = userService.isUserFriendOfUser(userId, potentialFriendId);
-            return new ResponseEntity<>(new IsFriendResponseDTO(isFriend), HttpStatus.OK);
+            return new ResponseEntity<>(isFriend, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
