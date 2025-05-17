@@ -705,18 +705,19 @@ public class EventService implements IEventService {
      * @return List of past events where inviterUserId invited requestingUserId
      */
     @Override
-    public List<FullFeedEventDTO> getPastEventsWhereUserInvited(UUID inviterUserId, UUID requestingUserId) {
+    public List<ProfileEventDTO> getPastEventsWhereUserInvited(UUID inviterUserId, UUID requestingUserId) {
         try {
             OffsetDateTime now = OffsetDateTime.now();
             List<Event> pastEvents = repository.getPastEventsWhereUserInvited(inviterUserId, requestingUserId, now);
             List<EventDTO> pastEventDTOs = getEventDTOs(pastEvents);
             
-            // Convert to FullFeedEventDTOs and mark them as past events
-            List<FullFeedEventDTO> result = convertEventsToFullFeedEvents(pastEventDTOs, requestingUserId);
+            // Convert to FullFeedEventDTOs then to ProfileEventDTOs and mark them as past events
+            List<FullFeedEventDTO> fullFeedEvents = convertEventsToFullFeedEvents(pastEventDTOs, requestingUserId);
+            List<ProfileEventDTO> result = new ArrayList<>();
             
-            // Set the isPastEvent flag to true for all events
-            for (FullFeedEventDTO event : result) {
-                event.setPastEvent(true);
+            // Convert each FullFeedEventDTO to ProfileEventDTO with isPastEvent set to true
+            for (FullFeedEventDTO fullFeedEvent : fullFeedEvents) {
+                result.add(ProfileEventDTO.fromFullFeedEventDTO(fullFeedEvent, true));
             }
             
             return result;
@@ -735,7 +736,7 @@ public class EventService implements IEventService {
      * @return List of events with a flag indicating if they are past events
      */
     @Override
-    public List<FullFeedEventDTO> getProfileEvents(UUID profileUserId, UUID requestingUserId) {
+    public List<ProfileEventDTO> getProfileEvents(UUID profileUserId, UUID requestingUserId) {
         try {
             // Get upcoming events created by the profile user
             List<EventDTO> upcomingEvents = getEventsByOwnerId(profileUserId);
@@ -744,19 +745,20 @@ public class EventService implements IEventService {
             // Remove expired events
             List<FullFeedEventDTO> nonExpiredEvents = removeExpiredEvents(upcomingFullEvents);
             
-            // If there are upcoming events, return them
+            // Convert to ProfileEventDTO
+            List<ProfileEventDTO> result = new ArrayList<>();
+            
+            // If there are upcoming events, return them as ProfileEventDTOs with isPastEvent = false
             if (!nonExpiredEvents.isEmpty()) {
                 sortEventsByStartTime(nonExpiredEvents);
-                return nonExpiredEvents;
+                for (FullFeedEventDTO event : nonExpiredEvents) {
+                    result.add(ProfileEventDTO.fromFullFeedEventDTO(event, false));
+                }
+                return result;
             }
             
             // If no upcoming events, get past events where the profile user invited the requesting user
-            List<FullFeedEventDTO> pastEvents = getPastEventsWhereUserInvited(profileUserId, requestingUserId);
-            
-            // Sort the past events
-            sortEventsByStartTime(pastEvents);
-            
-            return pastEvents;
+            return getPastEventsWhereUserInvited(profileUserId, requestingUserId);
         } catch (Exception e) {
             logger.error("Error fetching profile events for user " + profileUserId + 
                          " requested by " + requestingUserId + ": " + e.getMessage());
