@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.User;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Models.FriendTag;
@@ -40,6 +41,15 @@ public interface IUserService {
 
     List<User> getFriendUsersByUserId(UUID requestingUserId);
 
+    /**
+     * Checks if a user is a friend of another user.
+     *
+     * @param userId The ID of the user to check
+     * @param potentialFriendId The ID of the potential friend
+     * @return True if the users are friends, false otherwise
+     */
+    boolean isUserFriendOfUser(UUID userId, UUID potentialFriendId);
+
     // For Friend Tags:
 
     Map<FriendTag, UUID> getOwnerUserIdsMap();
@@ -56,7 +66,7 @@ public interface IUserService {
 
     /**
      * Gets the timestamp of the latest profile update from any of the user's friends.
-     * 
+     *
      * @param userId The user ID to get the latest friend profile update for
      * @return The timestamp of the latest friend profile update, or null if none found
      */
@@ -98,4 +108,6 @@ public interface IUserService {
      * Get the User entity by email
      */
     User getUserByEmail(String email);
+
+    List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
 }

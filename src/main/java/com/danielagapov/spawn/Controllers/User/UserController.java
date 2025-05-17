@@ -1,10 +1,7 @@
 package com.danielagapov.spawn.Controllers.User;
 
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.S3.IS3Service;
@@ -49,7 +46,7 @@ public class UserController {
     @GetMapping("{id}")
     public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        try { 
+        try {
             return new ResponseEntity<>(userService.getBaseUserById(id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -162,6 +159,36 @@ public class UserController {
         try {
             return new ResponseEntity<>(userService.searchByQuery(searchQuery), HttpStatus.OK);
         } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/{userId}/recent-users
+    @GetMapping("{userId}/recent-users")
+    public ResponseEntity<List<RecentlySpawnedUserDTO>> getRecentlySpawnedWithUsers(@PathVariable UUID userId) {
+        try {
+            return new ResponseEntity<>(userService.getRecentlySpawnedWithUsers(userId), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/{userId}/is-friend/{potentialFriendId}
+    @GetMapping("{userId}/is-friend/{potentialFriendId}")
+    public ResponseEntity<Boolean> isUserFriendOfUser(
+            @PathVariable UUID userId,
+            @PathVariable UUID potentialFriendId) {
+        if (userId == null || potentialFriendId == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        try {
+            boolean isFriend = userService.isUserFriendOfUser(userId, potentialFriendId);
+            return new ResponseEntity<>(isFriend, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error checking if user " + userId + " is friend of user " + potentialFriendId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
