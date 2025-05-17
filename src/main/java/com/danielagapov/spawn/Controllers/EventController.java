@@ -41,6 +41,24 @@ public class EventController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    
+    // full path: /api/v1/events/profile/{profileUserId}?requestingUserId={requestingUserId}
+    @GetMapping("profile/{profileUserId}")
+    public ResponseEntity<?> getProfileEvents(@PathVariable UUID profileUserId, @RequestParam UUID requestingUserId) {
+        if (profileUserId == null || requestingUserId == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        try {
+            return new ResponseEntity<>(eventService.getProfileEvents(profileUserId, requestingUserId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            // User not found - return 404
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // Any other exception
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
     // full path: /api/v1/events/friendTag/{friendTagFilterId}
     @GetMapping("friendTag/{friendTagFilterId}")
