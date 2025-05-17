@@ -249,4 +249,54 @@ public class FriendTagController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // returns ResponseEntity with list of UserDTOs (can be empty) or not found entity type (friendTag, user)
+    // full path: /api/v1/friendTags/{id}/suggestedFriends?userId={userId}
+    @GetMapping("{id}/suggestedFriends")
+    public ResponseEntity<?> getSuggestedFriendsForTag(@PathVariable UUID id, @RequestParam UUID userId) {
+        if (id == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            return new ResponseEntity<>(friendTagService.getSuggestedFriendsForTag(id, userId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.User) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // helper endpoint to add a single friend to a tag
+    // full path: /api/v1/friendTags/addFriendToTag?friendTagId={friendTagId}&friendId={friendId}
+    @PostMapping("addFriendToTag")
+    public ResponseEntity<Void> addFriendToTag(@RequestParam UUID friendTagId, @RequestParam UUID friendId) {
+        if (friendTagId == null || friendId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            friendTagService.saveUserToFriendTag(friendTagId, friendId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // helper endpoint to remove a single friend from a tag
+    // full path: /api/v1/friendTags/removeFriendFromTag?friendTagId={friendTagId}&friendId={friendId}
+    @DeleteMapping("removeFriendFromTag")
+    public ResponseEntity<Void> removeFriendFromTag(@RequestParam UUID friendTagId, @RequestParam UUID friendId) {
+        if (friendTagId == null || friendId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            friendTagService.removeUserFromFriendTag(friendTagId, friendId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
