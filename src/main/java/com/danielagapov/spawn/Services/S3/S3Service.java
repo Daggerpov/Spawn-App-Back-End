@@ -88,8 +88,7 @@ public class S3Service implements IS3Service {
                     user.getFriendUserIds(),
                     user.getUsername(),
                     file == null ? DEFAULT_PFP : putObject(file),
-                    user.getFirstName(),
-                    user.getLastName(),
+                    user.getName(),
                     user.getBio(),
                     user.getFriendTagIds(),
                     user.getEmail()

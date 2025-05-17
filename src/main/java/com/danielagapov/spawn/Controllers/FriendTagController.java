@@ -80,7 +80,7 @@ public class FriendTagController {
         if (ownerId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
             if (full) {
-                return new ResponseEntity<>(friendTagService.convertFriendTagsToFullFriendTags(friendTagService.getFriendTagsByOwnerId(ownerId)), HttpStatus.OK);
+                return new ResponseEntity<>(friendTagService.getFullFriendTagsWithFriendsByOwnerId(ownerId), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(friendTagService.getFriendTagsByOwnerId(ownerId), HttpStatus.OK);
             }

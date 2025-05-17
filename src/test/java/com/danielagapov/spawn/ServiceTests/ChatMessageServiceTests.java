@@ -119,8 +119,7 @@ public class ChatMessageServiceTests {
                 List.of(),
                 "johndoe",
                 "profile.jpg",
-                "John",
-                "Doe",
+                "John Doe",
                 "A bio",
                 List.of(),
                 "john.doe@example.com"
@@ -261,7 +260,7 @@ public class ChatMessageServiceTests {
         chatMessage.setEvent(dummyEvent);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(chatMessage));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
-        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
+        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
         when(userService.getUserById(any(UUID.class))).thenReturn(userDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO result = chatMessageService.getFullChatMessageById(chatMessageId);
@@ -297,7 +296,7 @@ public class ChatMessageServiceTests {
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(new ArrayList<>());
         when(chatMessageLikesRepository.findByChatMessage(chatMessage2)).thenReturn(new ArrayList<>());
-        BaseUserDTO baseUser = new BaseUserDTO(UUID.randomUUID(), "First", "Last", "user@example.com", "user", "bio", "avatar.jpg");
+        BaseUserDTO baseUser = new BaseUserDTO(UUID.randomUUID(), "John Doe", "user@example.com", "user", "bio", "avatar.jpg");
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(baseUser);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.getFullChatMessagesByEventId(eventId);
@@ -520,7 +519,7 @@ public class ChatMessageServiceTests {
         dummyChatMessage.setEvent(dummyEvent);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
-        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
+        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
         when(userService.getUserById(senderId)).thenReturn(userDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
@@ -556,7 +555,7 @@ public class ChatMessageServiceTests {
         dummyChatMessage.setEvent(dummyEvent);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
-        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "First", "Last", "bio", List.of(), "email@example.com");
+        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
         when(userService.getUserById(senderId)).thenReturn(userDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         List<FullEventChatMessageDTO> result = chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageDTOs);

@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,7 +50,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_NewUser_Google() {
-        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John Doe", "bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
@@ -67,7 +68,7 @@ public class OAuthServiceTests {
     @Test
     public void testMakeUser_ExistingUserByExternalId_Google() {
         UUID id = UUID.randomUUID();
-        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         User user = new User();
@@ -85,7 +86,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_ExistingUserByEmail_Google() {
-        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
         User user = new User();
         user.setEmail("john.doe@example.com");
@@ -102,7 +103,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_DatabaseException_Google() {
-        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         when(externalIdMapRepository.existsById("externalId123")).thenThrow(new DataAccessException("DB error") {
@@ -114,7 +115,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_UnexpectedException_Google() {
-        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John", "Doe", "Bio", null, "john.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John Doe", "Bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenThrow(new RuntimeException("Unexpected save error"));
@@ -125,7 +126,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_NewUser_Apple() {
-        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         when(externalIdMapRepository.existsById("externalId456")).thenReturn(false);
@@ -143,7 +144,7 @@ public class OAuthServiceTests {
     @Test
     public void testMakeUser_ExistingUserByExternalId_Apple() {
         UUID id = UUID.randomUUID();
-        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
         User user = new User();
         user.setId(id);
@@ -161,7 +162,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_ExistingUserByEmail_Apple() {
-        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         User user = new User();
@@ -179,7 +180,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_DatabaseException_Apple() {
-        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         when(externalIdMapRepository.existsById("externalId456")).thenThrow(new DataAccessException("DB error") {
@@ -191,7 +192,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_UnexpectedException_Apple() {
-        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane", "Doe", "Bio", null, "jane.doe@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
 
         when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenThrow(new RuntimeException("Unexpected save error"));
@@ -202,7 +203,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_NullEmailInUserDTO() {
-        UserDTO userDTO = new UserDTO(null, null, "john.noemail", "profile.jpg", "John", "NoEmail", "Bio", null, null);
+        UserDTO userDTO = new UserDTO(null, null, "john.noemail", "profile.jpg", "John NoEmail", "Bio", null, null);
         byte[] profilePicture = new byte[0];
 
         assertThrows(NullPointerException.class, () ->
@@ -214,7 +215,7 @@ public class OAuthServiceTests {
     @Test
     public void testMakeUser_ExistingMappingDifferentEmail() {
         UUID id = UUID.randomUUID();
-        UserDTO userDTO = new UserDTO(null, null, "john.diffemail", "profile.jpg", "John", "DiffEmail", "Bio", null, "john.diffemail@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "john.diffemail", "profile.jpg", "John DiffEmail", "Bio", null, "john.diffemail@example.com");
         byte[] profilePicture = new byte[0];
         User user = new User();
         user.setId(id);
@@ -232,7 +233,7 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_LargeProfilePicture() {
-        UserDTO userDTO = new UserDTO(null, null, "john.largepic", "profile.jpg", "John", "LargePic", "Bio", null, "john.largepic@example.com");
+        UserDTO userDTO = new UserDTO(null, null, "john.largepic", "profile.jpg", "John LargePic", "Bio", null, "john.largepic@example.com");
         byte[] profilePicture = new byte[10 * 1024 * 1024]; // 10 MB profile picture
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);

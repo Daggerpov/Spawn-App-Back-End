@@ -472,14 +472,13 @@ public class UserService implements IUserService {
                 List<FriendTagDTO> tags = friendToTagsMap.getOrDefault(friend.getId(), List.of());
 
                 FullFriendUserDTO dto = new FullFriendUserDTO(
-                        friend.getId(),
-                        friend.getUsername(),
-                        friend.getProfilePictureUrlString(),
-                        friend.getFirstName(),
-                        friend.getLastName(),
-                        friend.getBio(),
-                        friend.getEmail(),
-                        tags
+                    friend.getId(),
+                    friend.getUsername(),
+                    friend.getProfilePictureUrlString(),
+                    friend.getName(),
+                    friend.getBio(),
+                    friend.getEmail(),
+                    tags
                 );
 
                 result.add(dto);
@@ -526,14 +525,13 @@ public class UserService implements IUserService {
                 }
 
                 FullFriendUserDTO dto = new FullFriendUserDTO(
-                        friend.getId(),
-                        friend.getUsername(),
-                        friend.getProfilePictureUrlString(),
-                        friend.getFirstName(),
-                        friend.getLastName(),
-                        friend.getBio(),
-                        friend.getEmail(),
-                        tags
+                    friend.getId(),
+                    friend.getUsername(),
+                    friend.getProfilePictureUrlString(),
+                    friend.getName(),
+                    friend.getBio(),
+                    friend.getEmail(),
+                    tags
                 );
 
                 result.add(dto);
@@ -590,8 +588,7 @@ public class UserService implements IUserService {
 
             user.setBio(updateDTO.getBio());
             user.setUsername(updateDTO.getUsername());
-            user.setFirstName(updateDTO.getFirstName());
-            user.setLastName(updateDTO.getLastName());
+            user.setName(updateDTO.getName());
 
             user = repository.save(user);
 

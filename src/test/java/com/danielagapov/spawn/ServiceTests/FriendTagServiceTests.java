@@ -236,7 +236,7 @@ public class FriendTagServiceTests {
         UUID friendTagId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         FriendTag friendTag = new FriendTag(friendTagId, "Test Tag", "#FFFFFF", UUID.randomUUID(), false, null);
-        User user = new User(userId, "john_doe", "profile.jpg", "John", "Doe", "A bio", "john.doe@example.com");
+        User user = new User(userId, "john_doe", "profile.jpg", "John Doe", "A bio", "john.doe@example.com");
 
         when(friendTagRepository.existsById(friendTagId)).thenReturn(true);
         when(userRepository.existsById(userId)).thenReturn(true);

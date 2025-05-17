@@ -1,0 +1,203 @@
+{
+  "apply_to": [
+    "**/*.java"
+  ],
+  "indent": {
+    "size": 4,
+    "style": "space"
+  },
+  "rules": {
+    "java": {
+      "imports": {
+        "organize": true,
+        "groups": [
+          "java.",
+          "javax.",
+          "org.springframework.",
+          "com.danielagapov.spawn.",
+          "lombok."
+        ]
+      },
+      "style": {
+        "braces": "same_line",
+        "max_line_length": 120
+      },
+      "completion": {
+        "include_snippets": true,
+        "auto_import": true
+      }
+    },
+    "controllers": {
+      "apply_to": [
+        "**/Controllers/**/*.java"
+      ],
+      "tags": ["api", "controller"],
+      "snippets": {
+        "rest_controller": {
+          "prefix": "restcontroller",
+          "body": [
+            "@RestController",
+            "@RequestMapping(\"${1:path}\")",
+            "public class ${2:${TM_FILENAME_BASE}} {",
+            "    ",
+            "    @Autowired",
+            "    private ${3:Service} ${4:service};",
+            "    ",
+            "    $0",
+            "}"
+          ],
+          "description": "Create a REST controller"
+        },
+        "get_mapping": {
+          "prefix": "getmapping",
+          "body": [
+            "@GetMapping(\"${1:path}\")",
+            "public ResponseEntity<${2:ReturnType}> ${3:methodName}(${4:parameters}) {",
+            "    $0",
+            "    return ResponseEntity.ok(${5:result});",
+            "}"
+          ],
+          "description": "Create a GET endpoint"
+        },
+        "post_mapping": {
+          "prefix": "postmapping",
+          "body": [
+            "@PostMapping(\"${1:path}\")",
+            "public ResponseEntity<${2:ReturnType}> ${3:methodName}(@RequestBody ${4:RequestType} ${5:requestName}) {",
+            "    $0",
+            "    return ResponseEntity.ok(${6:result});",
+            "}"
+          ],
+          "description": "Create a POST endpoint"
+        }
+      }
+    },
+    "services": {
+      "apply_to": [
+        "**/Services/**/*.java"
+      ],
+      "tags": ["service", "business-logic"],
+      "snippets": {
+        "service_class": {
+          "prefix": "service",
+          "body": [
+            "@Service",
+            "public class ${1:${TM_FILENAME_BASE}} {",
+            "    ",
+            "    @Autowired",
+            "    private ${2:Repository} ${3:repository};",
+            "    ",
+            "    $0",
+            "}"
+          ],
+          "description": "Create a service class"
+        }
+      }
+    },
+    "repositories": {
+      "apply_to": [
+        "**/Repositories/**/*.java"
+      ],
+      "tags": ["repository", "data-access"],
+      "snippets": {
+        "repository_interface": {
+          "prefix": "repository",
+          "body": [
+            "@Repository",
+            "public interface ${1:${TM_FILENAME_BASE}} extends JpaRepository<${2:Entity}, ${3:Long}> {",
+            "    $0",
+            "}"
+          ],
+          "description": "Create a repository interface"
+        }
+      }
+    },
+    "models": {
+      "apply_to": [
+        "**/Models/**/*.java"
+      ],
+      "tags": ["entity", "model"],
+      "snippets": {
+        "entity_class": {
+          "prefix": "entity",
+          "body": [
+            "@Entity",
+            "@Table(name = \"${1:table_name}\")",
+            "@Data",
+            "@NoArgsConstructor",
+            "@AllArgsConstructor",
+            "public class ${2:${TM_FILENAME_BASE}} {",
+            "    ",
+            "    @Id",
+            "    @GeneratedValue(strategy = GenerationType.IDENTITY)",
+            "    private Long id;",
+            "    ",
+            "    $0",
+            "}"
+          ],
+          "description": "Create an entity class"
+        }
+      }
+    },
+    "dtos": {
+      "apply_to": [
+        "**/DTOs/**/*.java"
+      ],
+      "tags": ["dto", "data-transfer"],
+      "snippets": {
+        "dto_class": {
+          "prefix": "dto",
+          "body": [
+            "@Data",
+            "@NoArgsConstructor",
+            "@AllArgsConstructor",
+            "public class ${1:${TM_FILENAME_BASE}} {",
+            "    $0",
+            "}"
+          ],
+          "description": "Create a DTO class"
+        }
+      }
+    }
+  },
+  "ignore": [
+    "**/target/**",
+    "**/.mvn/**",
+    "**/.idea/**",
+    "**/node_modules/**"
+  ],
+  "navigation": {
+    "quick_groups": [
+      {
+        "name": "Controllers",
+        "pattern": "**/Controllers/**/*.java"
+      },
+      {
+        "name": "Services",
+        "pattern": "**/Services/**/*.java"
+      },
+      {
+        "name": "Models",
+        "pattern": "**/Models/**/*.java"
+      },
+      {
+        "name": "Repositories",
+        "pattern": "**/Repositories/**/*.java"
+      },
+      {
+        "name": "DTOs",
+        "pattern": "**/DTOs/**/*.java"
+      },
+      {
+        "name": "Configs",
+        "pattern": "**/Config/**/*.java"
+      }
+    ]
+  },
+  "hints": {
+    "entity_relationships": "Use @OneToMany, @ManyToOne, @ManyToMany appropriately for entity relationships",
+    "controller_api": "Consider using @Valid for request validation",
+    "security": "Ensure proper authorization checks in controllers",
+    "exception_handling": "Use @ExceptionHandler or @ControllerAdvice for centralized exception handling"
+  }
+} 

@@ -41,8 +41,7 @@ public class AdminUserInitializer {
                     User adminUser = new User();
                     adminUser.setId(UUID.randomUUID());
                     adminUser.setUsername(adminUsername);
-                    adminUser.setFirstName("Admin");
-                    adminUser.setLastName("User");
+                    adminUser.setName("Admin User");
                     adminUser.setEmail("admin@getspawn.com");
                     adminUser.setBio("Spawn Admin Account");
                     

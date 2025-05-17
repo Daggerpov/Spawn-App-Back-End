@@ -52,12 +52,12 @@ class UserSearchServiceTests {
 
     @BeforeEach
     void setUp() {
-        // Assuming User has a constructor: User(Long id, String firstName, String lastName, String username)
-        user1 = new User(UUID.randomUUID(), "alicej", null, "Alice", "Johnson", "Bio of Alice", "alice@example.com");
-        user2 = new User(UUID.randomUUID(), "alicia123", null, "Alicia", "Jameson", "Bio of Alicia", "alicia@example.com");
-        user3 = new User(UUID.randomUUID(), "bob99", null, "Bob", "Smith", "Bio of Bob", "bob@example.com");
-        user4 = new User(UUID.randomUUID(), "albert007", null, "Albert", "Jones", "Bio of Albert", "albert@example.com");
-        user5 = new User(UUID.randomUUID(), "alexw", null, "Alex", "Williams", "Bio of Alex", "alex@example.com");
+        // Assuming User has a constructor: User(UUID id, String username, String profilePicture, String name, String bio, String email)
+        user1 = new User(UUID.randomUUID(), "alicej", null, "Alice Johnson", "Bio of Alice", "alice@example.com");
+        user2 = new User(UUID.randomUUID(), "alicia123", null, "Alicia Jameson", "Bio of Alicia", "alicia@example.com");
+        user3 = new User(UUID.randomUUID(), "bob99", null, "Bob Smith", "Bio of Bob", "bob@example.com");
+        user4 = new User(UUID.randomUUID(), "albert007", null, "Albert Jones", "Bio of Albert", "albert@example.com");
+        user5 = new User(UUID.randomUUID(), "alexw", null, "Alex Williams", "Bio of Alex", "alex@example.com");
     }
 
     @Test
@@ -91,7 +91,7 @@ class UserSearchServiceTests {
         // For example, if filtering is strict, you might expect 3 matches.
         // Here we simply ensure the top result is the closest match.
         BaseUserDTO topResult = result.get(0);
-        assertEquals("Alice", topResult.getFirstName(), "The most similar user should be ranked first.");
+        assertEquals("Alice Johnson", topResult.getName(), "The most similar user should be ranked first.");
     }
 
     @Test
@@ -115,16 +115,16 @@ class UserSearchServiceTests {
         // Expect that the user with the closest match ("Alicia") appears first.
         // Adjust assertions based on how your ranking works. For this test, we assume user2 ("Alicia") is best.
         assertFalse(result.isEmpty(), "Expected non-empty result list.");
-        assertEquals("Alicia", result.get(0).getFirstName(), "Alicia should be ranked highest based on similarity.");
+        assertEquals("Alicia Jameson", result.get(0).getName(), "Alicia should be ranked highest based on similarity.");
     }
 
     @Test
     void getRecommendedFriendsBySearch_ShouldReturnFilteredRecommendations_WhenSearchQueryIsProvided() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        RecommendedFriendUserDTO friend1 = new RecommendedFriendUserDTO(UUID.randomUUID(), "Alice", "Smith", "alice@example.com", "alice", "Bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO friend2 = new RecommendedFriendUserDTO(UUID.randomUUID(), "Bob", "Johnson", "bob@example.com", "bob", "Bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO friend3 = new RecommendedFriendUserDTO(UUID.randomUUID(), "Charlie", "Brown", "charlie@example.com", "charlie", "Bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO friend1 = new RecommendedFriendUserDTO(UUID.randomUUID(), "alice", "profile.jpg", "Alice Smith", "Bio", "alice@example.com", 1);
+        RecommendedFriendUserDTO friend2 = new RecommendedFriendUserDTO(UUID.randomUUID(), "bob", "profile.jpg", "Bob Johnson", "Bio", "bob@example.com", 1);
+        RecommendedFriendUserDTO friend3 = new RecommendedFriendUserDTO(UUID.randomUUID(), "charlie", "profile.jpg", "Charlie Brown", "Bio", "charlie@example.com", 1);
 
         // Mock all required friend request service methods
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
@@ -148,8 +148,8 @@ class UserSearchServiceTests {
     void getRecommendedFriendsBySearch_ShouldReturnAllRecommendations_WhenSearchQueryIsEmpty() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        RecommendedFriendUserDTO friend1 = new RecommendedFriendUserDTO(UUID.randomUUID(), "Alice", "Smith", "alice@example.com", "alice", "Bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO friend2 = new RecommendedFriendUserDTO(UUID.randomUUID(), "Bob", "Johnson", "bob@example.com", "bob", "Bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO friend1 = new RecommendedFriendUserDTO(UUID.randomUUID(), "alice", "profile.jpg", "Alice Smith", "Bio", "alice@example.com", 1);
+        RecommendedFriendUserDTO friend2 = new RecommendedFriendUserDTO(UUID.randomUUID(), "bob", "profile.jpg", "Bob Johnson", "Bio", "bob@example.com", 1);
 
         // Mock the friend request service methods
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
@@ -172,8 +172,8 @@ class UserSearchServiceTests {
     void getRecommendedFriendsBySearch_ShouldReturnEmpty_WhenNoRecommendationsMatch() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        RecommendedFriendUserDTO friend1 = new RecommendedFriendUserDTO(UUID.randomUUID(), "Alice", "Smith", "alice@example.com", "alice", "Bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO friend2 = new RecommendedFriendUserDTO(UUID.randomUUID(), "Bob", "Johnson", "bob@example.com", "bob", "Bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO friend1 = new RecommendedFriendUserDTO(UUID.randomUUID(), "alice", "profile.jpg", "Alice Smith", "Bio", "alice@example.com", 1);
+        RecommendedFriendUserDTO friend2 = new RecommendedFriendUserDTO(UUID.randomUUID(), "bob", "profile.jpg", "Bob Johnson", "Bio", "bob@example.com", 1);
 
         // Mock the friend request service methods
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
@@ -200,14 +200,14 @@ class UserSearchServiceTests {
         UUID user3Id = UUID.randomUUID();
         UUID user4Id = UUID.randomUUID();
         UUID user5Id = UUID.randomUUID();
-        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, "Jane", "Doe", "jane.doe@example.com", "jane_doe", "A bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "Lorem", "Ipsum", "email@e.com", "person", "A bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "Lauren", "Ibson", "lauren_ibson@e.ca", "LaurenIbson", "A bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, "jane_doe", "profile.jpg", "Jane Doe", "A bio", "jane.doe@example.com", 1);
+        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "person", "profile.jpg", "Lorem Ipsum", "A bio", "email@e.com", 1);
+        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "LaurenIbson", "profile.jpg", "Lauren Ibson", "A bio", "lauren_ibson@e.ca", 1);
 
         UUID ftId = UUID.randomUUID();
         // Very incomplete relationship but it should suffice for a test.
         FriendTagDTO ft = new FriendTagDTO(ftId, "Everyone", "#ffffff", user1Id, List.of(), true);
-        FullFriendUserDTO user5Full = new FullFriendUserDTO(user5Id, "thatPerson", "profile.jpg", "That", "Person", "A bio", "thatPerson@email.com", List.of(ft));
+        FullFriendUserDTO user5Full = new FullFriendUserDTO(user5Id, "thatPerson", "profile.jpg", "That Person", "A bio", "thatPerson@email.com", List.of(ft));
 
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
@@ -227,9 +227,9 @@ class UserSearchServiceTests {
         UUID user2Id = UUID.randomUUID();
         UUID user3Id = UUID.randomUUID();
         UUID user4Id = UUID.randomUUID();
-        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, "Jane", "Doe", "jane.doe@example.com", "jane_doe", "A bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "Lorem", "Ipsum", "email@e.com", "person", "A bio", "profile.jpg", 1);
-        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "Lauren", "Ibson", "lauren_ibson@e.ca", "LaurenIbson", "A bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, "jane_doe", "profile.jpg", "Jane Doe", "A bio", "jane.doe@example.com", 1);
+        RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "person", "profile.jpg", "Lorem Ipsum", "A bio", "email@e.com", 1);
+        RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "LaurenIbson", "profile.jpg", "Lauren Ibson", "A bio", "lauren_ibson@e.ca", 1);
 
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
@@ -245,7 +245,7 @@ class UserSearchServiceTests {
     void isQueryMatch_ShouldMatchPartialFirstName() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
+        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "Jo");
@@ -256,7 +256,7 @@ class UserSearchServiceTests {
     void isQueryMatch_ShouldMatchPartialLastName() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
+        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "oe");
@@ -267,7 +267,7 @@ class UserSearchServiceTests {
     void isQueryMatch_ShouldMatchPartialUsername() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
+        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "hnd");
@@ -278,7 +278,7 @@ class UserSearchServiceTests {
     void isQueryMatch_ShouldBeCaseInsensitive() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
+        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "JOHN");
@@ -289,7 +289,7 @@ class UserSearchServiceTests {
     void isQueryMatch_ShouldReturnFalseWhenNoMatch() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John", "Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
+        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
 
         // Act & Assert - Using reflection to access private method
         boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "xyz");
@@ -300,7 +300,7 @@ class UserSearchServiceTests {
     void getRecommendedFriendsBySearch_ShouldHandleEmptySearchQuery() {
         // Arrange
         UUID userId = UUID.randomUUID();
-        RecommendedFriendUserDTO friend = new RecommendedFriendUserDTO(UUID.randomUUID(), "Alice", "Smith", "alice@example.com", "alice", "Bio", "profile.jpg", 1);
+        RecommendedFriendUserDTO friend = new RecommendedFriendUserDTO(UUID.randomUUID(), "alice", "profile.jpg", "Alice Smith", "Bio", "alice@example.com", 1);
 
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
 
@@ -339,7 +339,7 @@ class UserSearchServiceTests {
         UUID userId = UUID.randomUUID();
         UUID requesterId = UUID.randomUUID();
 
-        BaseUserDTO requesterInfo = new BaseUserDTO(requesterId, "David", "Search", "dsearch@example.com", "davidsearch", "Bio", "profile.jpg");
+        BaseUserDTO requesterInfo = new BaseUserDTO(requesterId, "David Search", "dsearch@example.com", "davidsearch", "Bio", "profile.jpg");
         FetchFriendRequestDTO friendRequest = mock(FetchFriendRequestDTO.class);
         when(friendRequest.getSenderUser()).thenReturn(requesterInfo);
 
