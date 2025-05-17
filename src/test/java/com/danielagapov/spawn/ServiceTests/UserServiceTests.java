@@ -214,7 +214,7 @@ public class UserServiceTests {
     void deleteUserById_ShouldLogException_WhenUnexpectedErrorOccurs() {
         UUID userId = UUID.randomUUID();
         User user = new User(userId, "JohnDoe123", "profile.jpg", "John Doe", null, "johndoe@anon.com");
-        
+
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         doNothing().when(s3Service).deleteObjectByURL(anyString());
         doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
@@ -493,9 +493,7 @@ public class UserServiceTests {
                 .thenReturn(pastEventIds);
         when(eventUserRepository.findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
                 .thenReturn(pastEventParticipants);
-        when(userService.getFriendUserIdsByUserId(eq(requestingUserId)))
-                .thenReturn(friendIds);
-        when(blockedUserService.getBlockedUserIds(requestingUserId)).thenReturn(List.of(blockedId));
+        when(userSearchService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of(blockedId, requestingUserId, friendId1, friendId2));
 
         // Mock the getBaseUserById method (if necessary, return a mocked BaseUserDTO)
         BaseUserDTO mockBaseUserDTO = new BaseUserDTO();
@@ -508,7 +506,6 @@ public class UserServiceTests {
         // Verify repository method interactions
         verify(eventUserRepository, times(1)).findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
         verify(eventUserRepository, times(1)).findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating));
-        verify(userService, times(1)).getFriendUserIdsByUserId(eq(requestingUserId));
         verify(userService, times(1)).getBaseUserById(any(UUID.class));
 
         // Assert the results

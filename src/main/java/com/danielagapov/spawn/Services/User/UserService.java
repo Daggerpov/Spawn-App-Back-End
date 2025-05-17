@@ -29,7 +29,6 @@ import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
-import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,7 +67,7 @@ public class UserService implements IUserService {
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,
                        IS3Service s3Service, ILogger logger,
-                       UserSearchService userSearchService,
+                       IUserSearchService userSearchService,
                        CacheManager cacheManager,
                        IFriendRequestService friendRequestService) {
         this.repository = repository;
