@@ -165,4 +165,24 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    // full path: /api/v1/users/{userId}/is-friend/{potentialFriendId}
+    @GetMapping("{userId}/is-friend/{potentialFriendId}")
+    public ResponseEntity<Boolean> isUserFriendOfUser(
+            @PathVariable UUID userId,
+            @PathVariable UUID potentialFriendId) {
+        if (userId == null || potentialFriendId == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        try {
+            boolean isFriend = userService.isUserFriendOfUser(userId, potentialFriendId);
+            return new ResponseEntity<>(isFriend, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error checking if user " + userId + " is friend of user " + potentialFriendId + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
