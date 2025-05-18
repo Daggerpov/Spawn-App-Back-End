@@ -45,9 +45,24 @@ public class AuthController {
      */
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
-    public ResponseEntity<?> signIn(@RequestParam("externalUserId") String externalUserId, @RequestParam(value = "email", required = false) String email) {
+    public ResponseEntity<?> signIn(
+            @RequestParam(value = "externalUserId", required = false) String externalUserId, 
+            @RequestParam(value = "idToken", required = false) String idToken,
+            @RequestParam(value = "email", required = false) String email) {
         try {
-            Optional<BaseUserDTO> optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+            Optional<BaseUserDTO> optionalDTO;
+            
+            // Handle Google ID token authentication if present
+            if (idToken != null && !idToken.isEmpty()) {
+                optionalDTO = oauthService.getUserIfExistsByGoogleToken(idToken, email);
+            } 
+            // Fall back to externalUserId for Apple or backward compatibility
+            else if (externalUserId != null && !externalUserId.isEmpty()) {
+                optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+            } else {
+                return ResponseEntity.badRequest().body(new ErrorResponse("Either externalUserId or idToken must be provided"));
+            }
+            
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
                 HttpHeaders headers = makeHeadersForTokens(baseUserDTO.getUsername());
@@ -58,6 +73,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (BaseNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.entityType);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid token: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new ErrorResponse(e.getMessage()));
         }
@@ -76,13 +93,29 @@ public class AuthController {
      */
     // full path: /api/v1/auth/make-user
     @PostMapping("make-user")
-    public ResponseEntity<BaseUserDTO> makeUser(@RequestBody UserCreationDTO userCreationDTO,
-                                                @RequestParam("externalUserId") String externalUserId,
-                                                @RequestParam(value = "provider") OAuthProvider provider) {
+    public ResponseEntity<BaseUserDTO> makeUser(
+            @RequestBody UserCreationDTO userCreationDTO,
+            @RequestParam(value = "externalUserId", required = false) String externalUserId,
+            @RequestParam(value = "idToken", required = false) String idToken,
+            @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
-            BaseUserDTO user = oauthService.createUser(userCreationDTO, externalUserId, provider);
+            BaseUserDTO user;
+            
+            // Handle Google ID token authentication if present
+            if (idToken != null && !idToken.isEmpty()) {
+                user = oauthService.createUserWithGoogleToken(userCreationDTO, idToken);
+            } 
+            // Fall back to externalUserId for Apple or backward compatibility
+            else if (externalUserId != null && !externalUserId.isEmpty() && provider != null) {
+                user = oauthService.createUser(userCreationDTO, externalUserId, provider);
+            } else {
+                return ResponseEntity.badRequest().body(null);
+            }
+            
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(null);
         }
