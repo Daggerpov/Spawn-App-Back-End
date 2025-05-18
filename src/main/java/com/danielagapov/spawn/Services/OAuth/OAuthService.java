@@ -232,14 +232,25 @@ public class OAuthService implements IOAuthService {
     // Updated method with @PostConstruct to ensure client ID is loaded from properties
     @PostConstruct
     public void initializeGoogleVerifier() {
-        // Re-initialize Google ID token verifier with client ID from application properties
-        if (googleClientId != null && !googleClientId.isEmpty()) {
-            logger.info("Initializing Google token verifier with client ID: " + googleClientId);
+        // Try to get client ID from property, which should come from env variable
+        String clientId = googleClientId;
+        
+        // If not set in property, try to get directly from environment
+        if (clientId == null || clientId.isEmpty()) {
+            clientId = System.getenv("GOOGLE_CLIENT_ID");
+            logger.info("Getting Google client ID directly from environment variable");
+        }
+        
+        // Re-initialize Google ID token verifier with client ID from properties or environment
+        if (clientId != null && !clientId.isEmpty()) {
+            logger.info("Initializing Google token verifier with client ID");
             this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                .setAudience(Collections.singletonList(googleClientId))
+                .setAudience(Collections.singletonList(clientId))
                 .build();
         } else {
-            logger.warn("Google client ID not set, token verification may fail");
+            logger.error("Google client ID not set, token verification will fail. Set GOOGLE_CLIENT_ID in your environment.");
+            // Create a dummy verifier that will reject all tokens
+            this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
         }
     }
 }
