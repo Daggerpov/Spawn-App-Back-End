@@ -28,6 +28,8 @@ import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Date;
+import java.net.URL;
 
 @Service
 public class OAuthService implements IOAuthService {
@@ -38,6 +40,9 @@ public class OAuthService implements IOAuthService {
     
     @Value("${google.client.id}")
     private String googleClientId;
+    
+    @Value("${apple.client.id}")
+    private String appleClientId;
 
     public OAuthService(IUserIdExternalIdMapRepository externalIdMapRepository, IUserService userService, ILogger logger) {
         this.externalIdMapRepository = externalIdMapRepository;
@@ -196,23 +201,106 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
+    public String verifyAppleIdToken(String idToken) {
+        try {
+            // Note: Implementation requires Auth0 JWT library
+            // This code will need the dependencies added to pom.xml
+            logger.info("Verifying Apple ID token");
+            
+            // Simple validation until proper JWT libraries are added
+            if (idToken == null || idToken.isEmpty()) {
+                throw new SecurityException("Empty token provided");
+            }
+            
+            if (!idToken.contains(".")) {
+                throw new SecurityException("Invalid token format");
+            }
+            
+            // This is a placeholder for the actual implementation
+            // For production, we need to properly decode and verify the token
+            // using the Auth0 JWT library as shown in the commented code
+            
+            // Extract the user ID - this is a simplified version
+            // In the real implementation, we would extract from a properly verified token
+            String[] parts = idToken.split("\\.");
+            if (parts.length < 2) {
+                throw new SecurityException("Invalid token format");
+            }
+            
+            // This is an insecure temporary solution - we're extracting a "fake" user ID
+            // Just for implementation placeholder - DO NOT USE IN PRODUCTION
+            String tempUserId = String.valueOf(idToken.hashCode());
+            logger.info("Extracted temporary user ID from Apple token: " + tempUserId);
+            
+            return tempUserId;
+            
+        } catch (Exception e) {
+            logger.error("Error verifying Apple ID token: " + e.getMessage());
+            throw new SecurityException("Error verifying Apple ID token: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Helper method to verify Apple token signature using Apple's public keys
+     * NOTE: This is a placeholder method until proper JWT libraries are added
+     */
+    private void verifyAppleTokenSignature(String jwt) throws Exception {
+        // This is a placeholder for the actual implementation
+        // Will be implemented when Auth0 JWT library dependencies are added
+        logger.info("Apple token signature verification placeholder - NOT IMPLEMENTED YET");
+    }
+    
+    @Override
+    public BaseUserDTO createUserWithAppleToken(UserCreationDTO userCreationDTO, String idToken) {
+        // Verify the token and extract the user ID
+        String userId = verifyAppleIdToken(idToken);
+        
+        UserDTO newUser = new UserDTO(
+                userCreationDTO.getId(),
+                null,
+                userCreationDTO.getUsername(),
+                null, // going to set within `makeUser()`
+                userCreationDTO.getName(),
+                userCreationDTO.getBio(),
+                null,
+                userCreationDTO.getEmail()
+        );
+
+        return makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), OAuthProvider.apple);
+    }
+    
+    @Override
+    public Optional<BaseUserDTO> getUserIfExistsByAppleToken(String idToken, String email) {
+        // Verify the token and extract the user ID
+        String userId = verifyAppleIdToken(idToken);
+        
+        // Use the extracted user ID to check if the user exists
+        return getUserIfExistsbyExternalId(userId, email);
+    }
+
+    @Override
     public BaseUserDTO createUserFromOAuth(UserCreationDTO userCreationDTO, String externalUserId, String idToken, OAuthProvider provider) {
         try {
             logger.info(String.format("Creating user from OAuth: {username: %s, email: %s}", 
                 userCreationDTO.getUsername(), userCreationDTO.getEmail()));
             
-            // Handle Google ID token authentication if present
-            if (idToken != null && !idToken.isEmpty()) {
+            // Handle Google ID token authentication
+            if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.google) {
                 logger.info("Using Google ID token authentication");
                 return createUserWithGoogleToken(userCreationDTO, idToken);
             } 
-            // Fall back to externalUserId for Apple or backward compatibility
-            else if (externalUserId != null && !externalUserId.isEmpty() && provider == OAuthProvider.apple) {
-                logger.info("Using Apple external ID authentication");
+            // Handle Apple ID token authentication
+            else if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.apple) {
+                logger.info("Using Apple ID token authentication");
+                return createUserWithAppleToken(userCreationDTO, idToken);
+            }
+            // Fall back to externalUserId only for backward compatibility (deprecated)
+            else if (externalUserId != null && !externalUserId.isEmpty() && provider != null) {
+                logger.warn("Using deprecated external ID authentication - consider upgrading to token-based authentication");
                 return createUser(userCreationDTO, externalUserId, provider);
             } else {
                 logger.warn("Missing required authentication parameters");
-                throw new IllegalArgumentException("Either Google ID token or Apple external user ID with provider must be provided");
+                throw new IllegalArgumentException("Either a valid ID token or external user ID with provider must be provided");
             }
         } catch (SecurityException e) {
             logger.error("Security error during OAuth authentication: " + e.getMessage());

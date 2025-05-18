@@ -48,19 +48,27 @@ public class AuthController {
     public ResponseEntity<?> signIn(
             @RequestParam(value = "externalUserId", required = false) String externalUserId, 
             @RequestParam(value = "idToken", required = false) String idToken,
+            @RequestParam(value = "provider", required = false) OAuthProvider provider,
             @RequestParam(value = "email", required = false) String email) {
         try {
             Optional<BaseUserDTO> optionalDTO;
             
-            // Handle Google ID token authentication if present
-            if (idToken != null && !idToken.isEmpty()) {
+            // Handle Google ID token authentication
+            if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.google) {
+                logger.info("Processing Google ID token sign-in");
                 optionalDTO = oauthService.getUserIfExistsByGoogleToken(idToken, email);
             } 
-            // Fall back to externalUserId for Apple or backward compatibility
+            // Handle Apple ID token authentication
+            else if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.apple) {
+                logger.info("Processing Apple ID token sign-in");
+                optionalDTO = oauthService.getUserIfExistsByAppleToken(idToken, email);
+            }
+            // Fall back to externalUserId for backward compatibility
             else if (externalUserId != null && !externalUserId.isEmpty()) {
+                logger.warn("Processing deprecated external ID sign-in - consider upgrading to token-based authentication");
                 optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
             } else {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Either externalUserId or idToken must be provided"));
+                return ResponseEntity.badRequest().body(new ErrorResponse("Either externalUserId or idToken with provider must be provided"));
             }
             
             if (optionalDTO.isPresent()) {

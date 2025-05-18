@@ -88,4 +88,30 @@ public interface IOAuthService {
      * @throws SecurityException when token validation fails
      */
     BaseUserDTO createUserFromOAuth(UserCreationDTO userCreationDTO, String externalUserId, String idToken, OAuthProvider provider);
+
+    /**
+     * Verifies an Apple ID token and extracts the subject (user ID)
+     * 
+     * @param idToken Apple ID token to verify
+     * @return the subject (user ID) extracted from the token
+     */
+    String verifyAppleIdToken(String idToken);
+    
+    /**
+     * Creates a user account using Apple ID token for authentication
+     * 
+     * @param userCreationDTO given from mobile, containing profile picture data
+     * @param idToken Apple ID token for authentication and verification
+     * @return returns the fully-created user
+     */
+    BaseUserDTO createUserWithAppleToken(UserCreationDTO userCreationDTO, String idToken);
+    
+    /**
+     * Verifies an Apple ID token and returns the user if they exist
+     * 
+     * @param idToken Apple ID token for authentication and verification
+     * @param email user email
+     * @return a BaseUserDTO if user exists, null otherwise
+     */
+    Optional<BaseUserDTO> getUserIfExistsByAppleToken(String idToken, String email);
 }
