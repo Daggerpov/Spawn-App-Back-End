@@ -99,24 +99,17 @@ public class AuthController {
             @RequestParam(value = "idToken", required = false) String idToken,
             @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
-            BaseUserDTO user;
-            
-            // Handle Google ID token authentication if present
-            if (idToken != null && !idToken.isEmpty()) {
-                user = oauthService.createUserWithGoogleToken(userCreationDTO, idToken);
-            } 
-            // Fall back to externalUserId for Apple or backward compatibility
-            else if (externalUserId != null && !externalUserId.isEmpty() && provider == OAuthProvider.apple) {
-                user = oauthService.createUser(userCreationDTO, externalUserId, provider);
-            } else {
-                return ResponseEntity.badRequest().body(null);
-            }
-            
+            BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, externalUserId, idToken, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Bad request during user creation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(null);
         } catch (SecurityException e) {
+            logger.warn("Security error during user creation: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         } catch (Exception e) {
+            logger.error("Unexpected error during user creation: " + e.getMessage());
             return ResponseEntity.internalServerError().body(null);
         }
     }

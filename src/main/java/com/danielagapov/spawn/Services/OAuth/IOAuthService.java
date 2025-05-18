@@ -75,4 +75,17 @@ public interface IOAuthService {
      * @return the subject (user ID) extracted from the token
      */
     String verifyGoogleIdToken(String idToken);
+
+    /**
+     * Creates a user from either Google ID token or Apple external user ID
+     * 
+     * @param userCreationDTO DTO containing user creation details
+     * @param externalUserId External user ID for Apple authentication (optional)
+     * @param idToken Google ID token (optional)
+     * @param provider OAuth provider (required for Apple)
+     * @return Created or existing user BaseUserDTO
+     * @throws IllegalArgumentException when required parameters are missing
+     * @throws SecurityException when token validation fails
+     */
+    BaseUserDTO createUserFromOAuth(UserCreationDTO userCreationDTO, String externalUserId, String idToken, OAuthProvider provider);
 }

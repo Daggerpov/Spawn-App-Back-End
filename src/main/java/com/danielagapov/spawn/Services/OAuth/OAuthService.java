@@ -45,6 +45,7 @@ public class OAuthService implements IOAuthService {
         this.logger = logger;
         
         // Create a temporary verifier that will be replaced in @PostConstruct
+        // No audience specified initially - will be set in initializeGoogleVerifier()
         this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
     }
 
@@ -191,6 +192,34 @@ public class OAuthService implements IOAuthService {
         } catch (GeneralSecurityException | IOException e) {
             logger.error("Error verifying Google ID token: " + e.getMessage());
             throw new SecurityException("Error verifying Google ID token", e);
+        }
+    }
+
+    @Override
+    public BaseUserDTO createUserFromOAuth(UserCreationDTO userCreationDTO, String externalUserId, String idToken, OAuthProvider provider) {
+        try {
+            logger.info(String.format("Creating user from OAuth: {username: %s, email: %s}", 
+                userCreationDTO.getUsername(), userCreationDTO.getEmail()));
+            
+            // Handle Google ID token authentication if present
+            if (idToken != null && !idToken.isEmpty()) {
+                logger.info("Using Google ID token authentication");
+                return createUserWithGoogleToken(userCreationDTO, idToken);
+            } 
+            // Fall back to externalUserId for Apple or backward compatibility
+            else if (externalUserId != null && !externalUserId.isEmpty() && provider == OAuthProvider.apple) {
+                logger.info("Using Apple external ID authentication");
+                return createUser(userCreationDTO, externalUserId, provider);
+            } else {
+                logger.warn("Missing required authentication parameters");
+                throw new IllegalArgumentException("Either Google ID token or Apple external user ID with provider must be provided");
+            }
+        } catch (SecurityException e) {
+            logger.error("Security error during OAuth authentication: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error during OAuth user creation: " + e.getMessage());
+            throw e;
         }
     }
 
