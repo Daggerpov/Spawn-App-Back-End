@@ -58,6 +58,14 @@ public class SpawnApplication {
         } catch (NullPointerException e) {
             System.err.println("Error: APNS_BUNDLE_ID environment variable not set. Consider setting, or adding a .env file.");
         }
+        try {
+            System.setProperty("GOOGLE_CLIENT_ID",
+                    System.getenv("GOOGLE_CLIENT_ID") != null ? System.getenv("GOOGLE_CLIENT_ID") : dotenv.get("GOOGLE_CLIENT_ID"));
+        } catch (NullPointerException e) {
+            System.err.println("Error: GOOGLE_CLIENT_ID environment variable not set. Consider setting it in your environment or .env file.");
+            System.err.println("Google authentication will not work without this value.");
+        }
+        
         SpringApplication.run(SpawnApplication.class, args);
     }
 }

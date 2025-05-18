@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Disabled;
 
 public class OAuthServiceTests {
 
@@ -246,5 +247,30 @@ public class OAuthServiceTests {
         assertEquals(userDTO.getEmail(), result.getEmail());
         verify(logger).info(contains("Making user"));
         verify(logger).info(contains("Returning BaseUserDTO of newly made user"));
+    }
+
+    @Test
+    public void testGetUserIfExistsByGoogleToken() {
+        // Create spy to mock token verification
+        OAuthService spyService = spy(oauthService);
+
+        // Mock successful token verification
+        doReturn("external_id_123").when(spyService).verifyGoogleIdToken(anyString());
+
+        // Setup mock behavior for user lookup
+        User user = new User();
+        user.setEmail("test@example.com");
+
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
+
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
+        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
+
+        // Call the method to test
+        Optional<BaseUserDTO> result = spyService.getUserIfExistsByGoogleToken("dummy_token", "test@example.com");
+
+        // Verify the result
+        assertTrue(result.isPresent());
+        verify(externalIdMapRepository).existsById("external_id_123");
     }
 }
