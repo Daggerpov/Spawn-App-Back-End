@@ -106,7 +106,7 @@ public class AuthController {
                 user = oauthService.createUserWithGoogleToken(userCreationDTO, idToken);
             } 
             // Fall back to externalUserId for Apple or backward compatibility
-            else if (externalUserId != null && !externalUserId.isEmpty() && provider != null) {
+            else if (externalUserId != null && !externalUserId.isEmpty() && provider == OAuthProvider.apple) {
                 user = oauthService.createUser(userCreationDTO, externalUserId, provider);
             } else {
                 return ResponseEntity.badRequest().body(null);
