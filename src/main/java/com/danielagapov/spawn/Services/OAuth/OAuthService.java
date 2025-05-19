@@ -51,24 +51,8 @@ public class OAuthService implements IOAuthService {
 
     @Override
     public BaseUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
-        UserDTO newUser = new UserDTO(
-                userCreationDTO.getId(),
-                null,
-                userCreationDTO.getUsername(),
-                null, // going to set within `makeUser()`
-                userCreationDTO.getName(),
-                userCreationDTO.getBio(),
-                null,
-                userCreationDTO.getEmail()
-        );
-
-        return makeUser(newUser, externalUserId, userCreationDTO.getProfilePictureData(), provider);
-    }
-    
-    @Override
-    public BaseUserDTO createUserWithGoogleToken(UserCreationDTO userCreationDTO, String idToken) {
-        // Verify the token and extract the user ID
-        String userId = verifyGoogleIdToken(idToken);
+        logger.info(String.format("Creating user with externalUserId: %s, provider: %s, email: %s", 
+            externalUserId, provider, userCreationDTO.getEmail()));
         
         UserDTO newUser = new UserDTO(
                 userCreationDTO.getId(),
@@ -81,7 +65,36 @@ public class OAuthService implements IOAuthService {
                 userCreationDTO.getEmail()
         );
 
-        return makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), OAuthProvider.google);
+        logger.info("Calling makeUser with UserDTO: " + newUser);
+        BaseUserDTO result = makeUser(newUser, externalUserId, userCreationDTO.getProfilePictureData(), provider);
+        logger.info("User creation completed successfully. New user ID: " + result.getId());
+        return result;
+    }
+    
+    @Override
+    public BaseUserDTO createUserWithGoogleToken(UserCreationDTO userCreationDTO, String idToken) {
+        logger.info(String.format("Creating user with Google ID token, email: %s", userCreationDTO.getEmail()));
+        
+        // Verify the token and extract the user ID
+        logger.info("Verifying Google ID token");
+        String userId = verifyGoogleIdToken(idToken);
+        logger.info("Token verified, extracted user ID: " + userId);
+        
+        UserDTO newUser = new UserDTO(
+                userCreationDTO.getId(),
+                null,
+                userCreationDTO.getUsername(),
+                null, // going to set within `makeUser()`
+                userCreationDTO.getName(),
+                userCreationDTO.getBio(),
+                null,
+                userCreationDTO.getEmail()
+        );
+
+        logger.info("Calling makeUser with extracted Google user ID: " + userId);
+        BaseUserDTO result = makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), OAuthProvider.google);
+        logger.info("User creation with Google token completed successfully. New user ID: " + result.getId());
+        return result;
     }
 
     @Override
@@ -133,57 +146,83 @@ public class OAuthService implements IOAuthService {
     
     @Override
     public BaseUserDTO makeUserWithGoogleToken(UserDTO user, String idToken, byte[] profilePicture) {
+        logger.info("Making user with Google token for email: " + user.getEmail());
+        
         // Verify the token and extract the user ID
+        logger.info("Verifying Google ID token");
         String userId = verifyGoogleIdToken(idToken);
+        logger.info("Token verified, extracted Google user ID: " + userId);
         
         // Use the regular makeUser method with the extracted user ID
-        return makeUser(user, userId, profilePicture, OAuthProvider.google);
+        logger.info("Calling makeUser with Google user ID: " + userId);
+        BaseUserDTO result = makeUser(user, userId, profilePicture, OAuthProvider.google);
+        logger.info("makeUserWithGoogleToken completed successfully, user ID: " + result.getId());
+        return result;
     }
 
 
     @Override
     public Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
+        logger.info("Checking if user exists by external ID: " + externalUserId + " and email: " + email);
         boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
         boolean existsByEmail = userService.existsByEmail(email);
+        logger.info("User exists by externalId: " + existsByExternalId + ", exists by email: " + existsByEmail);
 
         if (existsByExternalId) { // A Spawn account exists with this external id, return the associated `BaseUserDTO`
+            logger.info("Found existing user by external ID: " + externalUserId);
             User user = getMapping(externalUserId).getUser();
-            return Optional.of(UserMapper.toDTO(user));
+            BaseUserDTO userDTO = UserMapper.toDTO(user);
+            logger.info("Returning user with ID: " + userDTO.getId() + " and username: " + userDTO.getUsername());
+            return Optional.of(userDTO);
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id which indicates a sign-in with incorrect provider
+            logger.info("Found existing user by email but not by external ID. This indicates an incorrect provider login attempt.");
             UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
             String provider = String.valueOf(externalIdMap.getProvider()).equals("google") ? "Google" : "Apple";
+            logger.info("Expected provider for this email: " + provider);
             throw new IncorrectProviderException("The email: " + email + " is already associated to a " + provider + " account. Please login through " + provider + " instead");
         } else { // No account exists for this external id or email
+            logger.info("No existing user found for external ID: " + externalUserId + " or email: " + email);
             return Optional.empty();
         }
     }
     
     @Override
     public Optional<BaseUserDTO> getUserIfExistsByGoogleToken(String idToken, String email) {
+        logger.info("Checking if user exists by Google ID token and email: " + email);
+        
         // Verify the token and extract the user ID
         String userId = verifyGoogleIdToken(idToken);
+        logger.info("Successfully verified Google ID token and extracted user ID: " + userId);
         
         // Use the extracted user ID to check if the user exists
+        logger.info("Checking if user exists with Google user ID: " + userId);
         return getUserIfExistsbyExternalId(userId, email);
     }
     
     @Override
     public String verifyGoogleIdToken(String idToken) {
         try {
+            logger.info("Attempting to verify Google ID token");
+            logger.info("Using client ID: " + googleClientId);
+            
             // Verify the token
             GoogleIdToken googleIdToken = verifier.verify(idToken);
             if (googleIdToken == null) {
+                logger.error("Token verification failed - invalid token");
                 throw new SecurityException("Invalid ID token");
             }
             
+            logger.info("Token verified successfully");
             // Get payload data
             Payload payload = googleIdToken.getPayload();
             String userId = payload.getSubject();  // Get the user's ID
+            logger.info("Extracted user ID: " + userId);
             
             // Verify additional claims if needed
             // For example, verify email is verified
             Boolean emailVerified = payload.getEmailVerified();
             if (emailVerified == null || !emailVerified) {
+                logger.error("Email not verified");
                 throw new SecurityException("Email not verified");
             }
             
@@ -191,6 +230,7 @@ public class OAuthService implements IOAuthService {
             
         } catch (GeneralSecurityException | IOException e) {
             logger.error("Error verifying Google ID token: " + e.getMessage());
+            logger.error("Token details: " + (idToken != null ? idToken.substring(0, Math.min(20, idToken.length())) + "..." : "null"));
             throw new SecurityException("Error verifying Google ID token", e);
         }
     }
@@ -226,12 +266,22 @@ public class OAuthService implements IOAuthService {
     /* ------------------------------ HELPERS ------------------------------ */
 
     private boolean mappingExistsByExternalId(String externalUserId) {
-        return externalIdMapRepository.existsById(externalUserId);
+        logger.info("Checking if mapping exists for external user ID: " + externalUserId);
+        boolean exists = externalIdMapRepository.existsById(externalUserId);
+        logger.info("Mapping exists for external user ID " + externalUserId + ": " + exists);
+        return exists;
     }
 
     private UserIdExternalIdMap getMapping(String externalId) {
         try {
-            return externalIdMapRepository.findById(externalId).orElse(null);
+            logger.info("Fetching mapping for external ID: " + externalId);
+            UserIdExternalIdMap mapping = externalIdMapRepository.findById(externalId).orElse(null);
+            if (mapping != null) {
+                logger.info("Found mapping for external ID: " + externalId + ", associated user ID: " + mapping.getUser().getId());
+            } else {
+                logger.info("No mapping found for external ID: " + externalId);
+            }
+            return mapping;
         } catch (DataAccessException e) {
             logger.error("Database error while fetching mapping for externalUserId( " + externalId + ") : " + e.getMessage());
             throw e;
@@ -255,7 +305,16 @@ public class OAuthService implements IOAuthService {
     }
 
     private UserIdExternalIdMap getMappingByUserEmail(String email) {
-        return externalIdMapRepository.findByUserEmail(email).orElseThrow(() -> new BaseNotFoundException(EntityType.ExternalIdMap, email, "email"));
+        logger.info("Searching for user mapping by email: " + email);
+        try {
+            UserIdExternalIdMap mapping = externalIdMapRepository.findByUserEmail(email)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.ExternalIdMap, email, "email"));
+            logger.info("Found mapping for email: " + email + ", associated with provider: " + mapping.getProvider());
+            return mapping;
+        } catch (BaseNotFoundException e) {
+            logger.error("No mapping found for email: " + email);
+            throw e;
+        }
     }
 
     // Updated method with @PostConstruct to ensure client ID is loaded from properties
@@ -263,23 +322,26 @@ public class OAuthService implements IOAuthService {
     public void initializeGoogleVerifier() {
         // Try to get client ID from property, which should come from env variable
         String clientId = googleClientId;
+        logger.info("Retrieved Google client ID from application properties: " + (clientId != null ? (clientId.substring(0, Math.min(10, clientId.length())) + "...") : "null"));
         
         // If not set in property, try to get directly from environment
         if (clientId == null || clientId.isEmpty()) {
             clientId = System.getenv("GOOGLE_CLIENT_ID");
-            logger.info("Getting Google client ID directly from environment variable");
+            logger.info("Getting Google client ID directly from environment variable: " + (clientId != null ? (clientId.substring(0, Math.min(10, clientId.length())) + "...") : "null"));
         }
         
         // Re-initialize Google ID token verifier with client ID from properties or environment
         if (clientId != null && !clientId.isEmpty()) {
-            logger.info("Initializing Google token verifier with client ID");
+            logger.info("Initializing Google token verifier with client ID: " + clientId);
             this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                 .setAudience(Collections.singletonList(clientId))
                 .build();
+            logger.info("Google token verifier successfully initialized");
         } else {
             logger.error("Google client ID not set, token verification will fail. Set GOOGLE_CLIENT_ID in your environment.");
             // Create a dummy verifier that will reject all tokens
             this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
+            logger.warn("Created dummy verifier that will reject all tokens");
         }
     }
 }
