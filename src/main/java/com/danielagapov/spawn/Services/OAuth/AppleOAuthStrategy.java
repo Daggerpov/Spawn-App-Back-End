@@ -14,6 +14,7 @@ import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
@@ -26,7 +27,7 @@ public class AppleOAuthStrategy implements OAuthStrategy {
     private final ILogger logger;
     private final IOAuthService oauthService;
 
-    private JwkProvider appleJwkProvider;
+    private final JwkProvider appleJwkProvider;
 
     private static final String APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys";
     private static final String APPLE_ISSUER = "https://appleid.apple.com";
@@ -35,6 +36,7 @@ public class AppleOAuthStrategy implements OAuthStrategy {
     private String appleClientId;
 
     @Autowired
+    @Lazy
     public AppleOAuthStrategy(ILogger logger, IOAuthService oauthService) {
         this.logger = logger;
         this.oauthService = oauthService;
