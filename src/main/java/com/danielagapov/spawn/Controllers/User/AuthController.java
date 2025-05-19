@@ -46,8 +46,7 @@ public class AuthController {
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
     public ResponseEntity<?> signIn(
-            @RequestParam(value = "externalUserId", required = false) String externalUserId, 
-            @RequestParam(value = "idToken", required = false) String idToken,
+            @RequestParam(value = "idToken", required = true) String idToken,
             @RequestParam(value = "provider", required = true) OAuthProvider provider,
             @RequestParam(value = "email", required = false) String email) {
         try {
