@@ -7,15 +7,17 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.User.IUserIdExternalIdMapRepository;
+import com.danielagapov.spawn.Services.OAuth.AppleOAuthStrategy;
+import com.danielagapov.spawn.Services.OAuth.GoogleOAuthStrategy;
 import com.danielagapov.spawn.Services.OAuth.OAuthService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DataAccessException;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,10 +35,10 @@ public class OAuthServiceTests {
     @Mock
     private ILogger logger;
 
-//    @Spy
-//    private GoogleOAuthStrategy googleOAuthStrategy;
+    private GoogleOAuthStrategy googleOAuthStrategy;
 
-    @InjectMocks
+    private AppleOAuthStrategy appleOAuthStrategy;
+
     private OAuthService oauthService;
 
     private User testUser;
@@ -44,7 +46,13 @@ public class OAuthServiceTests {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        googleOAuthStrategy = spy(new GoogleOAuthStrategy(logger));
+        appleOAuthStrategy = spy(new AppleOAuthStrategy(logger));
 
+        doReturn(OAuthProvider.google).when(googleOAuthStrategy).getOAuthProvider();
+        doReturn(OAuthProvider.apple).when(appleOAuthStrategy).getOAuthProvider();
+
+        oauthService = new OAuthService(externalIdMapRepository, userService, logger, List.of(googleOAuthStrategy, appleOAuthStrategy));
         testUser = new User();
         testUser.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
     }
@@ -250,29 +258,28 @@ public class OAuthServiceTests {
         verify(logger).info(contains("Returning BaseUserDTO of newly made user"));
     }
 
-//    @Test
-//    public void testGetUserIfExistsByGoogleToken() {
-//        // Create spy to mock token verification
-//        OAuthService spyService = spy(oauthService);
-//        GoogleOAuthStrategy spy
-//
-//        // Mock successful token verification
-//        doReturn("external_id_123").when(spyService).verifyGoogleIdToken(anyString());
-//
-//        // Setup mock behavior for user lookup
-//        User user = new User();
-//        user.setEmail("test@example.com");
-//
-//        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
-//
-//        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
-//        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
-//
-//        // Call the method to test
-//        Optional<BaseUserDTO> result = spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
-//
-//        // Verify the result
-//        assertTrue(result.isPresent());
-//        verify(externalIdMapRepository).existsById("external_id_123");
-//    }
+    @Test
+    public void testGetUserIfExistsByGoogleToken() {
+        // Create spy to mock token verification
+        OAuthService spyService = spy(oauthService);
+
+        // Mock successful token verification
+        doReturn("external_id_123").when(googleOAuthStrategy).verifyIdToken(anyString());
+
+        // Setup mock behavior for user lookup
+        User user = new User();
+        user.setEmail("test@example.com");
+
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
+
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
+        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
+
+        // Call the method to test
+        Optional<BaseUserDTO> result = spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
+
+        // Verify the result
+        assertTrue(result.isPresent());
+        verify(externalIdMapRepository).existsById("external_id_123");
+    }
 }
