@@ -1,5 +1,12 @@
 package com.danielagapov.spawn.Services.OAuth;
 
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.JwkProviderBuilder;
+import com.auth0.jwk.Jwk;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.JWTVerifier;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -24,9 +31,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class OAuthService implements IOAuthService {
@@ -34,6 +46,10 @@ public class OAuthService implements IOAuthService {
     private final IUserService userService;
     private final ILogger logger;
     private GoogleIdTokenVerifier verifier;
+    private JwkProvider appleJwkProvider;
+    
+    private static final String APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys";
+    private static final String APPLE_ISSUER = "https://appleid.apple.com";
     
     @Value("${google.client.id}")
     private String googleClientId;
@@ -49,6 +65,12 @@ public class OAuthService implements IOAuthService {
         // Create a temporary verifier that will be replaced in @PostConstruct
         // No audience specified initially - will be set in initializeGoogleVerifier()
         this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
+        
+        // Initialize the Apple JWK provider
+        this.appleJwkProvider = new JwkProviderBuilder(APPLE_JWKS_URL)
+            .cached(10, 24, TimeUnit.HOURS) // Cache up to 10 JWKs for 24 hours
+            .rateLimited(10, 1, TimeUnit.MINUTES) // Max 10 requests per minute
+            .build();
     }
 
     @Override
@@ -240,57 +262,59 @@ public class OAuthService implements IOAuthService {
     @Override
     public String verifyAppleIdToken(String idToken) {
         try {
-            // Note: Implementation requires Auth0 JWT library
-            // This code will need the dependencies added to pom.xml
             logger.info("Verifying Apple ID token");
             
-            // Simple validation until proper JWT libraries are added
             if (idToken == null || idToken.isEmpty()) {
-                throw new SecurityException("Empty token provided");
+                throw new SecurityException("Empty Apple ID token provided");
             }
             
-            if (!idToken.contains(".")) {
-                throw new SecurityException("Invalid token format");
+            // Parse the JWT without verifying to get the header and extract the Key ID
+            DecodedJWT decodedJWT = JWT.decode(idToken);
+            
+            // Get the kid (Key ID) from the JWT header
+            String keyId = decodedJWT.getKeyId();
+            if (keyId == null) {
+                throw new SecurityException("Key ID not found in Apple ID token header");
             }
             
-            // This is a placeholder for the actual implementation
-            // For production, we need to properly decode and verify the token
-            // using the Auth0 JWT library as shown in the commented code
+            // Get the matching JWK from Apple's JWKS endpoint using the Key ID
+            Jwk jwk = appleJwkProvider.get(keyId);
             
-            // Extract the user ID - this is a simplified version
-            // In the real implementation, we would extract from a properly verified token
-            String[] parts = idToken.split("\\.");
-            if (parts.length < 2) {
-                throw new SecurityException("Invalid token format");
-            }
+            // Get the public key from the JWK
+            PublicKey publicKey = jwk.getPublicKey();
             
-            // This is an insecure temporary solution - we're extracting a "fake" user ID
-            // Just for implementation placeholder - DO NOT USE IN PRODUCTION
-            String tempUserId = String.valueOf(idToken.hashCode());
-            logger.info("Extracted temporary user ID from Apple token: " + tempUserId);
+            // Create a verification algorithm using the public key
+            Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) publicKey, null);
             
-            return tempUserId;
+            // Create a verifier for Apple ID tokens
+            JWTVerifier verifier = JWT.require(algorithm)
+                .withIssuer(APPLE_ISSUER)
+                .withAudience(appleClientId)
+                .build();
+            
+            // Verify the token
+            DecodedJWT verifiedJWT = verifier.verify(idToken);
+            
+            // Extract the subject (user ID)
+            String userId = verifiedJWT.getSubject();
+            logger.info("Successfully verified Apple ID token and extracted user ID: " + userId);
+            
+            return userId;
             
         } catch (Exception e) {
             logger.error("Error verifying Apple ID token: " + e.getMessage());
-            throw new SecurityException("Error verifying Apple ID token: " + e.getMessage());
+            throw new SecurityException("Error verifying Apple ID token: " + e.getMessage(), e);
         }
-    }
-    
-    /**
-     * Helper method to verify Apple token signature using Apple's public keys
-     * NOTE: This is a placeholder method until proper JWT libraries are added
-     */
-    private void verifyAppleTokenSignature(String jwt) throws Exception {
-        // This is a placeholder for the actual implementation
-        // Will be implemented when Auth0 JWT library dependencies are added
-        logger.info("Apple token signature verification placeholder - NOT IMPLEMENTED YET");
     }
     
     @Override
     public BaseUserDTO createUserWithAppleToken(UserCreationDTO userCreationDTO, String idToken) {
+        logger.info("Creating user with Apple ID token, email: " + userCreationDTO.getEmail());
+        
         // Verify the token and extract the user ID
+        logger.info("Verifying Apple ID token");
         String userId = verifyAppleIdToken(idToken);
+        logger.info("Token verified, extracted Apple user ID: " + userId);
         
         UserDTO newUser = new UserDTO(
                 userCreationDTO.getId(),
@@ -303,15 +327,22 @@ public class OAuthService implements IOAuthService {
                 userCreationDTO.getEmail()
         );
 
-        return makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), OAuthProvider.apple);
+        logger.info("Calling makeUser with extracted Apple user ID: " + userId);
+        BaseUserDTO result = makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), OAuthProvider.apple);
+        logger.info("User creation with Apple token completed successfully. New user ID: " + result.getId());
+        return result;
     }
     
     @Override
     public Optional<BaseUserDTO> getUserIfExistsByAppleToken(String idToken, String email) {
+        logger.info("Checking if user exists by Apple ID token and email: " + email);
+        
         // Verify the token and extract the user ID
         String userId = verifyAppleIdToken(idToken);
+        logger.info("Successfully verified Apple ID token and extracted user ID: " + userId);
         
         // Use the extracted user ID to check if the user exists
+        logger.info("Checking if user exists with Apple user ID: " + userId);
         return getUserIfExistsbyExternalId(userId, email);
     }
 
