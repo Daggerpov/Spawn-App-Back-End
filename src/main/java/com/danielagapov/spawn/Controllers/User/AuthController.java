@@ -2,9 +2,9 @@ package com.danielagapov.spawn.Controllers.User;
 
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
@@ -52,24 +52,24 @@ public class AuthController {
             @RequestParam(value = "email", required = false) String email) {
         try {
             Optional<BaseUserDTO> optionalDTO;
-            
-            // Handle Google ID token authentication
-            if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.google) {
-                logger.info("Processing Google ID token sign-in");
-                optionalDTO = oauthService.getUserIfExistsByGoogleToken(idToken, email);
-            } 
-            // Handle Apple ID token authentication
-            else if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.apple) {
-                logger.info("Processing Apple ID token sign-in");
-                optionalDTO = oauthService.getUserIfExistsByAppleToken(idToken, email);
-            }
-            // Fall back to externalUserId for backward compatibility
-            else if (externalUserId != null && !externalUserId.isEmpty()) {
-                logger.warn("Processing deprecated external ID sign-in - consider upgrading to token-based authentication");
-                optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
-            } else {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Either externalUserId or idToken with provider must be provided"));
-            }
+            optionalDTO = oauthService.signInUser(idToken, email, provider);
+//            // Handle Google ID token authentication
+//            if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.google) {
+//                logger.info("Processing Google ID token sign-in");
+//                optionalDTO = oauthService.getUserIfExistsByGoogleToken(idToken, email);
+//            }
+//            // Handle Apple ID token authentication
+//            else if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.apple) {
+//                logger.info("Processing Apple ID token sign-in");
+//                optionalDTO = oauthService.getUserIfExistsByAppleToken(idToken, email);
+//            }
+//            // Fall back to externalUserId for backward compatibility
+//            else if (externalUserId != null && !externalUserId.isEmpty()) {
+//                logger.warn("Processing deprecated external ID sign-in - consider upgrading to token-based authentication");
+//                optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
+//            } else {
+//                return ResponseEntity.badRequest().body(new ErrorResponse("Either externalUserId or idToken with provider must be provided"));
+//            }
             
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
@@ -107,7 +107,7 @@ public class AuthController {
             @RequestParam(value = "idToken", required = false) String idToken,
             @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
-            BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, externalUserId, idToken, provider);
+            BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, idToken, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (IllegalArgumentException e) {
