@@ -85,7 +85,6 @@ public class AuthController {
     @PostMapping("make-user")
     public ResponseEntity<BaseUserDTO> makeUser(
             @RequestBody UserCreationDTO userCreationDTO,
-            @RequestParam(value = "externalUserId", required = false) String externalUserId,
             @RequestParam(value = "idToken", required = false) String idToken,
             @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
