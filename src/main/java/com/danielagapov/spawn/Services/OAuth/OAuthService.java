@@ -26,10 +26,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.Date;
-import java.net.URL;
 
 @Service
 public class OAuthService implements IOAuthService {

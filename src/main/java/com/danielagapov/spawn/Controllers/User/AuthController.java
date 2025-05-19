@@ -48,7 +48,7 @@ public class AuthController {
     public ResponseEntity<?> signIn(
             @RequestParam(value = "externalUserId", required = false) String externalUserId, 
             @RequestParam(value = "idToken", required = false) String idToken,
-            @RequestParam(value = "provider", required = false) OAuthProvider provider,
+            @RequestParam(value = "provider", required = true) OAuthProvider provider,
             @RequestParam(value = "email", required = false) String email) {
         try {
             Optional<BaseUserDTO> optionalDTO;
