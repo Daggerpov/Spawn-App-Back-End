@@ -24,15 +24,6 @@ public interface IOAuthService {
     Optional<BaseUserDTO> signInUser(String idToken, String email, OAuthProvider provider);
 
     /**
-     * @param userCreationDTO given from mobile, containing the profile picture data within it
-     * @param externalUserId  externalUserId, from Google or Apple
-     * @param provider        provider indicating Google or Apple
-     * @return returns back the fully-created user, after it goes through the `makeUser()` method
-     */
-    BaseUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider);
-
-
-    /**
      * Given an external user id from an oauth provider, check whether it belongs it a user account.
      * First tries to find user by external id, then by email in case a user has signed in with a different provider
      *

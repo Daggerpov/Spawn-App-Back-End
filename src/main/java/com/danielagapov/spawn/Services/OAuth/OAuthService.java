@@ -44,30 +44,6 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public BaseUserDTO createUser(UserCreationDTO userCreationDTO, String externalUserId, OAuthProvider provider) {
-        logger.info(String.format("Creating user with externalUserId: %s, provider: %s, email: %s", 
-            externalUserId, provider, userCreationDTO.getEmail()));
-        
-        UserDTO newUser = new UserDTO(
-                userCreationDTO.getId(),
-                null,
-                userCreationDTO.getUsername(),
-                null, // going to set within `makeUser()`
-                userCreationDTO.getName(),
-                userCreationDTO.getBio(),
-                null,
-                userCreationDTO.getEmail()
-        );
-
-        logger.info("Calling makeUser with UserDTO: " + newUser);
-        BaseUserDTO result = makeUser(newUser, externalUserId, userCreationDTO.getProfilePictureData(), provider);
-        logger.info("User creation completed successfully. New user ID: " + result.getId());
-        return result;
-    }
-    
-
-
-    @Override
     public BaseUserDTO makeUser(UserDTO user, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
         try {
             logger.info(String.format("Making user: {user: %s, externalUserId: %s}", user, externalUserId));
@@ -116,7 +92,16 @@ public class OAuthService implements IOAuthService {
 
     @Override
     public Optional<BaseUserDTO> signInUser(String idToken, String email, OAuthProvider provider) {
-         return oauthProviders.get(provider).getUserIfExistsByToken(idToken, email);
+        logger.info("Checking if user signing in with " + provider + " exists by ID token and email: " + email);
+        OAuthStrategy oauthStrategy = oauthProviders.get(provider);
+
+        // Verify the token and extract the user ID
+        String userId = oauthStrategy.verifyIdToken(idToken);
+        logger.info("Successfully verified " + provider + " ID token and extracted user ID: " + userId);
+
+        // Use the extracted user ID to check if the user exists
+        logger.info("Checking if user exists with " + provider + " user ID: " + userId);
+        return getUserIfExistsbyExternalId(userId, email);
     }
 
     @Override
@@ -147,13 +132,22 @@ public class OAuthService implements IOAuthService {
     @Override
     public BaseUserDTO createUserFromOAuth(UserCreationDTO userCreationDTO, String idToken, OAuthProvider provider) {
         try {
-            logger.info(String.format("Creating user from OAuth: {username: %s, email: %s}", 
-                userCreationDTO.getUsername(), userCreationDTO.getEmail()));
+            logger.info(String.format("Creating user from OAuth: {username: %s, email: %s, provider: %s}",
+                userCreationDTO.getUsername(), userCreationDTO.getEmail(), provider));
 
+            // Get the appropriate OAuth strategy
+            OAuthStrategy oauthStrategy = oauthProviders.get(provider);
             if (idToken != null) {
-                return oauthProviders.get(provider).createUserWithToken(userCreationDTO, idToken);
+                // Verify the token and extract the user ID
+                String userId = oauthStrategy.verifyIdToken(idToken);
+                logger.info("Successfully verified " + provider + " ID token and extracted user ID: " + userId);
+
+                UserDTO newUser = UserMapper.toDTOFromCreationUserDTO(userCreationDTO);
+
+                logger.info("Making new user: " + newUser.getUsername());
+                return makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), provider);
             } else {
-                logger.warn("Missing required authentication parameters");
+                logger.error("Missing required authentication parameters");
                 throw new IllegalArgumentException("Either a valid ID token or external user ID with provider must be provided");
             }
         } catch (SecurityException e) {

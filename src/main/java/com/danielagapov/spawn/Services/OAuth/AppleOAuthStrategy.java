@@ -7,9 +7,6 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +16,11 @@ import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class AppleOAuthStrategy implements OAuthStrategy {
     private final ILogger logger;
-    private final IOAuthService oauthService;
 
     private final JwkProvider appleJwkProvider;
 
@@ -37,9 +32,8 @@ public class AppleOAuthStrategy implements OAuthStrategy {
 
     @Autowired
     @Lazy
-    public AppleOAuthStrategy(ILogger logger, IOAuthService oauthService) {
+    public AppleOAuthStrategy(ILogger logger) {
         this.logger = logger;
-        this.oauthService = oauthService;
 
         // Initialize the Apple JWK provider
         this.appleJwkProvider = new JwkProviderBuilder(APPLE_JWKS_URL)
@@ -48,53 +42,13 @@ public class AppleOAuthStrategy implements OAuthStrategy {
                 .build();
     }
 
-
-    @Override
-    public Optional<BaseUserDTO> getUserIfExistsByToken(String idToken, String email) {
-        logger.info("Checking if user exists by Apple ID token and email: " + email);
-
-        // Verify the token and extract the user ID
-        String userId = verifyAppleIdToken(idToken);
-        logger.info("Successfully verified Apple ID token and extracted user ID: " + userId);
-
-        // Use the extracted user ID to check if the user exists
-        logger.info("Checking if user exists with Apple user ID: " + userId);
-        return oauthService.getUserIfExistsbyExternalId(userId, email);
-    }
-
     @Override
     public OAuthProvider getOAuthProvider() {
         return OAuthProvider.apple;
     }
 
     @Override
-    public BaseUserDTO createUserWithToken(UserCreationDTO userCreationDTO, String idToken) {
-        logger.info("Creating user with Apple ID token, email: " + userCreationDTO.getEmail());
-
-        // Verify the token and extract the user ID
-        logger.info("Verifying Apple ID token");
-        String userId = verifyAppleIdToken(idToken);
-        logger.info("Token verified, extracted Apple user ID: " + userId);
-
-        UserDTO newUser = new UserDTO(
-                userCreationDTO.getId(),
-                null,
-                userCreationDTO.getUsername(),
-                null, // going to set within `makeUser()`
-                userCreationDTO.getName(),
-                userCreationDTO.getBio(),
-                null,
-                userCreationDTO.getEmail()
-        );
-
-        logger.info("Calling makeUser with extracted Apple user ID: " + userId);
-        BaseUserDTO result = oauthService.makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), OAuthProvider.apple);
-        logger.info("User creation with Apple token completed successfully. New user ID: " + result.getId());
-        return result;
-    }
-
-
-    private String verifyAppleIdToken(String idToken) {
+    public String verifyIdToken(String idToken) {
         try {
             logger.info("Verifying Apple ID token");
 

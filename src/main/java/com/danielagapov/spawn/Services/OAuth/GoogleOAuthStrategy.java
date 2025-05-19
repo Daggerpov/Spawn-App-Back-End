@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.Services.OAuth;
 
 
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -19,12 +16,10 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
-import java.util.Optional;
 
 @Service
 public class GoogleOAuthStrategy implements OAuthStrategy {
     private final ILogger logger;
-    private final IOAuthService oauthService;
     private GoogleIdTokenVerifier verifier;
 
     @Value("${google.client.id}")
@@ -33,31 +28,9 @@ public class GoogleOAuthStrategy implements OAuthStrategy {
 
     @Autowired
     @Lazy
-    public GoogleOAuthStrategy(ILogger logger, IOAuthService oauthService) {
+    public GoogleOAuthStrategy(ILogger logger) {
         this.logger = logger;
-        this.oauthService = oauthService;
         this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
-    }
-
-
-    /**
-     * Verifies a Google ID token and returns the user if they exist
-     *
-     * @param idToken Google ID token for authentication and verification
-     * @param email user email
-     * @return a BaseUserDTO if user exists, null otherwise
-     */
-    @Override
-    public Optional<BaseUserDTO> getUserIfExistsByToken(String idToken, String email) {
-        logger.info("Checking if user exists by Google ID token and email: " + email);
-
-        // Verify the token and extract the user ID
-        String userId = verifyGoogleIdToken(idToken);
-        logger.info("Successfully verified Google ID token and extracted user ID: " + userId);
-
-        // Use the extracted user ID to check if the user exists
-        logger.info("Checking if user exists with Google user ID: " + userId);
-        return oauthService.getUserIfExistsbyExternalId(userId, email);
     }
 
     @Override
@@ -66,45 +39,13 @@ public class GoogleOAuthStrategy implements OAuthStrategy {
     }
 
     /**
-     * Creates a user account using Google ID token for authentication
-     *
-     * @param userCreationDTO given from mobile, containing profile picture data
-     * @param idToken        Google ID token for authentication and verification
-     * @return returns the fully-created user
-     */
-    @Override
-    public BaseUserDTO createUserWithToken(UserCreationDTO userCreationDTO, String idToken) {
-        logger.info(String.format("Creating user with Google ID token, email: %s", userCreationDTO.getEmail()));
-
-        // Verify the token and extract the user ID
-        logger.info("Verifying Google ID token");
-        String userId = verifyGoogleIdToken(idToken);
-        logger.info("Token verified, extracted user ID: " + userId);
-
-        UserDTO newUser = new UserDTO(
-                userCreationDTO.getId(),
-                null,
-                userCreationDTO.getUsername(),
-                null, // going to set within `makeUser()`
-                userCreationDTO.getName(),
-                userCreationDTO.getBio(),
-                null,
-                userCreationDTO.getEmail()
-        );
-
-        logger.info("Calling makeUser with extracted Google user ID: " + userId);
-        BaseUserDTO result = oauthService.makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), OAuthProvider.google);
-        logger.info("User creation with Google token completed successfully. New user ID: " + result.getId());
-        return result;
-    }
-
-    /**
      * Verifies a Google ID token and extracts the subject (user ID)
      *
      * @param idToken Google ID token to verify
      * @return the subject (user ID) extracted from the token
      */
-    private String verifyGoogleIdToken(String idToken) {
+    @Override
+    public String verifyIdToken(String idToken) {
         try {
             logger.info("Attempting to verify Google ID token");
             logger.info("Using client ID: " + googleClientId);
