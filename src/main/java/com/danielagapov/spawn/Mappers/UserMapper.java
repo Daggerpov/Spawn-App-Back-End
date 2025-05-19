@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Models.User.User;
 
@@ -82,6 +83,19 @@ public class UserMapper {
         return userDTOs.stream()
                 .map(UserMapper::toBaseDTO)
                 .collect(Collectors.toList());
+    }
+
+    public static UserDTO toDTOFromCreationUserDTO(UserCreationDTO userCreationDTO) {
+        return new UserDTO(
+                userCreationDTO.getId(),
+                null,
+                userCreationDTO.getUsername(),
+                null,
+                userCreationDTO.getName(),
+                userCreationDTO.getBio(),
+                null,
+                userCreationDTO.getEmail()
+        );
     }
 
 }

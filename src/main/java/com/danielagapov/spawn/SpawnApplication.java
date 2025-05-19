@@ -65,6 +65,13 @@ public class SpawnApplication {
             System.err.println("Error: GOOGLE_CLIENT_ID environment variable not set. Consider setting it in your environment or .env file.");
             System.err.println("Google authentication will not work without this value.");
         }
+        try {
+            System.setProperty("APPLE_CLIENT_ID",
+                    System.getenv("APPLE_CLIENT_ID") != null ? System.getenv("APPLE_CLIENT_ID") : dotenv.get("APPLE_CLIENT_ID"));
+        } catch (NullPointerException e) {
+            System.err.println("Error: APPLE_CLIENT_ID environment variable not set. Consider setting it in your environment or .env file.");
+            System.err.println("Apple authentication will not work without this value.");
+        }
         
         SpringApplication.run(SpawnApplication.class, args);
     }

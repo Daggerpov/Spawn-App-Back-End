@@ -22,4 +22,6 @@ public interface IAuthService {
      * @return true if password change was successful
      */
     boolean changePassword(String username, String currentPassword, String newPassword);
+
+    BaseUserDTO getUserByToken(String token);
 }

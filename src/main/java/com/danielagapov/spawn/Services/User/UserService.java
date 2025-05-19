@@ -643,6 +643,16 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public BaseUserDTO getBaseUserByUsername(String username) {
+        try {
+            return UserMapper.toDTO(getUserEntityByUsername(username));
+        } catch (Exception e) {
+            logger.error("Error getting BaseUserDTO by username (" + username + "): " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public Instant getLatestFriendProfileUpdateTimestamp(UUID userId) {
         try {
             return repository.findLatestFriendProfileUpdate(userId);

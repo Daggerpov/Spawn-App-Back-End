@@ -2,9 +2,9 @@ package com.danielagapov.spawn.Controllers.User;
 
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
@@ -46,22 +46,12 @@ public class AuthController {
     // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
     @GetMapping("sign-in")
     public ResponseEntity<?> signIn(
-            @RequestParam(value = "externalUserId", required = false) String externalUserId, 
-            @RequestParam(value = "idToken", required = false) String idToken,
+            @RequestParam(value = "idToken", required = true) String idToken,
+            @RequestParam(value = "provider", required = true) OAuthProvider provider,
             @RequestParam(value = "email", required = false) String email) {
         try {
             Optional<BaseUserDTO> optionalDTO;
-            
-            // Handle Google ID token authentication if present
-            if (idToken != null && !idToken.isEmpty()) {
-                optionalDTO = oauthService.getUserIfExistsByGoogleToken(idToken, email);
-            } 
-            // Fall back to externalUserId for Apple or backward compatibility
-            else if (externalUserId != null && !externalUserId.isEmpty()) {
-                optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
-            } else {
-                return ResponseEntity.badRequest().body(new ErrorResponse("Either externalUserId or idToken must be provided"));
-            }
+            optionalDTO = oauthService.signInUser(idToken, email, provider);
             
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
@@ -95,11 +85,10 @@ public class AuthController {
     @PostMapping("make-user")
     public ResponseEntity<BaseUserDTO> makeUser(
             @RequestBody UserCreationDTO userCreationDTO,
-            @RequestParam(value = "externalUserId", required = false) String externalUserId,
             @RequestParam(value = "idToken", required = false) String idToken,
             @RequestParam(value = "provider", required = false) OAuthProvider provider) {
         try {
-            BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, externalUserId, idToken, provider);
+            BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, idToken, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (IllegalArgumentException e) {
@@ -204,10 +193,8 @@ public class AuthController {
             
             // Extract username from JWT token
             final String authHeader = request.getHeader("Authorization");
-            
             final String token = authHeader.substring(7);
             final String username = jwtService.extractUsername(token);
-            
             
             boolean success = authService.changePassword(
                 username, 
@@ -225,6 +212,18 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Error changing password: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to change password"));
+        }
+    }
+
+    // full path: /api/v1/auth/quick-sign-in
+    @GetMapping("quick-sign-in")
+    public ResponseEntity<?> quickSignIn(HttpServletRequest request) {
+        try {
+            BaseUserDTO user = authService.getUserByToken(request.getHeader("Authorization").substring(7));
+            return new ResponseEntity<>(user, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Error while performing quick sign-in"));
         }
     }
 
