@@ -110,4 +110,6 @@ public interface IUserService {
     User getUserByEmail(String email);
 
     List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
+
+    BaseUserDTO getBaseUserByUsername(String username);
 }

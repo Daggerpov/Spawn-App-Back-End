@@ -122,6 +122,12 @@ public class AuthService implements IAuthService {
         }
     }
 
+    @Override
+    public BaseUserDTO getUserByToken(String token) {
+        final String username = jwtService.extractUsername(token);
+        return userService.getBaseUserByUsername(username);
+    }
+
     /* ------------------------------ HELPERS ------------------------------ */
 
     private void checkIfUniqueCredentials(AuthUserDTO authUserDTO) {

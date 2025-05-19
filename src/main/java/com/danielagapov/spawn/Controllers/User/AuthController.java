@@ -53,23 +53,6 @@ public class AuthController {
         try {
             Optional<BaseUserDTO> optionalDTO;
             optionalDTO = oauthService.signInUser(idToken, email, provider);
-//            // Handle Google ID token authentication
-//            if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.google) {
-//                logger.info("Processing Google ID token sign-in");
-//                optionalDTO = oauthService.getUserIfExistsByGoogleToken(idToken, email);
-//            }
-//            // Handle Apple ID token authentication
-//            else if (idToken != null && !idToken.isEmpty() && provider == OAuthProvider.apple) {
-//                logger.info("Processing Apple ID token sign-in");
-//                optionalDTO = oauthService.getUserIfExistsByAppleToken(idToken, email);
-//            }
-//            // Fall back to externalUserId for backward compatibility
-//            else if (externalUserId != null && !externalUserId.isEmpty()) {
-//                logger.warn("Processing deprecated external ID sign-in - consider upgrading to token-based authentication");
-//                optionalDTO = oauthService.getUserIfExistsbyExternalId(externalUserId, email);
-//            } else {
-//                return ResponseEntity.badRequest().body(new ErrorResponse("Either externalUserId or idToken with provider must be provided"));
-//            }
             
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
@@ -212,10 +195,8 @@ public class AuthController {
             
             // Extract username from JWT token
             final String authHeader = request.getHeader("Authorization");
-            
             final String token = authHeader.substring(7);
             final String username = jwtService.extractUsername(token);
-            
             
             boolean success = authService.changePassword(
                 username, 
@@ -233,6 +214,18 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Error changing password: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to change password"));
+        }
+    }
+
+    // full path: /api/v1/auth/quick-sign-in
+    @GetMapping("quick-sign-in")
+    public ResponseEntity<?> quickSignIn(HttpServletRequest request) {
+        try {
+            BaseUserDTO user = authService.getUserByToken(request.getHeader("Authorization").substring(7));
+            return new ResponseEntity<>(user, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Error while performing quick sign-in"));
         }
     }
 
