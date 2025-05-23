@@ -32,6 +32,13 @@ import java.util.List;
 public class SecurityConfig {
     private final UserInfoService userInfoService;
     private final JWTFilterConfig jwtFilterConfig;
+    private final String[] whitelistedUrls = new String[] {
+            "/api/v1/auth/login",
+            "/api/v1/auth/sign-in",
+            "/api/v1/auth/register",
+            "/api/v1/auth/refresh-token",
+            "/api/v1/auth/make-user",
+    };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -61,7 +68,7 @@ public class SecurityConfig {
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/**", "/api/v1/notifications/notification").permitAll()
+                        .requestMatchers(whitelistedUrls).permitAll()
                         .anyRequest()
                         .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
                 )
