@@ -85,8 +85,8 @@ public class AuthController {
     @PostMapping("make-user")
     public ResponseEntity<BaseUserDTO> makeUser(
             @RequestBody UserCreationDTO userCreationDTO,
-            @RequestParam(value = "idToken", required = false) String idToken,
-            @RequestParam(value = "provider", required = false) OAuthProvider provider) {
+            @RequestParam(value = "idToken") String idToken,
+            @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, idToken, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
