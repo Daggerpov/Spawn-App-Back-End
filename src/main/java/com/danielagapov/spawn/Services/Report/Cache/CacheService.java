@@ -7,6 +7,7 @@ import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserSocialMediaDTO;
 import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -14,6 +15,8 @@ import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
+import com.danielagapov.spawn.Services.UserInterest.IUserInterestService;
+import com.danielagapov.spawn.Services.UserSocialMedia.IUserSocialMediaService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -58,6 +61,8 @@ public class CacheService implements ICacheService {
     private final IFriendRequestService friendRequestService;
     private final ObjectMapper objectMapper;
     private final IUserStatsService userStatsService;
+    private final IUserInterestService userInterestService;
+    private final IUserSocialMediaService userSocialMediaService;
 
     @Autowired
     public CacheService(
@@ -66,13 +71,17 @@ public class CacheService implements ICacheService {
             IEventService eventService,
             IFriendRequestService friendRequestService,
             ObjectMapper objectMapper,
-            IUserStatsService userStatsService) {
+            IUserStatsService userStatsService,
+            IUserInterestService userInterestService,
+            IUserSocialMediaService userSocialMediaService) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.eventService = eventService;
         this.friendRequestService = friendRequestService;
         this.objectMapper = objectMapper;
         this.userStatsService = userStatsService;
+        this.userInterestService = userInterestService;
+        this.userSocialMediaService = userSocialMediaService;
     }
 
     /**
@@ -484,7 +493,7 @@ public class CacheService implements ICacheService {
 
                 if (needsUpdate) {
                     try {
-                        List<String> interests = userService.getUserInterests(user.getId());
+                        List<String> interests = userInterestService.getUserInterests(user.getId());
                         byte[] interestsData = objectMapper.writeValueAsBytes(interests);
 
                         if (interestsData.length < 100_000) {
@@ -518,7 +527,7 @@ public class CacheService implements ICacheService {
 
                 if (needsUpdate) {
                     try {
-                        UserSocialMediaDTO socialMedia = userService.getUserSocialMedia(user.getId());
+                        UserSocialMediaDTO socialMedia = userSocialMediaService.getUserSocialMedia(user.getId());
                         byte[] socialMediaData = objectMapper.writeValueAsBytes(socialMedia);
 
                         if (socialMediaData.length < 100_000) {
@@ -551,7 +560,7 @@ public class CacheService implements ICacheService {
 
             if (needsUpdate) {
                 try {
-                    List<ProfileEventDTO> events = eventService.getProfileEvents(user.getId());
+                    List<ProfileEventDTO> events = eventService.getProfileEvents(user.getId(), user.getId());
                     byte[] eventsData = objectMapper.writeValueAsBytes(events);
 
                     if (eventsData.length < 100_000) {
