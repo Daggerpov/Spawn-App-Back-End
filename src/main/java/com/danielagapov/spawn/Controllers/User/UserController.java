@@ -143,7 +143,9 @@ public class UserController {
 
     // full path: /api/v1/users/filtered/{requestingUserId}?query=searchQuery
     @GetMapping("filtered/{requestingUserId}")
-    public ResponseEntity<SearchedUserResult> getRecommendedFriendsBySearch(@PathVariable UUID requestingUserId, @RequestParam String searchQuery) {
+    public ResponseEntity<SearchedUserResult> getRecommendedFriendsBySearch(
+            @PathVariable UUID requestingUserId, 
+            @RequestParam(required = false, defaultValue = "") String searchQuery) {
         try {
             return new ResponseEntity<>(userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -155,7 +157,8 @@ public class UserController {
 
     // full path: /api/v1/users/search
     @GetMapping("search")
-    public ResponseEntity<List<BaseUserDTO>> searchForUsers(@RequestBody String searchQuery) {
+    public ResponseEntity<List<BaseUserDTO>> searchForUsers(
+            @RequestParam(required = false, defaultValue = "") String searchQuery) {
         try {
             return new ResponseEntity<>(userService.searchByQuery(searchQuery), HttpStatus.OK);
         } catch (Exception e) {
