@@ -155,7 +155,7 @@ public class UserController {
 
     // full path: /api/v1/users/search
     @GetMapping("search")
-    public ResponseEntity<List<BaseUserDTO>> searchForUsers(@RequestBody String searchQuery) {
+    public ResponseEntity<List<BaseUserDTO>> searchForUsers(@RequestParam String searchQuery) {
         try {
             return new ResponseEntity<>(userService.searchByQuery(searchQuery), HttpStatus.OK);
         } catch (Exception e) {
