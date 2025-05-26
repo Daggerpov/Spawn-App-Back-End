@@ -2,26 +2,23 @@ package com.danielagapov.spawn.Services.Report.Cache;
 
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
 import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
+import com.danielagapov.spawn.DTOs.Event.ProfileEventDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FullFriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
 import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IFriendTagRepository;
-import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.Event.IEventService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -43,17 +40,6 @@ import java.util.UUID;
 @Service
 public class CacheService implements ICacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
-
-    private final IUserRepository userRepository;
-    private final IUserService userService;
-    private final IEventService eventService;
-    private final IFriendRequestService friendRequestService;
-    private final IFriendTagService friendTagService;
-    private final IFriendTagRepository friendTagRepository;
-    private final IUserFriendTagRepository userFriendTagRepository;
-    private final ObjectMapper objectMapper;
-    private final CacheManager cacheManager;
-
     // Define cache categories
     private static final String FRIENDS_CACHE = "friends";
     private static final String EVENTS_CACHE = "events";
@@ -61,9 +47,17 @@ public class CacheService implements ICacheService {
     private static final String OTHER_PROFILES_CACHE = "otherProfiles";
     private static final String RECOMMENDED_FRIENDS_CACHE = "recommendedFriends";
     private static final String FRIEND_REQUESTS_CACHE = "friendRequests";
-    private static final String USER_TAGS_CACHE = "userTags";
-    private static final String TAG_FRIENDS_CACHE = "tagFriends";
     private static final String RECENTLY_SPAWNED_CACHE = "recentlySpawned";
+    private static final String PROFILE_STATS_CACHE = "profileStats";
+    private static final String PROFILE_INTERESTS_CACHE = "profileInterests";
+    private static final String PROFILE_SOCIAL_MEDIA_CACHE = "profileSocialMedia";
+    private static final String PROFILE_EVENTS_CACHE = "profileEvents";
+    private final IUserRepository userRepository;
+    private final IUserService userService;
+    private final IEventService eventService;
+    private final IFriendRequestService friendRequestService;
+    private final ObjectMapper objectMapper;
+    private final IUserStatsService userStatsService;
 
     @Autowired
     public CacheService(
@@ -71,20 +65,14 @@ public class CacheService implements ICacheService {
             IUserService userService,
             IEventService eventService,
             IFriendRequestService friendRequestService,
-            IFriendTagService friendTagService,
-            IFriendTagRepository friendTagRepository,
-            IUserFriendTagRepository userFriendTagRepository,
             ObjectMapper objectMapper,
-            CacheManager cacheManager) {
+            IUserStatsService userStatsService) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.eventService = eventService;
         this.friendRequestService = friendRequestService;
-        this.friendTagService = friendTagService;
-        this.friendTagRepository = friendTagRepository;
-        this.userFriendTagRepository = userFriendTagRepository;
         this.objectMapper = objectMapper;
-        this.cacheManager = cacheManager;
+        this.userStatsService = userStatsService;
     }
 
     /**
@@ -123,8 +111,11 @@ public class CacheService implements ICacheService {
             response.put(OTHER_PROFILES_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(RECOMMENDED_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(FRIEND_REQUESTS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(USER_TAGS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(TAG_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(RECENTLY_SPAWNED_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(PROFILE_STATS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(PROFILE_INTERESTS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(PROFILE_SOCIAL_MEDIA_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(PROFILE_EVENTS_CACHE, new CacheValidationResponseDTO(true, null));
             return response;
         }
 
@@ -158,19 +149,29 @@ public class CacheService implements ICacheService {
             response.put(FRIEND_REQUESTS_CACHE, validateFriendRequestsCache(user, clientCacheTimestamps.get(FRIEND_REQUESTS_CACHE)));
         }
 
-        // Validate user tags cache
-        if (clientCacheTimestamps.containsKey(USER_TAGS_CACHE)) {
-            response.put(USER_TAGS_CACHE, validateUserTagsCache(user, clientCacheTimestamps.get(USER_TAGS_CACHE)));
-        }
-
-        // Validate tag friends cache
-        if (clientCacheTimestamps.containsKey(TAG_FRIENDS_CACHE)) {
-            response.put(TAG_FRIENDS_CACHE, validateTagFriendsCache(user, clientCacheTimestamps.get(TAG_FRIENDS_CACHE)));
-        }
-
         // Validate recently-spawned cache
         if (clientCacheTimestamps.containsKey(RECENTLY_SPAWNED_CACHE)) {
             response.put(RECENTLY_SPAWNED_CACHE, validateRecentlySpawnedCache(user, clientCacheTimestamps.get(RECENTLY_SPAWNED_CACHE)));
+        }
+
+        // Validate profile stats cache
+        if (clientCacheTimestamps.containsKey(PROFILE_STATS_CACHE)) {
+            response.put(PROFILE_STATS_CACHE, validateProfileStatsCache(user, clientCacheTimestamps.get(PROFILE_STATS_CACHE)));
+        }
+
+        // Validate profile interests cache
+        if (clientCacheTimestamps.containsKey(PROFILE_INTERESTS_CACHE)) {
+            response.put(PROFILE_INTERESTS_CACHE, validateProfileInterestsCache(user, clientCacheTimestamps.get(PROFILE_INTERESTS_CACHE)));
+        }
+
+        // Validate profile social media cache
+        if (clientCacheTimestamps.containsKey(PROFILE_SOCIAL_MEDIA_CACHE)) {
+            response.put(PROFILE_SOCIAL_MEDIA_CACHE, validateProfileSocialMediaCache(user, clientCacheTimestamps.get(PROFILE_SOCIAL_MEDIA_CACHE)));
+        }
+
+        // Validate profile events cache
+        if (clientCacheTimestamps.containsKey(PROFILE_EVENTS_CACHE)) {
+            response.put(PROFILE_EVENTS_CACHE, validateProfileEventsCache(user, clientCacheTimestamps.get(PROFILE_EVENTS_CACHE)));
         }
 
         return response;
@@ -436,92 +437,134 @@ public class CacheService implements ICacheService {
     }
 
     /**
-     * Validates the user's tags cache.
+     * Validates the user's profile stats cache.
      */
-    private CacheValidationResponseDTO validateUserTagsCache(User user, String clientTimestamp) {
+    private CacheValidationResponseDTO validateProfileStatsCache(User user, String clientTimestamp) {
         try {
-            // Parse the client timestamp
             ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
 
-            // Get latest tag modifications - need to consider both tag and tag-friend activities
-            Instant latestTagActivity = getLatestTagActivity(user.getId());
-            Instant latestTagFriendActivity = getLatestTagFriendActivity(user.getId());
+            // Check if user's stats have been updated since the client's cache timestamp
+            if (user.getLastUpdated() != null) {
+                ZonedDateTime lastUpdated = ZonedDateTime.ofInstant(user.getLastUpdated(), clientTime.getZone());
+                boolean needsUpdate = lastUpdated.isAfter(clientTime);
 
-            // Use the most recent activity timestamp
-            Instant latestActivity = latestTagActivity.isAfter(latestTagFriendActivity) ?
-                    latestTagActivity : latestTagFriendActivity;
+                if (needsUpdate) {
+                    try {
+                        UserStatsDTO stats = userStatsService.getUserStats(user.getId());
+                        byte[] statsData = objectMapper.writeValueAsBytes(stats);
 
-            boolean needsUpdate = latestActivity.isAfter(clientTime.toInstant());
-
-            if (needsUpdate) {
-                try {
-                    // Get the FriendTagDTOs
-                    List<FriendTagDTO> tags = friendTagService.getFriendTagsByOwnerId(user.getId());
-
-                    // Convert to FullFriendTagDTOs with embedded friend data
-                    List<FullFriendTagDTO> fullTags = friendTagService.convertFriendTagsToFullFriendTags(tags);
-
-                    byte[] tagsData = objectMapper.writeValueAsBytes(fullTags);
-
-                    if (tagsData.length < 100_000) {
-                        return new CacheValidationResponseDTO(true, tagsData);
+                        if (statsData.length < 100_000) {
+                            return new CacheValidationResponseDTO(true, statsData);
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to serialize profile stats data", e);
                     }
-                } catch (Exception e) {
-                    logger.error("Failed to serialize user tags data", e);
+                    return new CacheValidationResponseDTO(true, null);
                 }
-
-                return new CacheValidationResponseDTO(true, null);
+                return new CacheValidationResponseDTO(false, null);
             }
-
-            return new CacheValidationResponseDTO(false, null);
-
+            return new CacheValidationResponseDTO(true, null);
         } catch (Exception e) {
-            logger.error("Error validating user tags cache for user {}: {}", user.getId(), e.getMessage());
+            logger.error("Error validating profile stats cache for user {}: {}", user.getId(), e.getMessage());
             return new CacheValidationResponseDTO(true, null);
         }
     }
 
     /**
-     * Validates the cache for friends associated with specific tags.
+     * Validates the user's profile interests cache.
      */
-    private CacheValidationResponseDTO validateTagFriendsCache(User user, String clientTimestamp) {
+    private CacheValidationResponseDTO validateProfileInterestsCache(User user, String clientTimestamp) {
         try {
-            // Parse the client timestamp
             ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
 
-            // Get latest tag-friend activity timestamp
-            Instant latestTagFriendActivity = getLatestTagFriendActivity(user.getId());
+            // Check if user's interests have been updated since the client's cache timestamp
+            if (user.getLastUpdated() != null) {
+                ZonedDateTime lastUpdated = ZonedDateTime.ofInstant(user.getLastUpdated(), clientTime.getZone());
+                boolean needsUpdate = lastUpdated.isAfter(clientTime);
 
-            boolean needsUpdate = latestTagFriendActivity.isAfter(clientTime.toInstant());
+                if (needsUpdate) {
+                    try {
+                        List<String> interests = userService.getUserInterests(user.getId());
+                        byte[] interestsData = objectMapper.writeValueAsBytes(interests);
+
+                        if (interestsData.length < 100_000) {
+                            return new CacheValidationResponseDTO(true, interestsData);
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to serialize profile interests data", e);
+                    }
+                    return new CacheValidationResponseDTO(true, null);
+                }
+                return new CacheValidationResponseDTO(false, null);
+            }
+            return new CacheValidationResponseDTO(true, null);
+        } catch (Exception e) {
+            logger.error("Error validating profile interests cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+
+    /**
+     * Validates the user's profile social media cache.
+     */
+    private CacheValidationResponseDTO validateProfileSocialMediaCache(User user, String clientTimestamp) {
+        try {
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+
+            // Check if user's social media has been updated since the client's cache timestamp
+            if (user.getLastUpdated() != null) {
+                ZonedDateTime lastUpdated = ZonedDateTime.ofInstant(user.getLastUpdated(), clientTime.getZone());
+                boolean needsUpdate = lastUpdated.isAfter(clientTime);
+
+                if (needsUpdate) {
+                    try {
+                        UserSocialMediaDTO socialMedia = userService.getUserSocialMedia(user.getId());
+                        byte[] socialMediaData = objectMapper.writeValueAsBytes(socialMedia);
+
+                        if (socialMediaData.length < 100_000) {
+                            return new CacheValidationResponseDTO(true, socialMediaData);
+                        }
+                    } catch (Exception e) {
+                        logger.error("Failed to serialize profile social media data", e);
+                    }
+                    return new CacheValidationResponseDTO(true, null);
+                }
+                return new CacheValidationResponseDTO(false, null);
+            }
+            return new CacheValidationResponseDTO(true, null);
+        } catch (Exception e) {
+            logger.error("Error validating profile social media cache for user {}: {}", user.getId(), e.getMessage());
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+
+    /**
+     * Validates the user's profile events cache.
+     */
+    private CacheValidationResponseDTO validateProfileEventsCache(User user, String clientTimestamp) {
+        try {
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+
+            // Get latest event activity for this user's profile
+            Instant latestEventActivity = getLatestEventActivity(user.getId());
+            boolean needsUpdate = latestEventActivity.isAfter(clientTime.toInstant());
 
             if (needsUpdate) {
                 try {
-                    // Get the tag-friends data
-                    List<FriendTagDTO> tags = friendTagService.getFriendTagsByOwnerId(user.getId());
-                    Map<UUID, List<UUID>> tagFriendsMap = new HashMap<>();
+                    List<ProfileEventDTO> events = eventService.getProfileEvents(user.getId());
+                    byte[] eventsData = objectMapper.writeValueAsBytes(events);
 
-                    // For each tag, get the friends associated with it
-                    for (FriendTagDTO tag : tags) {
-                        List<UUID> friendsInTag = friendTagService.getFriendIdsByTagId(tag.getId());
-                        tagFriendsMap.put(tag.getId(), friendsInTag);
-                    }
-
-                    byte[] tagFriendsData = objectMapper.writeValueAsBytes(tagFriendsMap);
-
-                    if (tagFriendsData.length < 100_000) {
-                        return new CacheValidationResponseDTO(true, tagFriendsData);
+                    if (eventsData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, eventsData);
                     }
                 } catch (Exception e) {
-                    logger.error("Failed to serialize tag-friends data", e);
+                    logger.error("Failed to serialize profile events data", e);
                 }
-
                 return new CacheValidationResponseDTO(true, null);
             }
-
             return new CacheValidationResponseDTO(false, null);
-
         } catch (Exception e) {
-            logger.error("Error validating tag-friends cache for user {}: {}", user.getId(), e.getMessage());
+            logger.error("Error validating profile events cache for user {}: {}", user.getId(), e.getMessage());
             return new CacheValidationResponseDTO(true, null);
         }
     }
@@ -638,30 +681,6 @@ public class CacheService implements ICacheService {
             return userRepository.findLatestFriendProfileUpdate(userId);
         } catch (Exception e) {
             logger.error("Error fetching latest friend profile update for user {}: {}", userId, e.getMessage(), e);
-            return Instant.now();
-        }
-    }
-
-    /**
-     * Gets the timestamp of the latest tag creation or modification by the user.
-     */
-    private Instant getLatestTagActivity(UUID userId) {
-        try {
-            return friendTagRepository.findLatestTagActivity(userId);
-        } catch (Exception e) {
-            logger.error("Error fetching latest tag activity for user {}: {}", userId, e.getMessage(), e);
-            return Instant.now();
-        }
-    }
-
-    /**
-     * Gets the timestamp of the latest change in tag-friend associations.
-     */
-    private Instant getLatestTagFriendActivity(UUID userId) {
-        try {
-            return userFriendTagRepository.findTopByFriendTag_OwnerIdOrderByLastUpdatedDesc(userId);
-        } catch (Exception e) {
-            logger.error("Error fetching latest tag-friend activity for user {}: {}", userId, e.getMessage(), e);
             return Instant.now();
         }
     }
