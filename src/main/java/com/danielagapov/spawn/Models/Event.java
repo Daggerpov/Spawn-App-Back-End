@@ -51,11 +51,17 @@ public class Event implements Serializable {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User creator;
     
+    @Column(name = "created_at")
+    private Instant createdAt;
+    
     @Column(name = "last_updated")
     private Instant lastUpdated;
     
     @PrePersist
     public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
         if (this.lastUpdated == null) {
             this.lastUpdated = Instant.now();
         }
@@ -74,6 +80,7 @@ public class Event implements Serializable {
         this.location = location;
         this.note = note;
         this.creator = creator;
+        this.createdAt = Instant.now();
         this.lastUpdated = Instant.now();
         this.icon = icon;
         this.category = category;
