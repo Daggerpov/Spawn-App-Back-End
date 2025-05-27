@@ -23,13 +23,13 @@ public class ChatMessageMapper {
         );
     }
 
-    public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Activity Activity) {
+    public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Activity activity) {
         return new ChatMessage(
                 dto.getId(),
                 dto.getContent(),
                 dto.getTimestamp(),
                 userSender,
-                Activity
+                activity
         );
     }
 
@@ -45,18 +45,18 @@ public class ChatMessageMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs, List<User> users, List<Activity> Activities) {
+    public static List<ChatMessage> toEntityList(List<ChatMessageDTO> chatMessageDTOs, List<User> users, List<Activity> activities) {
         return chatMessageDTOs.stream()
                 .map(dto -> {
                     User userSender = users.stream()
                             .filter(user -> user.getId().equals(dto.getSenderUserId()))
                             .findFirst()
                             .orElse(null);
-                    Activity Activity = Activities.stream()
+                    Activity activity = activities.stream()
                             .filter(ev -> ev.getId().equals(dto.getActivityId()))
                             .findFirst()
                             .orElse(null);
-                    return toEntity(dto, userSender, Activity);
+                    return toEntity(dto, userSender, activity);
                 })
                 .collect(Collectors.toList());
     }

@@ -133,14 +133,14 @@ public class ChatMessageService implements IChatMessageService {
         ChatMessageDTO savedMessage = saveChatMessage(chatMessageDTO);
 
         // Get the Activity and sender details
-        Activity Activity = ActivityRepository.findById(savedMessage.getActivityId())
+        Activity activity = ActivityRepository.findById(savedMessage.getActivityId())
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, savedMessage.getActivityId()));
         User sender = userRepository.findById(savedMessage.getSenderUserId())
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, savedMessage.getSenderUserId()));
 
         // Create and publish notification Activity
         eventPublisher.publishEvent(new NewCommentNotificationEvent(
-                sender, Activity, savedMessage, activityUserRepository));
+                sender, activity, savedMessage, activityUserRepository));
 
         return savedMessage;
     }
@@ -166,10 +166,10 @@ public class ChatMessageService implements IChatMessageService {
         try {
             User userSender = userRepository.findById(chatMessageDTO.getSenderUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.getSenderUserId()));
-            Activity Activity = ActivityRepository.findById(chatMessageDTO.getActivityId())
+            Activity activity = ActivityRepository.findById(chatMessageDTO.getActivityId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.getActivityId()));
 
-            ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, Activity);
+            ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, activity);
 
             chatMessageRepository.save(chatMessageEntity);
 

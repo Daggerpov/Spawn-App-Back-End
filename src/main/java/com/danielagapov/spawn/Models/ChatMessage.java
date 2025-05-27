@@ -43,5 +43,5 @@ public class ChatMessage implements Serializable {
     @ManyToOne
     @JoinColumn(name = "Activity_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Activity Activity;
+    private Activity activity;
 }
