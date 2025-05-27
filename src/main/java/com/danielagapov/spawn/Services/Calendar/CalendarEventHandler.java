@@ -1,25 +1,25 @@
 package com.danielagapov.spawn.Services.Calendar;
 
-import com.danielagapov.spawn.Activities.ActivityInviteNotificationActivity;
-import com.danielagapov.spawn.Activities.ActivityUpdateNotificationActivity;
-import com.danielagapov.spawn.Activities.ActivityParticipationNotificationActivity;
+import com.danielagapov.spawn.Events.ActivityInviteNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityUpdateNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityParticipationNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import org.springframework.context.Activity.ActivityListener;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 /**
- * Activity handler for calendar-related Activities.
- * Clears calendar cache when Activities are created, updated, or deleted.
+ * Event handler for calendar-related events.
+ * Clears calendar cache when activities are created, updated, or deleted.
  */
 @Component
-public class CalendarActivityHandler {
+public class CalendarEventHandler {
 
     private final ICalendarService calendarService;
     private final ILogger logger;
 
-    public CalendarActivityHandler(ICalendarService calendarService, ILogger logger) {
+    public CalendarEventHandler(ICalendarService calendarService, ILogger logger) {
         this.calendarService = calendarService;
         this.logger = logger;
     }
@@ -28,8 +28,8 @@ public class CalendarActivityHandler {
      * Handler for Activity invite notifications.
      * Clears the calendar cache for all users involved.
      */
-    @ActivityListener
-    public void handleActivityInviteNotification(ActivityInviteNotificationActivity Activity) {
+    @EventListener
+    public void handleActivityInviteNotification(ActivityInviteNotificationEvent event) {
         // Get the Activity ID from the notification data
         String ActivityIdStr = Activity.getData().get("ActivityId");
         String creatorIdStr = Activity.getData().get("creatorId");

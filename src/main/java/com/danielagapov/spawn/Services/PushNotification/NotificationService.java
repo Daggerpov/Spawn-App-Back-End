@@ -14,7 +14,7 @@ import com.danielagapov.spawn.Repositories.INotificationPreferencesRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationActivityPublisher;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.Activity.ActivityListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +32,7 @@ public class NotificationService {
     private final IDeviceTokenRepository deviceTokenRepository;
     private final INotificationPreferencesRepository preferencesRepository;
     private final IUserService userService;
-    private final ApplicationActivityPublisher ActivityPublisher;
+    private final ApplicationEventPublisher eventPublisher;
     private final ILogger logger;
     private final FCMService fcmService;
 
@@ -41,7 +41,7 @@ public class NotificationService {
             IDeviceTokenRepository deviceTokenRepository,
             INotificationPreferencesRepository preferencesRepository,
             IUserService userService,
-            ApplicationActivityPublisher ActivityPublisher,
+            ApplicationEventPublisher eventPublisher,
             ILogger logger, FCMService fcmService) {
         this.deviceTokenRepository = deviceTokenRepository;
         this.preferencesRepository = preferencesRepository;

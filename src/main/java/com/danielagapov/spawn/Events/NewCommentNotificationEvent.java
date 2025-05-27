@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Activities;
+package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.Enums.NotificationType;
@@ -14,7 +14,7 @@ import java.util.UUID;
 /**
  * Activity for when a new comment is added to an activity
  */
-public class NewCommentNotificationActivity extends NotificationActivity {
+public class NewCommentNotificationEvent extends NotificationEvent {
     private final User sender;
     private final Activity activity;
     private final ChatMessageDTO messageDTO;
@@ -23,7 +23,7 @@ public class NewCommentNotificationActivity extends NotificationActivity {
     /**
      * Create a notification Activity for a new comment
      */
-    public NewCommentNotificationActivity(User sender, Activity activity, ChatMessageDTO messageDTO, IActivityUserRepository activityUserRepository) {
+    public NewCommentNotificationEvent(User sender, Activity activity, ChatMessageDTO messageDTO, IActivityUserRepository activityUserRepository) {
         super(NotificationType.NEW_COMMENT);
         
         this.sender = sender;

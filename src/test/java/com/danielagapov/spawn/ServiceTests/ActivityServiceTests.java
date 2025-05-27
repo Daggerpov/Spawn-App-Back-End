@@ -24,7 +24,7 @@ import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
-import com.danielagapov.spawn.Services.Activity.Activitieservice;
+import com.danielagapov.spawn.Services.Activity.ActivityService;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -34,7 +34,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.context.ApplicationActivityPublisher;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.time.Instant;
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class ActivitieserviceTests {
+public class ActivityServiceTests {
 
     @Mock
     private IActivityRepository ActivityRepository;
@@ -75,10 +75,10 @@ public class ActivitieserviceTests {
     private IChatMessageService chatMessageService;
     
     @Mock
-    private ApplicationActivityPublisher ActivityPublisher;
+    private ApplicationEventPublisher ActivityPublisher;
 
     @InjectMocks
-    private Activitieservice Activitieservice;
+    private ActivityService ActivityService;
 
     @BeforeEach
     void setup() {
@@ -127,7 +127,7 @@ public class ActivitieserviceTests {
         when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<ActivityDTO> result = Activitieservice.getAllActivities();
+        List<ActivityDTO> result = ActivityService.getAllActivities();
 
         assertFalse(result.isEmpty());
         // For ActivityDTO (record), use getTitle() accessor.
@@ -150,7 +150,7 @@ public class ActivitieserviceTests {
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
-        ActivityDTO result = Activitieservice.getActivityById(ActivityId);
+        ActivityDTO result = ActivityService.getActivityById(ActivityId);
 
         assertEquals("Test Activity", result.getTitle());
         verify(ActivityRepository, times(1)).findById(ActivityId);
@@ -162,7 +162,7 @@ public class ActivitieserviceTests {
         when(ActivityRepository.existsById(ActivityId)).thenReturn(false);
 
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> Activitieservice.deleteActivityById(ActivityId));
+                () -> ActivityService.deleteActivityById(ActivityId));
 
         assertTrue(exception.getMessage().contains(ActivityId.toString()));
         verify(ActivityRepository, never()).deleteById(ActivityId);
@@ -187,7 +187,7 @@ public class ActivitieserviceTests {
         when(userService.getUserEntityById(ActivityDTO.getCreatorUserId())).thenReturn(creator);
         when(ActivityRepository.save(any(Activity.class))).thenReturn(ActivityMapper.toEntity(ActivityDTO, location, creator));
 
-        assertDoesNotThrow(() -> Activitieservice.saveActivity(ActivityDTO));
+        assertDoesNotThrow(() -> ActivityService.saveActivity(ActivityDTO));
 
         verify(ActivityRepository, times(1)).save(any(Activity.class));
     }
@@ -205,7 +205,7 @@ public class ActivitieserviceTests {
         });
 
         BaseSaveException exception = assertThrows(BaseSaveException.class,
-                () -> Activitieservice.saveActivity(ActivityDTO));
+                () -> ActivityService.saveActivity(ActivityDTO));
 
         assertTrue(exception.getMessage().contains("Failed to save Activity"));
         verify(ActivityRepository, times(1)).save(any(Activity.class));
@@ -216,7 +216,7 @@ public class ActivitieserviceTests {
         UUID ActivityId = UUID.randomUUID();
         when(ActivityRepository.existsById(ActivityId)).thenReturn(true);
 
-        assertDoesNotThrow(() -> Activitieservice.deleteActivityById(ActivityId));
+        assertDoesNotThrow(() -> ActivityService.deleteActivityById(ActivityId));
 
         verify(ActivityRepository, times(1)).deleteById(ActivityId);
     }
@@ -228,7 +228,7 @@ public class ActivitieserviceTests {
         doThrow(new DataAccessException("Database error") {
         }).when(ActivityRepository).deleteById(ActivityId);
 
-        boolean result = Activitieservice.deleteActivityById(ActivityId);
+        boolean result = ActivityService.deleteActivityById(ActivityId);
 
         assertFalse(result);
         verify(ActivityRepository, times(1)).deleteById(ActivityId);
@@ -289,7 +289,7 @@ public class ActivitieserviceTests {
         Set<UUID> expectedInvited = new HashSet<>(Arrays.asList(friendTagUserId, explicitInviteId));
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(new ArrayList<>(expectedInvited));
 
-        ActivityDTO ActivityDTO = (ActivityDTO) Activitieservice.createActivity(creationDTO);
+        ActivityDTO ActivityDTO = (ActivityDTO) ActivityService.createActivity(creationDTO);
 
         assertNotNull(ActivityDTO);
         assertEquals("Test Activity", ActivityDTO.getTitle());
@@ -332,7 +332,7 @@ public class ActivitieserviceTests {
         });
 
         ApplicationException ex = assertThrows(ApplicationException.class, () ->
-                Activitieservice.createActivity(creationDTO));
+                ActivityService.createActivity(creationDTO));
         assertNotNull(ex.getCause());
         assertTrue(ex.getMessage().contains("Failed to create Activity"));
     }
@@ -386,7 +386,7 @@ public class ActivitieserviceTests {
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of(commonUserId));
         when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
 
-        ActivityDTO ActivityDTO = (ActivityDTO) Activitieservice.createActivity(creationDTO);
+        ActivityDTO ActivityDTO = (ActivityDTO) ActivityService.createActivity(creationDTO);
 
         assertNotNull(ActivityDTO);
         assertEquals("Merged Invites Activity", ActivityDTO.getTitle());
@@ -424,7 +424,7 @@ public class ActivitieserviceTests {
         dummyEU.setStatus(ParticipationStatus.invited);
         when(activityUserRepository.findByActivity_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
 
-        List<FullFeedActivityDTO> fullActivities = Activitieservice.getAllFullActivities();
+        List<FullFeedActivityDTO> fullActivities = ActivityService.getAllFullActivities();
 
         assertNotNull(fullActivities);
         assertFalse(fullActivities.isEmpty());
@@ -474,7 +474,7 @@ public class ActivitieserviceTests {
         when(activityUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
 
         // Call the service method
-        FullFeedActivityDTO fullActivity = Activitieservice.getFullActivityById(ActivityId, requestingUserId);
+        FullFeedActivityDTO fullActivity = ActivityService.getFullActivityById(ActivityId, requestingUserId);
 
         // Assertions
         assertNotNull(fullActivity);
@@ -498,7 +498,7 @@ public class ActivitieserviceTests {
         when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<ActivityDTO> Activities = Activitieservice.getActivitiesByFriendTagId(tagId);
+        List<ActivityDTO> Activities = ActivityService.getActivitiesByFriendTagId(tagId);
 
         assertNotNull(Activities);
         assertFalse(Activities.isEmpty());
@@ -514,7 +514,7 @@ public class ActivitieserviceTests {
         when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<ActivityDTO> Activities = Activitieservice.getActivitiesByOwnerId(ownerId);
+        List<ActivityDTO> Activities = ActivityService.getActivitiesByOwnerId(ownerId);
 
         assertNotNull(Activities);
         assertFalse(Activities.isEmpty());
@@ -539,7 +539,7 @@ public class ActivitieserviceTests {
         updatedActivity.setCreator(dummyCreator);
         when(ActivityRepository.save(existingActivity)).thenReturn(updatedActivity);
 
-        ActivityDTO result = Activitieservice.replaceActivity(newActivityDTO, ActivityId);
+        ActivityDTO result = ActivityService.replaceActivity(newActivityDTO, ActivityId);
 
         assertNotNull(result);
         assertEquals("New Title", result.getTitle());
@@ -562,7 +562,7 @@ public class ActivitieserviceTests {
         newActivity.setCreator(dummyCreator);
         when(ActivityRepository.save(any(Activity.class))).thenReturn(newActivity);
 
-        ActivityDTO result = Activitieservice.replaceActivity(newActivityDTO, ActivityId);
+        ActivityDTO result = ActivityService.replaceActivity(newActivityDTO, ActivityId);
 
         assertNotNull(result);
         assertEquals("Created Activity", result.getTitle());
@@ -588,7 +588,7 @@ public class ActivitieserviceTests {
                 user1.getId(), List.of(), "user1", "pic.jpg", "First Last", "bio", List.of(), "email1@example.com");
         when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
 
-        List<UserDTO> participants = Activitieservice.getParticipatingUsersByActivityId(ActivityId);
+        List<UserDTO> participants = ActivityService.getParticipatingUsersByActivityId(ActivityId);
 
         assertNotNull(participants);
         assertEquals(1, participants.size());
@@ -612,7 +612,7 @@ public class ActivitieserviceTests {
         // Ensure we fetch by both ActivityId and userId
         when(activityUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
 
-        ParticipationStatus status = Activitieservice.getParticipationStatus(ActivityId, userId);
+        ParticipationStatus status = ActivityService.getParticipationStatus(ActivityId, userId);
 
         assertEquals(ParticipationStatus.participating, status);
     }
@@ -632,7 +632,7 @@ public class ActivitieserviceTests {
         eu.setStatus(ParticipationStatus.invited);
         when(activityUserRepository.findByActivity_Id(ActivityId)).thenReturn(List.of(eu));
 
-        ParticipationStatus status = Activitieservice.getParticipationStatus(ActivityId, userId);
+        ParticipationStatus status = ActivityService.getParticipationStatus(ActivityId, userId);
 
         assertEquals(ParticipationStatus.notInvited, status);
     }
@@ -655,7 +655,7 @@ public class ActivitieserviceTests {
         Activity Activity = createDummyActivity(ActivityId, "Invite Test", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
         when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
 
-        boolean alreadyInvited = Activitieservice.inviteUser(ActivityId, userId);
+        boolean alreadyInvited = ActivityService.inviteUser(ActivityId, userId);
 
         assertFalse(alreadyInvited);
         verify(activityUserRepository, times(1)).save(any(ActivityUser.class));
@@ -686,7 +686,7 @@ public class ActivitieserviceTests {
         when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity)); // PrActivities NotFoundException
 
         // Call the method
-        boolean result = Activitieservice.inviteUser(ActivityId, userId);
+        boolean result = ActivityService.inviteUser(ActivityId, userId);
 
         // Assertions
         assertTrue(result);
@@ -710,7 +710,7 @@ public class ActivitieserviceTests {
         when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<ActivityDTO> Activities = Activitieservice.getActivitiesInvitedTo(userId);
+        List<ActivityDTO> Activities = ActivityService.getActivitiesInvitedTo(userId);
 
         assertNotNull(Activities);
         assertEquals(1, Activities.size());
@@ -749,7 +749,7 @@ public class ActivitieserviceTests {
         when(dummyTag.getColorHexCode()).thenReturn("#DUMMY");
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(Optional.of(dummyTag));
 
-        List<FullFeedActivityDTO> fullActivities = Activitieservice.getFullActivitiesInvitedTo(userId);
+        List<FullFeedActivityDTO> fullActivities = ActivityService.getFullActivitiesInvitedTo(userId);
 
         assertNotNull(fullActivities);
         assertFalse(fullActivities.isEmpty());
@@ -778,7 +778,7 @@ public class ActivitieserviceTests {
         when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByActivityId(ActivityDTO.getId())).thenReturn(List.of());
 
-        FullFeedActivityDTO fullActivity = Activitieservice.getFullActivityByActivity(ActivityDTO, null, new HashSet<>());
+        FullFeedActivityDTO fullActivity = ActivityService.getFullActivityByActivity(ActivityDTO, null, new HashSet<>());
 
         assertNotNull(fullActivity);
         // For ActivityDTO record, use ActivityDTO.getTitle() accessor.
@@ -798,7 +798,7 @@ public class ActivitieserviceTests {
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
         when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, creatorId)).thenReturn(Optional.of(friendTag));
 
-        String colorHex = Activitieservice.getFriendTagColorHexCodeForRequestingUser(ActivityDTO, requestingUserId);
+        String colorHex = ActivityService.getFriendTagColorHexCodeForRequestingUser(ActivityDTO, requestingUserId);
 
         assertEquals("#ABCDEF", colorHex);
     }
@@ -830,7 +830,7 @@ public class ActivitieserviceTests {
         // Stub friend tag lookup to return null (i.e. no friend tag applies).
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
-        List<FullFeedActivityDTO> fullActivities = Activitieservice.convertActivitiesToFullFeedActivities(Activities, requestingUserId);
+        List<FullFeedActivityDTO> fullActivities = ActivityService.convertActivitiesToFullFeedActivities(Activities, requestingUserId);
         assertNotNull(fullActivities, "The converted list should not be null");
         assertEquals(2, fullActivities.size(), "There should be two full Activities in the converted list");
     }
@@ -864,7 +864,7 @@ public class ActivitieserviceTests {
         validActivityUser.setStatus(ParticipationStatus.participating);
         when(activityUserRepository.findByActivity_Id(any(UUID.class))).thenReturn(List.of(validActivityUser));
 
-        List<FullFeedActivityDTO> fullActivities = Activitieservice.convertActivitiesToFullFeedSelfOwnedActivities(Activities, requestingUserId);
+        List<FullFeedActivityDTO> fullActivities = ActivityService.convertActivitiesToFullFeedSelfOwnedActivities(Activities, requestingUserId);
 
         assertNotNull(fullActivities);
         assertEquals(1, fullActivities.size());
@@ -892,7 +892,7 @@ public class ActivitieserviceTests {
         invitedActivityUser.setStatus(ParticipationStatus.invited);
         invitedActivityUser.setActivity(Activity);
 
-        // Mock the method that Activitieservice.toggleParticipation actually calls
+        // Mock the method that ActivityService.toggleParticipation actually calls
         when(activityUserRepository.findByActivity_IdAndUser_Id(ActivityId, userId)).thenReturn(Optional.of(invitedActivityUser));
         when(activityUserRepository.save(any(ActivityUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
@@ -907,12 +907,12 @@ public class ActivitieserviceTests {
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
         when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
-        FullFeedActivityDTO result = Activitieservice.toggleParticipation(ActivityId, userId);
+        FullFeedActivityDTO result = ActivityService.toggleParticipation(ActivityId, userId);
         assertNotNull(result);
         assertEquals(ParticipationStatus.participating, invitedActivityUser.getStatus());
         
         // Test toggle from participating to invited
-        result = Activitieservice.toggleParticipation(ActivityId, userId);
+        result = ActivityService.toggleParticipation(ActivityId, userId);
         assertNotNull(result);
         assertEquals(ParticipationStatus.invited, invitedActivityUser.getStatus());
         

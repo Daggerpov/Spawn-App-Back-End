@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Activities;
+package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.Enums.NotificationType;
 
@@ -11,14 +11,14 @@ import java.util.UUID;
 /**
  * Base class for notification Activities in the application
  */
-public abstract class NotificationActivity {
+public abstract class NotificationEvent {
     private final NotificationType type;
     private final Map<String, String> data;
     private final List<UUID> targetUserIds = new ArrayList<>();
     private String title;
     private String message;
 
-    protected NotificationActivity(NotificationType type) {
+    protected NotificationEvent(NotificationType type) {
         this.type = type;
         this.data = new HashMap<>();
         this.data.put("type", type.name().toLowerCase());

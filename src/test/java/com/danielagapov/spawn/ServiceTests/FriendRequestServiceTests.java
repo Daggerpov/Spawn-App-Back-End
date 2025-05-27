@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.context.ApplicationActivityPublisher;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.util.List;
@@ -44,7 +44,7 @@ class FriendRequestServiceTests {
     private ILogger logger;
     
     @Mock
-    private ApplicationActivityPublisher ActivityPublisher;
+    private ApplicationEventPublisher ActivityPublisher;
 
     @Mock
     private CacheManager cacheManager;

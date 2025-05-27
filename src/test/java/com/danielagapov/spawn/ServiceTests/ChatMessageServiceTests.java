@@ -16,7 +16,7 @@ import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
-import com.danielagapov.spawn.Services.Activity.IActivitieservice;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.context.ApplicationActivityPublisher;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.time.Instant;
@@ -49,7 +49,7 @@ public class ChatMessageServiceTests {
     private IActivityRepository ActivityRepository;
 
     @Mock
-    private IActivitieservice Activitieservice;
+    private IActivityService ActivityService;
 
     @Mock
     private IFriendTagService ftService;
@@ -64,7 +64,7 @@ public class ChatMessageServiceTests {
     private IActivityUserRepository ActivityUserRepository;
 
     @Mock
-    private ApplicationActivityPublisher ActivityPublisher;
+    private ApplicationEventPublisher ActivityPublisher;
 
     @InjectMocks
     private ChatMessageService chatMessageService;

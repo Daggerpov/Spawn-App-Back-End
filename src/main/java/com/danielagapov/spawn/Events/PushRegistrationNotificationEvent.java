@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Activities;
+package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Models.User.User;
@@ -6,10 +6,10 @@ import com.danielagapov.spawn.Models.User.User;
 /**
  * Activity for when a device is registered for push notifications
  */
-public class PushRegistrationNotificationActivity extends NotificationActivity {
+public class PushRegistrationNotificationEvent extends NotificationEvent {
     private final User user;
 
-    public PushRegistrationNotificationActivity(User user) {
+    public PushRegistrationNotificationEvent(User user) {
         super(NotificationType.PUSH_REGISTRATION);
         
         this.user = user;

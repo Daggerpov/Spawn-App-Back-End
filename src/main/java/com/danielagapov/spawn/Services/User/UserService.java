@@ -62,7 +62,7 @@ public class UserService implements IUserService {
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
-                       IEventUserRepository eventUserRepository,
+                       IActivityUserRepository eventUserRepository,
                        IUserFriendTagRepository uftRepository,
                        IFriendTagService friendTagService,
                        IFriendTagRepository friendTagRepository,

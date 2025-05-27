@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Activities;
+package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Models.Activity;
@@ -6,12 +6,12 @@ import com.danielagapov.spawn.Models.User.User;
 
 
 /**
- * Activity for when a user's participation status changes in an activity
+ * Event for when a user's participation status changes in an activity
  */
-public class ActivityParticipationNotificationActivity extends NotificationActivity {
+public class ActivityParticipationNotificationEvent extends NotificationEvent {
     private final Activity activity;
 
-    private ActivityParticipationNotificationActivity(User participant, Activity activity, NotificationType type) {
+    private ActivityParticipationNotificationEvent(User participant, Activity activity, NotificationType type) {
         super(type);
 
         this.activity = activity;
@@ -33,19 +33,19 @@ public class ActivityParticipationNotificationActivity extends NotificationActiv
         findTargetUsers();
     }
 
-    public static ActivityParticipationNotificationActivity forJoining(User participant, Activity activity) {
-        return new ActivityParticipationNotificationActivity(
+    public static ActivityParticipationNotificationEvent forJoining(User participant, Activity activity) {
+        return new ActivityParticipationNotificationEvent(
                 participant,
                 activity,
-                NotificationType.Activity_PARTICIPATION
+                NotificationType.ACTIVITY_PARTICIPATION
         );
     }
 
-    public static ActivityParticipationNotificationActivity forLeaving(User participant, Activity activity) {
-        return new ActivityParticipationNotificationActivity(
+    public static ActivityParticipationNotificationEvent forLeaving(User participant, Activity activity) {
+        return new ActivityParticipationNotificationEvent(
                 participant,
                 activity,
-                NotificationType.Activity_PARTICIPATION_REVOKED
+                NotificationType.ACTIVITY_PARTICIPATION_REVOKED
         );
     }
     

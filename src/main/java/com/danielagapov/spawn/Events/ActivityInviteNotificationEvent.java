@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Activities;
+package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Models.Activity;
@@ -8,12 +8,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Activity for when users are invited to an activity
+ * Event for when users are invited to an activity
  */
-public class ActivityInviteNotificationActivity extends NotificationActivity {
+public class ActivityInviteNotificationEvent extends NotificationEvent {
     private final Set<UUID> invitedUserIds;
 
-    public ActivityInviteNotificationActivity(User creator, Activity activity, Set<UUID> invitedUserIds) {
+    public ActivityInviteNotificationEvent(User creator, Activity activity, Set<UUID> invitedUserIds) {
         super(NotificationType.Activity_INVITE);
         
         this.invitedUserIds = invitedUserIds;

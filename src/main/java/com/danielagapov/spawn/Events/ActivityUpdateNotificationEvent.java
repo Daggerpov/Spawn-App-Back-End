@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Activities;
+package com.danielagapov.spawn.Events;
 
 import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -12,12 +12,12 @@ import java.util.List;
 /**
  * Activity for when an activity is updated
  */
-public class ActivityUpdateNotificationActivity extends NotificationActivity {
+public class ActivityUpdateNotificationEvent extends NotificationEvent {
     private final User creator;
     private final Activity activity;
     private final IActivityUserRepository activityUserRepository;
 
-    public ActivityUpdateNotificationActivity(User creator, Activity activity, IActivityUserRepository activityUserRepository) {
+    public ActivityUpdateNotificationEvent(User creator, Activity activity, IActivityUserRepository activityUserRepository) {
         super(NotificationType.Activity_UPDATE);
         
         this.creator = creator;

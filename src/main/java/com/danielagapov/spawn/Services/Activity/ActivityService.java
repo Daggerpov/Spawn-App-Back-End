@@ -44,7 +44,7 @@ import com.danielagapov.spawn.Activities.ActivityParticipationNotificationActivi
 import com.danielagapov.spawn.Activities.ActivityUpdateNotificationActivity;
 
 @Service
-public class Activitieservice implements IActivitieservice {
+public class ActivityService implements IActivityService {
     private final IActivityRepository repository;
     private final ILocationRepository locationRepository;
     private final IActivityUserRepository activityUserRepository;
@@ -58,13 +58,13 @@ public class Activitieservice implements IActivitieservice {
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
-    public Activitieservice(IActivityRepository repository, ILocationRepository locationRepository,
+    public ActivityService(IActivityRepository repository, ILocationRepository locationRepository,
                         IActivityUserRepository ActivityUserRepository, IUserRepository userRepository,
                         IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
                         ILogger logger, ILocationService locationService, ApplicationActivityPublisher ActivityPublisher) {
         this.repository = repository;
         this.locationRepository = locationRepository;
-        this.ActivityUserRepository = ActivityUserRepository;
+        this.activityUserRepository = ActivityUserRepository;
         this.userRepository = userRepository;
         this.friendTagService = friendTagService;
         this.userService = userService;
