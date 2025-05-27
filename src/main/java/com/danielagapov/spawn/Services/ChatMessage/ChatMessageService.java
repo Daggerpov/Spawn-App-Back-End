@@ -47,13 +47,13 @@ public class ChatMessageService implements IChatMessageService {
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
     private final IActivityUserRepository activityUserRepository;
-    private final ApplicationEventPublisher ActivityPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IActivityRepository ActivityRepository, IChatMessageLikesRepository chatMessageLikesRepository,
                               IFriendTagService ftService, IUserRepository userRepository, ILogger logger,
                               IActivityUserRepository activityUserRepository,
-                              ApplicationEventPublisher ActivityPublisher) {
+                              ApplicationEventPublisher eventPublisher) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.ActivityRepository = ActivityRepository;
@@ -62,7 +62,7 @@ public class ChatMessageService implements IChatMessageService {
         this.userRepository = userRepository;
         this.logger = logger;
         this.activityUserRepository = activityUserRepository;
-        this.ActivityPublisher = ActivityPublisher;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override

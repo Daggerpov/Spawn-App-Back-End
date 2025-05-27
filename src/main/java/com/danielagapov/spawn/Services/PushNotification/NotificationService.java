@@ -46,7 +46,7 @@ public class NotificationService {
         this.deviceTokenRepository = deviceTokenRepository;
         this.preferencesRepository = preferencesRepository;
         this.userService = userService;
-        this.ActivityPublisher = ActivityPublisher;
+        this.eventPublisher = eventPublisher;
         this.logger = logger;
         this.fcmService = fcmService;
     }
@@ -249,23 +249,23 @@ public class NotificationService {
      * Process notification Activities
      */
     @EventListener
-    public void handleNotificationEvent(NotificationEvent Activity) throws Exception {
+    public void handleNotificationEvent(NotificationEvent event) throws Exception {
         try {
-            List<UUID> targetUserIds = Activity.getTargetUserIds();
+            List<UUID> targetUserIds = event.getTargetUserIds();
 
-            logger.info("Handling notification Activity: " + Activity.getClass().getSimpleName() +
+            logger.info("Handling notification event: " + event.getClass().getSimpleName() +
                     " for " + targetUserIds.size() + " users");
 
             if (targetUserIds.isEmpty()) {
-                logger.warn("Activity has no target users, skipping");
+                logger.warn("Event has no target users, skipping");
                 return;
             }
 
-            processNotificationsForUsers(targetUserIds, Activity);
+            processNotificationsForUsers(targetUserIds, event);
 
-            logger.info("Notification Activity processing completed");
+            logger.info("Notification event processing completed");
         } catch (Exception e) {
-            logger.error("Error handling notification Activity: " + e.getMessage());
+            logger.error("Error handling notification event: " + e.getMessage());
             throw e;
         }
     }
@@ -273,31 +273,31 @@ public class NotificationService {
     /**
      * Process notifications for multiple users
      */
-    private void processNotificationsForUsers(List<UUID> userIds, NotificationEvent Activity) throws Exception {
+    private void processNotificationsForUsers(List<UUID> userIds, NotificationEvent event) throws Exception {
         for (UUID userId : userIds) {
-            processNotificationForUser(userId, Activity);
+            processNotificationForUser(userId, event);
         }
     }
 
     /**
      * Process notification for a single user
      */
-    private void processNotificationForUser(UUID userId, NotificationEvent Activity) throws Exception {
+    private void processNotificationForUser(UUID userId, NotificationEvent event) throws Exception {
         try {
             User user = userService.getUserEntityById(userId);
             NotificationPreferences preferences = preferencesRepository.findByUser(user).orElse(null);
 
-            boolean shouldSendNotification = shouldSendNotificationBasedOnPreferences(preferences, Activity.getType());
+            boolean shouldSendNotification = shouldSendNotificationBasedOnPreferences(preferences, event.getType());
 
             if (shouldSendNotification) {
                 sendNotificationToUser(
                         userId,
-                        Activity.getTitle(),
-                        Activity.getMessage(),
-                        Activity.getData());
+                        event.getTitle(),
+                        event.getMessage(),
+                        event.getData());
             } else {
                 logger.info("Notification skipped for user " + LoggingUtils.formatUserInfo(user) +
-                        " due to preferences setting for type " + Activity.getType());
+                        " due to preferences setting for type " + event.getType());
             }
         } catch (Exception e) {
             logger.error("Error processing notification for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());

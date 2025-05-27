@@ -31,20 +31,20 @@ public class CalendarEventHandler {
     @EventListener
     public void handleActivityInviteNotification(ActivityInviteNotificationEvent event) {
         // Get the Activity ID from the notification data
-        String ActivityIdStr = Activity.getData().get("ActivityId");
-        String creatorIdStr = Activity.getData().get("creatorId");
+        String activityIdStr = event.getData().get("activityId");
+        String creatorIdStr = event.getData().get("creatorId");
         
         if (creatorIdStr != null) {
             try {
                 UUID creatorId = UUID.fromString(creatorIdStr);
                 clearCacheForUser(creatorId);
             } catch (IllegalArgumentException e) {
-                logger.error("Invalid creator ID format in Activity notification: " + creatorIdStr);
+                logger.error("Invalid creator ID format in activity notification: " + creatorIdStr);
             }
         }
         
         // Clear cache for all target users (invitees)
-        Activity.getTargetUserIds().forEach(this::clearCacheForUser);
+        event.getTargetUserIds().forEach(this::clearCacheForUser);
     }
 
     /**
@@ -52,22 +52,22 @@ public class CalendarEventHandler {
      * Clears the calendar cache for all users involved.
      */
     @EventListener
-    public void handleActivityUpdateNotification(ActivityUpdateNotificationEvent Activity) {
+    public void handleActivityUpdateNotification(ActivityUpdateNotificationEvent event) {
         // Get the Activity ID and creator ID from the notification data
-        String ActivityIdStr = Activity.getData().get("ActivityId");
-        String creatorIdStr = Activity.getData().get("creatorId");
+        String activityIdStr = event.getData().get("activityId");
+        String creatorIdStr = event.getData().get("creatorId");
         
         if (creatorIdStr != null) {
             try {
                 UUID creatorId = UUID.fromString(creatorIdStr);
                 clearCacheForUser(creatorId);
             } catch (IllegalArgumentException e) {
-                logger.error("Invalid creator ID format in Activity notification: " + creatorIdStr);
+                logger.error("Invalid creator ID format in activity notification: " + creatorIdStr);
             }
         }
         
         // Clear cache for all target users
-        Activity.getTargetUserIds().forEach(this::clearCacheForUser);
+        event.getTargetUserIds().forEach(this::clearCacheForUser);
     }
 
     /**
@@ -75,9 +75,9 @@ public class CalendarEventHandler {
      * Clears the calendar cache for the user whose participation status changed.
      */
     @EventListener
-    public void handleActivityParticipationChange(ActivityParticipationNotificationEvent Activity) {
+    public void handleActivityParticipationChange(ActivityParticipationNotificationEvent event) {
         // Get the user ID from the notification data
-        String userIdStr = Activity.getData().get("userId");
+        String userIdStr = event.getData().get("userId");
         if (userIdStr != null) {
             try {
                 UUID userId = UUID.fromString(userIdStr);
@@ -87,8 +87,8 @@ public class CalendarEventHandler {
             }
         }
         
-        // Clear cache for Activity creator (who is the target of the notification)
-        Activity.getTargetUserIds().forEach(this::clearCacheForUser);
+        // Clear cache for activity creator (who is the target of the notification)
+        event.getTargetUserIds().forEach(this::clearCacheForUser);
     }
 
     /**
