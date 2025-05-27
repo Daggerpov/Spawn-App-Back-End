@@ -8,7 +8,7 @@ import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Services.Activity.IActivitieservice;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +19,10 @@ import java.util.UUID;
 @RestController()
 @RequestMapping("api/v1/Activities")
 public class ActivityController {
-    private final IActivitieservice Activitieservice;
+    private final IActivityService ActivityService;
 
-    public ActivityController(IActivitieservice Activitieservice) {
-        this.Activitieservice = Activitieservice;
+    public ActivityController(IActivityService ActivityService) {
+        this.ActivityService = ActivityService;
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful.
@@ -33,7 +33,7 @@ public class ActivityController {
     @GetMapping("user/{creatorUserId}")
     public ResponseEntity<?> getActivitiesCreatedByUserId(@PathVariable UUID creatorUserId) {
         try {
-            return new ResponseEntity<>(Activitieservice.convertActivitiesToFullFeedSelfOwnedActivities(Activitieservice.getActivitiesByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.convertActivitiesToFullFeedSelfOwnedActivities(ActivityService.getActivitiesByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // user or activity not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -51,7 +51,7 @@ public class ActivityController {
         }
         
         try {
-            return new ResponseEntity<>(Activitieservice.getProfileActivities(profileUserId, requestingUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getProfileActivities(profileUserId, requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // User not found - return 404
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -67,7 +67,7 @@ public class ActivityController {
         if (friendTagFilterId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 
         try {
-            return new ResponseEntity<>(Activitieservice.getFilteredFeedActivitiesByFriendTagId(friendTagFilterId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getFilteredFeedActivitiesByFriendTagId(friendTagFilterId), HttpStatus.OK);
         } catch (BasesNotFoundException e) {
             // thrown list of activities not found for given user id
             // if entities not found is Activity: return response with empty list and 200 status
@@ -90,7 +90,7 @@ public class ActivityController {
     @PostMapping
     public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityCreationDTO activityCreationDTO) {
         try {
-            AbstractActivityDTO createdActivity = Activitieservice.createActivity(activityCreationDTO);
+            AbstractActivityDTO createdActivity = ActivityService.createActivity(activityCreationDTO);
             return new ResponseEntity<>(createdActivity, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -106,7 +106,7 @@ public class ActivityController {
     public ResponseEntity<?> replaceActivity(@RequestBody ActivityDTO newActivity, @PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(Activitieservice.replaceActivity(newActivity, id), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.replaceActivity(newActivity, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // Only return 404 if user doesn't exist, not if activity doesn't exist
             if (e.entityType == EntityType.User) {
@@ -131,7 +131,7 @@ public class ActivityController {
     public ResponseEntity<?> deleteActivity(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            boolean isDeleted = Activitieservice.deleteActivityById(id);
+            boolean isDeleted = ActivityService.deleteActivityById(id);
             if (isDeleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
             } else {
@@ -151,7 +151,7 @@ public class ActivityController {
     public ResponseEntity<?> toggleParticipation(@PathVariable UUID ActivityId, @PathVariable UUID userId) {
         if (userId == null || ActivityId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            FullFeedActivityDTO updatedActivityAfterParticipationToggle = Activitieservice.toggleParticipation(ActivityId, userId);
+            FullFeedActivityDTO updatedActivityAfterParticipationToggle = ActivityService.toggleParticipation(ActivityId, userId);
             return new ResponseEntity<>(updatedActivityAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // Only return 404 for appropriate entity types
@@ -179,7 +179,7 @@ public class ActivityController {
     public ResponseEntity<?> getFeedActivities(@PathVariable UUID requestingUserId) {
         if (requestingUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(Activitieservice.getFeedActivities(requestingUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getFeedActivities(requestingUserId), HttpStatus.OK);
         } catch (BasesNotFoundException e) {
             // thrown list of activities not found for given user id
             // if entities not found is Activity: return response with empty list and 200 status
@@ -205,7 +205,7 @@ public class ActivityController {
         }
 
         try {
-            return new ResponseEntity<>(Activitieservice.getFullActivityById(id, requestingUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getFullActivityById(id, requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // Activity or User not found - only return 404 if it's the user that's not found
             if (e.entityType == EntityType.User) {

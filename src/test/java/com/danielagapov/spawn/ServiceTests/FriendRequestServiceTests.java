@@ -44,7 +44,7 @@ class FriendRequestServiceTests {
     private ILogger logger;
     
     @Mock
-    private ApplicationEventPublisher ActivityPublisher;
+    private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private CacheManager cacheManager;

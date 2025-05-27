@@ -37,7 +37,7 @@ public class ActivityParticipationNotificationEvent extends NotificationEvent {
         return new ActivityParticipationNotificationEvent(
                 participant,
                 activity,
-                NotificationType.ACTIVITY_PARTICIPATION
+                NotificationType.Activity_PARTICIPATION
         );
     }
 
@@ -45,7 +45,7 @@ public class ActivityParticipationNotificationEvent extends NotificationEvent {
         return new ActivityParticipationNotificationEvent(
                 participant,
                 activity,
-                NotificationType.ACTIVITY_PARTICIPATION_REVOKED
+                NotificationType.Activity_PARTICIPATION_REVOKED
         );
     }
     

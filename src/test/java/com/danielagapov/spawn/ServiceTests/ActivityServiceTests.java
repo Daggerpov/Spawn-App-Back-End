@@ -75,7 +75,7 @@ public class ActivityServiceTests {
     private IChatMessageService chatMessageService;
     
     @Mock
-    private ApplicationEventPublisher ActivityPublisher;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ActivityService ActivityService;

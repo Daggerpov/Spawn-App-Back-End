@@ -10,7 +10,7 @@ import com.danielagapov.spawn.Models.ReportedContent;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IReportedContentRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
-import com.danielagapov.spawn.Services.Activity.IActivitieservice;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Exceptions.Logger.Logger;
 import lombok.AllArgsConstructor;
@@ -28,7 +28,7 @@ import static com.danielagapov.spawn.Enums.ResolutionStatus.PENDING;
 public class ReportContentService implements IReportContentService {
     private final IReportedContentRepository repository;
     private final IUserService userService;
-    private final IActivitieservice Activitieservice;
+    private final IActivityService ActivityService;
     private final IChatMessageService chatMessageService;
     private final Logger logger;
 
@@ -172,7 +172,7 @@ public class ReportContentService implements IReportContentService {
      * Made a wrapper method for improved readability in the caller method.
      */
     private User getActivityOwnerByContentId(UUID activityId) {
-        return userService.getUserEntityById(Activitieservice.getActivityById(activityId).getCreatorUserId());
+        return userService.getUserEntityById(ActivityService.getActivityById(activityId).getCreatorUserId());
     }
 
     /**

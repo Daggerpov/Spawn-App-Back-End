@@ -3,8 +3,8 @@ package com.danielagapov.spawn.Services.PushNotification;
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
 import com.danielagapov.spawn.Enums.NotificationType;
-import com.danielagapov.spawn.Activities.NotificationActivity;
-import com.danielagapov.spawn.Activities.PushRegistrationNotificationActivity;
+import com.danielagapov.spawn.Events.NotificationEvent;
+import com.danielagapov.spawn.Events.PushRegistrationNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.DeviceToken;
 import com.danielagapov.spawn.Models.NotificationPreferences;
@@ -15,7 +15,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.Activity.ActivityListener;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,7 +85,7 @@ public class NotificationService {
                     + user.getName() + " and username: " + user.getUsername());
 
             // Send a test notification to confirm registration
-            ActivityPublisher.publishActivity(new PushRegistrationNotificationActivity(user));
+            eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));
             logger.info("Sent test notification for token registration confirmation");
         } catch (Exception e) {
             logger.error("Error registering device token: " + e.getMessage());
@@ -248,8 +248,8 @@ public class NotificationService {
     /**
      * Process notification Activities
      */
-    @ActivityListener
-    public void handleNotificationActivity(NotificationActivity Activity) throws Exception {
+    @EventListener
+    public void handleNotificationEvent(NotificationEvent Activity) throws Exception {
         try {
             List<UUID> targetUserIds = Activity.getTargetUserIds();
 
@@ -273,7 +273,7 @@ public class NotificationService {
     /**
      * Process notifications for multiple users
      */
-    private void processNotificationsForUsers(List<UUID> userIds, NotificationActivity Activity) throws Exception {
+    private void processNotificationsForUsers(List<UUID> userIds, NotificationEvent Activity) throws Exception {
         for (UUID userId : userIds) {
             processNotificationForUser(userId, Activity);
         }
@@ -282,7 +282,7 @@ public class NotificationService {
     /**
      * Process notification for a single user
      */
-    private void processNotificationForUser(UUID userId, NotificationActivity Activity) throws Exception {
+    private void processNotificationForUser(UUID userId, NotificationEvent Activity) throws Exception {
         try {
             User user = userService.getUserEntityById(userId);
             NotificationPreferences preferences = preferencesRepository.findByUser(user).orElse(null);

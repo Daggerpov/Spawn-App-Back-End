@@ -30,7 +30,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.ApplicationActivityPublisher;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -39,9 +39,9 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.danielagapov.spawn.Activities.ActivityInviteNotificationActivity;
-import com.danielagapov.spawn.Activities.ActivityParticipationNotificationActivity;
-import com.danielagapov.spawn.Activities.ActivityUpdateNotificationActivity;
+import com.danielagapov.spawn.Events.ActivityInviteNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityParticipationNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityUpdateNotificationEvent;
 
 @Service
 public class ActivityService implements IActivityService {
@@ -54,24 +54,24 @@ public class ActivityService implements IActivityService {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
     private final ILocationService locationService;
-    private final ApplicationActivityPublisher ActivityPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
     public ActivityService(IActivityRepository repository, ILocationRepository locationRepository,
-                        IActivityUserRepository ActivityUserRepository, IUserRepository userRepository,
+                        IActivityUserRepository activityUserRepository, IUserRepository userRepository,
                         IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService, ApplicationActivityPublisher ActivityPublisher) {
+                        ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.locationRepository = locationRepository;
-        this.activityUserRepository = ActivityUserRepository;
+        this.activityUserRepository = activityUserRepository;
         this.userRepository = userRepository;
         this.friendTagService = friendTagService;
         this.userService = userService;
         this.chatMessageService = chatMessageService;
         this.logger = logger;
         this.locationService = locationService;
-        this.ActivityPublisher = ActivityPublisher;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -238,12 +238,12 @@ public class ActivityService implements IActivityService {
                 ActivityUser.setActivity(Activity);
                 ActivityUser.setUser(invitedUser);
                 ActivityUser.setStatus(ParticipationStatus.invited);
-                ActivityUserRepository.save(ActivityUser);
+                activityUserRepository.save(ActivityUser);
             }
 
             // Create and publish Activity invite notification directly
-            ActivityPublisher.publishActivity(
-                new ActivityInviteNotificationActivity(Activity.getCreator(), Activity, allInvitedUserIds)
+            eventPublisher.publishEvent(
+                new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, allInvitedUserIds)
             );
 
             return ActivityMapper.toDTO(Activity, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
@@ -293,8 +293,8 @@ public class ActivityService implements IActivityService {
             // Save updated Activity
             repository.save(Activity);
 
-            ActivityPublisher.publishActivity(
-                new ActivityUpdateNotificationActivity(Activity.getCreator(), Activity, ActivityUserRepository)
+            eventPublisher.publishEvent(
+                new ActivityUpdateNotificationEvent(Activity.getCreator(), Activity, activityUserRepository)
             );
             return constructDTOFromEntity(Activity);
         }).orElseGet(() -> {
@@ -306,8 +306,8 @@ public class ActivityService implements IActivityService {
             Activity ActivityEntity = ActivityMapper.toEntity(newActivity, location, creator);
             ActivityEntity = repository.save(ActivityEntity);
             
-            ActivityPublisher.publishActivity(
-                new ActivityUpdateNotificationActivity(ActivityEntity.getCreator(), ActivityEntity, ActivityUserRepository)
+            eventPublisher.publishEvent(
+                new ActivityUpdateNotificationEvent(ActivityEntity.getCreator(), ActivityEntity, activityUserRepository)
             );
             return constructDTOFromEntity(ActivityEntity);
         });
@@ -315,7 +315,7 @@ public class ActivityService implements IActivityService {
 
     private List<UUID> getParticipatingUserIdsByActivityId(UUID ActivityId) {
         try {
-            List<ActivityUser> ActivityUsers = ActivityUserRepository.findActivitiesByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating);
+            List<ActivityUser> ActivityUsers = activityUserRepository.findActivitiesByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating);
             return ActivityUsers.stream().map((ActivityUser -> ActivityUser.getUser().getId())).collect(Collectors.toList());
         } catch (DataAccessException e) {
             logger.error("Error finding Activities by Activity id: " + e.getMessage());
@@ -358,7 +358,7 @@ public class ActivityService implements IActivityService {
     @Override
     public List<UserDTO> getParticipatingUsersByActivityId(UUID ActivityId) {
         try {
-            List<ActivityUser> ActivityUsers = ActivityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating);
+            List<ActivityUser> ActivityUsers = activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating);
             return ActivityUsers.stream()
                     .map(ActivityUser -> userService.getUserById(ActivityUser.getUser().getId()))
                     .toList();
@@ -374,7 +374,7 @@ public class ActivityService implements IActivityService {
     @Override
     public ParticipationStatus getParticipationStatus(UUID ActivityId, UUID userId) {
         ActivityUsersId compositeId = new ActivityUsersId(ActivityId, userId);
-        return ActivityUserRepository.findById(compositeId)
+        return activityUserRepository.findById(compositeId)
                 .map(ActivityUser::getStatus)
                 .orElse(ParticipationStatus.notInvited);
     }
@@ -394,7 +394,7 @@ public class ActivityService implements IActivityService {
     })
     public boolean inviteUser(UUID ActivityId, UUID userId) {
         ActivityUsersId compositeId = new ActivityUsersId(ActivityId, userId);
-        Optional<ActivityUser> existingActivityUser = ActivityUserRepository.findById(compositeId);
+        Optional<ActivityUser> existingActivityUser = activityUserRepository.findById(compositeId);
 
         if (existingActivityUser.isPresent()) {
             // User is already invited
@@ -412,7 +412,7 @@ public class ActivityService implements IActivityService {
             newActivityUser.setUser(user);
             newActivityUser.setStatus(ParticipationStatus.invited);
 
-            ActivityUserRepository.save(newActivityUser);
+            activityUserRepository.save(newActivityUser);
             return false;
         }
     }
@@ -432,7 +432,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "filteredFeedActivities", key = "#userId")
     })
     public FullFeedActivityDTO toggleParticipation(UUID ActivityId, UUID userId) {
-        ActivityUser ActivityUser = ActivityUserRepository.findByActivity_IdAndUser_Id(ActivityId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.ActivityUser));
+        ActivityUser ActivityUser = activityUserRepository.findByActivity_IdAndUser_Id(ActivityId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.ActivityUser));
 
         if (ActivityUser.getStatus() == ParticipationStatus.participating) {
             ActivityUser.setStatus(ParticipationStatus.invited);
@@ -445,23 +445,23 @@ public class ActivityService implements IActivityService {
         final ParticipationStatus status = ActivityUser.getStatus();
         
         if (status == ParticipationStatus.participating) { // Status changed from invited to participating
-            ActivityPublisher.publishActivity(
-                ActivityParticipationNotificationActivity.forJoining(user, Activity)
+            eventPublisher.publishEvent(
+                ActivityParticipationNotificationEvent.forJoining(user, Activity)
             );
         } else if (status == ParticipationStatus.invited) { // Status changed from participating to invited
-            ActivityPublisher.publishActivity(
-                ActivityParticipationNotificationActivity.forLeaving(user, Activity)
+            eventPublisher.publishEvent(
+                ActivityParticipationNotificationEvent.forLeaving(user, Activity)
             );
         }
         
-        ActivityUserRepository.save(ActivityUser);
+        activityUserRepository.save(ActivityUser);
         return getFullActivityById(ActivityId, userId);
     }
 
     @Override
     @Cacheable(value = "ActivitiesInvitedTo", key = "#id")
     public List<ActivityDTO> getActivitiesInvitedTo(UUID id) {
-        List<ActivityUser> ActivityUsers = ActivityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
+        List<ActivityUser> ActivityUsers = activityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
         return getActivityDTOs(ActivityUsers.stream()
                 .map(ActivityUser::getActivity)
                 .toList());
@@ -485,7 +485,7 @@ public class ActivityService implements IActivityService {
     @Override
     @Cacheable(value = "fullActivitiesInvitedTo", key = "#id")
     public List<FullFeedActivityDTO> getFullActivitiesInvitedTo(UUID id) {
-        List<ActivityUser> ActivityUsers = ActivityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
+        List<ActivityUser> ActivityUsers = activityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
         return convertActivitiesToFullFeedActivities(
                 getActivityDTOs(ActivityUsers.stream()
                         .map(ActivityUser::getActivity)

@@ -51,8 +51,8 @@ public class CalendarEventHandler {
      * Handler for Activity update notifications.
      * Clears the calendar cache for all users involved.
      */
-    @ActivityListener
-    public void handleActivityUpdateNotification(ActivityUpdateNotificationActivity Activity) {
+    @EventListener
+    public void handleActivityUpdateNotification(ActivityUpdateNotificationEvent Activity) {
         // Get the Activity ID and creator ID from the notification data
         String ActivityIdStr = Activity.getData().get("ActivityId");
         String creatorIdStr = Activity.getData().get("creatorId");
@@ -74,8 +74,8 @@ public class CalendarEventHandler {
      * Handler for Activity participation changes.
      * Clears the calendar cache for the user whose participation status changed.
      */
-    @ActivityListener
-    public void handleActivityParticipationChange(ActivityParticipationNotificationActivity Activity) {
+    @EventListener
+    public void handleActivityParticipationChange(ActivityParticipationNotificationEvent Activity) {
         // Get the user ID from the notification data
         String userIdStr = Activity.getData().get("userId");
         if (userIdStr != null) {

@@ -26,18 +26,18 @@ public class CalendarService implements ICalendarService {
     private static final String FILTERED_CALENDAR_ACTIVITIES_CACHE = "filteredCalendarActivities";
     private final ILogger logger;
     private final IActivityRepository ActivityRepository;
-    private final IActivityUserRepository ActivityUserRepository;
+    private final IActivityUserRepository activityUserRepository;
     private final CacheManager cacheManager;
 
     public CalendarService(
         ILogger logger, 
         IActivityRepository ActivityRepository, 
-        IActivityUserRepository ActivityUserRepository,
+        IActivityUserRepository activityUserRepository,
         CacheManager cacheManager
     ) {
         this.logger = logger;
         this.ActivityRepository = ActivityRepository;
-        this.ActivityUserRepository = ActivityUserRepository;
+        this.activityUserRepository = activityUserRepository;
         this.cacheManager = cacheManager;
     }
 
@@ -145,7 +145,7 @@ public class CalendarService implements ICalendarService {
             logger.info("Found " + createdActivities.size() + " Activities created by user: " + userId);
             
             // 2. Get Activities the user is participating in
-            List<ActivityUser> participatingActivities = ActivityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
+            List<ActivityUser> participatingActivities = activityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
             logger.info("Found " + participatingActivities.size() + " Activities user is participating in, userId: " + userId);
             
             // Process Activities created by the user

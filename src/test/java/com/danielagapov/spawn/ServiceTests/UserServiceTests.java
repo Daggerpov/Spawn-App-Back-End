@@ -65,7 +65,7 @@ public class UserServiceTests {
     private IUserSearchService userSearchService;
 
     @Mock
-    private IActivityUserRepository ActivityUserRepository;
+    private IActivityUserRepository activityUserRepository;
 
     @Spy
     @InjectMocks
@@ -489,9 +489,9 @@ public class UserServiceTests {
         List<UUID> friendIds = Arrays.asList(friendId1, friendId2);
 
         // Mock the repository methods
-        when(ActivityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+        when(activityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
                 .thenReturn(pastActivityIds);
-        when(ActivityUserRepository.findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
+        when(activityUserRepository.findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
                 .thenReturn(pastActivityParticipants);
         when(userSearchService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of(blockedId, requestingUserId, friendId1, friendId2));
 
@@ -504,8 +504,8 @@ public class UserServiceTests {
         List<RecentlySpawnedUserDTO> result = userService.getRecentlySpawnedWithUsers(requestingUserId);
 
         // Verify repository method interactions
-        verify(ActivityUserRepository, times(1)).findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
-        verify(ActivityUserRepository, times(1)).findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating));
+        verify(activityUserRepository, times(1)).findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
+        verify(activityUserRepository, times(1)).findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating));
         verify(userService, times(1)).getBaseUserById(any(UUID.class));
 
         // Assert the results
@@ -523,9 +523,9 @@ public class UserServiceTests {
         List<UUID> friendIds = new ArrayList<>();
 
         // Mock the repository methods
-        when(ActivityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+        when(activityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
                 .thenReturn(pastActivityIds);
-        when(ActivityUserRepository.findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
+        when(activityUserRepository.findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
                 .thenReturn(pastActivityParticipantIds);
         when(userService.getFriendUserIdsByUserId(eq(requestingUserId)))
                 .thenReturn(friendIds);
@@ -542,7 +542,7 @@ public class UserServiceTests {
     void testGetRecentlySpawnedWithUsers_ExceptionHandling() {
         // Simulate an exception being thrown in the repository method
         UUID requestingUserId = UUID.randomUUID();
-        when(ActivityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+        when(activityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
                 .thenThrow(new RuntimeException("Database error"));
 
         // Call the method and assert it handles the exception
@@ -554,7 +554,7 @@ public class UserServiceTests {
         }
 
         // Verify the repository interaction
-        verify(ActivityUserRepository, times(1)).findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
+        verify(activityUserRepository, times(1)).findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
     }
 
     // Helper method to create an "Everyone" tag

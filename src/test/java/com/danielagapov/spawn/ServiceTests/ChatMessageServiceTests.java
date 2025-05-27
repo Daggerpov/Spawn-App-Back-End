@@ -61,10 +61,10 @@ public class ChatMessageServiceTests {
     private ILogger logger;
 
     @Mock
-    private IActivityUserRepository ActivityUserRepository;
+    private IActivityUserRepository activityUserRepository;
 
     @Mock
-    private ApplicationEventPublisher ActivityPublisher;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ChatMessageService chatMessageService;

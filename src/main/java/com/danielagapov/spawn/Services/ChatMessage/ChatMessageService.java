@@ -6,7 +6,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Activities.NewCommentNotificationActivity;
+import com.danielagapov.spawn.Events.NewCommentNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -26,7 +26,7 @@ import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.context.ApplicationActivityPublisher;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -46,14 +46,14 @@ public class ChatMessageService implements IChatMessageService {
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
-    private final IActivityUserRepository ActivityUserRepository;
-    private final ApplicationActivityPublisher ActivityPublisher;
+    private final IActivityUserRepository activityUserRepository;
+    private final ApplicationEventPublisher ActivityPublisher;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IActivityRepository ActivityRepository, IChatMessageLikesRepository chatMessageLikesRepository,
                               IFriendTagService ftService, IUserRepository userRepository, ILogger logger,
-                              IActivityUserRepository ActivityUserRepository,
-                              ApplicationActivityPublisher ActivityPublisher) {
+                              IActivityUserRepository activityUserRepository,
+                              ApplicationEventPublisher ActivityPublisher) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.ActivityRepository = ActivityRepository;
@@ -61,7 +61,7 @@ public class ChatMessageService implements IChatMessageService {
         this.ftService = ftService;
         this.userRepository = userRepository;
         this.logger = logger;
-        this.ActivityUserRepository = ActivityUserRepository;
+        this.activityUserRepository = activityUserRepository;
         this.ActivityPublisher = ActivityPublisher;
     }
 
@@ -139,8 +139,8 @@ public class ChatMessageService implements IChatMessageService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, savedMessage.getSenderUserId()));
 
         // Create and publish notification Activity
-        ActivityPublisher.publishActivity(new NewCommentNotificationActivity(
-                sender, Activity, savedMessage, ActivityUserRepository));
+        eventPublisher.publishEvent(new NewCommentNotificationEvent(
+                sender, Activity, savedMessage, activityUserRepository));
 
         return savedMessage;
     }
