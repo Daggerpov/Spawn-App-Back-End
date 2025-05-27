@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
-import com.danielagapov.spawn.DTOs.UserIdEventTimeDTO;
+import com.danielagapov.spawn.DTOs.UserIdActivityTimeDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -12,7 +12,7 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IEventUserRepository;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -65,7 +65,7 @@ public class UserServiceTests {
     private IUserSearchService userSearchService;
 
     @Mock
-    private IEventUserRepository eventUserRepository;
+    private IActivityUserRepository ActivityUserRepository;
 
     @Spy
     @InjectMocks
@@ -476,23 +476,23 @@ public class UserServiceTests {
     void testGetRecentlySpawnedWithUsers() {
         // Setup mock data for the repository methods
         UUID requestingUserId = UUID.randomUUID();
-        List<UUID> pastEventIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
+        List<UUID> pastActivityIds = Arrays.asList(UUID.randomUUID(), UUID.randomUUID());
         UUID friendId1 = UUID.randomUUID();
         UUID friendId2 = UUID.randomUUID();
         UUID nonFriendId = UUID.randomUUID();
         UUID blockedId = UUID.randomUUID();
-        UserIdEventTimeDTO friendIdEventTime1 = new UserIdEventTimeDTO(friendId1, OffsetDateTime.now());
-        UserIdEventTimeDTO friendIdEventTime2 = new UserIdEventTimeDTO(friendId2, OffsetDateTime.now());
-        UserIdEventTimeDTO nonfriendIdEventTime = new UserIdEventTimeDTO(nonFriendId, OffsetDateTime.now());
-        UserIdEventTimeDTO blockedIdEventTime = new UserIdEventTimeDTO(blockedId, OffsetDateTime.now());
-        List<UserIdEventTimeDTO> pastEventParticipants = Arrays.asList(friendIdEventTime1, friendIdEventTime2, nonfriendIdEventTime, blockedIdEventTime);
+        UserIdActivityTimeDTO friendIdActivityTime1 = new UserIdActivityTimeDTO(friendId1, OffsetDateTime.now());
+        UserIdActivityTimeDTO friendIdActivityTime2 = new UserIdActivityTimeDTO(friendId2, OffsetDateTime.now());
+        UserIdActivityTimeDTO nonfriendIdActivityTime = new UserIdActivityTimeDTO(nonFriendId, OffsetDateTime.now());
+        UserIdActivityTimeDTO blockedIdActivityTime = new UserIdActivityTimeDTO(blockedId, OffsetDateTime.now());
+        List<UserIdActivityTimeDTO> pastActivityParticipants = Arrays.asList(friendIdActivityTime1, friendIdActivityTime2, nonfriendIdActivityTime, blockedIdActivityTime);
         List<UUID> friendIds = Arrays.asList(friendId1, friendId2);
 
         // Mock the repository methods
-        when(eventUserRepository.findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
-                .thenReturn(pastEventIds);
-        when(eventUserRepository.findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
-                .thenReturn(pastEventParticipants);
+        when(ActivityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+                .thenReturn(pastActivityIds);
+        when(ActivityUserRepository.findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
+                .thenReturn(pastActivityParticipants);
         when(userSearchService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of(blockedId, requestingUserId, friendId1, friendId2));
 
         // Mock the getBaseUserById method (if necessary, return a mocked BaseUserDTO)
@@ -504,8 +504,8 @@ public class UserServiceTests {
         List<RecentlySpawnedUserDTO> result = userService.getRecentlySpawnedWithUsers(requestingUserId);
 
         // Verify repository method interactions
-        verify(eventUserRepository, times(1)).findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
-        verify(eventUserRepository, times(1)).findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating));
+        verify(ActivityUserRepository, times(1)).findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
+        verify(ActivityUserRepository, times(1)).findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating));
         verify(userService, times(1)).getBaseUserById(any(UUID.class));
 
         // Assert the results
@@ -518,15 +518,15 @@ public class UserServiceTests {
     void testGetRecentlySpawnedWithUsers_NoParticipants() {
         // Setup mock data for no participants
         UUID requestingUserId = UUID.randomUUID();
-        List<UUID> pastEventIds = Collections.emptyList();
-        List<UserIdEventTimeDTO> pastEventParticipantIds = Collections.emptyList();
+        List<UUID> pastActivityIds = Collections.emptyList();
+        List<UserIdActivityTimeDTO> pastActivityParticipantIds = Collections.emptyList();
         List<UUID> friendIds = new ArrayList<>();
 
         // Mock the repository methods
-        when(eventUserRepository.findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
-                .thenReturn(pastEventIds);
-        when(eventUserRepository.findOtherUserIdsByEventIds(eq(pastEventIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
-                .thenReturn(pastEventParticipantIds);
+        when(ActivityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+                .thenReturn(pastActivityIds);
+        when(ActivityUserRepository.findOtherUserIdsByActivityIds(eq(pastActivityIds), eq(requestingUserId), eq(ParticipationStatus.participating)))
+                .thenReturn(pastActivityParticipantIds);
         when(userService.getFriendUserIdsByUserId(eq(requestingUserId)))
                 .thenReturn(friendIds);
 
@@ -542,7 +542,7 @@ public class UserServiceTests {
     void testGetRecentlySpawnedWithUsers_ExceptionHandling() {
         // Simulate an exception being thrown in the repository method
         UUID requestingUserId = UUID.randomUUID();
-        when(eventUserRepository.findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
+        when(ActivityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any()))
                 .thenThrow(new RuntimeException("Database error"));
 
         // Call the method and assert it handles the exception
@@ -554,7 +554,7 @@ public class UserServiceTests {
         }
 
         // Verify the repository interaction
-        verify(eventUserRepository, times(1)).findPastEventIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
+        verify(ActivityUserRepository, times(1)).findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any());
     }
 
     // Helper method to create an "Everyone" tag

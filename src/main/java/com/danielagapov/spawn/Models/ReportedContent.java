@@ -22,7 +22,7 @@ import java.util.UUID;
 @NoArgsConstructor
 /*
  * This entity represents a report that a user has made, against another user's account or content.
- * "Content" includes chat message, event, and user account.
+ * "Content" includes chat message, Activity, and user account.
  *
  * ReportType is used to categorize the report with how the reported content violates a policy (e.g. Bullying, Nudity, etc.)
  * ResolutionStatus is used to indicate whether the report has been investigated by a Spawn Admin and if so,

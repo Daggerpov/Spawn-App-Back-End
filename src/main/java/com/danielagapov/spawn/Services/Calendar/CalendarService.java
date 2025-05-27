@@ -3,10 +3,10 @@ package com.danielagapov.spawn.Services.Calendar;
 import com.danielagapov.spawn.DTOs.CalendarActivityDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.EventUser;
-import com.danielagapov.spawn.Repositories.IEventRepository;
-import com.danielagapov.spawn.Repositories.IEventUserRepository;
+import com.danielagapov.spawn.Models.Activity;
+import com.danielagapov.spawn.Models.ActivityUser;
+import com.danielagapov.spawn.Repositories.IActivityRepository;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -20,25 +20,24 @@ import java.util.*;
 public class CalendarService implements ICalendarService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private final ILogger logger;
-    private final IEventRepository eventRepository;
-    private final IEventUserRepository eventUserRepository;
-    private final CacheManager cacheManager;
-    
     // Cache names
     private static final String CALENDAR_ACTIVITIES_CACHE = "calendarActivities";
     private static final String ALL_CALENDAR_ACTIVITIES_CACHE = "allCalendarActivities";
     private static final String FILTERED_CALENDAR_ACTIVITIES_CACHE = "filteredCalendarActivities";
+    private final ILogger logger;
+    private final IActivityRepository ActivityRepository;
+    private final IActivityUserRepository ActivityUserRepository;
+    private final CacheManager cacheManager;
 
     public CalendarService(
         ILogger logger, 
-        IEventRepository eventRepository, 
-        IEventUserRepository eventUserRepository,
+        IActivityRepository ActivityRepository, 
+        IActivityUserRepository ActivityUserRepository,
         CacheManager cacheManager
     ) {
         this.logger = logger;
-        this.eventRepository = eventRepository;
-        this.eventUserRepository = eventUserRepository;
+        this.ActivityRepository = ActivityRepository;
+        this.ActivityUserRepository = ActivityUserRepository;
         this.cacheManager = cacheManager;
     }
 
@@ -141,49 +140,49 @@ public class CalendarService implements ICalendarService {
                        (startDate != null ? ", startDate: " + startDate : "") + 
                        (endDate != null ? ", endDate: " + endDate : ""));
             
-            // 1. Get events the user created
-            List<Event> createdEvents = eventRepository.findByCreatorId(userId);
-            logger.info("Found " + createdEvents.size() + " events created by user: " + userId);
+            // 1. Get Activities the user created
+            List<Activity> createdActivities = ActivityRepository.findByCreatorId(userId);
+            logger.info("Found " + createdActivities.size() + " Activities created by user: " + userId);
             
-            // 2. Get events the user is participating in
-            List<EventUser> participatingEvents = eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
-            logger.info("Found " + participatingEvents.size() + " events user is participating in, userId: " + userId);
+            // 2. Get Activities the user is participating in
+            List<ActivityUser> participatingActivities = ActivityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
+            logger.info("Found " + participatingActivities.size() + " Activities user is participating in, userId: " + userId);
             
-            // Process events created by the user
-            for (Event event : createdEvents) {
+            // Process Activities created by the user
+            for (Activity Activity : createdActivities) {
                 try {
-                    LocalDate eventDate = event.getStartTime().toLocalDate();
+                    LocalDate ActivityDate = Activity.getStartTime().toLocalDate();
                     
                     // Apply date filtering if specified
-                    if (isDateInRange(eventDate, startDate, endDate)) {
-                        activities.add(createCalendarActivityFromEvent(event, userId, "creator"));
+                    if (isDateInRange(ActivityDate, startDate, endDate)) {
+                        activities.add(createCalendarActivityFromActivity(Activity, userId, "creator"));
                     }
                 } catch (Exception e) {
-                    logger.error("Error processing created event: " + event.getId() + " for user: " + userId + 
+                    logger.error("Error processing created Activity: " + Activity.getId() + " for user: " + userId + 
                                 ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
-                    // Continue processing other events
+                    // Continue processing other Activities
                 }
             }
             
-            // Process events the user is participating in
-            for (EventUser eventUser : participatingEvents) {
+            // Process Activities the user is participating in
+            for (ActivityUser ActivityUser : participatingActivities) {
                 try {
-                    Event event = eventUser.getEvent();
-                    LocalDate eventDate = event.getStartTime().toLocalDate();
+                    Activity Activity = ActivityUser.getActivity();
+                    LocalDate ActivityDate = Activity.getStartTime().toLocalDate();
                     
                     // Apply date filtering if specified
-                    if (isDateInRange(eventDate, startDate, endDate)) {
-                        // Avoid adding duplicate entries for events the user both created and is participating in
-                        if (!event.getCreator().getId().equals(userId)) {
-                            activities.add(createCalendarActivityFromEvent(event, userId, "participant"));
+                    if (isDateInRange(ActivityDate, startDate, endDate)) {
+                        // Avoid adding duplicate entries for Activities the user both created and is participating in
+                        if (!Activity.getCreator().getId().equals(userId)) {
+                            activities.add(createCalendarActivityFromActivity(Activity, userId, "participant"));
                         }
                     }
                 } catch (Exception e) {
-                    logger.error("Error processing participating event: " + 
-                                (eventUser.getEvent() != null ? eventUser.getEvent().getId() : "null") + 
+                    logger.error("Error processing participating Activity: " + 
+                                (ActivityUser.getActivity() != null ? ActivityUser.getActivity().getId() : "null") + 
                                 " for user: " + userId + ". Error: " + e.getMessage() + 
                                 ", Stack trace: " + Arrays.toString(e.getStackTrace()));
-                    // Continue processing other events
+                    // Continue processing other Activities
                 }
             }
             
@@ -198,7 +197,7 @@ public class CalendarService implements ICalendarService {
     
     /**
      * Clear the calendar cache for a specific user
-     * This should be called when events are created, updated, or deleted,
+     * This should be called when Activities are created, updated, or deleted,
      * or when a user's participation status changes.
      */
     public void clearCalendarCache(UUID userId) {
@@ -266,20 +265,20 @@ public class CalendarService implements ICalendarService {
     }
     
     /**
-     * Create a CalendarActivityDTO from an Event
+     * Create a CalendarActivityDTO from an Activity
      */
-    private CalendarActivityDTO createCalendarActivityFromEvent(Event event, UUID userId, String role) {
+    private CalendarActivityDTO createCalendarActivityFromActivity(Activity Activity, UUID userId, String role) {
         try {
             return CalendarActivityDTO.builder()
-                    .id(event.getId())
-                    .date(event.getStartTime().toLocalDate().format(DATE_FORMATTER))
-                    .eventCategory(event.getCategory())
-                    .icon(event.getIcon())
-                    .colorHexCode(event.getColorHexCode())
-                    .eventId(event.getId())
+                    .id(Activity.getId())
+                    .date(Activity.getStartTime().toLocalDate().format(DATE_FORMATTER))
+                    .ActivityCategory(Activity.getCategory())
+                    .icon(Activity.getIcon())
+                    .colorHexCode(Activity.getColorHexCode())
+                    .ActivityId(Activity.getId())
                     .build();
         } catch (Exception e) {
-            logger.error("Error creating calendar activity from event: " + event.getId() + 
+            logger.error("Error creating calendar activity from Activity: " + Activity.getId() + 
                         " for user: " + userId + ", role: " + role + 
                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
             throw e;

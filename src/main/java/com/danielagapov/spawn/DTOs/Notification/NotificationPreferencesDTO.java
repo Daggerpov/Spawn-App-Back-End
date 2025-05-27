@@ -19,14 +19,14 @@ public class NotificationPreferencesDTO {
     private boolean friendRequestsEnabled;
     
     /**
-     * Whether the user wants to receive event invite notifications
+     * Whether the user wants to receive Activity invite notifications
      */
-    private boolean eventInvitesEnabled;
+    private boolean ActivityInvitesEnabled;
     
     /**
-     * Whether the user wants to receive event update notifications
+     * Whether the user wants to receive Activity update notifications
      */
-    private boolean eventUpdatesEnabled;
+    private boolean ActivityUpdatesEnabled;
     
     /**
      * Whether the user wants to receive chat message notifications

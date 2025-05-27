@@ -1,6 +1,6 @@
-package com.danielagapov.spawn.DTOs.Event;
+package com.danielagapov.spawn.DTOs.Activity;
 
-import com.danielagapov.spawn.Enums.EventCategory;
+import com.danielagapov.spawn.Enums.ActivityCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,8 +13,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-// Groups events under an "abstract event"
-public abstract class AbstractEventDTO implements Serializable {
+// Groups activities under an "abstract activity"
+public abstract class AbstractActivityDTO implements Serializable {
     UUID id;
     String title;
     OffsetDateTime startTime;
@@ -27,6 +27,6 @@ public abstract class AbstractEventDTO implements Serializable {
      * Java String supports full UTF-8 emoji characters.
      */
     String icon;
-    EventCategory category;
+    ActivityCategory category;
     Instant createdAt;
 }

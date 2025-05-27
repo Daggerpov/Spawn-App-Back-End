@@ -16,9 +16,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
-public class EventUsersId implements Serializable {
-    @Column(name = "event_id", nullable = false)
-    private UUID eventId;
+public class ActivityUsersId implements Serializable {
+    @Column(name = "activity_id", nullable = false)
+    private UUID activityId;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
@@ -26,13 +26,13 @@ public class EventUsersId implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof EventUsersId that)) return false;
-        return Objects.equals(eventId, that.eventId) &&
+        if (!(o instanceof ActivityUsersId that)) return false;
+        return Objects.equals(activityId, that.activityId) &&
                 Objects.equals(userId, that.userId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventId, userId);
+        return Objects.hash(activityId, userId);
     }
 }

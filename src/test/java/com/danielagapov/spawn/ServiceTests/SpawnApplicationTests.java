@@ -7,7 +7,7 @@ class SpawnApplicationTests {
 
 	@Test
 	void contextLoads() {
-		// Placeholder test to prevent errors during test suite execution.
+		// Placeholder test to prActivity errors during test suite execution.
 		assertTrue(true);
 	}
 }

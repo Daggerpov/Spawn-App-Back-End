@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Events;
+package com.danielagapov.spawn.Activities;
 
 import com.danielagapov.spawn.Enums.NotificationType;
 
@@ -9,16 +9,16 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Base class for notification events in the application
+ * Base class for notification Activities in the application
  */
-public abstract class NotificationEvent {
+public abstract class NotificationActivity {
     private final NotificationType type;
     private final Map<String, String> data;
+    private final List<UUID> targetUserIds = new ArrayList<>();
     private String title;
     private String message;
-    private List<UUID> targetUserIds = new ArrayList<>();
 
-    protected NotificationEvent(NotificationType type) {
+    protected NotificationActivity(NotificationType type) {
         this.type = type;
         this.data = new HashMap<>();
         this.data.put("type", type.name().toLowerCase());
@@ -71,13 +71,6 @@ public abstract class NotificationEvent {
     }
 
     /**
-     * Set the notification title
-     */
-    protected void setTitle(String title) {
-        this.title = title;
-    }
-
-    /**
      * Get the notification title
      */
     public String getTitle() {
@@ -85,10 +78,10 @@ public abstract class NotificationEvent {
     }
 
     /**
-     * Set the notification message
+     * Set the notification title
      */
-    protected void setMessage(String message) {
-        this.message = message;
+    protected void setTitle(String title) {
+        this.title = title;
     }
 
     /**
@@ -96,6 +89,13 @@ public abstract class NotificationEvent {
      */
     public String getMessage() {
         return message;
+    }
+
+    /**
+     * Set the notification message
+     */
+    protected void setMessage(String message) {
+        this.message = message;
     }
     
     /**

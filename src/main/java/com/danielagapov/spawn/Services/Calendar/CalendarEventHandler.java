@@ -1,83 +1,83 @@
 package com.danielagapov.spawn.Services.Calendar;
 
-import com.danielagapov.spawn.Events.EventInviteNotificationEvent;
-import com.danielagapov.spawn.Events.EventUpdateNotificationEvent;
-import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
+import com.danielagapov.spawn.Activities.ActivityInviteNotificationActivity;
+import com.danielagapov.spawn.Activities.ActivityUpdateNotificationActivity;
+import com.danielagapov.spawn.Activities.ActivityParticipationNotificationActivity;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.Activity.ActivityListener;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 /**
- * Event handler for calendar-related events.
- * Clears calendar cache when events are created, updated, or deleted.
+ * Activity handler for calendar-related Activities.
+ * Clears calendar cache when Activities are created, updated, or deleted.
  */
 @Component
-public class CalendarEventHandler {
+public class CalendarActivityHandler {
 
     private final ICalendarService calendarService;
     private final ILogger logger;
 
-    public CalendarEventHandler(ICalendarService calendarService, ILogger logger) {
+    public CalendarActivityHandler(ICalendarService calendarService, ILogger logger) {
         this.calendarService = calendarService;
         this.logger = logger;
     }
 
     /**
-     * Handler for event invite notifications.
+     * Handler for Activity invite notifications.
      * Clears the calendar cache for all users involved.
      */
-    @EventListener
-    public void handleEventInviteNotification(EventInviteNotificationEvent event) {
-        // Get the event ID from the notification data
-        String eventIdStr = event.getData().get("eventId");
-        String creatorIdStr = event.getData().get("creatorId");
+    @ActivityListener
+    public void handleActivityInviteNotification(ActivityInviteNotificationActivity Activity) {
+        // Get the Activity ID from the notification data
+        String ActivityIdStr = Activity.getData().get("ActivityId");
+        String creatorIdStr = Activity.getData().get("creatorId");
         
         if (creatorIdStr != null) {
             try {
                 UUID creatorId = UUID.fromString(creatorIdStr);
                 clearCacheForUser(creatorId);
             } catch (IllegalArgumentException e) {
-                logger.error("Invalid creator ID format in event notification: " + creatorIdStr);
+                logger.error("Invalid creator ID format in Activity notification: " + creatorIdStr);
             }
         }
         
         // Clear cache for all target users (invitees)
-        event.getTargetUserIds().forEach(this::clearCacheForUser);
+        Activity.getTargetUserIds().forEach(this::clearCacheForUser);
     }
 
     /**
-     * Handler for event update notifications.
+     * Handler for Activity update notifications.
      * Clears the calendar cache for all users involved.
      */
-    @EventListener
-    public void handleEventUpdateNotification(EventUpdateNotificationEvent event) {
-        // Get the event ID and creator ID from the notification data
-        String eventIdStr = event.getData().get("eventId");
-        String creatorIdStr = event.getData().get("creatorId");
+    @ActivityListener
+    public void handleActivityUpdateNotification(ActivityUpdateNotificationActivity Activity) {
+        // Get the Activity ID and creator ID from the notification data
+        String ActivityIdStr = Activity.getData().get("ActivityId");
+        String creatorIdStr = Activity.getData().get("creatorId");
         
         if (creatorIdStr != null) {
             try {
                 UUID creatorId = UUID.fromString(creatorIdStr);
                 clearCacheForUser(creatorId);
             } catch (IllegalArgumentException e) {
-                logger.error("Invalid creator ID format in event notification: " + creatorIdStr);
+                logger.error("Invalid creator ID format in Activity notification: " + creatorIdStr);
             }
         }
         
         // Clear cache for all target users
-        event.getTargetUserIds().forEach(this::clearCacheForUser);
+        Activity.getTargetUserIds().forEach(this::clearCacheForUser);
     }
 
     /**
-     * Handler for event participation changes.
+     * Handler for Activity participation changes.
      * Clears the calendar cache for the user whose participation status changed.
      */
-    @EventListener
-    public void handleEventParticipationChange(EventParticipationNotificationEvent event) {
+    @ActivityListener
+    public void handleActivityParticipationChange(ActivityParticipationNotificationActivity Activity) {
         // Get the user ID from the notification data
-        String userIdStr = event.getData().get("userId");
+        String userIdStr = Activity.getData().get("userId");
         if (userIdStr != null) {
             try {
                 UUID userId = UUID.fromString(userIdStr);
@@ -87,8 +87,8 @@ public class CalendarEventHandler {
             }
         }
         
-        // Clear cache for event creator (who is the target of the notification)
-        event.getTargetUserIds().forEach(this::clearCacheForUser);
+        // Clear cache for Activity creator (who is the target of the notification)
+        Activity.getTargetUserIds().forEach(this::clearCacheForUser);
     }
 
     /**

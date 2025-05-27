@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.Events;
+package com.danielagapov.spawn.Activities;
 
 import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Models.User.User;
@@ -6,12 +6,12 @@ import com.danielagapov.spawn.Models.User.User;
 import java.util.UUID;
 
 /**
- * Event for when a friend request is sent
+ * Activity for when a friend request is sent
  */
-public class FriendRequestNotificationEvent extends NotificationEvent {
+public class FriendRequestNotificationActivity extends NotificationActivity {
     private final UUID receiverId;
 
-    public FriendRequestNotificationEvent(User sender, UUID receiverId) {
+    public FriendRequestNotificationActivity(User sender, UUID receiverId) {
         super(NotificationType.FRIEND_REQUEST);
         
         this.receiverId = receiverId;

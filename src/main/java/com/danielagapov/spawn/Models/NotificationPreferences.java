@@ -34,16 +34,16 @@ public class NotificationPreferences {
     private boolean friendRequestsEnabled = true;
     
     /**
-     * Whether the user wants to receive event invite notifications
+     * Whether the user wants to receive Activity invite notifications
      */
     @Column(nullable = false)
-    private boolean eventInvitesEnabled = true;
+    private boolean ActivityInvitesEnabled = true;
     
     /**
-     * Whether the user wants to receive event update notifications
+     * Whether the user wants to receive Activity update notifications
      */
     @Column(nullable = false)
-    private boolean eventUpdatesEnabled = true;
+    private boolean ActivityUpdatesEnabled = true;
     
     /**
      * Whether the user wants to receive chat message notifications

@@ -14,8 +14,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * A Chat Message is left under a specific event, and there may be
- * many chat messages left by one person under the same event, to
+ * A Chat Message is left under a specific Activity, and there may be
+ * many chat messages left by one person under the same Activity, to
  * allow for a conversation or group chat of sorts to happen.
  * We track the timestamp to display the delta time from when
  * it was sent (e.g. 3 sec ago).
@@ -41,7 +41,7 @@ public class ChatMessage implements Serializable {
     private User userSender;
 
     @ManyToOne
-    @JoinColumn(name = "event_id", nullable = false)
+    @JoinColumn(name = "Activity_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Event event;
+    private Activity Activity;
 }

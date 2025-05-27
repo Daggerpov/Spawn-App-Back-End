@@ -3,8 +3,8 @@ package com.danielagapov.spawn.Services.PushNotification;
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
 import com.danielagapov.spawn.Enums.NotificationType;
-import com.danielagapov.spawn.Events.NotificationEvent;
-import com.danielagapov.spawn.Events.PushRegistrationNotificationEvent;
+import com.danielagapov.spawn.Activities.NotificationActivity;
+import com.danielagapov.spawn.Activities.PushRegistrationNotificationActivity;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.DeviceToken;
 import com.danielagapov.spawn.Models.NotificationPreferences;
@@ -14,8 +14,8 @@ import com.danielagapov.spawn.Repositories.INotificationPreferencesRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.ApplicationActivityPublisher;
+import org.springframework.context.Activity.ActivityListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +32,7 @@ public class NotificationService {
     private final IDeviceTokenRepository deviceTokenRepository;
     private final INotificationPreferencesRepository preferencesRepository;
     private final IUserService userService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ApplicationActivityPublisher ActivityPublisher;
     private final ILogger logger;
     private final FCMService fcmService;
 
@@ -41,12 +41,12 @@ public class NotificationService {
             IDeviceTokenRepository deviceTokenRepository,
             INotificationPreferencesRepository preferencesRepository,
             IUserService userService,
-            ApplicationEventPublisher eventPublisher,
+            ApplicationActivityPublisher ActivityPublisher,
             ILogger logger, FCMService fcmService) {
         this.deviceTokenRepository = deviceTokenRepository;
         this.preferencesRepository = preferencesRepository;
         this.userService = userService;
-        this.eventPublisher = eventPublisher;
+        this.ActivityPublisher = ActivityPublisher;
         this.logger = logger;
         this.fcmService = fcmService;
     }
@@ -85,7 +85,7 @@ public class NotificationService {
                     + user.getName() + " and username: " + user.getUsername());
 
             // Send a test notification to confirm registration
-            eventPublisher.publishEvent(new PushRegistrationNotificationEvent(user));
+            ActivityPublisher.publishActivity(new PushRegistrationNotificationActivity(user));
             logger.info("Sent test notification for token registration confirmation");
         } catch (Exception e) {
             logger.error("Error registering device token: " + e.getMessage());
@@ -150,8 +150,8 @@ public class NotificationService {
     private NotificationPreferencesDTO mapPreferencesToDTO(NotificationPreferences preferences, UUID userId) {
         return new NotificationPreferencesDTO(
                 preferences.isFriendRequestsEnabled(),
-                preferences.isEventInvitesEnabled(),
-                preferences.isEventUpdatesEnabled(),
+                preferences.isActivityInvitesEnabled(),
+                preferences.isActivityUpdatesEnabled(),
                 preferences.isChatMessagesEnabled(),
                 userId
         );
@@ -190,8 +190,8 @@ public class NotificationService {
         // Update entity
         preferences.setUser(user);
         preferences.setFriendRequestsEnabled(preferencesDTO.isFriendRequestsEnabled());
-        preferences.setEventInvitesEnabled(preferencesDTO.isEventInvitesEnabled());
-        preferences.setEventUpdatesEnabled(preferencesDTO.isEventUpdatesEnabled());
+        preferences.setActivityInvitesEnabled(preferencesDTO.isActivityInvitesEnabled());
+        preferences.setActivityUpdatesEnabled(preferencesDTO.isActivityUpdatesEnabled());
         preferences.setChatMessagesEnabled(preferencesDTO.isChatMessagesEnabled());
 
         // Save and return
@@ -246,26 +246,26 @@ public class NotificationService {
     }
 
     /**
-     * Process notification events
+     * Process notification Activities
      */
-    @EventListener
-    public void handleNotificationEvent(NotificationEvent event) throws Exception {
+    @ActivityListener
+    public void handleNotificationActivity(NotificationActivity Activity) throws Exception {
         try {
-            List<UUID> targetUserIds = event.getTargetUserIds();
+            List<UUID> targetUserIds = Activity.getTargetUserIds();
 
-            logger.info("Handling notification event: " + event.getClass().getSimpleName() +
+            logger.info("Handling notification Activity: " + Activity.getClass().getSimpleName() +
                     " for " + targetUserIds.size() + " users");
 
             if (targetUserIds.isEmpty()) {
-                logger.warn("Event has no target users, skipping");
+                logger.warn("Activity has no target users, skipping");
                 return;
             }
 
-            processNotificationsForUsers(targetUserIds, event);
+            processNotificationsForUsers(targetUserIds, Activity);
 
-            logger.info("Notification event processing completed");
+            logger.info("Notification Activity processing completed");
         } catch (Exception e) {
-            logger.error("Error handling notification event: " + e.getMessage());
+            logger.error("Error handling notification Activity: " + e.getMessage());
             throw e;
         }
     }
@@ -273,31 +273,31 @@ public class NotificationService {
     /**
      * Process notifications for multiple users
      */
-    private void processNotificationsForUsers(List<UUID> userIds, NotificationEvent event) throws Exception {
+    private void processNotificationsForUsers(List<UUID> userIds, NotificationActivity Activity) throws Exception {
         for (UUID userId : userIds) {
-            processNotificationForUser(userId, event);
+            processNotificationForUser(userId, Activity);
         }
     }
 
     /**
      * Process notification for a single user
      */
-    private void processNotificationForUser(UUID userId, NotificationEvent event) throws Exception {
+    private void processNotificationForUser(UUID userId, NotificationActivity Activity) throws Exception {
         try {
             User user = userService.getUserEntityById(userId);
             NotificationPreferences preferences = preferencesRepository.findByUser(user).orElse(null);
 
-            boolean shouldSendNotification = shouldSendNotificationBasedOnPreferences(preferences, event.getType());
+            boolean shouldSendNotification = shouldSendNotificationBasedOnPreferences(preferences, Activity.getType());
 
             if (shouldSendNotification) {
                 sendNotificationToUser(
                         userId,
-                        event.getTitle(),
-                        event.getMessage(),
-                        event.getData());
+                        Activity.getTitle(),
+                        Activity.getMessage(),
+                        Activity.getData());
             } else {
                 logger.info("Notification skipped for user " + LoggingUtils.formatUserInfo(user) +
-                        " due to preferences setting for type " + event.getType());
+                        " due to preferences setting for type " + Activity.getType());
             }
         } catch (Exception e) {
             logger.error("Error processing notification for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -320,12 +320,12 @@ public class NotificationService {
             case FRIEND_REQUEST:
             case FRIEND_REQUEST_ACCEPTED:
                 return preferences.isFriendRequestsEnabled();
-            case EVENT_INVITE:
-                return preferences.isEventInvitesEnabled();
-            case EVENT_UPDATE:
-            case EVENT_PARTICIPATION:
-            case EVENT_PARTICIPATION_REVOKED:
-                return preferences.isEventUpdatesEnabled();
+            case Activity_INVITE:
+                return preferences.isActivityInvitesEnabled();
+            case Activity_UPDATE:
+            case Activity_PARTICIPATION:
+            case Activity_PARTICIPATION_REVOKED:
+                return preferences.isActivityUpdatesEnabled();
             case NEW_COMMENT:
                 return preferences.isChatMessagesEnabled();
             default:

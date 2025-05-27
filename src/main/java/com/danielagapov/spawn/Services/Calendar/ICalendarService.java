@@ -40,7 +40,7 @@ public interface ICalendarService {
     
     /**
      * Clear the calendar cache for a specific user
-     * This should be called when events are created, updated, or deleted,
+     * This should be called when Activities are created, updated, or deleted,
      * or when a user's participation status changes.
      * 
      * @param userId User ID whose cache should be cleared

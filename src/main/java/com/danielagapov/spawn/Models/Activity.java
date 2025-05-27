@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Enums.EventCategory;
+import com.danielagapov.spawn.Enums.ActivityCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,18 +16,18 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * An event is the primary function of our app.
+ * An activity is the primary function of our app.
  * Upon creation, the creating user can invite many
  * friends directly, or by friend tags, that they've placed
  * friends into. Then, those invited users can choose to
- * participate in that event.
+ * participate in that activity.
  */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class Event implements Serializable {
+public class Activity implements Serializable {
     private @Id
     @GeneratedValue UUID id;
 
@@ -38,7 +38,7 @@ public class Event implements Serializable {
     private String colorHexCode;
     
     @Enumerated(EnumType.STRING)
-    private EventCategory category;
+    private ActivityCategory category;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "location_id", referencedColumnName = "id", nullable = false)
@@ -72,7 +72,7 @@ public class Event implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Event(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, EventCategory category) {
+    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, ActivityCategory category) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;

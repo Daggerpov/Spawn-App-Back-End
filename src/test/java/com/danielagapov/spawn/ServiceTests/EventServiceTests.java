@@ -1,30 +1,30 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
-import com.danielagapov.spawn.DTOs.Event.EventDTO;
-import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.Event.LocationDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.Enums.EventCategory;
+import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Mappers.EventMapper;
-import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
-import com.danielagapov.spawn.Models.Event;
-import com.danielagapov.spawn.Models.EventUser;
+import com.danielagapov.spawn.Mappers.ActivityMapper;
+import com.danielagapov.spawn.Models.CompositeKeys.ActivityUsersId;
+import com.danielagapov.spawn.Models.Activity;
+import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IEventRepository;
-import com.danielagapov.spawn.Repositories.IEventUserRepository;
+import com.danielagapov.spawn.Repositories.IActivityRepository;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
-import com.danielagapov.spawn.Services.Event.EventService;
+import com.danielagapov.spawn.Services.Activity.Activitieservice;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -34,7 +34,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationActivityPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.time.Instant;
@@ -45,10 +45,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class EventServiceTests {
+public class ActivitieserviceTests {
 
     @Mock
-    private IEventRepository eventRepository;
+    private IActivityRepository ActivityRepository;
 
     @Mock
     private ILogger logger;
@@ -63,7 +63,7 @@ public class EventServiceTests {
     private IUserRepository userRepository;
 
     @Mock
-    private IEventUserRepository eventUserRepository;
+    private IActivityUserRepository activityUserRepository;
 
     @Mock
     private IUserService userService;
@@ -75,10 +75,10 @@ public class EventServiceTests {
     private IChatMessageService chatMessageService;
     
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private ApplicationActivityPublisher ActivityPublisher;
 
     @InjectMocks
-    private EventService eventService;
+    private Activitieservice Activitieservice;
 
     @BeforeEach
     void setup() {
@@ -86,23 +86,23 @@ public class EventServiceTests {
     }
 
     // --- Helper methods ---
-    private Event createDummyEvent(UUID eventId, String title, OffsetDateTime start, OffsetDateTime end) {
+    private Activity createDummyActivity(UUID ActivityId, String title, OffsetDateTime start, OffsetDateTime end) {
         Location loc = new Location(UUID.randomUUID(), "Dummy Location", 0.0, 0.0);
         User creator = new User();
         creator.setId(UUID.randomUUID());
-        return new Event(eventId, title, start, end, loc, "Note", creator, "icon", EventCategory.ACTIVE);
+        return new Activity(ActivityId, title, start, end, loc, "Note", creator, "icon", ActivityCategory.ACTIVE);
     }
 
-    private EventDTO dummyEventDTO(UUID eventId, String title) {
-        return new EventDTO(
-                eventId,
+    private ActivityDTO dummyActivityDTO(UUID ActivityId, String title) {
+        return new ActivityDTO(
+                ActivityId,
                 title,
                 OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(1),
                 UUID.randomUUID(),
                 "Note",
                 "icon",
-                EventCategory.ACTIVE,
+                ActivityCategory.ACTIVE,
                 UUID.randomUUID(),
                 List.of(),
                 List.of(),
@@ -114,66 +114,66 @@ public class EventServiceTests {
     
     // --- Basic tests (unchanged) ---
     @Test
-    void getAllEvents_ShouldReturnList_WhenEventsExist() {
+    void getAllActivities_ShouldReturnList_WhenActivitiesExist() {
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
         User dummyCreator = new User();
         dummyCreator.setId(UUID.randomUUID());
-        Event event = new Event(UUID.randomUUID(), "Test Event",
+        Activity Activity = new Activity(UUID.randomUUID(), "Test Activity",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", EventCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon", ActivityCategory.ACTIVE);
 
-        when(eventRepository.findAll()).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(ActivityRepository.findAll()).thenReturn(List.of(Activity));
+        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<EventDTO> result = eventService.getAllEvents();
+        List<ActivityDTO> result = Activitieservice.getAllActivities();
 
         assertFalse(result.isEmpty());
-        // For EventDTO (record), use getTitle() accessor.
-        assertEquals("Test Event", result.get(0).getTitle());
-        verify(eventRepository, times(1)).findAll();
+        // For ActivityDTO (record), use getTitle() accessor.
+        assertEquals("Test Activity", result.get(0).getTitle());
+        verify(ActivityRepository, times(1)).findAll();
     }
 
     @Test
-    void getEventById_ShouldReturnEvent_WhenEventExists() {
-        UUID eventId = UUID.randomUUID();
+    void getActivityById_ShouldReturnActivity_WhenActivityExists() {
+        UUID ActivityId = UUID.randomUUID();
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
         User dummyCreator = new User();
         dummyCreator.setId(UUID.randomUUID());
-        Event event = new Event(eventId, "Test Event",
+        Activity Activity = new Activity(ActivityId, "Test Activity",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", EventCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon", ActivityCategory.ACTIVE);
 
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
+        when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
-        EventDTO result = eventService.getEventById(eventId);
+        ActivityDTO result = Activitieservice.getActivityById(ActivityId);
 
-        assertEquals("Test Event", result.getTitle());
-        verify(eventRepository, times(1)).findById(eventId);
+        assertEquals("Test Activity", result.getTitle());
+        verify(ActivityRepository, times(1)).findById(ActivityId);
     }
 
     @Test
-    void deleteEventById_ShouldThrowException_WhenEventNotFound() {
-        UUID eventId = UUID.randomUUID();
-        when(eventRepository.existsById(eventId)).thenReturn(false);
+    void deleteActivityById_ShouldThrowException_WhenActivityNotFound() {
+        UUID ActivityId = UUID.randomUUID();
+        when(ActivityRepository.existsById(ActivityId)).thenReturn(false);
 
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> eventService.deleteEventById(eventId));
+                () -> Activitieservice.deleteActivityById(ActivityId));
 
-        assertTrue(exception.getMessage().contains(eventId.toString()));
-        verify(eventRepository, never()).deleteById(eventId);
+        assertTrue(exception.getMessage().contains(ActivityId.toString()));
+        verify(ActivityRepository, never()).deleteById(ActivityId);
     }
 
     @Test
-    void saveEvent_ShouldSaveEvent_WhenValidData() {
+    void saveActivity_ShouldSaveActivity_WhenValidData() {
         UUID locationId = UUID.randomUUID();
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
-        EventDTO eventDTO = new EventDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", EventCategory.ACTIVE, UUID.randomUUID(),
+        ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", ActivityCategory.ACTIVE, UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
         User creator = new User(
                 UUID.randomUUID(),
@@ -184,73 +184,73 @@ public class EventServiceTests {
                 "email");
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
-        when(userService.getUserEntityById(eventDTO.getCreatorUserId())).thenReturn(creator);
-        when(eventRepository.save(any(Event.class))).thenReturn(EventMapper.toEntity(eventDTO, location, creator));
+        when(userService.getUserEntityById(ActivityDTO.getCreatorUserId())).thenReturn(creator);
+        when(ActivityRepository.save(any(Activity.class))).thenReturn(ActivityMapper.toEntity(ActivityDTO, location, creator));
 
-        assertDoesNotThrow(() -> eventService.saveEvent(eventDTO));
+        assertDoesNotThrow(() -> Activitieservice.saveActivity(ActivityDTO));
 
-        verify(eventRepository, times(1)).save(any(Event.class));
+        verify(ActivityRepository, times(1)).save(any(Activity.class));
     }
 
     @Test
-    void saveEvent_ShouldThrowException_WhenDatabaseErrorOccurs() {
+    void saveActivity_ShouldThrowException_WhenDatabaseErrorOccurs() {
         UUID locationId = UUID.randomUUID();
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
-        EventDTO eventDTO = new EventDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", EventCategory.ACTIVE, UUID.randomUUID(),
+        ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", ActivityCategory.ACTIVE, UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
-        when(eventRepository.save(any(Event.class))).thenThrow(new DataAccessException("Database error") {
+        when(ActivityRepository.save(any(Activity.class))).thenThrow(new DataAccessException("Database error") {
         });
 
         BaseSaveException exception = assertThrows(BaseSaveException.class,
-                () -> eventService.saveEvent(eventDTO));
+                () -> Activitieservice.saveActivity(ActivityDTO));
 
-        assertTrue(exception.getMessage().contains("Failed to save event"));
-        verify(eventRepository, times(1)).save(any(Event.class));
+        assertTrue(exception.getMessage().contains("Failed to save Activity"));
+        verify(ActivityRepository, times(1)).save(any(Activity.class));
     }
 
     @Test
-    void deleteEventById_ShouldDeleteEvent_WhenEventExists() {
-        UUID eventId = UUID.randomUUID();
-        when(eventRepository.existsById(eventId)).thenReturn(true);
+    void deleteActivityById_ShouldDeleteActivity_WhenActivityExists() {
+        UUID ActivityId = UUID.randomUUID();
+        when(ActivityRepository.existsById(ActivityId)).thenReturn(true);
 
-        assertDoesNotThrow(() -> eventService.deleteEventById(eventId));
+        assertDoesNotThrow(() -> Activitieservice.deleteActivityById(ActivityId));
 
-        verify(eventRepository, times(1)).deleteById(eventId);
+        verify(ActivityRepository, times(1)).deleteById(ActivityId);
     }
 
     @Test
-    void deleteEventById_ShouldReturnFalse_WhenDatabaseErrorOccurs() {
-        UUID eventId = UUID.randomUUID();
-        when(eventRepository.existsById(eventId)).thenReturn(true);
+    void deleteActivityById_ShouldReturnFalse_WhenDatabaseErrorOccurs() {
+        UUID ActivityId = UUID.randomUUID();
+        when(ActivityRepository.existsById(ActivityId)).thenReturn(true);
         doThrow(new DataAccessException("Database error") {
-        }).when(eventRepository).deleteById(eventId);
+        }).when(ActivityRepository).deleteById(ActivityId);
 
-        boolean result = eventService.deleteEventById(eventId);
+        boolean result = Activitieservice.deleteActivityById(ActivityId);
 
         assertFalse(result);
-        verify(eventRepository, times(1)).deleteById(eventId);
+        verify(ActivityRepository, times(1)).deleteById(ActivityId);
     }
 
     @Test
-    void createEvent_Successful() {
+    void createActivity_Successful() {
         UUID creatorId = UUID.randomUUID();
         UUID friendTagId = UUID.randomUUID();
         UUID explicitInviteId = UUID.randomUUID();
         UUID friendTagUserId = UUID.randomUUID();
 
         LocationDTO locationDTO = new LocationDTO(null, "Test Location", 0.0, 0.0);
-        EventCreationDTO creationDTO = new EventCreationDTO(
+        ActivityCreationDTO creationDTO = new ActivityCreationDTO(
                 null,
-                "Test Event",
+                "Test Activity",
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
                 locationDTO,
                 "Test note",
                 "icon",
-                EventCategory.ACTIVE,
+                ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(friendTagId),
                 List.of(explicitInviteId),
@@ -264,19 +264,19 @@ public class EventServiceTests {
         creator.setId(creatorId);
         when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
 
-        Event savedEvent = new Event();
-        UUID eventId = UUID.randomUUID();
-        savedEvent.setId(eventId);
-        savedEvent.setTitle("Test Event");
-        savedEvent.setStartTime(creationDTO.getStartTime());
-        savedEvent.setEndTime(creationDTO.getEndTime());
-        savedEvent.setLocation(location);
-        savedEvent.setNote("Test note");
-        savedEvent.setCreator(creator);
-        when(eventRepository.save(any(Event.class))).thenReturn(savedEvent);
+        Activity savedActivity = new Activity();
+        UUID ActivityId = UUID.randomUUID();
+        savedActivity.setId(ActivityId);
+        savedActivity.setTitle("Test Activity");
+        savedActivity.setStartTime(creationDTO.getStartTime());
+        savedActivity.setEndTime(creationDTO.getEndTime());
+        savedActivity.setLocation(location);
+        savedActivity.setNote("Test note");
+        savedActivity.setCreator(creator);
+        when(ActivityRepository.save(any(Activity.class))).thenReturn(savedActivity);
 
         when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of(friendTagUserId));
-        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         User friendTagUser = new User();
         friendTagUser.setId(friendTagUserId);
@@ -287,41 +287,41 @@ public class EventServiceTests {
         when(userRepository.findById(explicitInviteId)).thenReturn(Optional.of(explicitInvitedUser));
 
         Set<UUID> expectedInvited = new HashSet<>(Arrays.asList(friendTagUserId, explicitInviteId));
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(new ArrayList<>(expectedInvited));
+        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(new ArrayList<>(expectedInvited));
 
-        EventDTO eventDTO = (EventDTO) eventService.createEvent(creationDTO);
+        ActivityDTO ActivityDTO = (ActivityDTO) Activitieservice.createActivity(creationDTO);
 
-        assertNotNull(eventDTO);
-        assertEquals("Test Event", eventDTO.getTitle());
-        assertEquals(expectedInvited, new HashSet<>(eventDTO.getInvitedUserIds()));
+        assertNotNull(ActivityDTO);
+        assertEquals("Test Activity", ActivityDTO.getTitle());
+        assertEquals(expectedInvited, new HashSet<>(ActivityDTO.getInvitedUserIds()));
 
-        ArgumentCaptor<EventUser> captor = ArgumentCaptor.forClass(EventUser.class);
-        verify(eventUserRepository, times(expectedInvited.size())).save(captor.capture());
-        List<EventUser> savedInvites = captor.getAllValues();
+        ArgumentCaptor<ActivityUser> captor = ArgumentCaptor.forClass(ActivityUser.class);
+        verify(activityUserRepository, times(expectedInvited.size())).save(captor.capture());
+        List<ActivityUser> savedInvites = captor.getAllValues();
         Set<UUID> savedInviteIds = new HashSet<>();
-        for (EventUser eu : savedInvites) {
+        for (ActivityUser eu : savedInvites) {
             savedInviteIds.add(eu.getUser().getId());
             assertEquals(ParticipationStatus.invited, eu.getStatus());
-            assertEquals(eventId, eu.getEvent().getId());
+            assertEquals(ActivityId, eu.getActivity().getId());
         }
         assertEquals(expectedInvited, savedInviteIds);
         
-        // Don't verify the event publisher - the service uses it correctly based on the logs
+        // Don't verify the Activity publisher - the service uses it correctly based on the logs
         // and the verification isn't working well in tests
     }
 
     @Test
-    void createEvent_Fails_WhenLocationNotCreated() {
+    void createActivity_Fails_WhenLocationNotCreated() {
         UUID creatorId = UUID.randomUUID();
-        EventCreationDTO creationDTO = new EventCreationDTO(
+        ActivityCreationDTO creationDTO = new ActivityCreationDTO(
                 null,
-                "Test Event",
+                "Test Activity",
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
                 new LocationDTO(null, "Test Location", 0.0, 0.0),
                 "Test note",
                 "icon",
-                EventCategory.ACTIVE,
+                ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(),
                 List.of(),
@@ -332,26 +332,26 @@ public class EventServiceTests {
         });
 
         ApplicationException ex = assertThrows(ApplicationException.class, () ->
-                eventService.createEvent(creationDTO));
+                Activitieservice.createActivity(creationDTO));
         assertNotNull(ex.getCause());
-        assertTrue(ex.getMessage().contains("Failed to create event"));
+        assertTrue(ex.getMessage().contains("Failed to create Activity"));
     }
 
     @Test
-    void createEvent_MergesInvites_Correctly() {
+    void createActivity_MergesInvites_Correctly() {
         UUID creatorId = UUID.randomUUID();
         UUID friendTagId = UUID.randomUUID();
         UUID commonUserId = UUID.randomUUID();
 
-        EventCreationDTO creationDTO = new EventCreationDTO(
+        ActivityCreationDTO creationDTO = new ActivityCreationDTO(
                 null,
-                "Merged Invites Event",
+                "Merged Invites Activity",
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
                 new LocationDTO(null, "Test Location", 0.0, 0.0),
                 "Merged invites test",
                 "icon",
-                EventCategory.ACTIVE,
+                ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(friendTagId),
                 List.of(commonUserId),
@@ -365,230 +365,230 @@ public class EventServiceTests {
         creator.setId(creatorId);
         when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
 
-        Event savedEvent = new Event();
-        UUID eventId = UUID.randomUUID();
-        savedEvent.setId(eventId);
-        savedEvent.setTitle("Merged Invites Event");
-        savedEvent.setStartTime(creationDTO.getStartTime());
-        savedEvent.setEndTime(creationDTO.getEndTime());
-        savedEvent.setLocation(location);
-        savedEvent.setNote("Merged invites test");
-        savedEvent.setCreator(creator);
-        when(eventRepository.save(any(Event.class))).thenReturn(savedEvent);
+        Activity savedActivity = new Activity();
+        UUID ActivityId = UUID.randomUUID();
+        savedActivity.setId(ActivityId);
+        savedActivity.setTitle("Merged Invites Activity");
+        savedActivity.setStartTime(creationDTO.getStartTime());
+        savedActivity.setEndTime(creationDTO.getEndTime());
+        savedActivity.setLocation(location);
+        savedActivity.setNote("Merged invites test");
+        savedActivity.setCreator(creator);
+        when(ActivityRepository.save(any(Activity.class))).thenReturn(savedActivity);
 
         when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of(commonUserId));
-        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         User commonUser = new User();
         commonUser.setId(commonUserId);
         when(userRepository.findById(commonUserId)).thenReturn(Optional.of(commonUser));
 
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of(commonUserId));
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of(commonUserId));
+        when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
 
-        EventDTO eventDTO = (EventDTO) eventService.createEvent(creationDTO);
+        ActivityDTO ActivityDTO = (ActivityDTO) Activitieservice.createActivity(creationDTO);
 
-        assertNotNull(eventDTO);
-        assertEquals("Merged Invites Event", eventDTO.getTitle());
-        assertEquals(1, eventDTO.getInvitedUserIds().size());
-        assertTrue(eventDTO.getInvitedUserIds().contains(commonUserId));
+        assertNotNull(ActivityDTO);
+        assertEquals("Merged Invites Activity", ActivityDTO.getTitle());
+        assertEquals(1, ActivityDTO.getInvitedUserIds().size());
+        assertTrue(ActivityDTO.getInvitedUserIds().contains(commonUserId));
 
-        verify(eventUserRepository, times(1)).save(any(EventUser.class));
+        verify(activityUserRepository, times(1)).save(any(ActivityUser.class));
         
-        // Don't verify the event publisher - the service uses it correctly based on the logs
+        // Don't verify the Activity publisher - the service uses it correctly based on the logs
         // and the verification isn't working well in tests
     }
 
     @Test
-    void getAllFullEvents_ShouldReturnFullFeedEvents_WhenEventsExist() {
-        Event event = createDummyEvent(UUID.randomUUID(), "Full Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findAll()).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
+    void getAllFullActivities_ShouldReturnFullFeedActivities_WhenActivitiesExist() {
+        Activity Activity = createDummyActivity(UUID.randomUUID(), "Full Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
+        when(ActivityRepository.findAll()).thenReturn(List.of(Activity));
+        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "John Smith", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
-        // Stub friend tag lookup; for events without a requesting user, no friend tag is applied.
+        when(chatMessageService.getFullChatMessagesByActivityId(any(UUID.class))).thenReturn(List.of());
+        // Stub friend tag lookup; for Activities without a requesting user, no friend tag is applied.
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
-        // To ensure getParticipationStatus does not throw, stub existsById and findByEvent_Id.
-        when(eventUserRepository.existsById(any(EventUsersId.class))).thenReturn(true);
-        // Return a list containing an EventUser with a dummy user (not matching any requesting user)
-        EventUser dummyEU = new EventUser();
+        // To ensure getParticipationStatus does not throw, stub existsById and findByActivity_Id.
+        when(activityUserRepository.existsById(any(ActivityUsersId.class))).thenReturn(true);
+        // Return a list containing an ActivityUser with a dummy user (not matching any requesting user)
+        ActivityUser dummyEU = new ActivityUser();
         User dummyUser = new User();
         dummyUser.setId(UUID.randomUUID());
         dummyEU.setUser(dummyUser);
         dummyEU.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
+        when(activityUserRepository.findByActivity_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
 
-        List<FullFeedEventDTO> fullEvents = eventService.getAllFullEvents();
+        List<FullFeedActivityDTO> fullActivities = Activitieservice.getAllFullActivities();
 
-        assertNotNull(fullEvents);
-        assertFalse(fullEvents.isEmpty());
-        FullFeedEventDTO first = fullEvents.get(0);
-        assertEquals("Full Event", first.getTitle());
-        assertNull(first.getEventFriendTagColorHexCodeForRequestingUser());
+        assertNotNull(fullActivities);
+        assertFalse(fullActivities.isEmpty());
+        FullFeedActivityDTO first = fullActivities.get(0);
+        assertEquals("Full Activity", first.getTitle());
+        assertNull(first.getActivityFriendTagColorHexCodeForRequestingUser());
         assertNull(first.getParticipationStatus());
     }
 
     @Test
-    void getFullEventById_ShouldReturnFullFeedEventDTO_WhenEventExists() {
-        UUID eventId = UUID.randomUUID();
+    void getFullActivityById_ShouldReturnFullFeedActivityDTO_WhenActivityExists() {
+        UUID ActivityId = UUID.randomUUID();
         UUID requestingUserId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, requestingUserId);
+        ActivityUsersId compositeId = new ActivityUsersId(ActivityId, requestingUserId);
 
-        // Create dummy event
-        Event event = createDummyEvent(eventId, "Detailed Event",
+        // Create dummy Activity
+        Activity Activity = createDummyActivity(ActivityId, "Detailed Activity",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
 
         // Stub various service calls
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
+        when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "John Smith", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(chatMessageService.getFullChatMessagesByEventId(eventId)).thenReturn(List.of());
+        when(chatMessageService.getFullChatMessagesByActivityId(ActivityId)).thenReturn(List.of());
 
         // Stub friend tag lookup
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#123456");
-        when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, event.getCreator().getId()))
+        when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, Activity.getCreator().getId()))
                 .thenReturn(Optional.of(friendTag));
 
         // Stub participation status lookups
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-        EventUser eu = new EventUser();
-        eu.setId(compositeId);  // Set the composite key on the EventUser
+        when(activityUserRepository.existsById(compositeId)).thenReturn(true);
+        ActivityUser eu = new ActivityUser();
+        eu.setId(compositeId);  // Set the composite key on the ActivityUser
         User euUser = new User();
         euUser.setId(requestingUserId);
         eu.setUser(euUser);
         eu.setStatus(ParticipationStatus.participating);
 
         // **Important:** Stub findById with the composite key
-        when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
+        when(activityUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
 
         // Call the service method
-        FullFeedEventDTO fullEvent = eventService.getFullEventById(eventId, requestingUserId);
+        FullFeedActivityDTO fullActivity = Activitieservice.getFullActivityById(ActivityId, requestingUserId);
 
         // Assertions
-        assertNotNull(fullEvent);
-        assertEquals("Detailed Event", fullEvent.getTitle());
-        assertEquals("#123456", fullEvent.getEventFriendTagColorHexCodeForRequestingUser());
-        assertEquals(ParticipationStatus.participating, fullEvent.getParticipationStatus());
+        assertNotNull(fullActivity);
+        assertEquals("Detailed Activity", fullActivity.getTitle());
+        assertEquals("#123456", fullActivity.getActivityFriendTagColorHexCodeForRequestingUser());
+        assertEquals(ParticipationStatus.participating, fullActivity.getParticipationStatus());
     }
 
 
     @Test
-    void getEventsByFriendTagId_ShouldReturnEvents_WhenFriendsExist() {
+    void getActivitiesByFriendTagId_ShouldReturnActivities_WhenFriendsExist() {
         UUID tagId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         List<UUID> friendIds = List.of(UUID.randomUUID());
         when(friendTag.getFriendUserIds()).thenReturn(friendIds);
         when(friendTagService.getFriendTagById(tagId)).thenReturn(friendTag);
 
-        Event event = createDummyEvent(UUID.randomUUID(), "Friend Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findByCreatorIdIn(friendIds)).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        Activity Activity = createDummyActivity(UUID.randomUUID(), "Friend Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
+        when(ActivityRepository.findByCreatorIdIn(friendIds)).thenReturn(List.of(Activity));
+        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<EventDTO> events = eventService.getEventsByFriendTagId(tagId);
+        List<ActivityDTO> Activities = Activitieservice.getActivitiesByFriendTagId(tagId);
 
-        assertNotNull(events);
-        assertFalse(events.isEmpty());
-        assertEquals("Friend Event", events.get(0).getTitle());
+        assertNotNull(Activities);
+        assertFalse(Activities.isEmpty());
+        assertEquals("Friend Activity", Activities.get(0).getTitle());
     }
 
     @Test
-    void getEventsByOwnerId_ShouldReturnEvents_WhenOwnerExists() {
+    void getActivitiesByOwnerId_ShouldReturnActivities_WhenOwnerExists() {
         UUID ownerId = UUID.randomUUID();
-        Event event = createDummyEvent(UUID.randomUUID(), "Owner Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findByCreatorId(ownerId)).thenReturn(List.of(event));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        Activity Activity = createDummyActivity(UUID.randomUUID(), "Owner Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
+        when(ActivityRepository.findByCreatorId(ownerId)).thenReturn(List.of(Activity));
+        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<EventDTO> events = eventService.getEventsByOwnerId(ownerId);
+        List<ActivityDTO> Activities = Activitieservice.getActivitiesByOwnerId(ownerId);
 
-        assertNotNull(events);
-        assertFalse(events.isEmpty());
-        assertEquals("Owner Event", events.get(0).getTitle());
+        assertNotNull(Activities);
+        assertFalse(Activities.isEmpty());
+        assertEquals("Owner Activity", Activities.get(0).getTitle());
     }
 
     @Test
-    void replaceEvent_ShouldReplaceEvent_WhenEventExists() {
-        UUID eventId = UUID.randomUUID();
-        Event existingEvent = createDummyEvent(eventId, "Old Title", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(existingEvent));
+    void replaceActivity_ShouldReplaceActivity_WhenActivityExists() {
+        UUID ActivityId = UUID.randomUUID();
+        Activity existingActivity = createDummyActivity(ActivityId, "Old Title", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(existingActivity));
 
-        EventDTO newEventDTO = dummyEventDTO(eventId, "New Title");
+        ActivityDTO newActivityDTO = dummyActivityDTO(ActivityId, "New Title");
         Location dummyLoc = new Location(UUID.randomUUID(), "New Location", 10.0, 20.0);
-        when(locationService.getLocationEntityById(newEventDTO.getLocationId())).thenReturn(dummyLoc);
+        when(locationService.getLocationEntityById(newActivityDTO.getLocationId())).thenReturn(dummyLoc);
         User dummyCreator = new User();
-        dummyCreator.setId(newEventDTO.getCreatorUserId());
-        when(userService.getUserEntityById(newEventDTO.getCreatorUserId())).thenReturn(dummyCreator);
+        dummyCreator.setId(newActivityDTO.getCreatorUserId());
+        when(userService.getUserEntityById(newActivityDTO.getCreatorUserId())).thenReturn(dummyCreator);
 
-        Event updatedEvent = createDummyEvent(eventId, "New Title", newEventDTO.getStartTime(), newEventDTO.getEndTime());
-        updatedEvent.setLocation(dummyLoc);
-        updatedEvent.setCreator(dummyCreator);
-        when(eventRepository.save(existingEvent)).thenReturn(updatedEvent);
+        Activity updatedActivity = createDummyActivity(ActivityId, "New Title", newActivityDTO.getStartTime(), newActivityDTO.getEndTime());
+        updatedActivity.setLocation(dummyLoc);
+        updatedActivity.setCreator(dummyCreator);
+        when(ActivityRepository.save(existingActivity)).thenReturn(updatedActivity);
 
-        EventDTO result = eventService.replaceEvent(newEventDTO, eventId);
+        ActivityDTO result = Activitieservice.replaceActivity(newActivityDTO, ActivityId);
 
         assertNotNull(result);
         assertEquals("New Title", result.getTitle());
     }
 
     @Test
-    void replaceEvent_ShouldCreateNewEvent_WhenEventNotFound() {
-        UUID eventId = UUID.randomUUID();
-        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
+    void replaceActivity_ShouldCreateNewActivity_WhenActivityNotFound() {
+        UUID ActivityId = UUID.randomUUID();
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.empty());
 
-        EventDTO newEventDTO = dummyEventDTO(eventId, "Created Event");
+        ActivityDTO newActivityDTO = dummyActivityDTO(ActivityId, "Created Activity");
         Location dummyLoc = new Location(UUID.randomUUID(), "Location", 0.0, 0.0);
-        when(locationService.getLocationEntityById(newEventDTO.getLocationId())).thenReturn(dummyLoc);
+        when(locationService.getLocationEntityById(newActivityDTO.getLocationId())).thenReturn(dummyLoc);
         User dummyCreator = new User();
-        dummyCreator.setId(newEventDTO.getCreatorUserId());
-        when(userService.getUserEntityById(newEventDTO.getCreatorUserId())).thenReturn(dummyCreator);
+        dummyCreator.setId(newActivityDTO.getCreatorUserId());
+        when(userService.getUserEntityById(newActivityDTO.getCreatorUserId())).thenReturn(dummyCreator);
 
-        Event newEvent = createDummyEvent(eventId, "Created Event", newEventDTO.getStartTime(), newEventDTO.getEndTime());
-        newEvent.setLocation(dummyLoc);
-        newEvent.setCreator(dummyCreator);
-        when(eventRepository.save(any(Event.class))).thenReturn(newEvent);
+        Activity newActivity = createDummyActivity(ActivityId, "Created Activity", newActivityDTO.getStartTime(), newActivityDTO.getEndTime());
+        newActivity.setLocation(dummyLoc);
+        newActivity.setCreator(dummyCreator);
+        when(ActivityRepository.save(any(Activity.class))).thenReturn(newActivity);
 
-        EventDTO result = eventService.replaceEvent(newEventDTO, eventId);
+        ActivityDTO result = Activitieservice.replaceActivity(newActivityDTO, ActivityId);
 
         assertNotNull(result);
-        assertEquals("Created Event", result.getTitle());
+        assertEquals("Created Activity", result.getTitle());
     }
 
     @Test
-    void getParticipatingUsersByEventId_ShouldReturnUserDTOs_WhenParticipantsExist() {
-        UUID eventId = UUID.randomUUID();
-        EventUser eu1 = new EventUser();
+    void getParticipatingUsersByActivityId_ShouldReturnUserDTOs_WhenParticipantsExist() {
+        UUID ActivityId = UUID.randomUUID();
+        ActivityUser eu1 = new ActivityUser();
         User user1 = new User();
         user1.setId(UUID.randomUUID());
         eu1.setUser(user1);
         eu1.setStatus(ParticipationStatus.participating);
-        EventUser eu2 = new EventUser();
+        ActivityUser eu2 = new ActivityUser();
         User user2 = new User();
         user2.setId(UUID.randomUUID());
         eu2.setUser(user2);
         eu2.setStatus(ParticipationStatus.invited);
 
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu1, eu2));
-        when(eventUserRepository.findByEvent_IdAndStatus(eventId, ParticipationStatus.participating)).thenReturn(List.of(eu1));
+        when(activityUserRepository.findByActivity_Id(ActivityId)).thenReturn(List.of(eu1, eu2));
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating)).thenReturn(List.of(eu1));
         UserDTO userDTO1 = new UserDTO(
                 user1.getId(), List.of(), "user1", "pic.jpg", "First Last", "bio", List.of(), "email1@example.com");
         when(userService.getUserById(user1.getId())).thenReturn(userDTO1);
 
-        List<UserDTO> participants = eventService.getParticipatingUsersByEventId(eventId);
+        List<UserDTO> participants = Activitieservice.getParticipatingUsersByActivityId(ActivityId);
 
         assertNotNull(participants);
         assertEquals(1, participants.size());
@@ -597,22 +597,22 @@ public class EventServiceTests {
 
     @Test
     void getParticipationStatus_ShouldReturnStatus_WhenUserParticipates() {
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        ActivityUsersId compositeId = new ActivityUsersId(ActivityId, userId);
 
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
+        when(activityUserRepository.existsById(compositeId)).thenReturn(true);
 
-        EventUser eu = new EventUser();
+        ActivityUser eu = new ActivityUser();
         User user = new User();
         user.setId(userId);
         eu.setUser(user);
         eu.setStatus(ParticipationStatus.participating);
 
-        // Ensure we fetch by both eventId and userId
-        when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
+        // Ensure we fetch by both ActivityId and userId
+        when(activityUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
 
-        ParticipationStatus status = eventService.getParticipationStatus(eventId, userId);
+        ParticipationStatus status = Activitieservice.getParticipationStatus(ActivityId, userId);
 
         assertEquals(ParticipationStatus.participating, status);
     }
@@ -620,303 +620,303 @@ public class EventServiceTests {
 
     @Test
     void getParticipationStatus_ShouldReturnNotInvited_WhenUserNotFound() {
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        ActivityUsersId compositeId = new ActivityUsersId(ActivityId, userId);
         // Stub existsById to return true and provide a list with a user not matching userId.
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-        EventUser eu = new EventUser();
+        when(activityUserRepository.existsById(compositeId)).thenReturn(true);
+        ActivityUser eu = new ActivityUser();
         User otherUser = new User();
         otherUser.setId(UUID.randomUUID());
         eu.setUser(otherUser);
         eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(eu));
+        when(activityUserRepository.findByActivity_Id(ActivityId)).thenReturn(List.of(eu));
 
-        ParticipationStatus status = eventService.getParticipationStatus(eventId, userId);
+        ParticipationStatus status = Activitieservice.getParticipationStatus(ActivityId, userId);
 
         assertEquals(ParticipationStatus.notInvited, status);
     }
 
     @Test
     void inviteUser_ShouldInviteUser_WhenNotAlreadyInvited() {
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        // Return a non-empty list with an EventUser for a different user.
-        EventUser otherEU = new EventUser();
+        // Return a non-empty list with an ActivityUser for a different user.
+        ActivityUser otherEU = new ActivityUser();
         User otherUser = new User();
         otherUser.setId(UUID.randomUUID());
         otherEU.setUser(otherUser);
         otherEU.setStatus(ParticipationStatus.participating);
-        when(eventUserRepository.findByEvent_Id(eventId)).thenReturn(List.of(otherEU));
+        when(activityUserRepository.findByActivity_Id(ActivityId)).thenReturn(List.of(otherEU));
 
         User user = new User();
         user.setId(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        Event event = createDummyEvent(eventId, "Invite Test", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        Activity Activity = createDummyActivity(ActivityId, "Invite Test", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
 
-        boolean alreadyInvited = eventService.inviteUser(eventId, userId);
+        boolean alreadyInvited = Activitieservice.inviteUser(ActivityId, userId);
 
         assertFalse(alreadyInvited);
-        verify(eventUserRepository, times(1)).save(any(EventUser.class));
+        verify(activityUserRepository, times(1)).save(any(ActivityUser.class));
     }
 
     @Test
     void inviteUser_ShouldReturnTrue_WhenUserAlreadyInvited() {
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        EventUsersId compositeId = new EventUsersId(eventId, userId);
+        ActivityUsersId compositeId = new ActivityUsersId(ActivityId, userId);
 
         // Create test entities
-        Event event = new Event();
-        event.setId(eventId);
+        Activity Activity = new Activity();
+        Activity.setId(ActivityId);
 
         User user = new User();
         user.setId(userId);
 
-        EventUser eu = new EventUser();
+        ActivityUser eu = new ActivityUser();
         eu.setId(compositeId);
-        eu.setEvent(event);
+        eu.setActivity(Activity);
         eu.setUser(user);
         eu.setStatus(ParticipationStatus.invited);
 
         // Mocking repository calls
-        when(eventUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user)); // Prevents NotFoundException
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event)); // Prevents NotFoundException
+        when(activityUserRepository.findById(compositeId)).thenReturn(Optional.of(eu));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user)); // PrActivities NotFoundException
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity)); // PrActivities NotFoundException
 
         // Call the method
-        boolean result = eventService.inviteUser(eventId, userId);
+        boolean result = Activitieservice.inviteUser(ActivityId, userId);
 
         // Assertions
         assertTrue(result);
-        verify(eventUserRepository, never()).save(any(EventUser.class)); // Ensures no save happens
+        verify(activityUserRepository, never()).save(any(ActivityUser.class)); // Ensures no save happens
     }
 
 
     @Test
-    void getEventsInvitedTo_ShouldReturnEvents_WhenUserIsInvited() {
+    void getActivitiesInvitedTo_ShouldReturnActivities_WhenUserIsInvited() {
         UUID userId = UUID.randomUUID();
-        Event event = createDummyEvent(UUID.randomUUID(), "Invited Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        EventUser eu = new EventUser();
+        Activity Activity = createDummyActivity(UUID.randomUUID(), "Invited Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
+        ActivityUser eu = new ActivityUser();
         User user = new User();
         user.setId(userId);
         eu.setUser(user);
-        eu.setEvent(event);
+        eu.setActivity(Activity);
         eu.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(eu));
-        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(eu));
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(activityUserRepository.findByUser_Id(userId)).thenReturn(List.of(eu));
+        when(activityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(eu));
+        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        List<EventDTO> events = eventService.getEventsInvitedTo(userId);
+        List<ActivityDTO> Activities = Activitieservice.getActivitiesInvitedTo(userId);
 
-        assertNotNull(events);
-        assertEquals(1, events.size());
+        assertNotNull(Activities);
+        assertEquals(1, Activities.size());
     }
 
     @Test
-    void getFullEventsInvitedTo_ShouldReturnFullEvents_WhenUserIsInvited() {
+    void getFullActivitiesInvitedTo_ShouldReturnFullActivities_WhenUserIsInvited() {
         UUID userId = UUID.randomUUID();
-        UUID eventId = UUID.randomUUID();
-        var compositeId = new EventUsersId(eventId, userId);
-        Event event = createDummyEvent(eventId, "Full Invited Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
+        UUID ActivityId = UUID.randomUUID();
+        var compositeId = new ActivityUsersId(ActivityId, userId);
+        Activity Activity = createDummyActivity(ActivityId, "Full Invited Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
 
-        // Stub participation with valid EventUser
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-        EventUser validEventUser = new EventUser();
+        // Stub participation with valid ActivityUser
+        when(activityUserRepository.existsById(compositeId)).thenReturn(true);
+        ActivityUser validActivityUser = new ActivityUser();
         User invitedUser = new User();
         invitedUser.setId(userId);
-        validEventUser.setUser(invitedUser);
-        validEventUser.setStatus(ParticipationStatus.invited);
-        validEventUser.setEvent(event);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(validEventUser));
-        when(eventUserRepository.findByUser_Id(userId)).thenReturn(List.of(validEventUser));
-        when(eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(validEventUser));
+        validActivityUser.setUser(invitedUser);
+        validActivityUser.setStatus(ParticipationStatus.invited);
+        validActivityUser.setActivity(Activity);
+        when(activityUserRepository.findByActivity_Id(any(UUID.class))).thenReturn(List.of(validActivityUser));
+        when(activityUserRepository.findByUser_Id(userId)).thenReturn(List.of(validActivityUser));
+        when(activityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.invited)).thenReturn(List.of(validActivityUser));
 
-        when(userService.getParticipantUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "John Smith", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(userService.getAllUsers()).thenReturn(List.of());
-        when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getFullChatMessagesByActivityId(any(UUID.class))).thenReturn(List.of());
 
         FriendTagDTO dummyTag = mock(FriendTagDTO.class);
         when(dummyTag.getColorHexCode()).thenReturn("#DUMMY");
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(Optional.of(dummyTag));
 
-        List<FullFeedEventDTO> fullEvents = eventService.getFullEventsInvitedTo(userId);
+        List<FullFeedActivityDTO> fullActivities = Activitieservice.getFullActivitiesInvitedTo(userId);
 
-        assertNotNull(fullEvents);
-        assertFalse(fullEvents.isEmpty());
+        assertNotNull(fullActivities);
+        assertFalse(fullActivities.isEmpty());
     }
 
     @Test
-    void getFullEventByEvent_ShouldReturnFullFeedEventDTO() {
-        UUID eventId = UUID.randomUUID();
-        EventDTO eventDTO = new EventDTO(
-                eventId,
-                "Some Event",
+    void getFullActivityByActivity_ShouldReturnFullFeedActivityDTO() {
+        UUID ActivityId = UUID.randomUUID();
+        ActivityDTO ActivityDTO = new ActivityDTO(
+                ActivityId,
+                "Some Activity",
                 OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(1),
                 UUID.randomUUID(),
                 "Note",
                 "icon",
-                EventCategory.ACTIVE,
+                ActivityCategory.ACTIVE,
                 UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
-        when(locationService.getLocationById(eventDTO.getLocationId()))
+        when(locationService.getLocationById(ActivityDTO.getLocationId()))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
-        when(userService.getBaseUserById(eventDTO.getCreatorUserId())).thenReturn(new BaseUserDTO(
+        when(userService.getBaseUserById(ActivityDTO.getCreatorUserId())).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "John Smith", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.getParticipantsByEventId(eventDTO.getId())).thenReturn(List.of());
-        when(userService.getInvitedByEventId(eventDTO.getId())).thenReturn(List.of());
+        when(userService.getParticipantsByActivityId(ActivityDTO.getId())).thenReturn(List.of());
+        when(userService.getInvitedByActivityId(ActivityDTO.getId())).thenReturn(List.of());
         when(userService.getAllUsers()).thenReturn(List.of());
-        when(chatMessageService.getFullChatMessagesByEventId(eventDTO.getId())).thenReturn(List.of());
+        when(chatMessageService.getFullChatMessagesByActivityId(ActivityDTO.getId())).thenReturn(List.of());
 
-        FullFeedEventDTO fullEvent = eventService.getFullEventByEvent(eventDTO, null, new HashSet<>());
+        FullFeedActivityDTO fullActivity = Activitieservice.getFullActivityByActivity(ActivityDTO, null, new HashSet<>());
 
-        assertNotNull(fullEvent);
-        // For EventDTO record, use eventDTO.getTitle() accessor.
-        assertEquals(eventDTO.getTitle(), fullEvent.getTitle());
-        assertNull(fullEvent.getEventFriendTagColorHexCodeForRequestingUser());
-        assertNull(fullEvent.getParticipationStatus());
+        assertNotNull(fullActivity);
+        // For ActivityDTO record, use ActivityDTO.getTitle() accessor.
+        assertEquals(ActivityDTO.getTitle(), fullActivity.getTitle());
+        assertNull(fullActivity.getActivityFriendTagColorHexCodeForRequestingUser());
+        assertNull(fullActivity.getParticipationStatus());
     }
 
     @Test
     void getFriendTagColorHexCodeForRequestingUser_ShouldReturnColorHexCode() {
         UUID creatorId = UUID.randomUUID();
-        EventDTO eventDTO = new EventDTO(
-                UUID.randomUUID(), "Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                UUID.randomUUID(), "Note", "icon", EventCategory.ACTIVE, creatorId, List.of(), List.of(), List.of(), Instant.now());
+        ActivityDTO ActivityDTO = new ActivityDTO(
+                UUID.randomUUID(), "Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
+                UUID.randomUUID(), "Note", "icon", ActivityCategory.ACTIVE, creatorId, List.of(), List.of(), List.of(), Instant.now());
         UUID requestingUserId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
         when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, creatorId)).thenReturn(Optional.of(friendTag));
 
-        String colorHex = eventService.getFriendTagColorHexCodeForRequestingUser(eventDTO, requestingUserId);
+        String colorHex = Activitieservice.getFriendTagColorHexCodeForRequestingUser(ActivityDTO, requestingUserId);
 
         assertEquals("#ABCDEF", colorHex);
     }
 
     @Test
-    void convertEventsToFullFeedEvents_ShouldReturnConvertedList() {
-        EventDTO eventDTO1 = dummyEventDTO(UUID.randomUUID(), "Event 1");
-        EventDTO eventDTO2 = dummyEventDTO(UUID.randomUUID(), "Event 2");
-        List<EventDTO> events = List.of(eventDTO1, eventDTO2);
+    void convertActivitiesToFullFeedActivities_ShouldReturnConvertedList() {
+        ActivityDTO ActivityDTO1 = dummyActivityDTO(UUID.randomUUID(), "Activity 1");
+        ActivityDTO ActivityDTO2 = dummyActivityDTO(UUID.randomUUID(), "Activity 2");
+        List<ActivityDTO> Activities = List.of(ActivityDTO1, ActivityDTO2);
         UUID requestingUserId = UUID.randomUUID();
 
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "John Smith", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getParticipantsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedByActivityId(any(UUID.class))).thenReturn(List.of());
         when(userService.getAllUsers()).thenReturn(List.of());
-        when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
-        // Stub participation: existsById true and findByEvent_Id returns a dummy EventUser not matching the requesting user.
-        when(eventUserRepository.existsById(new EventUsersId(eventDTO1.getId(), requestingUserId))).thenReturn(true);
+        when(chatMessageService.getFullChatMessagesByActivityId(any(UUID.class))).thenReturn(List.of());
+        // Stub participation: existsById true and findByActivity_Id returns a dummy ActivityUser not matching the requesting user.
+        when(activityUserRepository.existsById(new ActivityUsersId(ActivityDTO1.getId(), requestingUserId))).thenReturn(true);
 
-        EventUser dummyEU = new EventUser();
+        ActivityUser dummyEU = new ActivityUser();
         User dummyUser = new User();
         dummyUser.setId(UUID.randomUUID()); // not equal to requestingUserId
         dummyEU.setUser(dummyUser);
         dummyEU.setStatus(ParticipationStatus.invited);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
+        when(activityUserRepository.findByActivity_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
         // Stub friend tag lookup to return null (i.e. no friend tag applies).
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
-        List<FullFeedEventDTO> fullEvents = eventService.convertEventsToFullFeedEvents(events, requestingUserId);
-        assertNotNull(fullEvents, "The converted list should not be null");
-        assertEquals(2, fullEvents.size(), "There should be two full events in the converted list");
+        List<FullFeedActivityDTO> fullActivities = Activitieservice.convertActivitiesToFullFeedActivities(Activities, requestingUserId);
+        assertNotNull(fullActivities, "The converted list should not be null");
+        assertEquals(2, fullActivities.size(), "There should be two full Activities in the converted list");
     }
 
     @Test
-    void convertEventsToFullFeedSelfOwnedEvents_ShouldReturnConvertedListWithAccent() {
-        UUID eventId = UUID.randomUUID();
-        EventDTO eventDTO1 = dummyEventDTO(eventId, "Self-Owned Event");
-        List<EventDTO> events = List.of(eventDTO1);
+    void convertActivitiesToFullFeedSelfOwnedActivities_ShouldReturnConvertedListWithAccent() {
+        UUID ActivityId = UUID.randomUUID();
+        ActivityDTO ActivityDTO1 = dummyActivityDTO(ActivityId, "Self-Owned Activity");
+        List<ActivityDTO> Activities = List.of(ActivityDTO1);
         UUID requestingUserId = UUID.randomUUID();
-        var compositeId = new EventUsersId(eventId, requestingUserId);
+        var compositeId = new ActivityUsersId(ActivityId, requestingUserId);
 
         when(locationService.getLocationById(any(UUID.class)))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(new BaseUserDTO(
                 UUID.randomUUID(), "John Smith", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
-        when(userService.getParticipantsByEventId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedByEventId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getParticipantsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(userService.getInvitedByActivityId(any(UUID.class))).thenReturn(List.of());
         when(userService.getAllUsers()).thenReturn(List.of());
-        when(chatMessageService.getFullChatMessagesByEventId(any(UUID.class))).thenReturn(List.of());
+        when(chatMessageService.getFullChatMessagesByActivityId(any(UUID.class))).thenReturn(List.of());
 
         // Stub friend tag lookup to return null (self-owned accent)
         when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
 
-        // Stub participation lookup with a valid EventUser and User
-        when(eventUserRepository.existsById(compositeId)).thenReturn(true);
-        EventUser validEventUser = new EventUser();
+        // Stub participation lookup with a valid ActivityUser and User
+        when(activityUserRepository.existsById(compositeId)).thenReturn(true);
+        ActivityUser validActivityUser = new ActivityUser();
         User validUser = new User();
         validUser.setId(UUID.randomUUID());
-        validEventUser.setUser(validUser);
-        validEventUser.setStatus(ParticipationStatus.participating);
-        when(eventUserRepository.findByEvent_Id(any(UUID.class))).thenReturn(List.of(validEventUser));
+        validActivityUser.setUser(validUser);
+        validActivityUser.setStatus(ParticipationStatus.participating);
+        when(activityUserRepository.findByActivity_Id(any(UUID.class))).thenReturn(List.of(validActivityUser));
 
-        List<FullFeedEventDTO> fullEvents = eventService.convertEventsToFullFeedSelfOwnedEvents(events, requestingUserId);
+        List<FullFeedActivityDTO> fullActivities = Activitieservice.convertActivitiesToFullFeedSelfOwnedActivities(Activities, requestingUserId);
 
-        assertNotNull(fullEvents);
-        assertEquals(1, fullEvents.size());
-        assertEquals("#8693FF", fullEvents.get(0).getEventFriendTagColorHexCodeForRequestingUser());
+        assertNotNull(fullActivities);
+        assertEquals(1, fullActivities.size());
+        assertEquals("#8693FF", fullActivities.get(0).getActivityFriendTagColorHexCodeForRequestingUser());
     }
 
     @Test
     void toggleParticipation_ShouldToggleStatus_WhenUserIsInvitedOrParticipating() {
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
-        var compositeId = new EventUsersId(eventId, userId);
+        var compositeId = new ActivityUsersId(ActivityId, userId);
 
-        // Create and set up the event
-        Event event = new Event();
-        event.setId(eventId);
+        // Create and set up the Activity
+        Activity Activity = new Activity();
+        Activity.setId(ActivityId);
         User creator = new User();
         creator.setId(UUID.randomUUID());
-        event.setCreator(creator);
+        Activity.setCreator(creator);
 
-        // Create and set up the event user
-        EventUser invitedEventUser = new EventUser();
+        // Create and set up the Activity user
+        ActivityUser invitedActivityUser = new ActivityUser();
         User user = new User();
         user.setId(userId);
-        invitedEventUser.setUser(user);
-        invitedEventUser.setStatus(ParticipationStatus.invited);
-        invitedEventUser.setEvent(event);
+        invitedActivityUser.setUser(user);
+        invitedActivityUser.setStatus(ParticipationStatus.invited);
+        invitedActivityUser.setActivity(Activity);
 
-        // Mock the method that EventService.toggleParticipation actually calls
-        when(eventUserRepository.findByEvent_IdAndUser_Id(eventId, userId)).thenReturn(Optional.of(invitedEventUser));
-        when(eventUserRepository.save(any(EventUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        // Mock the method that Activitieservice.toggleParticipation actually calls
+        when(activityUserRepository.findByActivity_IdAndUser_Id(ActivityId, userId)).thenReturn(Optional.of(invitedActivityUser));
+        when(activityUserRepository.save(any(ActivityUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
         
-        // Mock for getFullEventById which is called by toggleParticipation to return the result
+        // Mock for getFullActivityById which is called by toggleParticipation to return the result
         LocationDTO locationDTO = new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0);
         when(locationService.getLocationById(any(UUID.class))).thenReturn(locationDTO);
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(
             new BaseUserDTO(UUID.randomUUID(), "John Smith", "email", "fullUsername", "bio", "avatar.jpg")
         );
-        when(userService.getParticipantUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByEventId(eventId)).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByEventId(eventId)).thenReturn(List.of());
+        when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
-        FullFeedEventDTO result = eventService.toggleParticipation(eventId, userId);
+        FullFeedActivityDTO result = Activitieservice.toggleParticipation(ActivityId, userId);
         assertNotNull(result);
-        assertEquals(ParticipationStatus.participating, invitedEventUser.getStatus());
+        assertEquals(ParticipationStatus.participating, invitedActivityUser.getStatus());
         
         // Test toggle from participating to invited
-        result = eventService.toggleParticipation(eventId, userId);
+        result = Activitieservice.toggleParticipation(ActivityId, userId);
         assertNotNull(result);
-        assertEquals(ParticipationStatus.invited, invitedEventUser.getStatus());
+        assertEquals(ParticipationStatus.invited, invitedActivityUser.getStatus());
         
-        // Don't verify the event publisher - the service uses it correctly based on the logs
+        // Don't verify the Activity publisher - the service uses it correctly based on the logs
         // and the verification isn't working well in tests
     }
 }

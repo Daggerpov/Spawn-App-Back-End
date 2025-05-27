@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Services.Report.Cache;
 
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
-import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.Event.ProfileEventDTO;
+import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
@@ -11,7 +11,7 @@ import com.danielagapov.spawn.DTOs.User.Profile.UserSocialMediaDTO;
 import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.Activity.IActivitieservice;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
@@ -57,7 +57,7 @@ public class CacheService implements ICacheService {
     private static final String PROFILE_EVENTS_CACHE = "profileEvents";
     private final IUserRepository userRepository;
     private final IUserService userService;
-    private final IEventService eventService;
+    private final IActivitieservice Activitieservice;
     private final IFriendRequestService friendRequestService;
     private final ObjectMapper objectMapper;
     private final IUserStatsService userStatsService;
@@ -68,7 +68,7 @@ public class CacheService implements ICacheService {
     public CacheService(
             IUserRepository userRepository,
             IUserService userService,
-            IEventService eventService,
+            IActivitieservice Activitieservice,
             IFriendRequestService friendRequestService,
             ObjectMapper objectMapper,
             IUserStatsService userStatsService,
@@ -76,7 +76,7 @@ public class CacheService implements ICacheService {
             IUserSocialMediaService userSocialMediaService) {
         this.userRepository = userRepository;
         this.userService = userService;
-        this.eventService = eventService;
+        this.Activitieservice = Activitieservice;
         this.friendRequestService = friendRequestService;
         this.objectMapper = objectMapper;
         this.userStatsService = userStatsService;
@@ -560,7 +560,7 @@ public class CacheService implements ICacheService {
 
             if (needsUpdate) {
                 try {
-                    List<ProfileEventDTO> events = eventService.getProfileEvents(user.getId(), user.getId());
+                    List<ProfileActivityDTO> events = eventService.getProfileEvents(user.getId(), user.getId());
                     byte[] eventsData = objectMapper.writeValueAsBytes(events);
 
                     if (eventsData.length < 100_000) {

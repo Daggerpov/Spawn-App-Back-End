@@ -3,8 +3,8 @@ package com.danielagapov.spawn.Services.FriendRequest;
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Events.FriendRequestAcceptedNotificationEvent;
-import com.danielagapov.spawn.Events.FriendRequestNotificationEvent;
+import com.danielagapov.spawn.Activities.FriendRequestAcceptedNotificationActivity;
+import com.danielagapov.spawn.Activities.FriendRequestNotificationActivity;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -19,7 +19,7 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationActivityPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -34,19 +34,19 @@ public class FriendRequestService implements IFriendRequestService {
     private final IUserService userService;
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ApplicationActivityPublisher ActivityPublisher;
     private final CacheManager cacheManager;
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
             IUserService userService,
             IBlockedUserService blockedUserService, ILogger logger,
-            ApplicationEventPublisher eventPublisher, CacheManager cacheManager) {
+            ApplicationActivityPublisher ActivityPublisher, CacheManager cacheManager) {
         this.repository = repository;
         this.userService = userService;
         this.blockedUserService = blockedUserService;
         this.logger = logger;
-        this.eventPublisher = eventPublisher;
+        this.ActivityPublisher = ActivityPublisher;
         this.cacheManager = cacheManager;
     }
 
@@ -70,8 +70,8 @@ public class FriendRequestService implements IFriendRequestService {
             repository.save(friendRequest);
             logger.info("Friend request saved successfully");
 
-            // Publish friend request notification event
-            eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
+            // Publish friend request notification Activity
+            ActivityPublisher.publishActivity(new FriendRequestNotificationActivity(sender, receiverId));
 
             // Return the saved friend request DTO with additional details (friends and friend tags)
             return FriendRequestMapper.toDTO(friendRequest);
@@ -149,16 +149,16 @@ public class FriendRequestService implements IFriendRequestService {
 
             userService.saveFriendToUser(sender.getId(), receiver.getId());
 
-            // Publish friend request accepted notification event
-            eventPublisher.publishEvent(
-                    new FriendRequestAcceptedNotificationEvent(receiver, sender.getId())
+            // Publish friend request accepted notification Activity
+            ActivityPublisher.publishActivity(
+                    new FriendRequestAcceptedNotificationActivity(receiver, sender.getId())
             );
 
             deleteFriendRequest(id);
 
-            if (cacheManager.getCache("filteredFeedEvents") != null) {
-                cacheManager.getCache("filteredFeedEvents").evict(sender.getId());
-                cacheManager.getCache("filteredFeedEvents").evict(receiver.getId());
+            if (cacheManager.getCache("filteredFeedActivities") != null) {
+                cacheManager.getCache("filteredFeedActivities").evict(sender.getId());
+                cacheManager.getCache("filteredFeedActivities").evict(receiver.getId());
             }
             if (cacheManager.getCache("incomingFriendRequests") != null)
                 cacheManager.getCache("incomingFriendRequests").evict(receiver.getId());

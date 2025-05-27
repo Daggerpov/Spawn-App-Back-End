@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationActivityPublisher;
 import org.springframework.dao.DataAccessException;
 
 import java.util.List;
@@ -44,7 +44,7 @@ class FriendRequestServiceTests {
     private ILogger logger;
     
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private ApplicationActivityPublisher ActivityPublisher;
 
     @Mock
     private CacheManager cacheManager;
@@ -81,7 +81,7 @@ class FriendRequestServiceTests {
         friendRequest.setReceiver(receiver);
 
         friendRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), senderId, receiverId);
-        when(cacheManager.getCache("filteredFeedEvents")).thenReturn(mockCache);
+        when(cacheManager.getCache("filteredFeedActivities")).thenReturn(mockCache);
         when(cacheManager.getCache("friendTagsByOwnerId")).thenReturn(mockCache);
     }
 
