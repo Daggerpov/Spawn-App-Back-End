@@ -37,6 +37,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -105,7 +106,8 @@ public class EventServiceTests {
                 UUID.randomUUID(),
                 List.of(),
                 List.of(),
-                List.of()
+                List.of(),
+                Instant.now()
         );
     }
 
@@ -172,7 +174,7 @@ public class EventServiceTests {
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         EventDTO eventDTO = new EventDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", EventCategory.ACTIVE, UUID.randomUUID(),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), Instant.now());
         User creator = new User(
                 UUID.randomUUID(),
                 "username",
@@ -196,7 +198,7 @@ public class EventServiceTests {
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         EventDTO eventDTO = new EventDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", EventCategory.ACTIVE, UUID.randomUUID(),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), Instant.now());
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
         when(eventRepository.save(any(Event.class))).thenThrow(new DataAccessException("Database error") {
@@ -251,7 +253,8 @@ public class EventServiceTests {
                 EventCategory.ACTIVE,
                 creatorId,
                 List.of(friendTagId),
-                List.of(explicitInviteId)
+                List.of(explicitInviteId),
+                null
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -321,7 +324,8 @@ public class EventServiceTests {
                 EventCategory.ACTIVE,
                 creatorId,
                 List.of(),
-                List.of()
+                List.of(),
+                null
         );
 
         when(locationService.save(any(Location.class))).thenThrow(new DataAccessException("Location save error") {
@@ -350,7 +354,8 @@ public class EventServiceTests {
                 EventCategory.ACTIVE,
                 creatorId,
                 List.of(friendTagId),
-                List.of(commonUserId)
+                List.of(commonUserId),
+                null
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -763,7 +768,7 @@ public class EventServiceTests {
                 "icon",
                 EventCategory.ACTIVE,
                 UUID.randomUUID(),
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), Instant.now());
         when(locationService.getLocationById(eventDTO.getLocationId()))
                 .thenReturn(new LocationDTO(UUID.randomUUID(), "Location", 0.0, 0.0));
         when(userService.getBaseUserById(eventDTO.getCreatorUserId())).thenReturn(new BaseUserDTO(
@@ -787,7 +792,7 @@ public class EventServiceTests {
         UUID creatorId = UUID.randomUUID();
         EventDTO eventDTO = new EventDTO(
                 UUID.randomUUID(), "Event", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                UUID.randomUUID(), "Note", "icon", EventCategory.ACTIVE, creatorId, List.of(), List.of(), List.of());
+                UUID.randomUUID(), "Note", "icon", EventCategory.ACTIVE, creatorId, List.of(), List.of(), List.of(), Instant.now());
         UUID requestingUserId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
