@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -27,4 +28,5 @@ public abstract class AbstractEventDTO implements Serializable {
      */
     String icon;
     EventCategory category;
+    Instant createdAt;
 }

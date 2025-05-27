@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -36,10 +37,11 @@ public class ProfileEventDTO extends FullFeedEventDTO {
                           String eventFriendTagColorHexCodeForRequestingUser,
                           ParticipationStatus participationStatus,
                           boolean isSelfOwned,
-                          boolean isPastEvent) {
+                          boolean isPastEvent,
+                          Instant createdAt) {
         super(id, title, startTime, endTime, location, note, icon, category, creatorUser, 
              participantUsers, invitedUsers, chatMessages, eventFriendTagColorHexCodeForRequestingUser, 
-             participationStatus, isSelfOwned);
+             participationStatus, isSelfOwned, createdAt);
         this.isPastEvent = isPastEvent;
     }
     
@@ -67,7 +69,8 @@ public class ProfileEventDTO extends FullFeedEventDTO {
             fullFeedEventDTO.getEventFriendTagColorHexCodeForRequestingUser(),
             fullFeedEventDTO.getParticipationStatus(),
             fullFeedEventDTO.isSelfOwned(),
-            isPastEvent
+            isPastEvent,
+            fullFeedEventDTO.getCreatedAt()
         );
     }
 } 

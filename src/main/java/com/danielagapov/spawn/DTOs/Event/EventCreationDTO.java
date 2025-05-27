@@ -4,6 +4,7 @@ import com.danielagapov.spawn.Enums.EventCategory;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -26,8 +27,9 @@ public class EventCreationDTO extends AbstractEventDTO {
     EventCategory category,
     UUID creatorUserId,
     List<UUID> invitedFriendTagIds,
-    List<UUID> invitedFriendUserIds) {
-        super(id, title, startTime, endTime, note, icon, category);
+    List<UUID> invitedFriendUserIds,
+    Instant createdAt) {
+        super(id, title, startTime, endTime, note, icon, category, createdAt);
         this.location = location;
         this.creatorUserId = creatorUserId;
         this.invitedFriendTagIds = invitedFriendTagIds;

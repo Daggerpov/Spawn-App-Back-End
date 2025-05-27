@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -44,8 +45,9 @@ public class FullFeedEventDTO extends AbstractEventDTO {
                             List<FullEventChatMessageDTO> chatMessages,
                             String eventFriendTagColorHexCodeForRequestingUser,
                             ParticipationStatus participationStatus, 
-                            boolean isSelfOwned) {
-        super(id, title, startTime, endTime, note, icon, category);
+                            boolean isSelfOwned,
+                            Instant createdAt) {
+        super(id, title, startTime, endTime, note, icon, category, createdAt);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;

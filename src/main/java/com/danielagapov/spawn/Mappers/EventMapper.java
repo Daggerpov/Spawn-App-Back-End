@@ -29,13 +29,14 @@ public class EventMapper {
                 creatorUserId,
                 participantUserIds,
                 invitedUserIds,
-                chatMessageIds
+                chatMessageIds,
+                entity.getCreatedAt()
         );
     }
 
     // Convert DTO to entity
     public static Event toEntity(EventDTO dto, Location location, User creator) {
-        return new Event(
+        Event event = new Event(
                 dto.getId(),
                 dto.getTitle(),
                 dto.getStartTime(),
@@ -46,6 +47,11 @@ public class EventMapper {
                 dto.getIcon(),
                 dto.getCategory()
         );
+        // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
+        if (dto.getCreatedAt() != null) {
+            event.setCreatedAt(dto.getCreatedAt());
+        }
+        return event;
     }
 
     public static List<EventDTO> toDTOList(
@@ -105,6 +111,11 @@ public class EventMapper {
         User creator = UserMapper.toEntity(dto.getCreatorUser());
         event.setCreator(creator); // Set the creator
 
+        // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
+        if (dto.getCreatedAt() != null) {
+            event.setCreatedAt(dto.getCreatedAt());
+        }
+
         return event;
     }
 
@@ -118,6 +129,10 @@ public class EventMapper {
         event.setCreator(creator);
         event.setIcon(dto.getIcon());
         event.setCategory(dto.getCategory());
+        // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
+        if (dto.getCreatedAt() != null) {
+            event.setCreatedAt(dto.getCreatedAt());
+        }
         return event;
     }
 }
