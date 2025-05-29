@@ -35,10 +35,8 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages
     @PostMapping
     public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {
-        logger.info("Creating new chat message for activity: " + newChatMessage.getActivityId() + " by user: " + LoggingUtils.formatUserIdInfo(newChatMessage.getSenderUserId()));
         try {
             ChatMessageDTO createdMessage = chatMessageService.createChatMessage(newChatMessage);
-            logger.info("Chat message created successfully with ID: " + createdMessage.getId());
             return new ResponseEntity<>(createdMessage, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error creating chat message: " + e.getMessage());
@@ -54,7 +52,6 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChatMessage(@PathVariable UUID id) {
-        logger.info("Deleting chat message with ID: " + id);
         if (id == null) {
             logger.error("Invalid parameter: chat message ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -62,7 +59,6 @@ public class ChatMessageController {
         try {
             boolean isDeleted = chatMessageService.deleteChatMessageById(id);
             if (isDeleted) {
-                logger.info("Chat message deleted successfully: " + id);
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             } else {
                 logger.error("Failed to delete chat message: " + id);
@@ -85,14 +81,12 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
     @PostMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<ChatMessageLikesDTO> createChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
-        logger.info("Creating chat message like for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
         if (chatMessageId == null || userId == null) {
             logger.error("Invalid parameters: chatMessageId or userId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
             ChatMessageLikesDTO createdLike = chatMessageService.createChatMessageLike(chatMessageId, userId);
-            logger.info("Chat message like created successfully for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
             return new ResponseEntity<>(createdLike, HttpStatus.CREATED);
         } catch (BaseNotFoundException e) {
             logger.error("Chat message or user not found for like creation: " + e.getMessage());
@@ -110,7 +104,6 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{chatMessageId}/likes
     @GetMapping("/{chatMessageId}/likes")
     public ResponseEntity<List<BaseUserDTO>> getChatMessageLikes(@PathVariable UUID chatMessageId) {
-        logger.info("Getting chat message likes for message: " + chatMessageId);
         if (chatMessageId == null) {
             logger.error("Invalid parameter: chatMessageId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -134,14 +127,12 @@ public class ChatMessageController {
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     @DeleteMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<?> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
-        logger.info("Deleting chat message like for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
         if (chatMessageId == null || userId == null) {
             logger.error("Invalid parameters: chatMessageId or userId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
-            logger.info("Chat message like deleted successfully for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (BaseNotFoundException e) {
             logger.error("Chat message like not found for deletion: " + e.getMessage());

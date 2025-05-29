@@ -30,7 +30,6 @@ public class BetaAccessSignUpController {
      */
     @GetMapping("emails")
     public ResponseEntity<List<String>> getAllEmails() {
-        logger.info("Getting all beta access sign up emails");
         try {
             return new ResponseEntity<>(service.getAllEmails(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -50,7 +49,6 @@ public class BetaAccessSignUpController {
      */
     @GetMapping("records")
     public ResponseEntity<List<BetaAccessSignUpDTO>> getAllRecords() {
-        logger.info("Getting all beta access sign up records");
         try {
             return new ResponseEntity<>(service.getAllBetaAccessSignUpRecords(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -73,7 +71,6 @@ public class BetaAccessSignUpController {
      */
     @PutMapping("{id}/emailed")
     public ResponseEntity<BetaAccessSignUpDTO> updateEmailedStatus(@PathVariable UUID id, @RequestBody Map<String, Boolean> requestBody) {
-        logger.info("Updating emailed status for beta access sign up: " + id);
         try {
             Boolean hasBeenEmailed = requestBody.get("hasBeenEmailed");
             if (hasBeenEmailed == null) {
@@ -82,7 +79,6 @@ public class BetaAccessSignUpController {
             }
             
             BetaAccessSignUpDTO updatedRecord = service.updateEmailedStatus(id, hasBeenEmailed);
-            logger.info("Emailed status updated successfully for beta access sign up: " + id + " to: " + hasBeenEmailed);
             return new ResponseEntity<>(updatedRecord, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Beta access sign up not found for emailed status update: " + id + ": " + e.getMessage());
@@ -104,10 +100,8 @@ public class BetaAccessSignUpController {
      */
     @PostMapping
     public ResponseEntity<BetaAccessSignUpDTO> signUp(@RequestBody BetaAccessSignUpDTO dto) {
-        logger.info("New beta access sign up for this email: " + dto.getEmail());
         try {
             BetaAccessSignUpDTO createdRecord = service.signUp(dto);
-            logger.info("Beta access sign up created successfully for email: " + dto.getEmail());
             return new ResponseEntity<>(createdRecord, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             logger.error("Beta access sign up conflict for email: " + dto.getEmail() + ": " + e.getMessage());

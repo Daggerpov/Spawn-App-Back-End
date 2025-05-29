@@ -26,13 +26,11 @@ public class UserInterestController {
 
     @GetMapping
     public ResponseEntity<List<String>> getUserInterests(@PathVariable UUID userId) {
-        logger.info("Getting user interests for user: " + LoggingUtils.formatUserIdInfo(userId));
         try {
             List<String> interests = userInterestService.getUserInterests(userId);
             interests = interests.stream()
                     .map(interest -> interest.replaceAll("^\"|\"$", ""))
                     .toList();
-            logger.info("User interests retrieved successfully for user: " + LoggingUtils.formatUserIdInfo(userId) + " (count: " + interests.size() + ")");
             return ResponseEntity.ok(interests);
         } catch (Exception e) {
             logger.error("Error getting user interests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -45,10 +43,8 @@ public class UserInterestController {
             @PathVariable UUID userId,
             @RequestBody String userInterestName) {
         userInterestName = userInterestName.replaceAll("^\"|\"$", "");
-        logger.info("Adding user interest '" + userInterestName + "' for user: " + LoggingUtils.formatUserIdInfo(userId));
         try {
             String result = userInterestService.addUserInterest(userId, userInterestName);
-            logger.info("User interest added successfully for user: " + LoggingUtils.formatUserIdInfo(userId) + " - interest: " + userInterestName);
             return new ResponseEntity<>(result, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error adding user interest for user: " + LoggingUtils.formatUserIdInfo(userId) + " - interest: " + userInterestName + ": " + e.getMessage());

@@ -31,7 +31,6 @@ public class CalendarController {
             @PathVariable UUID userId,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
-        logger.info("Getting calendar activities for user: " + LoggingUtils.formatUserIdInfo(userId) + " (month: " + month + ", year: " + year + ")");
         if (userId == null) {
             logger.error("Invalid parameter: userId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -39,7 +38,6 @@ public class CalendarController {
 
         try {
             List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesWithFilters(userId, month, year);
-            logger.info("Calendar activities retrieved successfully for user: " + LoggingUtils.formatUserIdInfo(userId) + " (count: " + activities.size() + ")");
             return ResponseEntity.ok(activities);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for calendar activities: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -53,7 +51,6 @@ public class CalendarController {
     @GetMapping("/all")
     public ResponseEntity<List<CalendarActivityDTO>> getAllCalendarActivities(
             @PathVariable UUID userId) {
-        logger.info("Getting all calendar activities for user: " + LoggingUtils.formatUserIdInfo(userId));
         if (userId == null) {
             logger.error("Invalid parameter: userId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -61,7 +58,6 @@ public class CalendarController {
 
         try {
             List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesWithFilters(userId, null, null);
-            logger.info("All calendar activities retrieved successfully for user: " + LoggingUtils.formatUserIdInfo(userId) + " (count: " + activities.size() + ")");
             return ResponseEntity.ok(activities);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for all calendar activities: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
