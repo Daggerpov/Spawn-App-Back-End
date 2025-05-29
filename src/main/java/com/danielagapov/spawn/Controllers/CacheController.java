@@ -42,9 +42,24 @@ public class CacheController {
     public ResponseEntity<Map<String, CacheValidationResponseDTO>> validateCache(
             @PathVariable UUID userId,
             @RequestBody CacheValidationRequestDTO request) {
-        logger.info("Validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + " with " + request.getTimestamps().size() + " categories");
+        // Calculate the number of categories safely for logging
+        // This prevents NullPointerException when request or timestamps is null
+        int categoryCount = 0;
+        if (request != null && request.getTimestamps() != null) {
+            categoryCount = request.getTimestamps().size();
+        }
+        
+        logger.info("Validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + " with " + categoryCount + " categories");
         try {
-            Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, request.getTimestamps());
+            // Add null checks to prevent NullPointerException
+            // This can happen when the mobile client sends an empty request body
+            // or when the timestamps field is null
+            Map<String, String> timestamps = null;
+            if (request != null) {
+                timestamps = request.getTimestamps();
+            }
+            
+            Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, timestamps);
             logger.info("Cache validation completed successfully for user: " + LoggingUtils.formatUserIdInfo(userId));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
