@@ -5,6 +5,9 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Events.ActivityInviteNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityParticipationNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityUpdateNotificationEvent;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -12,9 +15,9 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ActivityMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
-import com.danielagapov.spawn.Models.CompositeKeys.ActivityUsersId;
 import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.ActivityUser;
+import com.danielagapov.spawn.Models.CompositeKeys.ActivityUsersId;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityRepository;
@@ -29,19 +32,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import com.danielagapov.spawn.Events.ActivityInviteNotificationEvent;
-import com.danielagapov.spawn.Events.ActivityParticipationNotificationEvent;
-import com.danielagapov.spawn.Events.ActivityUpdateNotificationEvent;
 
 @Service
 public class ActivityService implements IActivityService {
@@ -218,18 +217,7 @@ public class ActivityService implements IActivityService {
 
             Activity = repository.save(Activity);
 
-            Set<UUID> allInvitedUserIds = new HashSet<>();
-            if (ActivityCreationDTO.getInvitedFriendTagIds() != null) {
-                for (UUID friendTagId : ActivityCreationDTO.getInvitedFriendTagIds()) {
-                    List<UUID> friendIdsForTag = userService.getFriendUserIdsByFriendTagId(friendTagId);
-                    allInvitedUserIds.addAll(friendIdsForTag);
-                }
-            }
-            if (ActivityCreationDTO.getInvitedFriendUserIds() != null) {
-                allInvitedUserIds.addAll(ActivityCreationDTO.getInvitedFriendUserIds());
-            }
-
-            for (UUID userId : allInvitedUserIds) {
+            for (UUID userId: ActivityCreationDTO.getInvitedFriendUserIds()) {
                 User invitedUser = userRepository.findById(userId)
                         .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
                 ActivityUsersId compositeId = new ActivityUsersId(Activity.getId(), userId);
@@ -243,10 +231,10 @@ public class ActivityService implements IActivityService {
 
             // Create and publish Activity invite notification directly
             eventPublisher.publishEvent(
-                new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, allInvitedUserIds)
+                new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, new HashSet<>(ActivityCreationDTO.getInvitedFriendUserIds()))
             );
 
-            return ActivityMapper.toDTO(Activity, creator.getId(), null, new ArrayList<>(allInvitedUserIds), null);
+            return ActivityMapper.toDTO(Activity, creator.getId(), null, new ArrayList<>(ActivityCreationDTO.getInvitedFriendUserIds()), null);
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
             throw new ApplicationException("Failed to create Activity", e);

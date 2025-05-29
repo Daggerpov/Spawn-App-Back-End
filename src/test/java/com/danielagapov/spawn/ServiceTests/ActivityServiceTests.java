@@ -252,7 +252,6 @@ public class ActivityServiceTests {
                 "icon",
                 ActivityCategory.ACTIVE,
                 creatorId,
-                List.of(friendTagId),
                 List.of(explicitInviteId),
                 null
         );
@@ -275,18 +274,13 @@ public class ActivityServiceTests {
         savedActivity.setCreator(creator);
         when(ActivityRepository.save(any(Activity.class))).thenReturn(savedActivity);
 
-        when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of(friendTagUserId));
         when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
-
-        User friendTagUser = new User();
-        friendTagUser.setId(friendTagUserId);
-        when(userRepository.findById(friendTagUserId)).thenReturn(Optional.of(friendTagUser));
 
         User explicitInvitedUser = new User();
         explicitInvitedUser.setId(explicitInviteId);
         when(userRepository.findById(explicitInviteId)).thenReturn(Optional.of(explicitInvitedUser));
 
-        Set<UUID> expectedInvited = new HashSet<>(Arrays.asList(friendTagUserId, explicitInviteId));
+        Set<UUID> expectedInvited = new HashSet<>(List.of(explicitInviteId));
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(new ArrayList<>(expectedInvited));
 
         ActivityDTO ActivityDTO = (ActivityDTO) ActivityService.createActivity(creationDTO);
@@ -324,7 +318,6 @@ public class ActivityServiceTests {
                 ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(),
-                List.of(),
                 null
         );
 
@@ -340,7 +333,6 @@ public class ActivityServiceTests {
     @Test
     void createActivity_MergesInvites_Correctly() {
         UUID creatorId = UUID.randomUUID();
-        UUID friendTagId = UUID.randomUUID();
         UUID commonUserId = UUID.randomUUID();
 
         ActivityCreationDTO creationDTO = new ActivityCreationDTO(
@@ -353,7 +345,6 @@ public class ActivityServiceTests {
                 "icon",
                 ActivityCategory.ACTIVE,
                 creatorId,
-                List.of(friendTagId),
                 List.of(commonUserId),
                 null
         );
@@ -376,7 +367,6 @@ public class ActivityServiceTests {
         savedActivity.setCreator(creator);
         when(ActivityRepository.save(any(Activity.class))).thenReturn(savedActivity);
 
-        when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of(commonUserId));
         when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         User commonUser = new User();
