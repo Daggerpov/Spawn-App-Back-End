@@ -14,7 +14,6 @@ import java.util.UUID;
 public class ActivityCreationDTO extends AbstractActivityDTO {
     LocationDTO location;
     UUID creatorUserId;
-    List<UUID> invitedFriendTagIds;
     List<UUID> invitedFriendUserIds;
     
     public ActivityCreationDTO(UUID id,
@@ -26,13 +25,11 @@ public class ActivityCreationDTO extends AbstractActivityDTO {
     String icon,
     ActivityCategory category,
     UUID creatorUserId,
-    List<UUID> invitedFriendTagIds,
     List<UUID> invitedFriendUserIds,
     Instant createdAt) {
         super(id, title, startTime, endTime, note, icon, category, createdAt);
         this.location = location;
         this.creatorUserId = creatorUserId;
-        this.invitedFriendTagIds = invitedFriendTagIds;
         this.invitedFriendUserIds = invitedFriendUserIds;
     }
 }
