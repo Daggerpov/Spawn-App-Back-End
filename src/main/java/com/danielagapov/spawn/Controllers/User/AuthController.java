@@ -49,6 +49,7 @@ public class AuthController {
             @RequestParam(value = "idToken", required = true) String idToken,
             @RequestParam(value = "provider", required = true) OAuthProvider provider,
             @RequestParam(value = "email", required = false) String email) {
+        logger.info("Sign-in request received for provider: " + provider + " with email: " + email);
         try {
             Optional<BaseUserDTO> optionalDTO;
             optionalDTO = oauthService.signInUser(idToken, email, provider);
@@ -56,16 +57,22 @@ public class AuthController {
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
                 HttpHeaders headers = makeHeadersForTokens(baseUserDTO.getUsername());
+                logger.info("Sign-in successful for user: " + baseUserDTO.getUsername());
                 return ResponseEntity.ok().headers(headers).body(baseUserDTO);
             }
+            logger.info("Sign-in attempt - user not found for provider: " + provider + " with email: " + email);
             return ResponseEntity.ok().body(null);
         } catch (IncorrectProviderException e) {
+            logger.error("Incorrect provider error during sign-in: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (BaseNotFoundException e) {
+            logger.error("Entity not found during sign-in: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.entityType);
         } catch (SecurityException e) {
+            logger.error("Security error during sign-in: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid token: " + e.getMessage()));
         } catch (Exception e) {
+            logger.error("Unexpected error during sign-in: " + e.getMessage());
             return ResponseEntity.internalServerError().body(new ErrorResponse(e.getMessage()));
         }
     }
@@ -87,9 +94,11 @@ public class AuthController {
             @RequestBody UserCreationDTO userCreationDTO,
             @RequestParam(value = "idToken") String idToken,
             @RequestParam(value = "provider") OAuthProvider provider) {
+        logger.info("Creating user for provider: " + provider + " with username: " + userCreationDTO.getUsername());
         try {
             BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, idToken, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
+            logger.info("User created successfully: " + userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (IllegalArgumentException e) {
             logger.warn("Bad request during user creation: " + e.getMessage());
@@ -106,18 +115,24 @@ public class AuthController {
     // full path: /api/v1/auth/refresh-token
     @PostMapping("refresh-token")
     public ResponseEntity<String> refreshToken(HttpServletRequest request) {
+        logger.info("Refresh token request received");
         try {
             HttpHeaders headers = new HttpHeaders();
             String token = jwtService.refreshAccessToken(request);
             headers.add("Authorization", "Bearer " + token);
+            logger.info("Token refreshed successfully");
             return ResponseEntity.ok().headers(headers).body(token);
         } catch (TokenNotFoundException e) {
+            logger.error("No authorization token found for refresh: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No authorization token found");
         } catch (BadTokenException e) {
+            logger.error("Bad or expired token for refresh: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bad or expired token");
         } catch (BaseNotFoundException e) {
+            logger.error("Entity not found during token refresh: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity not found: " + e.entityType);
         } catch (Exception e) {
+            logger.error("Unexpected error during token refresh: " + e.getMessage());
             return ResponseEntity.internalServerError().body(null);
         }
     }
@@ -125,18 +140,20 @@ public class AuthController {
     // full path: /api/v1/auth/register
     @PostMapping("register")
     public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
+        logger.info("Registration request received for user: " + authUserDTO.getUsername());
         try {
             UserDTO newUserDTO = authService.registerUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
+            logger.info("User registered successfully: " + newUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
-            logger.warn(fae.getMessage());
+            logger.warn("Registration failed - field already exists: " + fae.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during registration: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
-            logger.error("Error registering in user: " + e.getMessage());
+            logger.error("Error registering user: " + authUserDTO.getUsername() + ": " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -144,11 +161,14 @@ public class AuthController {
     // full path: /api/v1/auth/login
     @PostMapping("login")
     public ResponseEntity<BaseUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+        logger.info("Login request received for user: " + authUserDTO.getUsername());
         try {
             BaseUserDTO existingUserDTO = authService.loginUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
+            logger.info("User logged in successfully: " + existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
+            logger.warn("Login failed - bad credentials for user: " + authUserDTO.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during login: " + e.entityType);

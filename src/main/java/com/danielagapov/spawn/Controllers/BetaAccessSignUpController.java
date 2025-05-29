@@ -30,11 +30,14 @@ public class BetaAccessSignUpController {
      */
     @GetMapping("emails")
     public ResponseEntity<List<String>> getAllEmails() {
+        logger.info("Getting all beta access sign up emails");
         try {
             return new ResponseEntity<>(service.getAllEmails(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("No beta access sign up emails found: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error getting all beta access sign up emails: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -47,11 +50,14 @@ public class BetaAccessSignUpController {
      */
     @GetMapping("records")
     public ResponseEntity<List<BetaAccessSignUpDTO>> getAllRecords() {
+        logger.info("Getting all beta access sign up records");
         try {
             return new ResponseEntity<>(service.getAllBetaAccessSignUpRecords(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("No beta access sign up records found: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error getting all beta access sign up records: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -67,17 +73,22 @@ public class BetaAccessSignUpController {
      */
     @PutMapping("{id}/emailed")
     public ResponseEntity<BetaAccessSignUpDTO> updateEmailedStatus(@PathVariable UUID id, @RequestBody Map<String, Boolean> requestBody) {
+        logger.info("Updating emailed status for beta access sign up: " + id);
         try {
             Boolean hasBeenEmailed = requestBody.get("hasBeenEmailed");
             if (hasBeenEmailed == null) {
+                logger.error("Invalid parameter: hasBeenEmailed is null for beta access sign up: " + id);
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             
-            return new ResponseEntity<>(service.updateEmailedStatus(id, hasBeenEmailed), HttpStatus.OK);
+            BetaAccessSignUpDTO updatedRecord = service.updateEmailedStatus(id, hasBeenEmailed);
+            logger.info("Emailed status updated successfully for beta access sign up: " + id + " to: " + hasBeenEmailed);
+            return new ResponseEntity<>(updatedRecord, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("Beta access sign up not found for emailed status update: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            logger.error("Error updating emailed status: " + e.getMessage());
+            logger.error("Error updating emailed status for beta access sign up: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -95,10 +106,14 @@ public class BetaAccessSignUpController {
     public ResponseEntity<BetaAccessSignUpDTO> signUp(@RequestBody BetaAccessSignUpDTO dto) {
         logger.info("New beta access sign up for this email: " + dto.getEmail());
         try {
-            return new ResponseEntity<>(service.signUp(dto), HttpStatus.CREATED);
+            BetaAccessSignUpDTO createdRecord = service.signUp(dto);
+            logger.info("Beta access sign up created successfully for email: " + dto.getEmail());
+            return new ResponseEntity<>(createdRecord, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
+            logger.error("Beta access sign up conflict for email: " + dto.getEmail() + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.CONFLICT); // 409 status code
         } catch (Exception e) {
+            logger.error("Error creating beta access sign up for email: " + dto.getEmail() + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

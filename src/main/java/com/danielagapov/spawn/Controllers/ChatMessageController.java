@@ -8,7 +8,9 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,18 +24,24 @@ import java.util.UUID;
 @RequestMapping("api/v1/chatMessages")
 public class ChatMessageController {
     private final IChatMessageService chatMessageService;
+    private final ILogger logger;
 
     @Autowired
-    public ChatMessageController(IChatMessageService chatMessageService) {
+    public ChatMessageController(IChatMessageService chatMessageService, ILogger logger) {
         this.chatMessageService = chatMessageService;
+        this.logger = logger;
     }
 
     // full path: /api/v1/chatMessages
     @PostMapping
     public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {
+        logger.info("Creating new chat message for activity: " + newChatMessage.getActivityId() + " by user: " + LoggingUtils.formatUserIdInfo(newChatMessage.getSenderUserId()));
         try {
-            return new ResponseEntity<>(chatMessageService.createChatMessage(newChatMessage), HttpStatus.CREATED);
+            ChatMessageDTO createdMessage = chatMessageService.createChatMessage(newChatMessage);
+            logger.info("Chat message created successfully with ID: " + createdMessage.getId());
+            return new ResponseEntity<>(createdMessage, HttpStatus.CREATED);
         } catch (Exception e) {
+            logger.error("Error creating chat message: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -46,17 +54,25 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChatMessage(@PathVariable UUID id) {
-        if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        logger.info("Deleting chat message with ID: " + id);
+        if (id == null) {
+            logger.error("Invalid parameter: chat message ID is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         try {
             boolean isDeleted = chatMessageService.deleteChatMessageById(id);
             if (isDeleted) {
+                logger.info("Chat message deleted successfully: " + id);
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             } else {
+                logger.error("Failed to delete chat message: " + id);
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (BaseNotFoundException e) {
+            logger.error("Chat message not found for deletion: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error deleting chat message: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -69,12 +85,20 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{chatMessageId}/likes/{userId}
     @PostMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<ChatMessageLikesDTO> createChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
-        if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        logger.info("Creating chat message like for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
+        if (chatMessageId == null || userId == null) {
+            logger.error("Invalid parameters: chatMessageId or userId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         try {
-            return new ResponseEntity<>(chatMessageService.createChatMessageLike(chatMessageId, userId), HttpStatus.CREATED);
+            ChatMessageLikesDTO createdLike = chatMessageService.createChatMessageLike(chatMessageId, userId);
+            logger.info("Chat message like created successfully for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
+            return new ResponseEntity<>(createdLike, HttpStatus.CREATED);
         } catch (BaseNotFoundException e) {
+            logger.error("Chat message or user not found for like creation: " + e.getMessage());
             return new ResponseEntity<ChatMessageLikesDTO>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error creating chat message like for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -86,12 +110,18 @@ public class ChatMessageController {
     // full path: /api/v1/chatMessages/{chatMessageId}/likes
     @GetMapping("/{chatMessageId}/likes")
     public ResponseEntity<List<BaseUserDTO>> getChatMessageLikes(@PathVariable UUID chatMessageId) {
-        if (chatMessageId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        logger.info("Getting chat message likes for message: " + chatMessageId);
+        if (chatMessageId == null) {
+            logger.error("Invalid parameter: chatMessageId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         try {
             return new ResponseEntity<>(chatMessageService.getChatMessageLikes(chatMessageId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("Chat message not found for likes retrieval: " + chatMessageId + ": " + e.getMessage());
             return new ResponseEntity<List<BaseUserDTO>>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error getting chat message likes for message: " + chatMessageId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -104,13 +134,20 @@ public class ChatMessageController {
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     @DeleteMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<?> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
-        if (chatMessageId == null || userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        logger.info("Deleting chat message like for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
+        if (chatMessageId == null || userId == null) {
+            logger.error("Invalid parameters: chatMessageId or userId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         try {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
+            logger.info("Chat message like deleted successfully for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (BaseNotFoundException e) {
+            logger.error("Chat message like not found for deletion: " + e.getMessage());
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error deleting chat message like for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
