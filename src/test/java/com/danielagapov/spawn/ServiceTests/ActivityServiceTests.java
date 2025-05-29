@@ -1,10 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
-import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
-import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
-import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.Activity.*;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ActivityCategory;
@@ -25,7 +21,6 @@ import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Activity.ActivityService;
-import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,9 +62,6 @@ public class ActivityServiceTests {
 
     @Mock
     private IUserService userService;
-
-    @Mock
-    private FriendTagService friendTagService;
 
     @Mock
     private IChatMessageService chatMessageService;
@@ -237,9 +229,7 @@ public class ActivityServiceTests {
     @Test
     void createActivity_Successful() {
         UUID creatorId = UUID.randomUUID();
-        UUID friendTagId = UUID.randomUUID();
         UUID explicitInviteId = UUID.randomUUID();
-        UUID friendTagUserId = UUID.randomUUID();
 
         LocationDTO locationDTO = new LocationDTO(null, "Test Location", 0.0, 0.0);
         ActivityCreationDTO creationDTO = new ActivityCreationDTO(
@@ -252,7 +242,6 @@ public class ActivityServiceTests {
                 "icon",
                 ActivityCategory.ACTIVE,
                 creatorId,
-                List.of(friendTagId),
                 List.of(explicitInviteId),
                 null
         );
@@ -275,18 +264,13 @@ public class ActivityServiceTests {
         savedActivity.setCreator(creator);
         when(ActivityRepository.save(any(Activity.class))).thenReturn(savedActivity);
 
-        when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of(friendTagUserId));
         when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
-
-        User friendTagUser = new User();
-        friendTagUser.setId(friendTagUserId);
-        when(userRepository.findById(friendTagUserId)).thenReturn(Optional.of(friendTagUser));
 
         User explicitInvitedUser = new User();
         explicitInvitedUser.setId(explicitInviteId);
         when(userRepository.findById(explicitInviteId)).thenReturn(Optional.of(explicitInvitedUser));
 
-        Set<UUID> expectedInvited = new HashSet<>(Arrays.asList(friendTagUserId, explicitInviteId));
+        Set<UUID> expectedInvited = new HashSet<>(Arrays.asList(explicitInviteId));
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(new ArrayList<>(expectedInvited));
 
         ActivityDTO ActivityDTO = (ActivityDTO) ActivityService.createActivity(creationDTO);
@@ -324,7 +308,6 @@ public class ActivityServiceTests {
                 ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(),
-                List.of(),
                 null
         );
 
@@ -340,7 +323,6 @@ public class ActivityServiceTests {
     @Test
     void createActivity_MergesInvites_Correctly() {
         UUID creatorId = UUID.randomUUID();
-        UUID friendTagId = UUID.randomUUID();
         UUID commonUserId = UUID.randomUUID();
 
         ActivityCreationDTO creationDTO = new ActivityCreationDTO(
@@ -353,7 +335,6 @@ public class ActivityServiceTests {
                 "icon",
                 ActivityCategory.ACTIVE,
                 creatorId,
-                List.of(friendTagId),
                 List.of(commonUserId),
                 null
         );
@@ -376,7 +357,7 @@ public class ActivityServiceTests {
         savedActivity.setCreator(creator);
         when(ActivityRepository.save(any(Activity.class))).thenReturn(savedActivity);
 
-        when(userService.getFriendUserIdsByFriendTagId(friendTagId)).thenReturn(List.of(commonUserId));
+        when(userService.getFriendUserIdsByFriendTagId(commonUserId)).thenReturn(List.of(commonUserId));
         when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         User commonUser = new User();
@@ -412,9 +393,6 @@ public class ActivityServiceTests {
                 UUID.randomUUID(), "John Smith", "email@example.com", "fullUsername", "bio", "avatar.jpg"));
         when(chatMessageService.getFullChatMessagesByActivityId(any(UUID.class))).thenReturn(List.of());
         // Stub friend tag lookup; for Activities without a requesting user, no friend tag is applied.
-        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
-
-        // To ensure getParticipationStatus does not throw, stub existsById and findByActivity_Id.
         when(activityUserRepository.existsById(any(ActivityUsersId.class))).thenReturn(true);
         // Return a list containing an ActivityUser with a dummy user (not matching any requesting user)
         ActivityUser dummyEU = new ActivityUser();
@@ -456,12 +434,6 @@ public class ActivityServiceTests {
         when(chatMessageService.getFullChatMessagesByActivityId(ActivityId)).thenReturn(List.of());
 
         // Stub friend tag lookup
-        FriendTagDTO friendTag = mock(FriendTagDTO.class);
-        when(friendTag.getColorHexCode()).thenReturn("#123456");
-        when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, Activity.getCreator().getId()))
-                .thenReturn(Optional.of(friendTag));
-
-        // Stub participation status lookups
         when(activityUserRepository.existsById(compositeId)).thenReturn(true);
         ActivityUser eu = new ActivityUser();
         eu.setId(compositeId);  // Set the composite key on the ActivityUser
@@ -479,30 +451,8 @@ public class ActivityServiceTests {
         // Assertions
         assertNotNull(fullActivity);
         assertEquals("Detailed Activity", fullActivity.getTitle());
-        assertEquals("#123456", fullActivity.getActivityFriendTagColorHexCodeForRequestingUser());
+        assertEquals("#8693FF", fullActivity.getActivityFriendTagColorHexCodeForRequestingUser());
         assertEquals(ParticipationStatus.participating, fullActivity.getParticipationStatus());
-    }
-
-
-    @Test
-    void getActivitiesByFriendTagId_ShouldReturnActivities_WhenFriendsExist() {
-        UUID tagId = UUID.randomUUID();
-        FriendTagDTO friendTag = mock(FriendTagDTO.class);
-        List<UUID> friendIds = List.of(UUID.randomUUID());
-        when(friendTag.getFriendUserIds()).thenReturn(friendIds);
-        when(friendTagService.getFriendTagById(tagId)).thenReturn(friendTag);
-
-        Activity Activity = createDummyActivity(UUID.randomUUID(), "Friend Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1));
-        when(ActivityRepository.findByCreatorIdIn(friendIds)).thenReturn(List.of(Activity));
-        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
-
-        List<ActivityDTO> Activities = ActivityService.getActivitiesByFriendTagId(tagId);
-
-        assertNotNull(Activities);
-        assertFalse(Activities.isEmpty());
-        assertEquals("Friend Activity", Activities.get(0).getTitle());
     }
 
     @Test
@@ -745,10 +695,6 @@ public class ActivityServiceTests {
         when(userService.getAllUsers()).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByActivityId(any(UUID.class))).thenReturn(List.of());
 
-        FriendTagDTO dummyTag = mock(FriendTagDTO.class);
-        when(dummyTag.getColorHexCode()).thenReturn("#DUMMY");
-        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(Optional.of(dummyTag));
-
         List<FullFeedActivityDTO> fullActivities = ActivityService.getFullActivitiesInvitedTo(userId);
 
         assertNotNull(fullActivities);
@@ -788,22 +734,6 @@ public class ActivityServiceTests {
     }
 
     @Test
-    void getFriendTagColorHexCodeForRequestingUser_ShouldReturnColorHexCode() {
-        UUID creatorId = UUID.randomUUID();
-        ActivityDTO ActivityDTO = new ActivityDTO(
-                UUID.randomUUID(), "Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                UUID.randomUUID(), "Note", "icon", ActivityCategory.ACTIVE, creatorId, List.of(), List.of(), List.of(), Instant.now());
-        UUID requestingUserId = UUID.randomUUID();
-        FriendTagDTO friendTag = mock(FriendTagDTO.class);
-        when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
-        when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, creatorId)).thenReturn(Optional.of(friendTag));
-
-        String colorHex = ActivityService.getFriendTagColorHexCodeForRequestingUser(ActivityDTO, requestingUserId);
-
-        assertEquals("#ABCDEF", colorHex);
-    }
-
-    @Test
     void convertActivitiesToFullFeedActivities_ShouldReturnConvertedList() {
         ActivityDTO ActivityDTO1 = dummyActivityDTO(UUID.randomUUID(), "Activity 1");
         ActivityDTO ActivityDTO2 = dummyActivityDTO(UUID.randomUUID(), "Activity 2");
@@ -828,7 +758,7 @@ public class ActivityServiceTests {
         dummyEU.setStatus(ParticipationStatus.invited);
         when(activityUserRepository.findByActivity_Id(any(UUID.class))).thenReturn(List.of(dummyEU));
         // Stub friend tag lookup to return null (i.e. no friend tag applies).
-        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
+        when(activityUserRepository.findByActivity_IdAndStatus(any(UUID.class), any(ParticipationStatus.class))).thenReturn(null);
 
         List<FullFeedActivityDTO> fullActivities = ActivityService.convertActivitiesToFullFeedActivities(Activities, requestingUserId);
         assertNotNull(fullActivities, "The converted list should not be null");
@@ -853,7 +783,7 @@ public class ActivityServiceTests {
         when(chatMessageService.getFullChatMessagesByActivityId(any(UUID.class))).thenReturn(List.of());
 
         // Stub friend tag lookup to return null (self-owned accent)
-        when(friendTagService.getPertainingFriendTagBetweenUsers(any(UUID.class), any(UUID.class))).thenReturn(null);
+        when(activityUserRepository.findByActivity_IdAndStatus(any(UUID.class), any(ParticipationStatus.class))).thenReturn(null);
 
         // Stub participation lookup with a valid ActivityUser and User
         when(activityUserRepository.existsById(compositeId)).thenReturn(true);

@@ -39,8 +39,6 @@ public interface IActivityService {
 
     List<ActivityDTO> getActivitiesInvitedTo(UUID id);
 
-    List<ActivityDTO> getActivitiesInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId);
-
     // Get 'Full' Activity Methods:
     List<FullFeedActivityDTO> getFullActivitiesInvitedTo(UUID id);
 
@@ -75,14 +73,8 @@ public interface IActivityService {
      */
     List<ProfileActivityDTO> getPastActivitiesWhereUserInvited(UUID inviterUserId, UUID requestingUserId);
 
-    List<FullFeedActivityDTO> getFilteredFeedActivitiesByFriendTagId(UUID friendTagFilterId);
-
     // Additional Methods:
-    List<ActivityDTO> getActivitiesByFriendTagId(UUID friendTagId);
-
     List<ActivityDTO> getActivitiesByOwnerId(UUID creatorUserId);
-
-    String getFriendTagColorHexCodeForRequestingUser(ActivityDTO activityDTO, UUID requestingUserId);
     
     /**
      * Gets the timestamp of the latest activity created by the user.

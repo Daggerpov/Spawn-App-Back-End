@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
-import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -58,31 +57,6 @@ public class ActivityController {
         } catch (Exception e) {
             // Any other exception
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/Activities/friendTag/{friendTagFilterId}
-    @GetMapping("friendTag/{friendTagFilterId}")
-    public ResponseEntity<?> getActivitiesByFriendTag(@PathVariable UUID friendTagFilterId) {
-        if (friendTagFilterId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-
-        try {
-            return new ResponseEntity<>(ActivityService.getFilteredFeedActivitiesByFriendTagId(friendTagFilterId), HttpStatus.OK);
-        } catch (BasesNotFoundException e) {
-            // thrown list of activities not found for given user id
-            // if entities not found is Activity: return response with empty list and 200 status
-            // otherwise: bad request http status
-            if (e.entityType == EntityType.Activity) {
-                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-        } catch (BaseNotFoundException e) {
-            // friend tag filter not found for friend tag id
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            // any other exception
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
