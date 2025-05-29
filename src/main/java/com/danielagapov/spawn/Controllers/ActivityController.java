@@ -36,6 +36,7 @@ public class ActivityController {
     // full path: /api/v1/Activities/user/{creatorUserId}
     @GetMapping("user/{creatorUserId}")
     public ResponseEntity<?> getActivitiesCreatedByUserId(@PathVariable UUID creatorUserId) {
+        logger.info("Getting activities created by user: " + LoggingUtils.formatUserIdInfo(creatorUserId));
         try {
             return new ResponseEntity<>(ActivityService.convertActivitiesToFullFeedSelfOwnedActivities(ActivityService.getActivitiesByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
@@ -52,6 +53,7 @@ public class ActivityController {
     // full path: /api/v1/Activities/profile/{profileUserId}?requestingUserId={requestingUserId}
     @GetMapping("profile/{profileUserId}")
     public ResponseEntity<?> getProfileActivities(@PathVariable UUID profileUserId, @RequestParam UUID requestingUserId) {
+        logger.info("Getting profile activities for user: " + LoggingUtils.formatUserIdInfo(profileUserId) + " requested by: " + LoggingUtils.formatUserIdInfo(requestingUserId));
         if (profileUserId == null || requestingUserId == null) {
             logger.error("Invalid parameters: profileUserId or requestingUserId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -73,6 +75,7 @@ public class ActivityController {
     // full path: /api/v1/Activities/friendTag/{friendTagFilterId}
     @GetMapping("friendTag/{friendTagFilterId}")
     public ResponseEntity<?> getActivitiesByFriendTag(@PathVariable UUID friendTagFilterId) {
+        logger.info("Getting activities by friend tag: " + friendTagFilterId);
         if (friendTagFilterId == null) {
             logger.error("Invalid parameter: friendTagFilterId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -85,6 +88,7 @@ public class ActivityController {
             // if entities not found is Activity: return response with empty list and 200 status
             // otherwise: bad request http status
             if (e.entityType == EntityType.Activity) {
+                logger.info("No activities found for friend tag: " + friendTagFilterId);
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Bad request for friend tag activities: " + e.getMessage());
@@ -104,8 +108,10 @@ public class ActivityController {
     // full path: /api/v1/Activities
     @PostMapping
     public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityCreationDTO activityCreationDTO) {
+        logger.info("Creating new activity: " + activityCreationDTO.getTitle());
         try {
             AbstractActivityDTO createdActivity = ActivityService.createActivity(activityCreationDTO);
+            logger.info("Activity created successfully with ID: " + createdActivity.getId());
             return new ResponseEntity<>(createdActivity, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error creating activity: " + e.getMessage());
@@ -120,6 +126,7 @@ public class ActivityController {
     // full path: /api/v1/Activities/{id}
     @PutMapping("{id}")
     public ResponseEntity<?> replaceActivity(@RequestBody ActivityDTO newActivity, @PathVariable UUID id) {
+        logger.info("Replacing activity with ID: " + id);
         if (id == null) {
             logger.error("Invalid parameter: activity ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -152,6 +159,7 @@ public class ActivityController {
     // full path: /api/v1/Activities/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<?> deleteActivity(@PathVariable UUID id) {
+        logger.info("Deleting activity with ID: " + id);
         if (id == null) {
             logger.error("Invalid parameter: activity ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -159,6 +167,7 @@ public class ActivityController {
         try {
             boolean isDeleted = ActivityService.deleteActivityById(id);
             if (isDeleted) {
+                logger.info("Activity deleted successfully: " + id);
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
             } else {
                 logger.error("Failed to delete activity: " + id);
@@ -178,12 +187,14 @@ public class ActivityController {
     // full path: /api/v1/Activities/{ActivityId}/toggleStatus/{userId}
     @PutMapping("{ActivityId}/toggleStatus/{userId}")
     public ResponseEntity<?> toggleParticipation(@PathVariable UUID ActivityId, @PathVariable UUID userId) {
+        logger.info("Toggling participation for user: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + ActivityId);
         if (userId == null || ActivityId == null) {
             logger.error("Invalid parameters: userId or ActivityId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
             FullFeedActivityDTO updatedActivityAfterParticipationToggle = ActivityService.toggleParticipation(ActivityId, userId);
+            logger.info("Participation toggled successfully for user: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + ActivityId);
             return new ResponseEntity<>(updatedActivityAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // Only return 404 for appropriate entity types
@@ -214,6 +225,7 @@ public class ActivityController {
     // need this `? extends AbstractActivityDTO` instead of simply `AbstractActivityDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
     public ResponseEntity<?> getFeedActivities(@PathVariable UUID requestingUserId) {
+        logger.info("Getting feed activities for user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
         if (requestingUserId == null) {
             logger.error("Invalid parameter: requestingUserId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -225,6 +237,7 @@ public class ActivityController {
             // if entities not found is Activity: return response with empty list and 200 status
             // otherwise: bad request http status
             if (e.entityType == EntityType.Activity) {
+                logger.info("No feed activities found for user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Bad request for feed activities: " + e.getMessage());
@@ -243,6 +256,7 @@ public class ActivityController {
     // full path: /api/v1/Activities/{id}
     @GetMapping("{id}")
     public ResponseEntity<?> getFullActivityById(@PathVariable UUID id, @RequestParam UUID requestingUserId) {
+        logger.info("Getting full activity by ID: " + id + " for user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
         if (id == null || requestingUserId == null) {
             logger.error("Invalid parameters: activity ID or requestingUserId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -257,6 +271,7 @@ public class ActivityController {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             } else if (e.entityType == EntityType.Activity) {
                 // Activity not found for a valid user, return empty response with 200
+                logger.info("Activity not found: " + id + " for user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Entity not found for full activity: " + e.getMessage());

@@ -36,8 +36,10 @@ public class FriendTagController {
     // full path: /api/v1/friendTags
     @PostMapping
     public ResponseEntity<FriendTagDTO> createFriendTag(@RequestBody FriendTagCreationDTO newFriendTag) {
+        logger.info("Creating new friend tag: " + newFriendTag.getDisplayName() + " for owner: " + LoggingUtils.formatUserIdInfo(newFriendTag.getOwnerUserId()));
         try {
             FriendTagDTO createdTag = friendTagService.saveFriendTag(newFriendTag);
+            logger.info("Friend tag created successfully with ID: " + createdTag.getId());
             return new ResponseEntity<>(createdTag, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error creating friend tag: " + e.getMessage());
@@ -49,6 +51,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/{id}
     @PutMapping("{id}")
     public ResponseEntity<?> replaceFriendTag(@RequestBody FriendTagDTO newFriendTag, @PathVariable UUID id) {
+        logger.info("Replacing friend tag with ID: " + id);
         if (id == null) {
             logger.error("Invalid parameter: friend tag ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -68,6 +71,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<?> deleteFriendTag(@PathVariable UUID id) {
+        logger.info("Deleting friend tag with ID: " + id);
         if (id == null) {
             logger.error("Invalid parameter: friend tag ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -75,6 +79,7 @@ public class FriendTagController {
         try {
             boolean isDeleted = friendTagService.deleteFriendTagById(id);
             if (isDeleted) {
+                logger.info("Friend tag deleted successfully: " + id);
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             } else {
                 logger.error("Failed to delete friend tag: " + id);
@@ -94,6 +99,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/owner/{ownerId}?full=full
     @GetMapping("owner/{ownerId}")
     public ResponseEntity<?> getFriendTagsByOwnerId(@PathVariable UUID ownerId, @RequestParam(value = "full", required = false) boolean full) {
+        logger.info("Getting friend tags for owner: " + LoggingUtils.formatUserIdInfo(ownerId) + " (full=" + full + ")");
         if (ownerId == null) {
             logger.error("Invalid parameter: ownerId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -109,6 +115,7 @@ public class FriendTagController {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (BasesNotFoundException e) {
             if (e.entityType == EntityType.FriendTag) {
+                logger.info("No friend tags found for owner: " + LoggingUtils.formatUserIdInfo(ownerId));
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Bad request for friend tags by owner: " + e.getMessage());
@@ -124,6 +131,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/{id}?friendTagAction={addFriend/removeFriend}&userId=userId
     @PostMapping("{id}")
     public ResponseEntity<?> modifyFriendTagFriends(@PathVariable UUID id, @RequestParam FriendTagAction friendTagAction, @RequestParam UUID userId) {
+        logger.info("Modifying friend tag " + id + " with action: " + friendTagAction + " for user: " + LoggingUtils.formatUserIdInfo(userId));
         if (id == null) {
             logger.error("Invalid parameter: friend tag ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -131,8 +139,10 @@ public class FriendTagController {
         try {
             if (friendTagAction == FriendTagAction.addFriend) {
                 friendTagService.saveUserToFriendTag(id, userId);
+                logger.info("User added to friend tag successfully: " + LoggingUtils.formatUserIdInfo(userId) + " to tag: " + id);
             } else if (friendTagAction == FriendTagAction.removeFriend) {
                 friendTagService.removeUserFromFriendTag(id, userId);
+                logger.info("User removed from friend tag successfully: " + LoggingUtils.formatUserIdInfo(userId) + " from tag: " + id);
             } else {
                 logger.error("Invalid friend tag action: " + friendTagAction);
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // this will handle null/invalid cases
@@ -161,6 +171,7 @@ public class FriendTagController {
      */
     @GetMapping("{friendTagsForFriend}")
     public ResponseEntity<?> getFriendTagsForFriend(@RequestParam UUID ownerUserId, @RequestParam UUID friendUserId) {
+        logger.info("Getting friend tags for friend: " + LoggingUtils.formatUserIdInfo(friendUserId) + " owned by: " + LoggingUtils.formatUserIdInfo(ownerUserId));
         if (ownerUserId == null || friendUserId == null) {
             logger.error("Invalid parameters: ownerUserId or friendUserId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -172,6 +183,7 @@ public class FriendTagController {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (BasesNotFoundException e) {
             if (e.entityType == EntityType.FriendTag) {
+                logger.info("No friend tags found for friend: " + LoggingUtils.formatUserIdInfo(friendUserId) + " owned by: " + LoggingUtils.formatUserIdInfo(ownerUserId));
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Bad request for friend tags for friend: " + e.getMessage());
@@ -194,6 +206,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
     @GetMapping("friendsNotAddedToTag/{friendTagId}")
     public ResponseEntity<?> getFriendsNotAddedToTag(@PathVariable UUID friendTagId) {
+        logger.info("Getting friends not added to tag: " + friendTagId);
         if (friendTagId == null) {
             logger.error("Invalid parameter: friendTagId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -205,6 +218,7 @@ public class FriendTagController {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (BasesNotFoundException e) {
             if (e.entityType == EntityType.User) {
+                logger.info("No friends available to add to tag: " + friendTagId);
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Bad request for friends not added to tag: " + e.getMessage());
@@ -221,6 +235,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/addUserToTags/{ownerUserId}?friendUserId=friendUserId
     @GetMapping("addUserToTags/{ownerUserId}")
     public ResponseEntity<?> getTagsNotAddedToFriend(@PathVariable UUID ownerUserId, @RequestParam UUID friendUserId) {
+        logger.info("Getting tags not added to friend: " + LoggingUtils.formatUserIdInfo(friendUserId) + " for owner: " + LoggingUtils.formatUserIdInfo(ownerUserId));
         if (ownerUserId == null || friendUserId == null) {
             logger.error("Invalid parameters: ownerUserId or friendUserId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -232,6 +247,7 @@ public class FriendTagController {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (BasesNotFoundException e) {
             if (e.entityType == EntityType.FriendTag) {
+                logger.info("No tags available to add friend to: " + LoggingUtils.formatUserIdInfo(friendUserId) + " for owner: " + LoggingUtils.formatUserIdInfo(ownerUserId));
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Bad request for tags not added to friend: " + e.getMessage());
@@ -247,8 +263,10 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/addUserToTags?friendUserId=friendUserId
     @PostMapping("addUserToTags")
     public ResponseEntity<?> addUserToTags(@RequestBody List<UUID> friendTagIds, @RequestParam UUID friendUserId) {
+        logger.info("Adding user: " + LoggingUtils.formatUserIdInfo(friendUserId) + " to " + friendTagIds.size() + " friend tags");
         try {
             friendTagService.addFriendToFriendTags(friendTagIds, friendUserId);
+            logger.info("User added to tags successfully: " + LoggingUtils.formatUserIdInfo(friendUserId));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found for adding user to tags: " + e.getMessage());
@@ -261,8 +279,10 @@ public class FriendTagController {
 
     @PostMapping("bulkAddFriendsToTag")
     public ResponseEntity<Void> bulkAddFriendsToTag(@RequestBody List<BaseUserDTO> friends, @RequestParam UUID friendTagId) {
+        logger.info("Bulk adding " + friends.size() + " friends to tag: " + friendTagId);
         try {
             friendTagService.bulkAddUsersToFriendTag(friendTagId, friends);
+            logger.info("Bulk add friends to tag completed successfully for tag: " + friendTagId);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Friend tag not found for bulk add: " + friendTagId + ": " + e.getMessage());
@@ -275,6 +295,7 @@ public class FriendTagController {
 
     @GetMapping("{id}/friends")
     public ResponseEntity<?> getFriendsByFriendTagId(@PathVariable UUID id) {
+        logger.info("Getting friends by friend tag ID: " + id);
         if (id == null) {
             logger.error("Invalid parameter: friend tag ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -286,6 +307,7 @@ public class FriendTagController {
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (BasesNotFoundException e) {
             if (e.entityType == EntityType.User) {
+                logger.info("No friends found for friend tag: " + id);
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 logger.error("Bad request for friends by friend tag: " + e.getMessage());

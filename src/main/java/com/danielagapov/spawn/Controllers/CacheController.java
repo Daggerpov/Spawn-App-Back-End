@@ -42,8 +42,10 @@ public class CacheController {
     public ResponseEntity<Map<String, CacheValidationResponseDTO>> validateCache(
             @PathVariable UUID userId,
             @RequestBody CacheValidationRequestDTO request) {
+        logger.info("Validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + " with " + request.getTimestamps().size() + " categories");
         try {
             Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, request.getTimestamps());
+            logger.info("Cache validation completed successfully for user: " + LoggingUtils.formatUserIdInfo(userId));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());

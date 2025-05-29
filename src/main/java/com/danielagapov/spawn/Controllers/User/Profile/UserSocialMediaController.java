@@ -26,8 +26,10 @@ public class UserSocialMediaController {
 
     @GetMapping
     public ResponseEntity<UserSocialMediaDTO> getUserSocialMedia(@PathVariable UUID userId) {
+        logger.info("Getting user social media for user: " + LoggingUtils.formatUserIdInfo(userId));
         try {
             UserSocialMediaDTO socialMedia = userSocialMediaService.getUserSocialMedia(userId);
+            logger.info("User social media retrieved successfully for user: " + LoggingUtils.formatUserIdInfo(userId));
             return ResponseEntity.ok(socialMedia);
         } catch (Exception e) {
             logger.error("Error getting user social media for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -39,8 +41,10 @@ public class UserSocialMediaController {
     public ResponseEntity<UserSocialMediaDTO> updateUserSocialMedia(
             @PathVariable UUID userId,
             @RequestBody UpdateUserSocialMediaDTO updateDTO) {
+        logger.info("Updating user social media for user: " + LoggingUtils.formatUserIdInfo(userId));
         try {
             UserSocialMediaDTO updatedSocialMedia = userSocialMediaService.updateUserSocialMedia(userId, updateDTO);
+            logger.info("User social media updated successfully for user: " + LoggingUtils.formatUserIdInfo(userId));
             return ResponseEntity.ok(updatedSocialMedia);
         } catch (Exception e) {
             logger.error("Error updating user social media for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());

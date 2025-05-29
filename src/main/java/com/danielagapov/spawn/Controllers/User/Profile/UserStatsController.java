@@ -28,8 +28,10 @@ public class UserStatsController {
 
     @GetMapping
     public ResponseEntity<UserStatsDTO> getUserStats(@PathVariable UUID userId) {
+        logger.info("Getting user stats for user: " + LoggingUtils.formatUserIdInfo(userId));
         try {
             UserStatsDTO stats = userStatsService.getUserStats(userId);
+            logger.info("User stats retrieved successfully for user: " + LoggingUtils.formatUserIdInfo(userId));
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             logger.error("Error getting user stats for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());

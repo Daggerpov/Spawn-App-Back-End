@@ -36,8 +36,10 @@ public class FeedbackSubmissionController {
      */
     @PostMapping
     public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody CreateFeedbackSubmissionDTO dto) {
+        logger.info("Submitting feedback from user: " + LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + " with type: " + dto.getType());
         try {
             FetchFeedbackSubmissionDTO submittedFeedback = service.submitFeedback(dto);
+            logger.info("Feedback submitted successfully with ID: " + submittedFeedback.getId());
             return new ResponseEntity<>(submittedFeedback, HttpStatus.CREATED);
         } catch (BaseSaveException e) {
             logger.error("Bad request for feedback submission: " + e.getMessage());
@@ -63,8 +65,10 @@ public class FeedbackSubmissionController {
             @PathVariable UUID id,
             @RequestBody(required = false) String resolutionComment
     ) {
+        logger.info("Resolving feedback with ID: " + id);
         try {
             FetchFeedbackSubmissionDTO resolvedFeedback = service.resolveFeedback(id, resolutionComment);
+            logger.info("Feedback resolved successfully: " + id);
             return new ResponseEntity<>(resolvedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Feedback not found for resolution: " + id + ": " + e.getMessage());
@@ -87,8 +91,10 @@ public class FeedbackSubmissionController {
             @PathVariable UUID id,
             @RequestBody(required = false) String comment
     ) {
+        logger.info("Marking feedback as in progress with ID: " + id);
         try {
             FetchFeedbackSubmissionDTO inProgressFeedback = service.markFeedbackInProgress(id, comment);
+            logger.info("Feedback marked as in progress successfully: " + id);
             return new ResponseEntity<>(inProgressFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Feedback not found for in-progress update: " + id + ": " + e.getMessage());
@@ -113,8 +119,10 @@ public class FeedbackSubmissionController {
             @RequestParam FeedbackStatus status,
             @RequestBody(required = false) String comment
     ) {
+        logger.info("Updating feedback status to " + status + " for ID: " + id);
         try {
             FetchFeedbackSubmissionDTO updatedFeedback = service.updateFeedbackStatus(id, status, comment);
+            logger.info("Feedback status updated successfully to " + status + " for ID: " + id);
             return new ResponseEntity<>(updatedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Feedback not found for status update: " + id + ": " + e.getMessage());
@@ -132,8 +140,10 @@ public class FeedbackSubmissionController {
      */
     @GetMapping
     public ResponseEntity<List<FetchFeedbackSubmissionDTO>> getAllFeedbacks() {
+        logger.info("Getting all feedback submissions");
         try {
             List<FetchFeedbackSubmissionDTO> feedbacks = service.getAllFeedbacks();
+            logger.info("Retrieved " + feedbacks.size() + " feedback submissions");
             return new ResponseEntity<>(feedbacks, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("No feedback submissions found: " + e.getMessage());
@@ -152,8 +162,10 @@ public class FeedbackSubmissionController {
      */
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<FetchFeedbackSubmissionDTO> deleteFeedback(@PathVariable UUID id) {
+        logger.info("Deleting feedback with ID: " + id);
         try {
             service.deleteFeedback(id);
+            logger.info("Feedback deleted successfully: " + id);
             return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             logger.error("Error deleting feedback: " + id + ": " + e.getMessage());
