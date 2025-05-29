@@ -124,7 +124,7 @@ public class FriendTagController {
     // full path: /api/v1/friendTags/friendTagsForFriend?ownerUserId&friendUserId
     /**
      * The purpose of this endpoint is to show which friend tags a user has placed a friend into
-     * on mobile -> in the event creation view when adding friends to an event, or in the friends view
+     * on mobile -> in the Activity creation view when adding friends to an Activity, or in the friends view
      *
      * @param ownerUserId
      * @param friendUserId

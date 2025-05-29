@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.Enums;
 
-public enum EventCategory {
+public enum ActivityCategory {
     GENERAL("GENERAL"),
     FOOD_AND_DRINK("FOOD_AND_DRINK"),
     ACTIVE("ACTIVE"),
     GRIND("GRIND"),
     CHILL("CHILL");
 
-    EventCategory(String displayValue) {}
+    ActivityCategory(String displayValue) {}
 }

@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Enums.ParticipationStatus;
-import com.danielagapov.spawn.Models.CompositeKeys.EventUsersId;
+import com.danielagapov.spawn.Models.CompositeKeys.ActivityUsersId;
 import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -14,27 +14,27 @@ import org.hibernate.annotations.OnDeleteAction;
 import java.io.Serializable;
 
 /**
- * An `EventUser` represents either a participant or
- * invited user to an event. Upon creation, the event's
- * creator can invite another user to an event, during which
+ * An `ActivityUser` represents either a participant or
+ * invited user to an activity. Upon creation, the activity's
+ * creator can invite another user to an activity, during which
  * they're added into this table with a status = ParticipationStatus.invited.
  * Once they've chosen to participate, their status is flipped to .participating.
  */
 @Entity
-@Table(name = "event_user")
+@Table(name = "activity_user")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class EventUser implements Serializable {
+public class ActivityUser implements Serializable {
     @EmbeddedId
-    private EventUsersId id;
+    private ActivityUsersId id;
 
     @ManyToOne
-    @MapsId("eventId")
-    @JoinColumn(name = "event_id", nullable = false)
+    @MapsId("activityId")
+    @JoinColumn(name = "activity_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Event event;
+    private Activity activity;
 
     @ManyToOne
     @MapsId("userId")

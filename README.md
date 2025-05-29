@@ -47,11 +47,11 @@ Spring Boot is our back-end framework with the Java language. It handles the API
                 - `@RequestParam` for query parameters
                 - `@RequestBody` for the request body (in a POST request, for example)
     - `@Service` tells Spring that this class is a service, and that it should be managed by Spring
-    - `@Autowired` tells Spring to inject the dependency (e.g. `EventService` into `EventController`)
+    - `@Autowired` tells Spring to inject the dependency (e.g. `Activitieservice` into `ActivityController`)
     - `@Repository` tells Spring that this class is a repository
 - Beans
     - Beans refer to the instantiations of our classes, which get managed by Spring. For example, our service classes, since they are concrete implementations of our interfaces (e.g. `UserService`, being the implementation of `IUserService`), are beans.
-    - So, we don't have to manage circular dependencies between classes. For example, since `UserService` takes in `EventService` as a dependency, and vice versa, `EventService` takes in `UserService`, we can annotate them with `@Autowired` to let Spring handle that issue
+    - So, we don't have to manage circular dependencies between classes. For example, since `UserService` takes in `Activitieservice` as a dependency, and vice versa, `Activitieservice` takes in `UserService`, we can annotate them with `@Autowired` to let Spring handle that issue
 
 ## JPA (Java Persistence API) & Hibernate
 
@@ -59,14 +59,14 @@ Spring Boot is our back-end framework with the Java language. It handles the API
 - `@Id` tells JPA that this field is the primary key of the table
     - `@GeneratedValue` tells JPA that this field is auto-generated
     - There are also other strategies for generating primary keys, like `GenerationType.IDENTITY`, `GenerationType.SEQUENCE`, etc.
-    - For ids of a table, there are also `@EmbeddedId` for composite primary keys, for example in the `EventParticipants` table
+    - For ids of a table, there are also `@EmbeddedId` for composite primary keys, for example in the `ActivityParticipants` table
 - `@Column` is used to specify the column name, length, nullable, etc.
 - `@OneToMany` and `@ManyToOne` are used to specify the relationships between entities
 - `JpaRepository` is an interface that extends `CrudRepository`, which provides CRUD operations for the entity
     - So, there are pre-defined generic methods like `save`, `findById`, `findAll`, `delete`, etc.
     - We can also define custom queries in the repository interface, by using the `@Query` annotation
         - An example of a custom query is in the `UserRepository` interface, where we find users by their username
-        - Also, with custom queries, they can be generated for us by simply naming the method according to JPA standards, like in the `EventRepository` interface, where we find events by their start time using the method, `List<Event> findByCreatorId(UUID creatorId);`
+        - Also, with custom queries, they can be generated for us by simply naming the method according to JPA standards, like in the `ActivityRepository` interface, where we find Activities by their start time using the method, `List<Activity> findByCreatorId(UUID creatorId);`
 
 ## Mobile Cache Implementation
 
@@ -89,7 +89,7 @@ The Spawn App iOS client implements a sophisticated caching mechanism to reduce 
 The app caches several types of data to enhance performance:
 
 1. **Friends List**: A user's complete friends list
-2. **Events**: Events the user created or was invited to
+2. **Activities**: Activities the user created or was invited to
 3. **Profile Pictures**: Both the user's own profile picture and those of friends
 4. **Recommended Friends**: Potential friends recommended by the system
 5. **Friend Requests**: Pending friend requests 
@@ -99,7 +99,7 @@ The app caches several types of data to enhance performance:
 #### Special Considerations
 
 - **User Blocking**: When a user blocks another user, relevant caches are invalidated to ensure they don't appear in each other's recommended friends lists, friend lists, or other profile views
-- **Event Creation**: New events trigger cache invalidation for invited users
+- **Activity Creation**: New Activities trigger cache invalidation for invited users
 
 #### Cache Validation API
 
@@ -108,7 +108,7 @@ The app makes a request to `/api/v1/cache/validate/:userId` on startup, sending 
 ```json
 {
   "friends": "2025-04-01T10:00:00Z",
-  "events": "2025-04-01T10:10:00Z",
+  "Activities": "2025-04-01T10:10:00Z",
   "profilePicture": "2025-04-01T10:15:00Z",
   "otherProfiles": "2025-04-01T10:20:00Z",
   "recommendedFriends": "2025-04-01T10:25:00Z",
@@ -126,7 +126,7 @@ The backend responds with which items need to be refreshed:
     "invalidate": true,
     "updatedItems": [...] // Optional
   },
-  "events": {
+  "Activities": {
     "invalidate": false
   },
   "profilePicture": {
@@ -142,8 +142,8 @@ The app listens for push notifications with specific types that indicate data ch
 
 - `friend-accepted`: When a friend request is accepted
 - `friend-blocked`: When a user is blocked
-- `event-updated`: When an event is updated
-- `event-created`: When a new event is created
+- `Activity-updated`: When an Activity is updated
+- `Activity-created`: When a new Activity is created
 - `profile-updated`: When a user's profile is updated
 - `tag-updated`: When a user's tags are modified
 
@@ -327,8 +327,8 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
       (UNHEX(REPLACE(UUID(), '-', '')), 'Golden Gate Park', 37.769042, -122.483519),
       (UNHEX(REPLACE(UUID(), '-', '')), 'Eiffel Tower', 48.858844, 2.294351);
       
-      -- Populate Events
-      INSERT INTO event (id, title, start_time, end_time, location_id, note, creator_id) VALUES
+      -- Populate Activities
+      INSERT INTO Activity (id, title, start_time, end_time, location_id, note, creator_id) VALUES
       (UNHEX(REPLACE(UUID(), '-', '')), 'Hiking Adventure', '2024-12-01T08:00:00', '2024-12-01T16:00:00',
       (SELECT id FROM location WHERE name='Central Park'), 'Bring snacks and water.',
       (SELECT id FROM user WHERE username='john_doe')),
@@ -339,17 +339,17 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
       (SELECT id FROM location WHERE name='Golden Gate Park'), 'Learn the basics of DSLR photography.',
       (SELECT id FROM user WHERE username='alex_jones'));
       
-      -- Populate Event Participants
-      INSERT INTO event_participants (event_id, user_id) VALUES
-      ((SELECT id FROM event WHERE title='Hiking Adventure'), (SELECT id FROM user WHERE username='jane_smith')),
-      ((SELECT id FROM event WHERE title='Hiking Adventure'), (SELECT id FROM user WHERE username='sam_wilson')),
-      ((SELECT id FROM event WHERE title='Book Club Meeting'), (SELECT id FROM user WHERE username='john_doe')),
-      ((SELECT id FROM event WHERE title='Book Club Meeting'), (SELECT id FROM user WHERE username='alex_jones'));
+      -- Populate Activity Participants
+      INSERT INTO Activity_participants (Activity_id, user_id) VALUES
+      ((SELECT id FROM Activity WHERE title='Hiking Adventure'), (SELECT id FROM user WHERE username='jane_smith')),
+      ((SELECT id FROM Activity WHERE title='Hiking Adventure'), (SELECT id FROM user WHERE username='sam_wilson')),
+      ((SELECT id FROM Activity WHERE title='Book Club Meeting'), (SELECT id FROM user WHERE username='john_doe')),
+      ((SELECT id FROM Activity WHERE title='Book Club Meeting'), (SELECT id FROM user WHERE username='alex_jones'));
       
-      -- Populate Event Invited
-      INSERT INTO event_invited (event_id, user_id) VALUES
-      ((SELECT id FROM event WHERE title='Photography Workshop'), (SELECT id FROM user WHERE username='john_doe')),
-      ((SELECT id FROM event WHERE title='Photography Workshop'), (SELECT id FROM user WHERE username='jane_smith'));
+      -- Populate Activity Invited
+      INSERT INTO Activity_invited (Activity_id, user_id) VALUES
+      ((SELECT id FROM Activity WHERE title='Photography Workshop'), (SELECT id FROM user WHERE username='john_doe')),
+      ((SELECT id FROM Activity WHERE title='Photography Workshop'), (SELECT id FROM user WHERE username='jane_smith'));
       
       -- Populate Friend Tags
       INSERT INTO friend_tag (id, display_name, color) VALUES

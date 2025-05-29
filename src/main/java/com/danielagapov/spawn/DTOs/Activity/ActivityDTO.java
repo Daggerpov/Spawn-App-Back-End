@@ -1,7 +1,7 @@
-package com.danielagapov.spawn.DTOs.Event;
+package com.danielagapov.spawn.DTOs.Activity;
 
 
-import com.danielagapov.spawn.Enums.EventCategory;
+import com.danielagapov.spawn.Enums.ActivityCategory;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,14 +12,14 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class EventDTO extends AbstractEventDTO {
+public class ActivityDTO extends AbstractActivityDTO {
     UUID locationId;
     UUID creatorUserId;
     List<UUID> participantUserIds;
     List<UUID> invitedUserIds;
     List<UUID> chatMessageIds;
     
-    public EventDTO(
+    public ActivityDTO(
             UUID id,
             String title,
             OffsetDateTime startTime,
@@ -27,7 +27,7 @@ public class EventDTO extends AbstractEventDTO {
             UUID locationId,
             String note,
             String icon,
-            EventCategory category,
+            ActivityCategory category,
             UUID creatorUserId,
             List<UUID> participantUserIds,
             List<UUID> invitedUserIds,

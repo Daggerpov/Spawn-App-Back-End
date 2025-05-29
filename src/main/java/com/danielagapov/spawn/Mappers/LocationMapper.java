@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.Event.LocationDTO;
+import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
 import com.danielagapov.spawn.Models.Location;
 
 import java.util.List;

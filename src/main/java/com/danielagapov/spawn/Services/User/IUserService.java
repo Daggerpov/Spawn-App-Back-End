@@ -72,15 +72,15 @@ public interface IUserService {
      */
     Instant getLatestFriendProfileUpdateTimestamp(UUID userId);
 
-    // For Events:
+    // For Activities:
 
-    List<BaseUserDTO> getParticipantsByEventId(UUID eventId);
+    List<BaseUserDTO> getParticipantsByActivityId(UUID ActivityId);
 
-    List<BaseUserDTO> getInvitedByEventId(UUID eventId);
+    List<BaseUserDTO> getInvitedByActivityId(UUID ActivityId);
 
-    List<UUID> getParticipantUserIdsByEventId(UUID eventId);
+    List<UUID> getParticipantUserIdsByActivityId(UUID ActivityId);
 
-    List<UUID> getInvitedUserIdsByEventId(UUID eventId);
+    List<UUID> getInvitedUserIdsByActivityId(UUID ActivityId);
 
     // Helper
     boolean existsByEmail(String email);

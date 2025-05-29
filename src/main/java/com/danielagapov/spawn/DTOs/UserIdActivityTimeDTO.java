@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
-public class UserIdEventTimeDTO {
+public class UserIdActivityTimeDTO {
     private UUID userId;
     private OffsetDateTime startTime;
 }

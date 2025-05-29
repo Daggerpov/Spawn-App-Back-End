@@ -122,8 +122,8 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventsByFriendTagId", key = "#friendTag.id", condition = "#friendTag.id != null"),
-            @CacheEvict(value = "filteredFeedEvents", key = "#friendTag.ownerUserId"),
+            @CacheEvict(value = "activitiesByFriendTagId", key = "#friendTag.id", condition = "#friendTag.id != null"),
+            @CacheEvict(value = "filteredFeedActivities", key = "#friendTag.ownerUserId"),
             @CacheEvict(value = "friendTagsByOwnerId", key = "#friendTag.ownerUserId")
     })
     public FriendTagDTO saveFriendTag(AbstractFriendTagDTO friendTag) {
@@ -148,8 +148,8 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventsByFriendTagId", key = "#id"),
-            @CacheEvict(value = "filteredFeedEvents", key = "#newFriendTag.ownerUserId"),
+            @CacheEvict(value = "activitiesByFriendTagId", key = "#id"),
+            @CacheEvict(value = "filteredFeedActivities", key = "#newFriendTag.ownerUserId"),
             @CacheEvict(value = "friendTagsByOwnerId", key = "#newFriendTag.ownerUserId")
     })
     public FriendTagDTO replaceFriendTag(FriendTagDTO newFriendTag, UUID id) {
@@ -169,7 +169,7 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventsByFriendTagId", key = "#id")
+            @CacheEvict(value = "activitiesByFriendTagId", key = "#id")
     })
     public boolean deleteFriendTagById(UUID id) {
         if (!repository.existsById(id)) {
@@ -193,8 +193,8 @@ public class FriendTagService implements IFriendTagService {
             uftRepository.findAllById(List.of(id)).forEach((UserFriendTag uftEntry) -> uftRepository.deleteById(uftEntry.getId()));
             repository.deleteById(id);
 
-            if (cacheManager.getCache("filteredFeedEvents") != null) {
-                cacheManager.getCache("filteredFeedEvents").evict(ownerId);
+            if (cacheManager.getCache("filteredFeedActivities") != null) {
+                cacheManager.getCache("filteredFeedActivities").evict(ownerId);
             }
 
             return true;
@@ -207,8 +207,8 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventsByFriendTagId", key = "#id"),
-            @CacheEvict(value = "filteredFeedEvents", key = "#id")
+            @CacheEvict(value = "activitiesByFriendTagId", key = "#id"),
+            @CacheEvict(value = "filteredFeedActivities", key = "#id")
     })
     public void saveUserToFriendTag(UUID id, UUID userId) {
         if (!repository.existsById(id)) {
@@ -245,8 +245,8 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventsByFriendTagId", key = "#id"),
-            @CacheEvict(value = "filteredFeedEvents", key = "#id")
+            @CacheEvict(value = "activitiesByFriendTagId", key = "#id"),
+            @CacheEvict(value = "filteredFeedActivities", key = "#id")
     })
     public void removeUserFromFriendTag(UUID id, UUID userId) {
         // Check if the FriendTag exists
@@ -272,8 +272,8 @@ public class FriendTagService implements IFriendTagService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId"),
-            @CacheEvict(value = "filteredFeedEvents", key = "#friendTagId")
+            @CacheEvict(value = "activitiesByFriendTagId", key = "#friendTagId"),
+            @CacheEvict(value = "filteredFeedActivities", key = "#friendTagId")
     })
     public void saveUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
         for (BaseUserDTO friend : friends) {
@@ -282,7 +282,7 @@ public class FriendTagService implements IFriendTagService {
     }
 
     @Override
-    @CacheEvict(value = "eventsByFriendTagId", key = "#friendTagId")
+    @CacheEvict(value = "activitiesByFriendTagId", key = "#friendTagId")
     public void bulkAddUsersToFriendTag(UUID friendTagId, List<BaseUserDTO> friends) {
         for (BaseUserDTO friend : friends) {
             saveUserToFriendTag(friendTagId, friend.getId());
