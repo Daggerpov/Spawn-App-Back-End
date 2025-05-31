@@ -1,18 +1,18 @@
--- Script to update all events with a default icon
+-- Script to update all Activities with a default icon
 -- To run:
--- mysql -u username -p database_name < update_event_icon_defaults.sql
+-- mysql -u username -p database_name < update_Activity_icon_defaults.sql
 
 -- Begin transaction
 START TRANSACTION;
 
--- Update all events that have a null icon or empty string
-UPDATE event
+-- Update all Activities that have a null icon or empty string
+UPDATE Activity
 SET icon = '⭐️'
 WHERE icon IS NULL
     OR icon = '';
 
--- Update all events that still don't have a color_hex_code
-UPDATE event
+-- Update all Activities that still don't have a color_hex_code
+UPDATE Activity
 SET color_hex_code = (
         -- Randomly select one of the predefined color codes
         CASE
@@ -27,7 +27,7 @@ WHERE color_hex_code IS NULL
     OR color_hex_code = '';
 
 -- Update the last_updated timestamp to current time
-UPDATE event
+UPDATE Activity
 SET last_updated = NOW()
 WHERE icon = '⭐️'
     OR (

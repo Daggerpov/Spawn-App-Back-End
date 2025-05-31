@@ -2,7 +2,9 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.CacheValidationRequestDTO;
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Report.Cache.ICacheService;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +21,12 @@ import java.util.UUID;
 public class CacheController {
 
     private final ICacheService cacheService;
+    private final ILogger logger;
 
     @Autowired
-    public CacheController(ICacheService cacheService) {
+    public CacheController(ICacheService cacheService, ILogger logger) {
         this.cacheService = cacheService;
+        this.logger = logger;
     }
 
     /**
@@ -38,8 +42,29 @@ public class CacheController {
     public ResponseEntity<Map<String, CacheValidationResponseDTO>> validateCache(
             @PathVariable UUID userId,
             @RequestBody CacheValidationRequestDTO request) {
+        // Calculate the number of categories safely for logging
+        // This prevents NullPointerException when request or timestamps is null
+        int categoryCount = 0;
+        if (request != null && request.getTimestamps() != null) {
+            categoryCount = request.getTimestamps().size();
+        }
+        
+        logger.info("Validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + " with " + categoryCount + " categories");
+        try {
+            // Add null checks to prevent NullPointerException
+            // This can happen when the mobile client sends an empty request body
+            // or when the timestamps field is null
+            Map<String, String> timestamps = null;
+            if (request != null) {
+                timestamps = request.getTimestamps();
+            }
             
-        Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, request.getTimestamps());
-        return ResponseEntity.ok(response);
+            Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, timestamps);
+            logger.info("Cache validation completed successfully for user: " + LoggingUtils.formatUserIdInfo(userId));
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
     }
 } 

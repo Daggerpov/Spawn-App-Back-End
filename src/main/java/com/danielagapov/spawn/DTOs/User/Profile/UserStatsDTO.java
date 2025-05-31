@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserStatsDTO {
-    private int peopleMet; // Users they've participated in events with
-    private int spawnsMade; // Events created
-    private int spawnsJoined; // Events participated in (not created by them)
+    private int peopleMet; // Users they've participated in Activities with
+    private int spawnsMade; // Activities created
+    private int spawnsJoined; // Activities participated in (not created by them)
 } 

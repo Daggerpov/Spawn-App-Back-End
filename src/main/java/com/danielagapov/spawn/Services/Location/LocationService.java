@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Services.Location;
 
-import com.danielagapov.spawn.DTOs.Event.LocationDTO;
+import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;

@@ -33,8 +33,10 @@ public class BetaAccessSignUpController {
         try {
             return new ResponseEntity<>(service.getAllEmails(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("No beta access sign up emails found: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error getting all beta access sign up emails: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -50,8 +52,10 @@ public class BetaAccessSignUpController {
         try {
             return new ResponseEntity<>(service.getAllBetaAccessSignUpRecords(), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("No beta access sign up records found: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error getting all beta access sign up records: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -70,14 +74,17 @@ public class BetaAccessSignUpController {
         try {
             Boolean hasBeenEmailed = requestBody.get("hasBeenEmailed");
             if (hasBeenEmailed == null) {
+                logger.error("Invalid parameter: hasBeenEmailed is null for beta access sign up: " + id);
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             
-            return new ResponseEntity<>(service.updateEmailedStatus(id, hasBeenEmailed), HttpStatus.OK);
+            BetaAccessSignUpDTO updatedRecord = service.updateEmailedStatus(id, hasBeenEmailed);
+            return new ResponseEntity<>(updatedRecord, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("Beta access sign up not found for emailed status update: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            logger.error("Error updating emailed status: " + e.getMessage());
+            logger.error("Error updating emailed status for beta access sign up: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -93,12 +100,14 @@ public class BetaAccessSignUpController {
      */
     @PostMapping
     public ResponseEntity<BetaAccessSignUpDTO> signUp(@RequestBody BetaAccessSignUpDTO dto) {
-        logger.info("New beta access sign up for this email: " + dto.getEmail());
         try {
-            return new ResponseEntity<>(service.signUp(dto), HttpStatus.CREATED);
+            BetaAccessSignUpDTO createdRecord = service.signUp(dto);
+            return new ResponseEntity<>(createdRecord, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
+            logger.error("Beta access sign up conflict for email: " + dto.getEmail() + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.CONFLICT); // 409 status code
         } catch (Exception e) {
+            logger.error("Error creating beta access sign up for email: " + dto.getEmail() + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

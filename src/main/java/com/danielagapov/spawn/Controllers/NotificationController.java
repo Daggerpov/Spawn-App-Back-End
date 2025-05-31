@@ -2,9 +2,11 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.PushNotification.FCMService;
 import com.danielagapov.spawn.Services.PushNotification.NotificationService;
 import com.danielagapov.spawn.Services.PushNotification.NotificationVO;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +21,13 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final FCMService fcmService;
+    private final ILogger logger;
 
     @Autowired
-    public NotificationController(NotificationService notificationService, FCMService fcmService) {
+    public NotificationController(NotificationService notificationService, FCMService fcmService, ILogger logger) {
         this.notificationService = notificationService;
         this.fcmService = fcmService;
+        this.logger = logger;
     }
 
     // full path: /api/v1/notifications/device-tokens/register
@@ -33,6 +37,7 @@ public class NotificationController {
             notificationService.registerDeviceToken(deviceTokenDTO);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
+            logger.error("Error registering device token for user: " + LoggingUtils.formatUserIdInfo(deviceTokenDTO.getUserId()) + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error registering device token: " + e.getMessage());
         }
@@ -45,6 +50,7 @@ public class NotificationController {
             notificationService.unregisterDeviceToken(deviceTokenDTO.getToken());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
+            logger.error("Error unregistering device token: " + deviceTokenDTO.getToken() + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error unregistering device token: " + e.getMessage());
         }
@@ -53,10 +59,14 @@ public class NotificationController {
     // full path: /api/v1/notifications/preferences/{userId}
     @GetMapping("/preferences/{userId}")
     public ResponseEntity<?> getNotificationPreferences(@PathVariable UUID userId) {
-        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (userId == null) {
+            logger.error("Invalid parameter: userId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         try {
             return new ResponseEntity<>(notificationService.getNotificationPreferences(userId), HttpStatus.OK);
         } catch (Exception e) {
+            logger.error("Error fetching notification preferences for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching notification preferences: " + e.getMessage());
         }
@@ -67,16 +77,21 @@ public class NotificationController {
     public ResponseEntity<?> updateNotificationPreferences(
             @PathVariable UUID userId,
             @RequestBody NotificationPreferencesDTO preferencesDTO) {
-        if (userId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if (userId == null) {
+            logger.error("Invalid parameter: userId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
         try {
             // Ensure user ID in path matches the one in the DTO
             if (!userId.equals(preferencesDTO.getUserId())) {
+                logger.error("User ID mismatch: path userId " + userId + " does not match DTO userId " + preferencesDTO.getUserId());
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
 
             NotificationPreferencesDTO savedPreferences = notificationService.saveNotificationPreferences(preferencesDTO);
             return new ResponseEntity<>(savedPreferences, HttpStatus.OK);
         } catch (Exception e) {
+            logger.error("Error updating notification preferences for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating notification preferences: " + e.getMessage());
         }
@@ -90,6 +105,7 @@ public class NotificationController {
             fcmService.sendMessageToToken(new NotificationVO(deviceToken, "Test", "This is a test notification sent from Spawn Backend", new HashMap<>()));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
+            logger.error("Error sending test notification to device token: " + deviceToken + ": " + e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

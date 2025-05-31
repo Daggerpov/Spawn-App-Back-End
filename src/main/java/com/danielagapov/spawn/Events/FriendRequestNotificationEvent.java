@@ -6,7 +6,7 @@ import com.danielagapov.spawn.Models.User.User;
 import java.util.UUID;
 
 /**
- * Event for when a friend request is sent
+ * Activity for when a friend request is sent
  */
 public class FriendRequestNotificationEvent extends NotificationEvent {
     private final UUID receiverId;

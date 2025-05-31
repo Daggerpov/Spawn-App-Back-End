@@ -5,7 +5,9 @@ import com.danielagapov.spawn.DTOs.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.Enums.FeedbackStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.FeedbackSubmission.IFeedbackSubmissionService;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,9 +20,11 @@ import java.util.UUID;
 @RequestMapping("api/v1/feedback")
 public class FeedbackSubmissionController {
     private final IFeedbackSubmissionService service;
+    private final ILogger logger;
 
-    public FeedbackSubmissionController(IFeedbackSubmissionService service) {
+    public FeedbackSubmissionController(IFeedbackSubmissionService service, ILogger logger) {
         this.service = service;
+        this.logger = logger;
     }
 
     // Full path: /api/v1/feedback
@@ -33,12 +37,16 @@ public class FeedbackSubmissionController {
     @PostMapping
     public ResponseEntity<FetchFeedbackSubmissionDTO> submitFeedback(@RequestBody CreateFeedbackSubmissionDTO dto) {
         try {
-            return new ResponseEntity<>(service.submitFeedback(dto), HttpStatus.CREATED);
+            FetchFeedbackSubmissionDTO submittedFeedback = service.submitFeedback(dto);
+            return new ResponseEntity<>(submittedFeedback, HttpStatus.CREATED);
         } catch (BaseSaveException e) {
+            logger.error("Bad request for feedback submission: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (BaseNotFoundException e) {
+            logger.error("User not found for feedback submission: " + LoggingUtils.formatUserIdInfo(dto.getFromUserId()) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error submitting feedback: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -59,8 +67,10 @@ public class FeedbackSubmissionController {
             FetchFeedbackSubmissionDTO resolvedFeedback = service.resolveFeedback(id, resolutionComment);
             return new ResponseEntity<>(resolvedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("Feedback not found for resolution: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error resolving feedback: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -81,8 +91,10 @@ public class FeedbackSubmissionController {
             FetchFeedbackSubmissionDTO inProgressFeedback = service.markFeedbackInProgress(id, comment);
             return new ResponseEntity<>(inProgressFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("Feedback not found for in-progress update: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error marking feedback as in progress: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -105,8 +117,10 @@ public class FeedbackSubmissionController {
             FetchFeedbackSubmissionDTO updatedFeedback = service.updateFeedbackStatus(id, status, comment);
             return new ResponseEntity<>(updatedFeedback, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("Feedback not found for status update: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error updating feedback status for ID: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -119,10 +133,13 @@ public class FeedbackSubmissionController {
     @GetMapping
     public ResponseEntity<List<FetchFeedbackSubmissionDTO>> getAllFeedbacks() {
         try {
-            return new ResponseEntity<>(service.getAllFeedbacks(), HttpStatus.OK);
+            List<FetchFeedbackSubmissionDTO> feedbacks = service.getAllFeedbacks();
+            return new ResponseEntity<>(feedbacks, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
+            logger.error("No feedback submissions found: " + e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
+            logger.error("Error getting all feedback submissions: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -139,6 +156,7 @@ public class FeedbackSubmissionController {
             service.deleteFeedback(id);
             return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
         } catch (Exception e) {
+            logger.error("Error deleting feedback: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

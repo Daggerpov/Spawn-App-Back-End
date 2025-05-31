@@ -4,7 +4,7 @@ import com.danielagapov.spawn.Enums.NotificationType;
 import com.danielagapov.spawn.Models.User.User;
 
 /**
- * Event for when a device is registered for push notifications
+ * Activity for when a device is registered for push notifications
  */
 public class PushRegistrationNotificationEvent extends NotificationEvent {
     private final User user;

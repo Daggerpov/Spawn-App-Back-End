@@ -3,7 +3,7 @@ package com.danielagapov.spawn.Enums;
 public enum EntityType {
     // Base Entities
     ChatMessage("Chat Message"),
-    Event("Event"),
+    Activity("Activity"),
     FriendTag("Friend Tag"),
     User("User"),
     FriendRequest("Friend Request"),
@@ -12,7 +12,7 @@ public enum EntityType {
     // Related to Base Entities
     Location("Location"),
     ChatMessageLike("Chat Message Like"),
-    EventUser("Event User"),
+    ActivityUser("Activity User"),
 
     // Unrelated to Base Entities
     ExternalIdMap("External Id Map"),

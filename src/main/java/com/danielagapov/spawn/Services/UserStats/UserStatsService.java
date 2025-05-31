@@ -4,9 +4,9 @@ import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Models.EventUser;
-import com.danielagapov.spawn.Repositories.IEventRepository;
-import com.danielagapov.spawn.Repositories.IEventUserRepository;
+import com.danielagapov.spawn.Models.ActivityUser;
+import com.danielagapov.spawn.Repositories.IActivityRepository;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,17 +19,17 @@ import java.util.UUID;
 @Service
 public class UserStatsService implements IUserStatsService {
 
-    private final IEventRepository eventRepository;
-    private final IEventUserRepository eventUserRepository;
+    private final IActivityRepository activityRepository;
+    private final IActivityUserRepository activityUserRepository;
     private final IUserRepository userRepository;
 
     @Autowired
     public UserStatsService(
-            IEventRepository eventRepository,
-            IEventUserRepository eventUserRepository,
+            IActivityRepository activityRepository,
+            IActivityUserRepository activityUserRepository,
             IUserRepository userRepository) {
-        this.eventRepository = eventRepository;
-        this.eventUserRepository = eventUserRepository;
+        this.activityRepository = activityRepository;
+        this.activityUserRepository = activityUserRepository;
         this.userRepository = userRepository;
     }
 
@@ -39,43 +39,43 @@ public class UserStatsService implements IUserStatsService {
             throw new BaseNotFoundException(EntityType.User, userId);
         }
 
-        // Get events created by user
-        int spawnsMade = eventRepository.findByCreatorId(userId).size();
+        // Get activities created by user
+        int spawnsMade = activityRepository.findByCreatorId(userId).size();
 
-        // Get events participated in (but not created by user)
-        List<EventUser> participatedEvents = eventUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
+        // Get activities participated in (but not created by user)
+        List<ActivityUser> participatedActivities = activityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
         
-        // Filter out events created by the user
-        int spawnsJoined = (int) participatedEvents.stream()
-                .filter(eu -> !eu.getEvent().getCreator().getId().equals(userId))
+        // Filter out activities created by the user
+        int spawnsJoined = (int) participatedActivities.stream()
+                .filter(au -> !au.getActivity().getCreator().getId().equals(userId))
                 .count();
 
-        // Get all unique users that this user has participated in events with
+        // Get all unique users that this user has participated in Activities with
         Set<UUID> peopleMet = new HashSet<>();
 
-        // Add people from events created by the user
-        eventRepository.findByCreatorId(userId).forEach(event -> {
-            eventUserRepository.findByEvent_IdAndStatus(event.getId(), ParticipationStatus.participating)
-                    .forEach(eu -> {
-                        UUID participantId = eu.getUser().getId();
+        // Add people from activities created by the user
+        activityRepository.findByCreatorId(userId).forEach(activity -> {
+            activityUserRepository.findByActivity_IdAndStatus(activity.getId(), ParticipationStatus.participating)
+                    .forEach(au -> {
+                        UUID participantId = au.getUser().getId();
                         if (!participantId.equals(userId)) {
                             peopleMet.add(participantId);
                         }
                     });
         });
 
-        // Add people from events the user participated in
-        participatedEvents.forEach(eventUser -> {
+        // Add people from activities the user participated in
+        participatedActivities.forEach(activityUser -> {
             // Add the creator if it's not the user
-            UUID creatorId = eventUser.getEvent().getCreator().getId();
+            UUID creatorId = activityUser.getActivity().getCreator().getId();
             if (!creatorId.equals(userId)) {
                 peopleMet.add(creatorId);
             }
 
             // Add other participants
-            eventUserRepository.findByEvent_IdAndStatus(eventUser.getEvent().getId(), ParticipationStatus.participating)
-                    .forEach(eu -> {
-                        UUID participantId = eu.getUser().getId();
+            activityUserRepository.findByActivity_IdAndStatus(activityUser.getActivity().getId(), ParticipationStatus.participating)
+                    .forEach(au -> {
+                        UUID participantId = au.getUser().getId();
                         if (!participantId.equals(userId)) {
                             peopleMet.add(participantId);
                         }

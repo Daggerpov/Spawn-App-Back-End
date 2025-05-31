@@ -10,12 +10,12 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class FullEventChatMessageDTO extends AbstractChatMessageDTO {
+public class FullActivityChatMessageDTO extends AbstractChatMessageDTO {
     BaseUserDTO senderUser;
     List<BaseUserDTO> likedByUsers;
 
-    public FullEventChatMessageDTO(UUID id, String content, Instant timestamp, BaseUserDTO senderUser, UUID eventId, List<BaseUserDTO> likedByUsers) {
-        super(id, content, timestamp, eventId);
+    public FullActivityChatMessageDTO(UUID id, String content, Instant timestamp, BaseUserDTO senderUser, UUID ActivityId, List<BaseUserDTO> likedByUsers) {
+        super(id, content, timestamp, ActivityId);
         this.senderUser = senderUser;
         this.likedByUsers = likedByUsers;
     }

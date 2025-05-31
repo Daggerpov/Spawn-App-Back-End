@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
-import com.danielagapov.spawn.DTOs.Event.EventDTO;
-import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
-import com.danielagapov.spawn.Enums.EventCategory;
-import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
+import com.danielagapov.spawn.Enums.ActivityCategory;
+import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
 
@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class EventMapper {
+public class ActivityMapper {
 
     // Convert entity to DTO
-    public static EventDTO toDTO(Event entity, UUID creatorUserId, List<UUID> participantUserIds, List<UUID> invitedUserIds, List<UUID> chatMessageIds) {
-        return new EventDTO(
+    public static ActivityDTO toDTO(Activity entity, UUID creatorUserId, List<UUID> participantUserIds, List<UUID> invitedUserIds, List<UUID> chatMessageIds) {
+        return new ActivityDTO(
                 entity.getId(),
                 entity.getTitle(),
                 entity.getStartTime(),
@@ -35,8 +35,8 @@ public class EventMapper {
     }
 
     // Convert DTO to entity
-    public static Event toEntity(EventDTO dto, Location location, User creator) {
-        Event event = new Event(
+    public static Activity toEntity(ActivityDTO dto, Location location, User creator) {
+        Activity activity = new Activity(
                 dto.getId(),
                 dto.getTitle(),
                 dto.getStartTime(),
@@ -49,17 +49,17 @@ public class EventMapper {
         );
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
-            event.setCreatedAt(dto.getCreatedAt());
+            activity.setCreatedAt(dto.getCreatedAt());
         }
-        return event;
+        return activity;
     }
 
-    public static List<EventDTO> toDTOList(
-            List<Event> entities,
-            Map<UUID, UUID> creatorUserIdMap, // Map of Event ID to creatorUserId UserDTO
-            Map<UUID, List<UUID>> participantUserIdsMap, // Map of Event ID to participantUserIds
-            Map<UUID, List<UUID>> invitedUserIdsMap, // Map of Event ID to invitedUserIds users
-            Map<UUID, List<UUID>> chatMessageIdsMap // Map of Event ID to chat messages
+    public static List<ActivityDTO> toDTOList(
+            List<Activity> entities,
+            Map<UUID, UUID> creatorUserIdMap, // Map of Activity ID to creatorUserId UserDTO
+            Map<UUID, List<UUID>> participantUserIdsMap, // Map of Activity ID to participantUserIds
+            Map<UUID, List<UUID>> invitedUserIdsMap, // Map of Activity ID to invitedUserIds users
+            Map<UUID, List<UUID>> chatMessageIdsMap // Map of Activity ID to chat messages
     ) {
         return entities.stream()
                 .map(entity -> toDTO(
@@ -72,8 +72,8 @@ public class EventMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<Event> toEntityList(List<EventDTO> eventDTOS, List<Location> locations, List<User> creators) {
-        return eventDTOS.stream()
+    public static List<Activity> toEntityList(List<ActivityDTO> activityDTOS, List<Location> locations, List<User> creators) {
+        return activityDTOS.stream()
                 .map(dto -> {
                     // Find the Location entity based on the locationId from DTO
                     Location location = locations.stream()
@@ -92,47 +92,47 @@ public class EventMapper {
                 .collect(Collectors.toList());
     }
 
-    public static Event convertFullFeedEventDTOToEventEntity(FullFeedEventDTO dto) {
-        Event event = new Event();
-        event.setId(dto.getId()); // Set the UUID
-        event.setTitle(dto.getTitle()); // Set the title
-        event.setStartTime(dto.getStartTime()); // Set the start time
-        event.setEndTime(dto.getEndTime()); // Set the end time
-        event.setIcon(dto.getIcon()); // Set the icon
-        event.setCategory(dto.getCategory()); // Set the category
+    public static Activity convertFullFeedActivityDTOToActivityEntity(FullFeedActivityDTO dto) {
+        Activity activity = new Activity();
+        activity.setId(dto.getId()); // Set the UUID
+        activity.setTitle(dto.getTitle()); // Set the title
+        activity.setStartTime(dto.getStartTime()); // Set the start time
+        activity.setEndTime(dto.getEndTime()); // Set the end time
+        activity.setIcon(dto.getIcon()); // Set the icon
+        activity.setCategory(dto.getCategory()); // Set the category
 
         // Convert LocationDTO to Location entity (assuming a similar method exists)
         Location location = LocationMapper.toEntity(dto.getLocation());
-        event.setLocation(location); // Set the location
+        activity.setLocation(location); // Set the location
 
-        event.setNote(dto.getNote()); // Set the note
+        activity.setNote(dto.getNote()); // Set the note
 
         // Convert BaseUserDTO to User entity (assuming a similar method exists)
         User creator = UserMapper.toEntity(dto.getCreatorUser());
-        event.setCreator(creator); // Set the creator
+        activity.setCreator(creator); // Set the creator
 
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
-            event.setCreatedAt(dto.getCreatedAt());
+            activity.setCreatedAt(dto.getCreatedAt());
         }
 
-        return event;
+        return activity;
     }
 
-    public static Event fromCreationDTO(EventCreationDTO dto, Location location, User creator) {
-        Event event = new Event();
-        event.setTitle(dto.getTitle());
-        event.setStartTime(dto.getStartTime());
-        event.setEndTime(dto.getEndTime());
-        event.setLocation(location); // Use the saved/persisted location.
-        event.setNote(dto.getNote());
-        event.setCreator(creator);
-        event.setIcon(dto.getIcon());
-        event.setCategory(dto.getCategory());
+    public static Activity fromCreationDTO(ActivityCreationDTO dto, Location location, User creator) {
+        Activity activity = new Activity();
+        activity.setTitle(dto.getTitle());
+        activity.setStartTime(dto.getStartTime());
+        activity.setEndTime(dto.getEndTime());
+        activity.setLocation(location); // Use the saved/persisted location.
+        activity.setNote(dto.getNote());
+        activity.setCreator(creator);
+        activity.setIcon(dto.getIcon());
+        activity.setCategory(dto.getCategory());
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
-            event.setCreatedAt(dto.getCreatedAt());
+            activity.setCreatedAt(dto.getCreatedAt());
         }
-        return event;
+        return activity;
     }
 }

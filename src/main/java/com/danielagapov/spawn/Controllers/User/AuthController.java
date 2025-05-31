@@ -60,12 +60,16 @@ public class AuthController {
             }
             return ResponseEntity.ok().body(null);
         } catch (IncorrectProviderException e) {
+            logger.error("Incorrect provider error during sign-in: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (BaseNotFoundException e) {
+            logger.error("Entity not found during sign-in: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.entityType);
         } catch (SecurityException e) {
+            logger.error("Security error during sign-in: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid token: " + e.getMessage()));
         } catch (Exception e) {
+            logger.error("Unexpected error during sign-in: " + e.getMessage());
             return ResponseEntity.internalServerError().body(new ErrorResponse(e.getMessage()));
         }
     }
@@ -112,12 +116,16 @@ public class AuthController {
             headers.add("Authorization", "Bearer " + token);
             return ResponseEntity.ok().headers(headers).body(token);
         } catch (TokenNotFoundException e) {
+            logger.error("No authorization token found for refresh: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No authorization token found");
         } catch (BadTokenException e) {
+            logger.error("Bad or expired token for refresh: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bad or expired token");
         } catch (BaseNotFoundException e) {
+            logger.error("Entity not found during token refresh: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity not found: " + e.entityType);
         } catch (Exception e) {
+            logger.error("Unexpected error during token refresh: " + e.getMessage());
             return ResponseEntity.internalServerError().body(null);
         }
     }
@@ -130,13 +138,13 @@ public class AuthController {
             HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
-            logger.warn(fae.getMessage());
+            logger.warn("Registration failed - field already exists: " + fae.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during registration: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
-            logger.error("Error registering in user: " + e.getMessage());
+            logger.error("Error registering user: " + authUserDTO.getUsername() + ": " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -149,6 +157,7 @@ public class AuthController {
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
+            logger.warn("Login failed - bad credentials for user: " + authUserDTO.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during login: " + e.entityType);
@@ -165,7 +174,6 @@ public class AuthController {
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("verifyAccountPage");
         try {
-            logger.info("Verify email request received");
             boolean isVerified = authService.verifyEmail(emailToken);
             String status = isVerified ? "success" : "expired";
             modelAndView.addObject("status", status);
@@ -189,8 +197,6 @@ public class AuthController {
     @PostMapping("change-password")
     public ResponseEntity<?> changePassword(@RequestBody PasswordChangeDTO passwordChangeDTO, HttpServletRequest request) {
         try {
-            logger.info("Password change request received");
-            
             // Extract username from JWT token
             final String authHeader = request.getHeader("Authorization");
             final String token = authHeader.substring(7);
@@ -203,7 +209,6 @@ public class AuthController {
             );
             
             if (success) {
-                logger.info("Password changed successfully for user: " + username);
                 return ResponseEntity.ok().build();
             } else {
                 logger.warn("Password change failed for user: " + username);
@@ -233,11 +238,10 @@ public class AuthController {
     @GetMapping("test-email")
     public ResponseEntity<String> email() {
         try {
-            logger.info("Email request received");
             emailService.sendEmail("spawnappmarketing@gmail.com", "Test Email", "This is a test email sent programmatically.");
             return ResponseEntity.ok().body("Email sent");
         } catch (MessagingException e) {
-            logger.info("Messaging Exception: " + e.getMessage());
+            logger.error("Messaging Exception: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Messaging Exception: " + e.getMessage());
         } catch (Exception e) {
             logger.error(e.getMessage());
