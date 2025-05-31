@@ -49,7 +49,6 @@ public class AuthController {
             @RequestParam(value = "idToken", required = true) String idToken,
             @RequestParam(value = "provider", required = true) OAuthProvider provider,
             @RequestParam(value = "email", required = false) String email) {
-        logger.info("Sign-in request received for provider: " + provider + " with email: " + email);
         try {
             Optional<BaseUserDTO> optionalDTO;
             optionalDTO = oauthService.signInUser(idToken, email, provider);
@@ -57,10 +56,8 @@ public class AuthController {
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
                 HttpHeaders headers = makeHeadersForTokens(baseUserDTO.getUsername());
-                logger.info("Sign-in successful for user: " + baseUserDTO.getUsername());
                 return ResponseEntity.ok().headers(headers).body(baseUserDTO);
             }
-            logger.info("Sign-in attempt - user not found for provider: " + provider + " with email: " + email);
             return ResponseEntity.ok().body(null);
         } catch (IncorrectProviderException e) {
             logger.error("Incorrect provider error during sign-in: " + e.getMessage());
@@ -94,11 +91,9 @@ public class AuthController {
             @RequestBody UserCreationDTO userCreationDTO,
             @RequestParam(value = "idToken") String idToken,
             @RequestParam(value = "provider") OAuthProvider provider) {
-        logger.info("Creating user for provider: " + provider + " with username: " + userCreationDTO.getUsername());
         try {
             BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, idToken, provider);
             HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
-            logger.info("User created successfully: " + userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (IllegalArgumentException e) {
             logger.warn("Bad request during user creation: " + e.getMessage());
@@ -115,12 +110,10 @@ public class AuthController {
     // full path: /api/v1/auth/refresh-token
     @PostMapping("refresh-token")
     public ResponseEntity<String> refreshToken(HttpServletRequest request) {
-        logger.info("Refresh token request received");
         try {
             HttpHeaders headers = new HttpHeaders();
             String token = jwtService.refreshAccessToken(request);
             headers.add("Authorization", "Bearer " + token);
-            logger.info("Token refreshed successfully");
             return ResponseEntity.ok().headers(headers).body(token);
         } catch (TokenNotFoundException e) {
             logger.error("No authorization token found for refresh: " + e.getMessage());
@@ -140,11 +133,9 @@ public class AuthController {
     // full path: /api/v1/auth/register
     @PostMapping("register")
     public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
-        logger.info("Registration request received for user: " + authUserDTO.getUsername());
         try {
             UserDTO newUserDTO = authService.registerUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
-            logger.info("User registered successfully: " + newUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
             logger.warn("Registration failed - field already exists: " + fae.getMessage());
@@ -161,11 +152,9 @@ public class AuthController {
     // full path: /api/v1/auth/login
     @PostMapping("login")
     public ResponseEntity<BaseUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
-        logger.info("Login request received for user: " + authUserDTO.getUsername());
         try {
             BaseUserDTO existingUserDTO = authService.loginUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
-            logger.info("User logged in successfully: " + existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
             logger.warn("Login failed - bad credentials for user: " + authUserDTO.getUsername());
@@ -185,7 +174,6 @@ public class AuthController {
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("verifyAccountPage");
         try {
-            logger.info("Verify email request received");
             boolean isVerified = authService.verifyEmail(emailToken);
             String status = isVerified ? "success" : "expired";
             modelAndView.addObject("status", status);
@@ -209,8 +197,6 @@ public class AuthController {
     @PostMapping("change-password")
     public ResponseEntity<?> changePassword(@RequestBody PasswordChangeDTO passwordChangeDTO, HttpServletRequest request) {
         try {
-            logger.info("Password change request received");
-            
             // Extract username from JWT token
             final String authHeader = request.getHeader("Authorization");
             final String token = authHeader.substring(7);
@@ -223,7 +209,6 @@ public class AuthController {
             );
             
             if (success) {
-                logger.info("Password changed successfully for user: " + username);
                 return ResponseEntity.ok().build();
             } else {
                 logger.warn("Password change failed for user: " + username);
@@ -253,11 +238,10 @@ public class AuthController {
     @GetMapping("test-email")
     public ResponseEntity<String> email() {
         try {
-            logger.info("Email request received");
             emailService.sendEmail("spawnappmarketing@gmail.com", "Test Email", "This is a test email sent programmatically.");
             return ResponseEntity.ok().body("Email sent");
         } catch (MessagingException e) {
-            logger.info("Messaging Exception: " + e.getMessage());
+            logger.error("Messaging Exception: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Messaging Exception: " + e.getMessage());
         } catch (Exception e) {
             logger.error(e.getMessage());
