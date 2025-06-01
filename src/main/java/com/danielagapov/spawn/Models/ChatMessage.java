@@ -41,7 +41,7 @@ public class ChatMessage implements Serializable {
     private User userSender;
 
     @ManyToOne
-    @JoinColumn(name = "Activity_id", nullable = false)
+    @JoinColumn(name = "activity_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Activity activity;
 }
