@@ -90,9 +90,10 @@ public class NotificationControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/notifications/notification - Should get notifications")
-    void testGetNotifications() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(NOTIFICATION_BASE_URL + "/notification"))
+    @DisplayName("GET /api/v1/notifications/notification - Should send test notification")
+    void testSendTestNotification() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get(NOTIFICATION_BASE_URL + "/notification")
+                .param("deviceToken", "test-device-token-for-notification"))
                 .andExpect(status().isOk());
     }
 
@@ -112,6 +113,39 @@ public class NotificationControllerIntegrationTest extends BaseIntegrationTest {
     void testGetNotificationPreferences_UserNotFound() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
         mockMvc.perform(MockMvcRequestBuilders.get(NOTIFICATION_BASE_URL + "/preferences/" + nonExistentId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/notifications/device-tokens/register - Should return not found for non-existent user")
+    void testRegisterDeviceToken_UserNotFound() throws Exception {
+        UUID nonExistentUserId = UUID.randomUUID();
+        String deviceTokenJson = "{"
+                + "\"token\":\"test-device-token\","
+                + "\"userId\":\"" + nonExistentUserId + "\","
+                + "\"platform\":\"ios\""
+                + "}";
+
+        mockMvc.perform(MockMvcRequestBuilders.post(NOTIFICATION_BASE_URL + "/device-tokens/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(deviceTokenJson))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/notifications/preferences/{userId} - Should return not found for non-existent user")
+    void testUpdateNotificationPreferences_UserNotFound() throws Exception {
+        UUID nonExistentUserId = UUID.randomUUID();
+        String preferencesJson = "{"
+                + "\"friendRequestsEnabled\":true,"
+                + "\"ActivityInvitesEnabled\":false,"
+                + "\"ActivityUpdatesEnabled\":true,"
+                + "\"chatMessagesEnabled\":true"
+                + "}";
+
+        mockMvc.perform(MockMvcRequestBuilders.post(NOTIFICATION_BASE_URL + "/preferences/" + nonExistentUserId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(preferencesJson))
                 .andExpect(status().isNotFound());
     }
 } 
