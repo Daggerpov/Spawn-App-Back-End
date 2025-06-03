@@ -1,12 +1,21 @@
 package com.danielagapov.spawn.Config;
 
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
+import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.util.List;
 import java.util.UUID;
 
 @TestConfiguration
@@ -80,6 +89,73 @@ public class TestS3Config {
             @Override
             public void deleteObjectByURL(String urlString) {
                 // Mock implementation - do nothing
+            }
+        };
+    }
+
+    @Bean
+    @Primary
+    public IJWTService mockJWTService() {
+        return new IJWTService() {
+            @Override
+            public String generateAccessToken(String username) {
+                return "mock-jwt-token-for-" + username;
+            }
+
+            @Override
+            public String generateRefreshToken(String username) {
+                return "mock-refresh-token-for-" + username;
+            }
+
+            @Override
+            public String extractUsername(String token) {
+                // Extract username from mock token format
+                if (token.startsWith("mock-jwt-token-for-")) {
+                    return token.substring("mock-jwt-token-for-".length());
+                }
+                throw new RuntimeException("Invalid mock token format");
+            }
+
+            @Override
+            public boolean isValidToken(String token, UserDetails userDetails) {
+                try {
+                    String username = extractUsername(token);
+                    return username.equals(userDetails.getUsername());
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            @Override
+            public String refreshAccessToken(HttpServletRequest request) {
+                // Mock implementation - not needed for these tests
+                return "mock-refreshed-token";
+            }
+
+            @Override
+            public String generateEmailToken(String username) {
+                return "mock-email-token-for-" + username;
+            }
+
+            @Override
+            public boolean isValidEmailToken(String token) {
+                return token.startsWith("mock-email-token-for-");
+            }
+        };
+    }
+
+    @Bean
+    @Primary
+    public UserDetailsService userInfoService() {
+        return new UserDetailsService() {
+            @Override
+            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                // Return a mock user for any username
+                return User.builder()
+                        .username(username)
+                        .password("password") // Not used in JWT validation
+                        .authorities(List.of(new SimpleGrantedAuthority("ROLE_USER")))
+                        .build();
             }
         };
     }
