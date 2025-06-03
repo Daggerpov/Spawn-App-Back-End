@@ -36,6 +36,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -199,6 +200,7 @@ public class ActivityService implements IActivityService {
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
