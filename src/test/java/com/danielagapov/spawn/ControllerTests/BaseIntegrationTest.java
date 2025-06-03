@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.ControllerTests;
 
+import com.danielagapov.spawn.Config.TestRedisConfig;
 import com.danielagapov.spawn.Config.TestS3Config;
 import com.danielagapov.spawn.Config.TestSecurityConfig;
 import com.danielagapov.spawn.SpawnApplication;
@@ -12,20 +13,29 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Base class for all controller integration tests.
  * Provides common configuration and utilities.
  * 
- * Note: @Transactional annotation is removed from class level to prevent transaction rollback
- * issues when testing HTTP endpoints via MockMvc. Individual test methods should manage
- * transactions as needed.
+ * Note: @Transactional annotation is added back to ensure proper transaction management
+ * for test data setup and HTTP endpoint testing via MockMvc.
  */
-@SpringBootTest(classes = {SpawnApplication.class, TestS3Config.class, TestSecurityConfig.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    classes = {
+        SpawnApplication.class,
+        TestS3Config.class,
+        TestSecurityConfig.class,
+        TestRedisConfig.class
+    },
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @SpringJUnitConfig
 @WithMockUser // This will provide a mock authenticated user for all tests
+@Transactional
 public abstract class BaseIntegrationTest {
 
     @Autowired
