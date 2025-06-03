@@ -177,8 +177,14 @@ jobs:
           # Compile the project
           mvn clean compile -DskipTests
           
-          # Run only repository/persistence layer tests
-          mvn test -Dtest="**/*Repository*Test,**/*Persistence*Test" -DfailIfNoTests=false
+          # Check if repository or persistence test files exist
+          if find src/test/java -name "*Repository*Test.java" -o -name "*Persistence*Test.java" | grep -q "."; then
+            echo "📝 Found repository/persistence tests, running them..."
+            mvn test -Dtest="**/*Repository*Test,**/*Persistence*Test"
+          else
+            echo "📝 No repository/persistence tests found, skipping test execution..."
+            echo "✅ This is expected if you haven't created repository tests yet"
+          fi
           
           echo "✅ Repository layer compilation and basic tests completed"
 
