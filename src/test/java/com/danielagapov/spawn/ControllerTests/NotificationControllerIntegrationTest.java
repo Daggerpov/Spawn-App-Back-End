@@ -1,52 +1,50 @@
 package com.danielagapov.spawn.ControllerTests;
 
-import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
-import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.Services.Auth.AuthService;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.Rollback;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @DisplayName("Notification Controller Integration Tests")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // Allow @BeforeAll on non-static methods
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class NotificationControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String NOTIFICATION_BASE_URL = "/api/v1/notifications";
     private UUID testUserId;
-
+    
     @Autowired
     private AuthService authService;
 
     @Override
     protected void setupTestData() {
-        // Empty implementation - we use @BeforeAll instead
-    }
-
-    @BeforeAll
-    @Transactional
-    @Rollback(false) // Ensure the user persists across tests
-    void setupTestUser() {
         try {
-            // Create a single test user for all tests in this class
-            AuthUserDTO testUserDTO = new AuthUserDTO(null, "Notification Test User", "notificationtest@example.com", "notificationtestuser", "Test bio", "password123");
+            // Create test user with unique username using UUID to avoid conflicts
+            String uniqueUsername = "notificationtestuser" + UUID.randomUUID().toString().substring(0, 8);
+            String uniqueEmail = "notificationtest" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
+            
+            AuthUserDTO testUserDTO = new AuthUserDTO(
+                null,
+                "Notification Test User",
+                uniqueEmail,
+                uniqueUsername,
+                "Test bio for notification testing",
+                "password123"
+            );
+            
             var registeredUser = authService.registerUser(testUserDTO);
             testUserId = registeredUser.getId();
             
             // Log the user creation for debugging
-            System.out.println("Created shared test user with ID: " + testUserId);
+            System.out.println("Created test user with ID: " + testUserId);
         } catch (Exception e) {
-            // Don't fall back to random UUID - if user creation fails, the test should fail
             throw new RuntimeException("Failed to create test user for notification tests: " + e.getMessage(), e);
         }
     }
@@ -93,8 +91,8 @@ public class NotificationControllerIntegrationTest extends BaseIntegrationTest {
     void testUpdateNotificationPreferences() throws Exception {
         String preferencesJson = "{"
                 + "\"friendRequestsEnabled\":true,"
-                + "\"ActivityInvitesEnabled\":false,"
-                + "\"ActivityUpdatesEnabled\":true,"
+                + "\"activityInvitesEnabled\":false,"
+                + "\"activityUpdatesEnabled\":true,"
                 + "\"chatMessagesEnabled\":true"
                 + "}";
 
@@ -154,8 +152,8 @@ public class NotificationControllerIntegrationTest extends BaseIntegrationTest {
         UUID nonExistentUserId = UUID.randomUUID();
         String preferencesJson = "{"
                 + "\"friendRequestsEnabled\":true,"
-                + "\"ActivityInvitesEnabled\":false,"
-                + "\"ActivityUpdatesEnabled\":true,"
+                + "\"activityInvitesEnabled\":false,"
+                + "\"activityUpdatesEnabled\":true,"
                 + "\"chatMessagesEnabled\":true"
                 + "}";
 
