@@ -146,7 +146,7 @@ public class TestS3Config {
 
     @Bean
     @Primary
-    public UserDetailsService userInfoService() {
+    public UserDetailsService mockUserDetailsService() {
         return new UserDetailsService() {
             @Override
             public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
