@@ -112,13 +112,22 @@ public class NotificationController {
         }
     }
 
-    // full path: /api/v1/notifications
+    // full path: /api/v1/notifications/notification
     @Deprecated(since = "for testing purposes")
     @GetMapping("/notification")
     public ResponseEntity<?> testNotification(@RequestParam String deviceToken) {
         try {
             fcmService.sendMessageToToken(new NotificationVO(deviceToken, "Test", "This is a test notification sent from Spawn Backend", new HashMap<>()));
             return new ResponseEntity<>(HttpStatus.OK);
+        } catch (IllegalStateException e) {
+            // Handle Firebase not being initialized (common in tests)
+            if (e.getMessage().contains("FirebaseApp")) {
+                logger.warn("Firebase not initialized for test notification - likely running in test environment: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                        .body("Firebase not configured - test notification cannot be sent");
+            }
+            logger.error("Error sending test notification to device token: " + deviceToken + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             logger.error("Error sending test notification to device token: " + deviceToken + ": " + e.getMessage());
             e.printStackTrace();
