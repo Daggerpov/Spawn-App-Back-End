@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
-import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseDeleteException;
@@ -11,12 +11,12 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.ChatMessageLikes;
-import com.danielagapov.spawn.Models.Event;
+import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
-import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,10 +46,10 @@ public class ChatMessageServiceTests {
     private IChatMessageLikesRepository chatMessageLikesRepository;
 
     @Mock
-    private IEventRepository eventRepository;
+    private IActivityRepository ActivityRepository;
 
     @Mock
-    private IEventService eventService;
+    private IActivityService ActivityService;
 
     @Mock
     private IFriendTagService ftService;
@@ -61,7 +61,7 @@ public class ChatMessageServiceTests {
     private ILogger logger;
 
     @Mock
-    private IEventUserRepository eventUserRepository;
+    private IActivityUserRepository activityUserRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -74,11 +74,11 @@ public class ChatMessageServiceTests {
         MockitoAnnotations.openMocks(this);
     }
 
-    // Helper method to create a dummy Event with a random ID.
-    private Event createDummyEvent() {
-        Event event = new Event();
-        event.setId(UUID.randomUUID());
-        return event;
+    // Helper method to create a dummy Activity with a random ID.
+    private Activity createDummyActivity() {
+        Activity Activity = new Activity();
+        Activity.setId(UUID.randomUUID());
+        return Activity;
     }
 
     // Helper method to create a dummy User with a given ID.
@@ -111,9 +111,9 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void saveChatMessage_ShouldThrowException_WhenEventNotFound() {
+    void saveChatMessage_ShouldThrowException_WhenActivityNotFound() {
         UUID userId = UUID.randomUUID();
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         UserDTO userDTO = new UserDTO(
                 userId,
                 List.of(),
@@ -129,16 +129,16 @@ public class ChatMessageServiceTests {
                 "Hello!",
                 Instant.now(),
                 userDTO.getId(),
-                eventId,
+                ActivityId,
                 List.of()
         );
-        // Stub user exists but event is missing
+        // Stub user exists but Activity is missing
         User dummyUser = createDummyUser(userDTO.getId());
         when(userRepository.findById(userDTO.getId())).thenReturn(Optional.of(dummyUser));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.empty());
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
                 () -> chatMessageService.saveChatMessage(chatMessageDTO));
-        assertTrue(exception.getMessage().contains(eventId.toString()));
+        assertTrue(exception.getMessage().contains(ActivityId.toString()));
         assertTrue(exception.getMessage().toLowerCase().contains("not found"));
         verify(chatMessageRepository, never()).save(any(ChatMessage.class));
     }
@@ -157,10 +157,10 @@ public class ChatMessageServiceTests {
         User dummyUser = createDummyUser(UUID.randomUUID());
         chatMessage1.setUserSender(dummyUser);
         chatMessage2.setUserSender(dummyUser);
-        // Also set a dummy event to avoid NPE in mapping
-        Event dummyEvent = createDummyEvent();
-        chatMessage1.setEvent(dummyEvent);
-        chatMessage2.setEvent(dummyEvent);
+        // Also set a dummy Activity to avoid NPE in mapping
+        Activity dummyActivity = createDummyActivity();
+        chatMessage1.setActivity(dummyActivity);
+        chatMessage2.setActivity(dummyActivity);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
         when(chatMessageRepository.findAll()).thenReturn(messages);
         when(chatMessageRepository.findById(id1)).thenReturn(Optional.of(chatMessage1));
@@ -190,8 +190,8 @@ public class ChatMessageServiceTests {
         chatMessage.setId(chatMessageId);
         // Set a dummy sender (even if not used in this method)
         chatMessage.setUserSender(createDummyUser(UUID.randomUUID()));
-        // Set a dummy event to avoid NPE if mapper is used indirectly
-        chatMessage.setEvent(createDummyEvent());
+        // Set a dummy Activity to avoid NPE if mapper is used indirectly
+        chatMessage.setActivity(createDummyActivity());
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(chatMessage));
         ChatMessageLikes like1 = new ChatMessageLikes();
         ChatMessageLikes like2 = new ChatMessageLikes();
@@ -224,9 +224,9 @@ public class ChatMessageServiceTests {
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setId(chatMessageId);
         chatMessage.setContent("Test message");
-        // Set dummy sender and event
+        // Set dummy sender and Activity
         chatMessage.setUserSender(createDummyUser(UUID.randomUUID()));
-        chatMessage.setEvent(createDummyEvent());
+        chatMessage.setActivity(createDummyActivity());
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(chatMessage));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
         ChatMessageDTO dto = chatMessageService.getChatMessageById(chatMessageId);
@@ -244,26 +244,26 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void getFullChatMessageById_ShouldReturnFullEventChatMessageDTO_WhenMessageExists() {
+    void getFullChatMessageById_ShouldReturnFullActivityChatMessageDTO_WhenMessageExists() {
         UUID chatMessageId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         Instant timestamp = Instant.now();
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setId(chatMessageId);
         chatMessage.setContent("Full message");
         chatMessage.setTimestamp(timestamp);
-        // Set dummy sender with expected senderId and event with expected eventId
+        // Set dummy sender with expected senderId and Activity with expected ActivityId
         chatMessage.setUserSender(createDummyUser(senderId));
-        Event dummyEvent = new Event();
-        dummyEvent.setId(eventId);
-        chatMessage.setEvent(dummyEvent);
+        Activity dummyActivity = new Activity();
+        dummyActivity.setId(ActivityId);
+        chatMessage.setActivity(dummyActivity);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(chatMessage));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
         UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
         when(userService.getUserById(any(UUID.class))).thenReturn(userDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
-        FullEventChatMessageDTO result = chatMessageService.getFullChatMessageById(chatMessageId);
+        FullActivityChatMessageDTO result = chatMessageService.getFullChatMessageById(chatMessageId);
         assertNotNull(result);
         assertEquals(chatMessageId, result.getId());
         assertEquals("Full message", result.getContent());
@@ -271,8 +271,8 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void getFullChatMessagesByEventId_ShouldReturnListOfFullEventChatMessageDTOs() {
-        UUID eventId = UUID.randomUUID();
+    void getFullChatMessagesByActivityId_ShouldReturnListOfFullActivityChatMessageDTOs() {
+        UUID ActivityId = UUID.randomUUID();
         ChatMessage chatMessage1 = new ChatMessage();
         ChatMessage chatMessage2 = new ChatMessage();
         UUID id1 = UUID.randomUUID();
@@ -283,15 +283,15 @@ public class ChatMessageServiceTests {
         chatMessage2.setId(id2);
         chatMessage2.setContent("Message 2");
         chatMessage2.setTimestamp(Instant.now());
-        // Set dummy sender and event for both messages
+        // Set dummy sender and Activity for both messages
         User dummyUser = createDummyUser(UUID.randomUUID());
         chatMessage1.setUserSender(dummyUser);
         chatMessage2.setUserSender(dummyUser);
-        Event dummyEvent = createDummyEvent();
-        chatMessage1.setEvent(dummyEvent);
-        chatMessage2.setEvent(dummyEvent);
+        Activity dummyActivity = createDummyActivity();
+        chatMessage1.setActivity(dummyActivity);
+        chatMessage2.setActivity(dummyActivity);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenReturn(messages);
+        when(chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(ActivityId)).thenReturn(messages);
         when(chatMessageRepository.findById(id1)).thenReturn(Optional.of(chatMessage1));
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(new ArrayList<>());
@@ -299,7 +299,7 @@ public class ChatMessageServiceTests {
         BaseUserDTO baseUser = new BaseUserDTO(UUID.randomUUID(), "John Doe", "user@example.com", "user", "bio", "avatar.jpg");
         when(userService.getBaseUserById(any(UUID.class))).thenReturn(baseUser);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
-        List<FullEventChatMessageDTO> result = chatMessageService.getFullChatMessagesByEventId(eventId);
+        List<FullActivityChatMessageDTO> result = chatMessageService.getFullChatMessagesByActivityId(ActivityId);
         assertNotNull(result);
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id1)));
@@ -309,27 +309,27 @@ public class ChatMessageServiceTests {
     @Test
     void saveChatMessage_ShouldSaveMessage_WhenValgetId() {
         UUID userId = UUID.randomUUID();
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
                 UUID.randomUUID(),
                 "Saving message",
                 Instant.now(),
                 userId,
-                eventId,
+                ActivityId,
                 List.of()
         );
-        // Create dummy user and event so the save proceeds
+        // Create dummy user and Activity so the save proceeds
         User dummyUser = createDummyUser(userId);
-        Event dummyEvent = new Event();
-        dummyEvent.setId(eventId);
+        Activity dummyActivity = new Activity();
+        dummyActivity.setId(ActivityId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(dummyUser));
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(dummyEvent));
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(dummyActivity));
         ChatMessage dummyChatMessage = new ChatMessage();
         dummyChatMessage.setId(chatMessageDTO.getId());
         dummyChatMessage.setContent(chatMessageDTO.getContent());
-        // Set sender and event on the saved entity
+        // Set sender and Activity on the saved entity
         dummyChatMessage.setUserSender(dummyUser);
-        dummyChatMessage.setEvent(dummyEvent);
+        dummyChatMessage.setActivity(dummyActivity);
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(dummyChatMessage);
         ChatMessageDTO savedDTO = chatMessageService.saveChatMessage(chatMessageDTO);
         assertNotNull(savedDTO);
@@ -338,27 +338,27 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void getChatMessageIdsByEventId_ShouldReturnIds_WhenEventExists() {
-        UUID eventId = UUID.randomUUID();
-        Event dummyEvent = new Event();
-        dummyEvent.setId(eventId);
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(dummyEvent));
+    void getChatMessageIdsByActivityId_ShouldReturnIds_WhenActivityExists() {
+        UUID ActivityId = UUID.randomUUID();
+        Activity dummyActivity = new Activity();
+        dummyActivity.setId(ActivityId);
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(dummyActivity));
         ChatMessage chatMessage1 = new ChatMessage();
         ChatMessage chatMessage2 = new ChatMessage();
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         chatMessage1.setId(id1);
         chatMessage2.setId(id2);
-        // Set a dummy sender and event on each message
+        // Set a dummy sender and Activity on each message
         User dummyUser = createDummyUser(UUID.randomUUID());
         chatMessage1.setUserSender(dummyUser);
         chatMessage2.setUserSender(dummyUser);
-        Event eventForMessages = createDummyEvent();
-        chatMessage1.setEvent(eventForMessages);
-        chatMessage2.setEvent(eventForMessages);
+        Activity ActivityForMessages = createDummyActivity();
+        chatMessage1.setActivity(ActivityForMessages);
+        chatMessage2.setActivity(ActivityForMessages);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenReturn(messages);
-        List<UUID> ids = chatMessageService.getChatMessageIdsByEventId(eventId);
+        when(chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(ActivityId)).thenReturn(messages);
+        List<UUID> ids = chatMessageService.getChatMessageIdsByActivityId(ActivityId);
         assertNotNull(ids);
         assertEquals(2, ids.size());
         assertTrue(ids.contains(id1));
@@ -366,9 +366,9 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void getChatMessageIdsByEventId_ShouldThrowBaseNotFoundException_WhenEventNotFound() {
-        UUID eventId = UUID.randomUUID();
-        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
+    void getChatMessageIdsByActivityId_ShouldThrowBaseNotFoundException_WhenActivityNotFound() {
+        UUID ActivityId = UUID.randomUUID();
+        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.empty());
     }
 
     @Test
@@ -378,9 +378,9 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)).thenReturn(false);
         ChatMessage dummyChatMessage = new ChatMessage();
         dummyChatMessage.setId(chatMessageId);
-        // Set a dummy sender and event
+        // Set a dummy sender and Activity
         dummyChatMessage.setUserSender(createDummyUser(UUID.randomUUID()));
-        dummyChatMessage.setEvent(createDummyEvent());
+        dummyChatMessage.setActivity(createDummyActivity());
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         User dummyUser = createDummyUser(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(dummyUser));
@@ -408,9 +408,9 @@ public class ChatMessageServiceTests {
         UUID chatMessageId = UUID.randomUUID();
         ChatMessage dummyChatMessage = new ChatMessage();
         dummyChatMessage.setId(chatMessageId);
-        // Set a dummy sender and event on the chat message
+        // Set a dummy sender and Activity on the chat message
         dummyChatMessage.setUserSender(createDummyUser(UUID.randomUUID()));
-        dummyChatMessage.setEvent(createDummyEvent());
+        dummyChatMessage.setActivity(createDummyActivity());
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         ChatMessageLikes dummyLike = new ChatMessageLikes();
         User dummyUser = createDummyUser(UUID.randomUUID());
@@ -456,30 +456,30 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void getChatMessagesByEventId_ShouldReturnChatMessageDTOs_WhenEventExists() {
-        UUID eventId = UUID.randomUUID();
+    void getChatMessagesByActivityId_ShouldReturnChatMessageDTOs_WhenActivityExists() {
+        UUID ActivityId = UUID.randomUUID();
         ChatMessage chatMessage1 = new ChatMessage();
         ChatMessage chatMessage2 = new ChatMessage();
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         chatMessage1.setId(id1);
-        chatMessage1.setContent("Event message 1");
+        chatMessage1.setContent("Activity message 1");
         chatMessage2.setId(id2);
-        chatMessage2.setContent("Event message 2");
-        // Set a dummy sender and event on both messages
+        chatMessage2.setContent("Activity message 2");
+        // Set a dummy sender and Activity on both messages
         User dummyUser = createDummyUser(UUID.randomUUID());
         chatMessage1.setUserSender(dummyUser);
         chatMessage2.setUserSender(dummyUser);
-        Event dummyEvent = createDummyEvent();
-        chatMessage1.setEvent(dummyEvent);
-        chatMessage2.setEvent(dummyEvent);
+        Activity dummyActivity = createDummyActivity();
+        chatMessage1.setActivity(dummyActivity);
+        chatMessage2.setActivity(dummyActivity);
         List<ChatMessage> messages = List.of(chatMessage1, chatMessage2);
-        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenReturn(messages);
+        when(chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(ActivityId)).thenReturn(messages);
         when(chatMessageRepository.findById(id1)).thenReturn(Optional.of(chatMessage1));
         when(chatMessageRepository.findById(id2)).thenReturn(Optional.of(chatMessage2));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage1)).thenReturn(new ArrayList<>());
         when(chatMessageLikesRepository.findByChatMessage(chatMessage2)).thenReturn(new ArrayList<>());
-        List<ChatMessageDTO> result = chatMessageService.getChatMessagesByEventId(eventId);
+        List<ChatMessageDTO> result = chatMessageService.getChatMessagesByActivityId(ActivityId);
         assertNotNull(result);
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(dto -> dto.getId().equals(id1)));
@@ -487,85 +487,85 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void getChatMessagesByEventId_ShouldThrowBasesNotFoundException_WhenDataAccessExceptionOccurs() {
-        UUID eventId = UUID.randomUUID();
+    void getChatMessagesByActivityId_ShouldThrowBasesNotFoundException_WhenDataAccessExceptionOccurs() {
+        UUID ActivityId = UUID.randomUUID();
         DataAccessException dae = new DataAccessException("DB error") {
         };
-        when(chatMessageRepository.getChatMessagesByEventIdOrderByTimestampDesc(eventId)).thenThrow(dae);
-        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByEventId(eventId));
+        when(chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(ActivityId)).thenThrow(dae);
+        assertThrows(BasesNotFoundException.class, () -> chatMessageService.getChatMessagesByActivityId(ActivityId));
         verify(logger, times(1)).error(dae.getMessage());
     }
 
     @Test
-    void getFullChatMessageByChatMessage_ShouldReturnFullEventChatMessageDTO() {
+    void getFullChatMessageByChatMessage_ShouldReturnFullActivityChatMessageDTO() {
         UUID chatMessageId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         Instant timestamp = Instant.now();
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
                 chatMessageId,
                 "Full chat message",
                 timestamp,
                 senderId,
-                eventId,
+                ActivityId,
                 List.of()
         );
         ChatMessage dummyChatMessage = new ChatMessage();
         dummyChatMessage.setId(chatMessageId);
-        // Set dummy sender with the same senderId and event with the same eventId
+        // Set dummy sender with the same senderId and Activity with the same ActivityId
         dummyChatMessage.setUserSender(createDummyUser(senderId));
-        Event dummyEvent = new Event();
-        dummyEvent.setId(eventId);
-        dummyChatMessage.setEvent(dummyEvent);
+        Activity dummyActivity = new Activity();
+        dummyActivity.setId(ActivityId);
+        dummyChatMessage.setActivity(dummyActivity);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
         UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
         when(userService.getUserById(senderId)).thenReturn(userDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
-        FullEventChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
+        FullActivityChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
         assertNotNull(fullDto);
         assertEquals(chatMessageId, fullDto.getId());
         assertEquals("Full chat message", fullDto.getContent());
         assertEquals(timestamp, fullDto.getTimestamp());
-        assertEquals(eventId, fullDto.getEventId());
+        assertEquals(ActivityId, fullDto.getActivityId());
         assertEquals(userDTO, fullDto.getSenderUser());
     }
 
     @Test
-    void convertChatMessagesToFullFeedEventChatMessages_ShouldReturnConvertedList() {
+    void convertChatMessagesToFullFeedActivityChatMessages_ShouldReturnConvertedList() {
         UUID chatMessageId = UUID.randomUUID();
         UUID senderId = UUID.randomUUID();
-        UUID eventId = UUID.randomUUID();
+        UUID ActivityId = UUID.randomUUID();
         Instant timestamp = Instant.now();
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
                 chatMessageId,
                 "Chat message conversion",
                 timestamp,
                 senderId,
-                eventId,
+                ActivityId,
                 List.of()
         );
         List<ChatMessageDTO> chatMessageDTOs = List.of(chatMessageDTO);
         ChatMessage dummyChatMessage = new ChatMessage();
         dummyChatMessage.setId(chatMessageId);
-        // Set dummy sender and event on the entity
+        // Set dummy sender and Activity on the entity
         dummyChatMessage.setUserSender(createDummyUser(senderId));
-        Event dummyEvent = new Event();
-        dummyEvent.setId(eventId);
-        dummyChatMessage.setEvent(dummyEvent);
+        Activity dummyActivity = new Activity();
+        dummyActivity.setId(ActivityId);
+        dummyChatMessage.setActivity(dummyActivity);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
         UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
         when(userService.getUserById(senderId)).thenReturn(userDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
-        List<FullEventChatMessageDTO> result = chatMessageService.convertChatMessagesToFullFeedEventChatMessages(chatMessageDTOs);
+        List<FullActivityChatMessageDTO> result = chatMessageService.convertChatMessagesToFullFeedActivityChatMessages(chatMessageDTOs);
         assertNotNull(result);
         assertEquals(1, result.size());
-        FullEventChatMessageDTO fullDto = result.get(0);
+        FullActivityChatMessageDTO fullDto = result.get(0);
         assertEquals(chatMessageId, fullDto.getId());
         assertEquals("Chat message conversion", fullDto.getContent());
         assertEquals(timestamp, fullDto.getTimestamp());
-        assertEquals(eventId, fullDto.getEventId());
+        assertEquals(ActivityId, fullDto.getActivityId());
         assertEquals(userDTO, fullDto.getSenderUser());
     }
 }

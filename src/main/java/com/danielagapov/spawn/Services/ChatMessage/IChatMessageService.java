@@ -3,7 +3,7 @@ package com.danielagapov.spawn.Services.ChatMessage;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
-import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 
 import java.util.List;
@@ -21,10 +21,10 @@ public interface IChatMessageService {
 
     boolean deleteChatMessageById(UUID id);
 
-    // by event:
-    List<ChatMessageDTO> getChatMessagesByEventId(UUID eventId);
+    // by Activity:
+    List<ChatMessageDTO> getChatMessagesByActivityId(UUID ActivityId);
 
-    List<UUID> getChatMessageIdsByEventId(UUID eventId);
+    List<UUID> getChatMessageIdsByActivityId(UUID ActivityId);
 
     // chat message likes:
     ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId);
@@ -37,11 +37,11 @@ public interface IChatMessageService {
 
 
     // full chat messages:
-    FullEventChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage);
+    FullActivityChatMessageDTO getFullChatMessageByChatMessage(ChatMessageDTO chatMessage);
 
-    FullEventChatMessageDTO getFullChatMessageById(UUID id);
+    FullActivityChatMessageDTO getFullChatMessageById(UUID id);
 
-    List<FullEventChatMessageDTO> getFullChatMessagesByEventId(UUID eventId);
+    List<FullActivityChatMessageDTO> getFullChatMessagesByActivityId(UUID ActivityId);
 
-    List<FullEventChatMessageDTO> convertChatMessagesToFullFeedEventChatMessages(List<ChatMessageDTO> chatMessages);
+    List<FullActivityChatMessageDTO> convertChatMessagesToFullFeedActivityChatMessages(List<ChatMessageDTO> chatMessages);
 }

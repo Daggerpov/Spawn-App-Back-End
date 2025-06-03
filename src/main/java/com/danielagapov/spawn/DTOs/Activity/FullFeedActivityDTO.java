@@ -1,9 +1,9 @@
-package com.danielagapov.spawn.DTOs.Event;
+package com.danielagapov.spawn.DTOs.Activity;
 
 
-import com.danielagapov.spawn.DTOs.ChatMessage.FullEventChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Enums.EventCategory;
+import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,33 +17,33 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class FullFeedEventDTO extends AbstractEventDTO {
+public class FullFeedActivityDTO extends AbstractActivityDTO {
     private LocationDTO location;
     private BaseUserDTO creatorUser;
     private List<BaseUserDTO> participantUsers;
     private List<BaseUserDTO> invitedUsers;
-    private List<FullEventChatMessageDTO> chatMessages;
-    /// useful for event retrieval from a user's feed/map view on mobile:
-    private String eventFriendTagColorHexCodeForRequestingUser;
+    private List<FullActivityChatMessageDTO> chatMessages;
+    /// useful for activity retrieval from a user's feed/map view on mobile:
+    private String activityFriendTagColorHexCodeForRequestingUser;
     // ensures string formatting when serialized to JSON; for mobile (client)
     private @JsonFormat(shape = JsonFormat.Shape.STRING) ParticipationStatus participationStatus;
     @JsonProperty("isSelfOwned") // specifying JSON name,
     // since booleans get turned to `selfOwned` (remove `is` from name)
     private boolean isSelfOwned;
 
-    public FullFeedEventDTO(UUID id,
+    public FullFeedActivityDTO(UUID id,
                             String title,
                             OffsetDateTime startTime,
                             OffsetDateTime endTime,
                             LocationDTO location,
                             String note,
                             String icon,
-                            EventCategory category,
+                            ActivityCategory category,
                             BaseUserDTO creatorUser,
                             List<BaseUserDTO> participantUsers,
                             List<BaseUserDTO> invitedUsers,
-                            List<FullEventChatMessageDTO> chatMessages,
-                            String eventFriendTagColorHexCodeForRequestingUser,
+                            List<FullActivityChatMessageDTO> chatMessages,
+                            String activityFriendTagColorHexCodeForRequestingUser,
                             ParticipationStatus participationStatus, 
                             boolean isSelfOwned,
                             Instant createdAt) {
@@ -53,7 +53,7 @@ public class FullFeedEventDTO extends AbstractEventDTO {
         this.participantUsers = participantUsers;
         this.invitedUsers = invitedUsers;
         this.chatMessages = chatMessages;
-        this.eventFriendTagColorHexCodeForRequestingUser = eventFriendTagColorHexCodeForRequestingUser;
+        this.activityFriendTagColorHexCodeForRequestingUser = activityFriendTagColorHexCodeForRequestingUser;
         this.participationStatus = participationStatus;
         this.isSelfOwned = isSelfOwned;
     }

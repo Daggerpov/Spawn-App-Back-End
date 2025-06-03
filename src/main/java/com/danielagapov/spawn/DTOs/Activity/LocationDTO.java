@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs.Event;
+package com.danielagapov.spawn.DTOs.Activity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

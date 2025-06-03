@@ -10,7 +10,7 @@ import com.danielagapov.spawn.Models.ReportedContent;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IReportedContentRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
-import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Exceptions.Logger.Logger;
 import lombok.AllArgsConstructor;
@@ -28,7 +28,7 @@ import static com.danielagapov.spawn.Enums.ResolutionStatus.PENDING;
 public class ReportContentService implements IReportContentService {
     private final IReportedContentRepository repository;
     private final IUserService userService;
-    private final IEventService eventService;
+    private final IActivityService ActivityService;
     private final IChatMessageService chatMessageService;
     private final Logger logger;
 
@@ -155,24 +155,24 @@ public class ReportContentService implements IReportContentService {
     /* ------------------------------ HELPERS ------------------------------ */
 
     /**
-     * Given the id of the content and contentType (which is one of a chat message, event, or user account), this method
+     * Given the id of the content and contentType (which is one of a chat message, Activity, or user account), this method
      * returns the User entity that owns the content
      */
     private User findContentOwnerByContentId(UUID contentId, EntityType contentType) {
         return switch (contentType) {
             case User -> userService.getUserEntityById(contentId);
-            case Event -> getEventOwnerByContentId(contentId);
+            case Activity -> getActivityOwnerByContentId(contentId);
             case ChatMessage -> getChatMessageOwnerByContentId(contentId);
             default -> throw new IllegalArgumentException("Unsupported content type: " + contentType);
         };
     }
 
     /**
-     * This is a wrapper method to getting the owner (a user) of an event with the given id.
+     * This is a wrapper method to getting the owner (a user) of an activity with the given id.
      * Made a wrapper method for improved readability in the caller method.
      */
-    private User getEventOwnerByContentId(UUID eventId) {
-        return userService.getUserEntityById(eventService.getEventById(eventId).getCreatorUserId());
+    private User getActivityOwnerByContentId(UUID activityId) {
+        return userService.getUserEntityById(ActivityService.getActivityById(activityId).getCreatorUserId());
     }
 
     /**

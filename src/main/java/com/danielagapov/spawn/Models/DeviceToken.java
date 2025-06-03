@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * DeviceToken stores push notification tokens for users' devices.
- * Used to send push notifications to specific devices for various events.
+ * Used to send push notifications to specific devices for various Activities.
  */
 @Entity
 @Table(name = "device_token")

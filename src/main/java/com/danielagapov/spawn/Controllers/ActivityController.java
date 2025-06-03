@@ -1,14 +1,14 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.Event.AbstractEventDTO;
-import com.danielagapov.spawn.DTOs.Event.EventCreationDTO;
-import com.danielagapov.spawn.DTOs.Event.EventDTO;
-import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.Event.ProfileEventDTO;
+import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,25 +17,25 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 @RestController()
-@RequestMapping("api/v1/events")
-public class EventController {
-    private final IEventService eventService;
+@RequestMapping("api/v1/Activities")
+public class ActivityController {
+    private final IActivityService ActivityService;
 
-    public EventController(IEventService eventService) {
-        this.eventService = eventService;
+    public ActivityController(IActivityService ActivityService) {
+        this.ActivityService = ActivityService;
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently." +
             "This may become a feature, as Owen has suggested, " +
-            "with showing a friend's recent events.")
-    // full path: /api/v1/events/user/{creatorUserId}
+            "with showing a friend's recent Activities.")
+    // full path: /api/v1/Activities/user/{creatorUserId}
     @GetMapping("user/{creatorUserId}")
-    public ResponseEntity<?> getEventsCreatedByUserId(@PathVariable UUID creatorUserId) {
+    public ResponseEntity<?> getActivitiesCreatedByUserId(@PathVariable UUID creatorUserId) {
         try {
-            return new ResponseEntity<>(eventService.convertEventsToFullFeedSelfOwnedEvents(eventService.getEventsByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.convertActivitiesToFullFeedSelfOwnedActivities(ActivityService.getActivitiesByOwnerId(creatorUserId), creatorUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            // user or event not found
+            // user or activity not found
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             // any other exception
@@ -43,15 +43,15 @@ public class EventController {
         }
     }
     
-    // full path: /api/v1/events/profile/{profileUserId}?requestingUserId={requestingUserId}
+    // full path: /api/v1/Activities/profile/{profileUserId}?requestingUserId={requestingUserId}
     @GetMapping("profile/{profileUserId}")
-    public ResponseEntity<?> getProfileEvents(@PathVariable UUID profileUserId, @RequestParam UUID requestingUserId) {
+    public ResponseEntity<?> getProfileActivities(@PathVariable UUID profileUserId, @RequestParam UUID requestingUserId) {
         if (profileUserId == null || requestingUserId == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         
         try {
-            return new ResponseEntity<>(eventService.getProfileEvents(profileUserId, requestingUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getProfileActivities(profileUserId, requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // User not found - return 404
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -61,18 +61,18 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/friendTag/{friendTagFilterId}
+    // full path: /api/v1/Activities/friendTag/{friendTagFilterId}
     @GetMapping("friendTag/{friendTagFilterId}")
-    public ResponseEntity<?> getEventsByFriendTag(@PathVariable UUID friendTagFilterId) {
+    public ResponseEntity<?> getActivitiesByFriendTag(@PathVariable UUID friendTagFilterId) {
         if (friendTagFilterId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 
         try {
-            return new ResponseEntity<>(eventService.getFilteredFeedEventsByFriendTagId(friendTagFilterId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getFilteredFeedActivitiesByFriendTagId(friendTagFilterId), HttpStatus.OK);
         } catch (BasesNotFoundException e) {
-            // thrown list of events not found for given user id
-            // if entities not found is Event: return response with empty list and 200 status
+            // thrown list of activities not found for given user id
+            // if entities not found is Activity: return response with empty list and 200 status
             // otherwise: bad request http status
-            if (e.entityType == EntityType.Event) {
+            if (e.entityType == EntityType.Activity) {
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -86,12 +86,12 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events
+    // full path: /api/v1/Activities
     @PostMapping
-    public ResponseEntity<AbstractEventDTO> createEvent(@RequestBody EventCreationDTO eventCreationDTO) {
+    public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityCreationDTO activityCreationDTO) {
         try {
-            AbstractEventDTO createdEvent = eventService.createEvent(eventCreationDTO);
-            return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
+            AbstractActivityDTO createdActivity = ActivityService.createActivity(activityCreationDTO);
+            return new ResponseEntity<>(createdActivity, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -101,18 +101,18 @@ public class EventController {
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/events/{id}
+    // full path: /api/v1/Activities/{id}
     @PutMapping("{id}")
-    public ResponseEntity<?> replaceEvent(@RequestBody EventDTO newEvent, @PathVariable UUID id) {
+    public ResponseEntity<?> replaceActivity(@RequestBody ActivityDTO newActivity, @PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(eventService.replaceEvent(newEvent, id), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.replaceActivity(newActivity, id), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            // Only return 404 if user doesn't exist, not if event doesn't exist
+            // Only return 404 if user doesn't exist, not if activity doesn't exist
             if (e.entityType == EntityType.User) {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else if (e.entityType == EntityType.Event) {
-                // Return 404 for events too, as this is specifically looking up an event by ID
+            } else if (e.entityType == EntityType.Activity) {
+                // Return 404 for activities too, as this is specifically looking up an activity by ID
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             } else {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -126,41 +126,41 @@ public class EventController {
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/events/{id}
+    // full path: /api/v1/Activities/{id}
     @DeleteMapping("{id}")
-    public ResponseEntity<?> deleteEvent(@PathVariable UUID id) {
+    public ResponseEntity<?> deleteActivity(@PathVariable UUID id) {
         if (id == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            boolean isDeleted = eventService.deleteEventById(id);
+            boolean isDeleted = ActivityService.deleteActivityById(id);
             if (isDeleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Success
             } else {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR); // Deletion failed
             }
         } catch (BaseNotFoundException e) {
-            // For deletion, it makes sense to return 404 if the event doesn't exist
+            // For deletion, it makes sense to return 404 if the activity doesn't exist
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // this corresponds to the button on the event for invited users
-    // full path: /api/v1/events/{eventId}/toggleStatus/{userId}
-    @PutMapping("{eventId}/toggleStatus/{userId}")
-    public ResponseEntity<?> toggleParticipation(@PathVariable UUID eventId, @PathVariable UUID userId) {
-        if (userId == null || eventId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    // this corresponds to the button on the activity for invited users
+    // full path: /api/v1/Activities/{ActivityId}/toggleStatus/{userId}
+    @PutMapping("{ActivityId}/toggleStatus/{userId}")
+    public ResponseEntity<?> toggleParticipation(@PathVariable UUID ActivityId, @PathVariable UUID userId) {
+        if (userId == null || ActivityId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            FullFeedEventDTO updatedEventAfterParticipationToggle = eventService.toggleParticipation(eventId, userId);
-            return new ResponseEntity<>(updatedEventAfterParticipationToggle, HttpStatus.OK);
+            FullFeedActivityDTO updatedActivityAfterParticipationToggle = ActivityService.toggleParticipation(ActivityId, userId);
+            return new ResponseEntity<>(updatedActivityAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // Only return 404 for appropriate entity types
             if (e.entityType == EntityType.User) {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else if (e.entityType == EntityType.Event) {
+            } else if (e.entityType == EntityType.Activity) {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else if (e.entityType == EntityType.EventUser) {
-                // If the user is not invited to the event, return 404
+            } else if (e.entityType == EntityType.ActivityUser) {
+                // If the user is not invited to the activity, return 404
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             } else {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -170,21 +170,21 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/feedEvents/{requestingUserId}
-    // this method will return the events created by a given user (like in `getEventsCreatedByUserId()`),
-    // in the universal accent color, followed by feed events (like in `getEventsInvitedTo()`
-    @GetMapping("feedEvents/{requestingUserId}")
-    // need this `? extends AbstractEventDTO` instead of simply `AbstractEventDTO`, because of this error:
+    // full path: /api/v1/Activities/feedActivities/{requestingUserId}
+    // this method will return the activities created by a given user (like in `getActivitiesCreatedByUserId()`),
+    // in the universal accent color, followed by feed activities (like in `getActivitiesInvitedTo()`
+    @GetMapping("feedActivities/{requestingUserId}")
+    // need this `? extends AbstractActivityDTO` instead of simply `AbstractActivityDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
-    public ResponseEntity<?> getFeedEvents(@PathVariable UUID requestingUserId) {
+    public ResponseEntity<?> getFeedActivities(@PathVariable UUID requestingUserId) {
         if (requestingUserId == null) return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         try {
-            return new ResponseEntity<>(eventService.getFeedEvents(requestingUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getFeedActivities(requestingUserId), HttpStatus.OK);
         } catch (BasesNotFoundException e) {
-            // thrown list of events not found for given user id
-            // if entities not found is Event: return response with empty list and 200 status
+            // thrown list of activities not found for given user id
+            // if entities not found is Activity: return response with empty list and 200 status
             // otherwise: bad request http status
-            if (e.entityType == EntityType.Event) {
+            if (e.entityType == EntityType.Activity) {
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -197,21 +197,21 @@ public class EventController {
         }
     }
 
-    // full path: /api/v1/events/{id}
+    // full path: /api/v1/Activities/{id}
     @GetMapping("{id}")
-    public ResponseEntity<?> getFullEventById(@PathVariable UUID id, @RequestParam UUID requestingUserId) {
+    public ResponseEntity<?> getFullActivityById(@PathVariable UUID id, @RequestParam UUID requestingUserId) {
         if (id == null || requestingUserId == null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
         try {
-            return new ResponseEntity<>(eventService.getFullEventById(id, requestingUserId), HttpStatus.OK);
+            return new ResponseEntity<>(ActivityService.getFullActivityById(id, requestingUserId), HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            // Event or User not found - only return 404 if it's the user that's not found
+            // Activity or User not found - only return 404 if it's the user that's not found
             if (e.entityType == EntityType.User) {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-            } else if (e.entityType == EntityType.Event) {
-                // Event not found for a valid user, return empty response with 200
+            } else if (e.entityType == EntityType.Activity) {
+                // Activity not found for a valid user, return empty response with 200
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);

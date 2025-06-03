@@ -70,7 +70,7 @@ public class FriendRequestService implements IFriendRequestService {
             repository.save(friendRequest);
             logger.info("Friend request saved successfully");
 
-            // Publish friend request notification event
+            // Publish friend request notification Activity
             eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
 
             // Return the saved friend request DTO with additional details (friends and friend tags)
@@ -149,16 +149,16 @@ public class FriendRequestService implements IFriendRequestService {
 
             userService.saveFriendToUser(sender.getId(), receiver.getId());
 
-            // Publish friend request accepted notification event
+            // Publish friend request accepted notification Activity
             eventPublisher.publishEvent(
                     new FriendRequestAcceptedNotificationEvent(receiver, sender.getId())
             );
 
             deleteFriendRequest(id);
 
-            if (cacheManager.getCache("filteredFeedEvents") != null) {
-                cacheManager.getCache("filteredFeedEvents").evict(sender.getId());
-                cacheManager.getCache("filteredFeedEvents").evict(receiver.getId());
+            if (cacheManager.getCache("filteredFeedActivities") != null) {
+                cacheManager.getCache("filteredFeedActivities").evict(sender.getId());
+                cacheManager.getCache("filteredFeedActivities").evict(receiver.getId());
             }
             if (cacheManager.getCache("incomingFriendRequests") != null)
                 cacheManager.getCache("incomingFriendRequests").evict(receiver.getId());

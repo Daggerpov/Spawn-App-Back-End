@@ -81,7 +81,7 @@ class FriendRequestServiceTests {
         friendRequest.setReceiver(receiver);
 
         friendRequestDTO = new CreateFriendRequestDTO(friendRequest.getId(), senderId, receiverId);
-        when(cacheManager.getCache("filteredFeedEvents")).thenReturn(mockCache);
+        when(cacheManager.getCache("filteredFeedActivities")).thenReturn(mockCache);
         when(cacheManager.getCache("friendTagsByOwnerId")).thenReturn(mockCache);
     }
 

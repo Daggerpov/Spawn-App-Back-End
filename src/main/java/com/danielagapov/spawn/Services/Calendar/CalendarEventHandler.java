@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Services.Calendar;
 
-import com.danielagapov.spawn.Events.EventInviteNotificationEvent;
-import com.danielagapov.spawn.Events.EventUpdateNotificationEvent;
-import com.danielagapov.spawn.Events.EventParticipationNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityInviteNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityUpdateNotificationEvent;
+import com.danielagapov.spawn.Events.ActivityParticipationNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Event handler for calendar-related events.
- * Clears calendar cache when events are created, updated, or deleted.
+ * Clears calendar cache when activities are created, updated, or deleted.
  */
 @Component
 public class CalendarEventHandler {
@@ -25,13 +25,13 @@ public class CalendarEventHandler {
     }
 
     /**
-     * Handler for event invite notifications.
+     * Handler for Activity invite notifications.
      * Clears the calendar cache for all users involved.
      */
     @EventListener
-    public void handleEventInviteNotification(EventInviteNotificationEvent event) {
-        // Get the event ID from the notification data
-        String eventIdStr = event.getData().get("eventId");
+    public void handleActivityInviteNotification(ActivityInviteNotificationEvent event) {
+        // Get the Activity ID from the notification data
+        String activityIdStr = event.getData().get("activityId");
         String creatorIdStr = event.getData().get("creatorId");
         
         if (creatorIdStr != null) {
@@ -39,7 +39,7 @@ public class CalendarEventHandler {
                 UUID creatorId = UUID.fromString(creatorIdStr);
                 clearCacheForUser(creatorId);
             } catch (IllegalArgumentException e) {
-                logger.error("Invalid creator ID format in event notification: " + creatorIdStr);
+                logger.error("Invalid creator ID format in activity notification: " + creatorIdStr);
             }
         }
         
@@ -48,13 +48,13 @@ public class CalendarEventHandler {
     }
 
     /**
-     * Handler for event update notifications.
+     * Handler for Activity update notifications.
      * Clears the calendar cache for all users involved.
      */
     @EventListener
-    public void handleEventUpdateNotification(EventUpdateNotificationEvent event) {
-        // Get the event ID and creator ID from the notification data
-        String eventIdStr = event.getData().get("eventId");
+    public void handleActivityUpdateNotification(ActivityUpdateNotificationEvent event) {
+        // Get the Activity ID and creator ID from the notification data
+        String activityIdStr = event.getData().get("activityId");
         String creatorIdStr = event.getData().get("creatorId");
         
         if (creatorIdStr != null) {
@@ -62,7 +62,7 @@ public class CalendarEventHandler {
                 UUID creatorId = UUID.fromString(creatorIdStr);
                 clearCacheForUser(creatorId);
             } catch (IllegalArgumentException e) {
-                logger.error("Invalid creator ID format in event notification: " + creatorIdStr);
+                logger.error("Invalid creator ID format in activity notification: " + creatorIdStr);
             }
         }
         
@@ -71,11 +71,11 @@ public class CalendarEventHandler {
     }
 
     /**
-     * Handler for event participation changes.
+     * Handler for Activity participation changes.
      * Clears the calendar cache for the user whose participation status changed.
      */
     @EventListener
-    public void handleEventParticipationChange(EventParticipationNotificationEvent event) {
+    public void handleActivityParticipationChange(ActivityParticipationNotificationEvent event) {
         // Get the user ID from the notification data
         String userIdStr = event.getData().get("userId");
         if (userIdStr != null) {
@@ -87,7 +87,7 @@ public class CalendarEventHandler {
             }
         }
         
-        // Clear cache for event creator (who is the target of the notification)
+        // Clear cache for activity creator (who is the target of the notification)
         event.getTargetUserIds().forEach(this::clearCacheForUser);
     }
 

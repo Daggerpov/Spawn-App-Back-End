@@ -13,5 +13,5 @@ import java.util.UUID;
 public class CreateChatMessageDTO implements Serializable {
     private String content;
     private UUID senderUserId;
-    private UUID eventId;
+    private UUID ActivityId;
 }

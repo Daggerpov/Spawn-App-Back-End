@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.DTOs.Event;
+package com.danielagapov.spawn.DTOs.Activity;
 
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import lombok.AllArgsConstructor;
@@ -11,8 +11,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-public class EventParticipationDTO implements Serializable {
-    UUID eventId;
+public class ActivityParticipationDTO implements Serializable {
+    UUID activityId;
     UUID userId;
     ParticipationStatus status;
 }

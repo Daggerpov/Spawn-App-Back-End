@@ -165,7 +165,7 @@ public class UserSearchService implements IUserSearchService {
             // Check if the potential friend is already excluded
             if (!excludedUserIds.contains(potentialFriendId)) {
                 recommendedFriends.add(FriendUserMapper.toDTO(userService.getUserEntityById(potentialFriendId), 0));
-                // Add to excluded list to prevent duplicates
+                // Add to excluded list to prActivity duplicates
                 excludedUserIds.add(potentialFriendId);
             }
         }

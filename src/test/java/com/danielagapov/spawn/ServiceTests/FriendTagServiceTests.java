@@ -57,7 +57,7 @@ public class FriendTagServiceTests {
     private Cache friendTagsByOwnerIdCache;
 
     @Mock
-    private Cache filteredFeedEventsCache;
+    private Cache filteredFeedActivitiesCache;
 
     @Spy
     @InjectMocks
@@ -68,7 +68,7 @@ public class FriendTagServiceTests {
     void setup() {
         MockitoAnnotations.openMocks(this);
         when(cacheManager.getCache("friendTagsByOwnerId")).thenReturn(friendTagsByOwnerIdCache);
-        when(cacheManager.getCache("filteredFeedEvents")).thenReturn(filteredFeedEventsCache);
+        when(cacheManager.getCache("filteredFeedActivities")).thenReturn(filteredFeedActivitiesCache);
     }
 
     @Test

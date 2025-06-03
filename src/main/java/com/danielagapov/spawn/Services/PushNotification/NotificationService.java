@@ -150,8 +150,8 @@ public class NotificationService {
     private NotificationPreferencesDTO mapPreferencesToDTO(NotificationPreferences preferences, UUID userId) {
         return new NotificationPreferencesDTO(
                 preferences.isFriendRequestsEnabled(),
-                preferences.isEventInvitesEnabled(),
-                preferences.isEventUpdatesEnabled(),
+                preferences.isActivityInvitesEnabled(),
+                preferences.isActivityUpdatesEnabled(),
                 preferences.isChatMessagesEnabled(),
                 userId
         );
@@ -190,8 +190,8 @@ public class NotificationService {
         // Update entity
         preferences.setUser(user);
         preferences.setFriendRequestsEnabled(preferencesDTO.isFriendRequestsEnabled());
-        preferences.setEventInvitesEnabled(preferencesDTO.isEventInvitesEnabled());
-        preferences.setEventUpdatesEnabled(preferencesDTO.isEventUpdatesEnabled());
+        preferences.setActivityInvitesEnabled(preferencesDTO.isActivityInvitesEnabled());
+        preferences.setActivityUpdatesEnabled(preferencesDTO.isActivityUpdatesEnabled());
         preferences.setChatMessagesEnabled(preferencesDTO.isChatMessagesEnabled());
 
         // Save and return
@@ -246,7 +246,7 @@ public class NotificationService {
     }
 
     /**
-     * Process notification events
+     * Process notification Activities
      */
     @EventListener
     public void handleNotificationEvent(NotificationEvent event) throws Exception {
@@ -320,12 +320,12 @@ public class NotificationService {
             case FRIEND_REQUEST:
             case FRIEND_REQUEST_ACCEPTED:
                 return preferences.isFriendRequestsEnabled();
-            case EVENT_INVITE:
-                return preferences.isEventInvitesEnabled();
-            case EVENT_UPDATE:
-            case EVENT_PARTICIPATION:
-            case EVENT_PARTICIPATION_REVOKED:
-                return preferences.isEventUpdatesEnabled();
+            case Activity_INVITE:
+                return preferences.isActivityInvitesEnabled();
+            case Activity_UPDATE:
+            case Activity_PARTICIPATION:
+            case Activity_PARTICIPATION_REVOKED:
+                return preferences.isActivityUpdatesEnabled();
             case NEW_COMMENT:
                 return preferences.isChatMessagesEnabled();
             default:

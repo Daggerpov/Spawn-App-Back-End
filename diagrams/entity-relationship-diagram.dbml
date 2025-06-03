@@ -25,7 +25,7 @@ Table UserFriendTag {
     }
 }
 
-Table Event {
+Table Activity {
     id UUID [pk]
     title String
     startTime Timestamp
@@ -40,7 +40,7 @@ Table ChatMessage {
     timestamp Timestamp
     userId UUID [ref: > User.id, unique]
     content String
-    eventId UUID [ref: > Event.id] // Association with Event
+    ActivityId UUID [ref: > Activity.id] // Association with Activity
 }
 
 // Junction table for ChatMessage Likes (Many-to-Many)
@@ -61,7 +61,7 @@ Table FriendRequests {
     }
 }
 
-// Event locations
+// Activity locations
 Table Location {
     id UUID [pk]
     name String
@@ -69,14 +69,14 @@ Table Location {
     longitude Double
 }
 
-// Junction table for Events and Users (Many-to-Many)
-// - one event can have many participating/invited Users
-// - one user can participate or be invited to many Events
-Table EventUser {
-    eventId UUID [ref: > Event.id]
+// Junction table for Activities and Users (Many-to-Many)
+// - one Activity can have many participating/invited Users
+// - one user can participate or be invited to many Activities
+Table ActivityUser {
+    ActivityId UUID [ref: > Activity.id]
     userId UUID [ref: > User.id]
-    status EventParticipationStatus
+    status ActivityParticipationStatus
     indexes {
-        (eventId, userId) [pk]
+        (ActivityId, userId) [pk]
     }
 }

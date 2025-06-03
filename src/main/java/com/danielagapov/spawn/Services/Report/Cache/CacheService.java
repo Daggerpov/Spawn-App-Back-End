@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.Services.Report.Cache;
 
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
-import com.danielagapov.spawn.DTOs.Event.FullFeedEventDTO;
-import com.danielagapov.spawn.DTOs.Event.ProfileEventDTO;
+import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
@@ -11,7 +11,7 @@ import com.danielagapov.spawn.DTOs.User.Profile.UserSocialMediaDTO;
 import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.Event.IEventService;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
@@ -57,7 +57,7 @@ public class CacheService implements ICacheService {
     private static final String PROFILE_EVENTS_CACHE = "profileEvents";
     private final IUserRepository userRepository;
     private final IUserService userService;
-    private final IEventService eventService;
+    private final IActivityService ActivityService;
     private final IFriendRequestService friendRequestService;
     private final ObjectMapper objectMapper;
     private final IUserStatsService userStatsService;
@@ -68,7 +68,7 @@ public class CacheService implements ICacheService {
     public CacheService(
             IUserRepository userRepository,
             IUserService userService,
-            IEventService eventService,
+            IActivityService ActivityService,
             IFriendRequestService friendRequestService,
             ObjectMapper objectMapper,
             IUserStatsService userStatsService,
@@ -76,7 +76,7 @@ public class CacheService implements ICacheService {
             IUserSocialMediaService userSocialMediaService) {
         this.userRepository = userRepository;
         this.userService = userService;
-        this.eventService = eventService;
+        this.ActivityService = ActivityService;
         this.friendRequestService = friendRequestService;
         this.objectMapper = objectMapper;
         this.userStatsService = userStatsService;
@@ -232,7 +232,7 @@ public class CacheService implements ICacheService {
     }
 
     /**
-     * Validates the user's events cache by checking if any relevant events have been
+     * Validates the user's events cache by checking if any relevant activities have been
      * created, updated, or deleted since the client's last cache timestamp.
      */
     private CacheValidationResponseDTO validateEventsCache(User user, String clientTimestamp) {
@@ -240,25 +240,25 @@ public class CacheService implements ICacheService {
             // Parse the client timestamp
             ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
 
-            // Get the latest event activity timestamp for this user
-            Instant latestEventActivity = getLatestEventActivity(user.getId());
+            // Get the latest activity activity timestamp for this user
+            Instant latestActivityActivity = getLatestActivityActivity(user.getId());
 
             // If client cache is older than the latest activity, invalidate
-            boolean needsUpdate = latestEventActivity.isAfter(clientTime.toInstant());
+            boolean needsUpdate = latestActivityActivity.isAfter(clientTime.toInstant());
 
             if (needsUpdate) {
-                // For events, we'll use feed events which combines owned and invited events
+                // For events, we'll use feed activities which combines owned and invited activities
                 try {
-                    // Get current events for the user
-                    List<FullFeedEventDTO> feedEvents = eventService.getFeedEvents(user.getId());
-                    byte[] eventsData = objectMapper.writeValueAsBytes(feedEvents);
+                    // Get current activities for the user
+                    List<FullFeedActivityDTO> feedActivities = ActivityService.getFeedActivities(user.getId());
+                    byte[] activitiesData = objectMapper.writeValueAsBytes(feedActivities);
 
                     // Only include the data if it's not too large (limit to ~100KB)
-                    if (eventsData.length < 100_000) {
-                        return new CacheValidationResponseDTO(true, eventsData);
+                    if (activitiesData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, activitiesData);
                     }
                 } catch (Exception e) {
-                    logger.error("Failed to serialize events data", e);
+                    logger.error("Failed to serialize activities data", e);
                 }
 
                 // If we couldn't include the data, just tell the client to refresh
@@ -269,7 +269,7 @@ public class CacheService implements ICacheService {
             return new CacheValidationResponseDTO(false, null);
 
         } catch (Exception e) {
-            logger.error("Error validating events cache for user {}: {}", user.getId(), e.getMessage());
+            logger.error("Error validating activities cache for user {}: {}", user.getId(), e.getMessage());
             // On error, tell client to refresh to be safe
             return new CacheValidationResponseDTO(true, null);
         }
@@ -554,26 +554,26 @@ public class CacheService implements ICacheService {
         try {
             ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
 
-            // Get latest event activity for this user's profile
-            Instant latestEventActivity = getLatestEventActivity(user.getId());
-            boolean needsUpdate = latestEventActivity.isAfter(clientTime.toInstant());
+            // Get latest activity activity for this user's profile
+            Instant latestActivityActivity = getLatestActivityActivity(user.getId());
+            boolean needsUpdate = latestActivityActivity.isAfter(clientTime.toInstant());
 
             if (needsUpdate) {
                 try {
-                    List<ProfileEventDTO> events = eventService.getProfileEvents(user.getId(), user.getId());
-                    byte[] eventsData = objectMapper.writeValueAsBytes(events);
+                    List<ProfileActivityDTO> activities = ActivityService.getProfileActivities(user.getId(), user.getId());
+                    byte[] activitiesData = objectMapper.writeValueAsBytes(activities);
 
-                    if (eventsData.length < 100_000) {
-                        return new CacheValidationResponseDTO(true, eventsData);
+                    if (activitiesData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, activitiesData);
                     }
                 } catch (Exception e) {
-                    logger.error("Failed to serialize profile events data", e);
+                    logger.error("Failed to serialize profile activities data", e);
                 }
                 return new CacheValidationResponseDTO(true, null);
             }
             return new CacheValidationResponseDTO(false, null);
         } catch (Exception e) {
-            logger.error("Error validating profile events cache for user {}: {}", user.getId(), e.getMessage());
+            logger.error("Error validating profile activities cache for user {}: {}", user.getId(), e.getMessage());
             return new CacheValidationResponseDTO(true, null);
         }
     }
@@ -639,33 +639,33 @@ public class CacheService implements ICacheService {
     }
 
     /**
-     * Gets the timestamp of the latest event-related activity relevant to a user.
-     * This includes events the user created, is participating in, or was invited to.
+     * Gets the timestamp of the latest activity-related activity relevant to a user.
+     * This includes activities the user created, is participating in, or was invited to.
      */
-    private Instant getLatestEventActivity(UUID userId) {
+    private Instant getLatestActivityActivity(UUID userId) {
         try {
-            // Get the latest event created by the user
-            Instant latestCreatedEvent = eventService.getLatestCreatedEventTimestamp(userId);
+            // Get the latest activity created by the user
+            Instant latestCreatedActivity = ActivityService.getLatestCreatedActivityTimestamp(userId);
 
-            // Get the latest event the user was invited to
-            Instant latestInvitedEvent = eventService.getLatestInvitedEventTimestamp(userId);
+            // Get the latest activity the user was invited to
+            Instant latestInvitedActivity = ActivityService.getLatestInvitedActivityTimestamp(userId);
 
-            // Get the latest event the user is participating in that was updated
-            Instant latestUpdatedEvent = eventService.getLatestUpdatedEventTimestamp(userId);
+            // Get the latest activity the user is participating in that was updated
+            Instant latestUpdatedActivity = ActivityService.getLatestUpdatedActivityTimestamp(userId);
 
             // Find the most recent timestamp among these three
             Instant latestTimestamp = null;
 
-            if (latestCreatedEvent != null) {
-                latestTimestamp = latestCreatedEvent;
+            if (latestCreatedActivity != null) {
+                latestTimestamp = latestCreatedActivity;
             }
 
-            if (latestInvitedEvent != null && (latestTimestamp == null || latestInvitedEvent.isAfter(latestTimestamp))) {
-                latestTimestamp = latestInvitedEvent;
+            if (latestInvitedActivity != null && (latestTimestamp == null || latestInvitedActivity.isAfter(latestTimestamp))) {
+                latestTimestamp = latestInvitedActivity;
             }
 
-            if (latestUpdatedEvent != null && (latestTimestamp == null || latestUpdatedEvent.isAfter(latestTimestamp))) {
-                latestTimestamp = latestUpdatedEvent;
+            if (latestUpdatedActivity != null && (latestTimestamp == null || latestUpdatedActivity.isAfter(latestTimestamp))) {
+                latestTimestamp = latestUpdatedActivity;
             }
 
             if (latestTimestamp != null) {
@@ -673,10 +673,10 @@ public class CacheService implements ICacheService {
             }
 
             // If no activity is found, return the current time to force a refresh
-            logger.debug("No event activity found for user {}, using current time", userId);
+            logger.debug("No activity activity found for user {}, using current time", userId);
             return Instant.now();
         } catch (Exception e) {
-            logger.error("Error getting latest event activity for user {}: {}", userId, e.getMessage(), e);
+            logger.error("Error getting latest activity activity for user {}: {}", userId, e.getMessage(), e);
             // In case of an error, return current time to force a refresh
             return Instant.now();
         }
