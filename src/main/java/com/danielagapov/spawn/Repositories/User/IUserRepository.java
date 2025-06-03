@@ -39,8 +39,8 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
      */
     @Modifying
     @Transactional
-    @Query(value = "DELETE FROM user WHERE verified = false AND date_created <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
-    int deleteAllExpiredUnverifiedUsers();
+    @Query("DELETE FROM User u WHERE u.verified = false AND u.dateCreated <= :cutoffDate")
+    int deleteAllExpiredUnverifiedUsers(@Param("cutoffDate") java.util.Date cutoffDate);
 
     @Query(value = "SELECT MAX(u.last_updated) FROM user u " +
             "JOIN user_friend_tag uft ON u.id = uft.friend_id " +
