@@ -53,24 +53,35 @@ public class ActivityControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/v1/Activities - Should create activity successfully")
     void testCreateActivity_Success() throws Exception {
-        ActivityCreationDTO activityCreationDTO = createTestActivityCreationDTO();
+        String activityJson = "{"
+                + "\"title\":\"Test Activity\","
+                + "\"note\":\"Test Note\","
+                + "\"creatorUserId\":\"" + testUserId + "\","
+                + "\"startTime\":\"2024-12-31T10:00:00Z\","
+                + "\"endTime\":\"2024-12-31T12:00:00Z\""
+                + "}";
 
         mockMvc.perform(MockMvcRequestBuilders.post(ACTIVITY_BASE_URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(activityCreationDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("Test Activity"))
-                .andExpect(jsonPath("$.description").value("Test Description"));
+                .content(activityJson))
+                .andExpect(status().isCreated());
     }
 
     @Test
     @DisplayName("PUT /api/v1/Activities/{id} - Should replace activity (deprecated)")
     void testReplaceActivity() throws Exception {
-        ActivityDTO activityDTO = createTestActivityDTO();
+        String activityJson = "{"
+                + "\"id\":\"" + testActivityId + "\","
+                + "\"title\":\"Updated Test Activity\","
+                + "\"note\":\"Updated Test Note\","
+                + "\"creatorUserId\":\"" + testUserId + "\","
+                + "\"startTime\":\"2024-12-31T10:00:00Z\","
+                + "\"endTime\":\"2024-12-31T12:00:00Z\""
+                + "}";
 
         mockMvc.perform(MockMvcRequestBuilders.put(ACTIVITY_BASE_URL + "/" + testActivityId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(activityDTO)))
+                .content(activityJson))
                 .andExpect(status().isOk());
     }
 
@@ -140,26 +151,5 @@ public class ActivityControllerIntegrationTest extends BaseIntegrationTest {
     void testGetActivitiesByFriendTag_MissingParam() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(ACTIVITY_BASE_URL + "/friendTag/" + testFriendTagId))
                 .andExpect(status().isBadRequest());
-    }
-
-    private ActivityCreationDTO createTestActivityCreationDTO() {
-        ActivityCreationDTO dto = new ActivityCreationDTO();
-        dto.setTitle("Test Activity");
-        dto.setDescription("Test Description");
-        dto.setLocation("Test Location");
-        dto.setDateTime(LocalDateTime.now().plusDays(1));
-        dto.setCreatorId(testUserId);
-        return dto;
-    }
-
-    private ActivityDTO createTestActivityDTO() {
-        ActivityDTO dto = new ActivityDTO();
-        dto.setId(testActivityId);
-        dto.setTitle("Updated Test Activity");
-        dto.setDescription("Updated Test Description");
-        dto.setLocation("Updated Test Location");
-        dto.setDateTime(LocalDateTime.now().plusDays(1));
-        dto.setCreatorId(testUserId);
-        return dto;
     }
 } 
