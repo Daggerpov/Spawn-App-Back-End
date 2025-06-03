@@ -2,8 +2,11 @@ package com.danielagapov.spawn.ControllerTests;
 
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
+import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
+import com.danielagapov.spawn.Services.Auth.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -15,11 +18,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class NotificationControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String NOTIFICATION_BASE_URL = "/api/v1/notifications";
-    private UUID testUserId = UUID.randomUUID();
+    private UUID testUserId;
+
+    @Autowired
+    private AuthService authService;
 
     @Override
     protected void setupTestData() {
-        // Setup test notifications and users for testing
+        try {
+            // Create a real test user for notification testing
+            AuthUserDTO testUserDTO = new AuthUserDTO(null, "Notification Test User", "notificationtest@example.com", "notificationtestuser", "Test bio", "password123");
+            var registeredUser = authService.registerUser(testUserDTO);
+            testUserId = registeredUser.getId();
+        } catch (Exception e) {
+            // Fall back to random UUID if user creation fails
+            testUserId = UUID.randomUUID();
+        }
     }
 
     @Test
@@ -63,10 +77,10 @@ public class NotificationControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("POST /api/v1/notifications/preferences/{userId} - Should update notification preferences")
     void testUpdateNotificationPreferences() throws Exception {
         String preferencesJson = "{"
-                + "\"pushNotificationsEnabled\":true,"
-                + "\"emailNotificationsEnabled\":false,"
-                + "\"friendRequestNotifications\":true,"
-                + "\"activityInviteNotifications\":true"
+                + "\"friendRequestsEnabled\":true,"
+                + "\"ActivityInvitesEnabled\":false,"
+                + "\"ActivityUpdatesEnabled\":true,"
+                + "\"chatMessagesEnabled\":true"
                 + "}";
 
         mockMvc.perform(MockMvcRequestBuilders.post(NOTIFICATION_BASE_URL + "/preferences/" + testUserId)

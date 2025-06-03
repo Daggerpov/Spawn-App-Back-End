@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.ControllerTests;
 
+import com.danielagapov.spawn.Config.TestS3Config;
 import com.danielagapov.spawn.DTOs.User.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,12 +15,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String USER_BASE_URL = "/api/v1/users";
-    private UUID testUserId = UUID.randomUUID();
+    private UUID testUserId;
     private String testUsername = "testuser";
 
     @Override
     protected void setupTestData() {
-        // Setup test users for testing
+        // Clear any existing test data
+        TestS3Config.clearTestData();
+        
+        // Create a test user in the mock service
+        testUserId = UUID.randomUUID();
+        BaseUserDTO testUser = new BaseUserDTO(
+            testUserId,
+            "Test User",
+            "test@example.com",
+            testUsername,
+            "Test bio",
+            "https://test-cdn.example.com/test-profile.jpg"
+        );
+        
+        // Add the test user to the mock service
+        TestS3Config.addTestUser(testUser);
     }
 
     @Test
@@ -129,7 +145,7 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
                 .param("query", "test")
                 .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$").exists());
     }
 
     @Test

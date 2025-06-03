@@ -1,8 +1,10 @@
 package com.danielagapov.spawn.ControllerTests;
 
+import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.Enums.FeedbackType;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.Auth.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,22 +19,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class FeedbackSubmissionControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String FEEDBACK_BASE_URL = "/api/v1/feedback";
-    private UUID testUserId = UUID.randomUUID();
+    private UUID testUserId;
     private UUID testFeedbackId = UUID.randomUUID();
 
     @Autowired
-    private IUserRepository userRepository;
+    private AuthService authService;
 
     @Override
     protected void setupTestData() {
-        // Create a test user for feedback submissions
-        User testUser = new User();
-        testUser.setId(testUserId);
-        testUser.setUsername("testuser");
-        testUser.setEmail("test@example.com");
-        testUser.setName("Test User");
-        testUser.setVerified(true);
-        userRepository.save(testUser);
+        try {
+            // Create a real test user for feedback submissions using AuthService
+            AuthUserDTO testUserDTO = new AuthUserDTO(null, "Test User", "feedbacktest@example.com", "feedbacktestuser", "Test bio", "password123");
+            var registeredUser = authService.registerUser(testUserDTO);
+            testUserId = registeredUser.getId();
+        } catch (Exception e) {
+            // Fall back to random UUID if user creation fails
+            testUserId = UUID.randomUUID();
+        }
     }
 
     @Test

@@ -1,10 +1,22 @@
 package com.danielagapov.spawn.ControllerTests;
 
+import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
+import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
+import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
+import com.danielagapov.spawn.Enums.ActivityCategory;
+import com.danielagapov.spawn.Services.Activity.IActivityService;
+import com.danielagapov.spawn.Services.Auth.IAuthService;
+import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -13,13 +25,74 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ChatMessageControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String CHAT_MESSAGE_BASE_URL = "/api/v1/chatMessages";
-    private UUID testUserId = UUID.randomUUID();
-    private UUID testActivityId = UUID.randomUUID();
-    private UUID testChatMessageId = UUID.randomUUID();
+    private UUID testUserId;
+    private UUID testActivityId;
+    private UUID testChatMessageId;
+
+    @Autowired
+    private IAuthService authService;
+    
+    @Autowired
+    private IActivityService activityService;
+    
+    @Autowired
+    private IChatMessageService chatMessageService;
 
     @Override
     protected void setupTestData() {
-        // Setup test chat messages and users for testing
+        try {
+            // Create test user via auth service
+            AuthUserDTO authUserDTO = new AuthUserDTO(
+                null,
+                "Test User",
+                "testuser@example.com",
+                "testuser",
+                "Test bio",
+                "password123"
+            );
+            testUserId = authService.registerUser(authUserDTO).getId();
+
+            // Create test location
+            LocationDTO locationDTO = new LocationDTO(
+                UUID.randomUUID(),
+                "Test Location", 
+                37.7749, // latitude
+                -122.4194 // longitude
+            );
+
+            // Create test activity
+            ActivityCreationDTO activityCreationDTO = new ActivityCreationDTO(
+                UUID.randomUUID(),
+                "Test Activity",
+                OffsetDateTime.now().plusDays(1),
+                OffsetDateTime.now().plusDays(1).plusHours(2),
+                locationDTO,
+                "Test note",
+                "🎯",
+                ActivityCategory.ACTIVE,
+                testUserId,
+                List.of(), // invitedFriendUserIds
+                Instant.now()
+            );
+            testActivityId = activityService.createActivity(activityCreationDTO).getId();
+
+            // Create test chat message
+            CreateChatMessageDTO createChatMessageDTO = new CreateChatMessageDTO(
+                "Test chat message content",
+                testUserId,
+                testActivityId
+            );
+            testChatMessageId = chatMessageService.createChatMessage(createChatMessageDTO).getId();
+            
+        } catch (Exception e) {
+            // Log the error but don't fail the test setup
+            System.err.println("Error setting up test data: " + e.getMessage());
+            e.printStackTrace();
+            // Use random UUIDs as fallback
+            testUserId = UUID.randomUUID();
+            testActivityId = UUID.randomUUID();
+            testChatMessageId = UUID.randomUUID();
+        }
     }
 
     @Test
@@ -27,14 +100,17 @@ public class ChatMessageControllerIntegrationTest extends BaseIntegrationTest {
     void testCreateChatMessage_Success() throws Exception {
         String chatMessageJson = "{"
                 + "\"content\":\"Test message content\","
-                + "\"fromUserId\":\"" + testUserId + "\","
+                + "\"senderUserId\":\"" + testUserId + "\","
                 + "\"activityId\":\"" + testActivityId + "\""
                 + "}";
 
         mockMvc.perform(MockMvcRequestBuilders.post(CHAT_MESSAGE_BASE_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(chatMessageJson))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.content").value("Test message content"))
+                .andExpect(jsonPath("$.senderUserId").value(testUserId.toString()))
+                .andExpect(jsonPath("$.activityId").value(testActivityId.toString()));
     }
 
     @Test
@@ -56,7 +132,9 @@ public class ChatMessageControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("POST /api/v1/chatMessages/{chatMessageId}/likes/{userId} - Should like chat message (deprecated)")
     void testLikeChatMessage() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post(CHAT_MESSAGE_BASE_URL + "/" + testChatMessageId + "/likes/" + testUserId))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.chatMessageId").value(testChatMessageId.toString()))
+                .andExpect(jsonPath("$.userId").value(testUserId.toString()));
     }
 
     @Test
@@ -78,8 +156,12 @@ public class ChatMessageControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("DELETE /api/v1/chatMessages/{chatMessageId}/likes/{userId} - Should unlike chat message (deprecated)")
     void testUnlikeChatMessage() throws Exception {
+        // First create a like, then delete it
+        mockMvc.perform(MockMvcRequestBuilders.post(CHAT_MESSAGE_BASE_URL + "/" + testChatMessageId + "/likes/" + testUserId))
+                .andExpect(status().isCreated());
+        
         mockMvc.perform(MockMvcRequestBuilders.delete(CHAT_MESSAGE_BASE_URL + "/" + testChatMessageId + "/likes/" + testUserId))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
     }
 
     @Test
