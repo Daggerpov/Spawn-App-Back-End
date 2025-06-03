@@ -1,0 +1,245 @@
+name: Repository Validation & SQL Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  repository-validation:
+    name: Repository Validation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_USER: testuser
+          POSTGRES_DB: spawn_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Install repository validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client ripgrep
+
+      - name: Repository Static Analysis
+        run: |
+          echo "🔍 Running Repository Static Analysis..."
+          
+          # Check for common repository naming issues
+          echo "Checking for potential naming issues in repository files..."
+          find src/main/java -name "*Repository*.java" -exec bash -c '
+            echo "📁 Analyzing: $1"
+            
+            # Check for inconsistent parameter naming
+            if grep -n "@Param" "$1" | grep -v -E "@Param\(\"[a-zA-Z][a-zA-Z0-9_]*\"\)" ; then
+              echo "❌ Warning: Inconsistent parameter naming in $1"
+              exit 1
+            fi
+            
+            # Check for potential SQL injection vulnerabilities (string concatenation in queries)
+            if grep -n "SELECT.*+.*FROM\|UPDATE.*+.*SET\|DELETE.*+.*FROM" "$1" ; then
+              echo "❌ Warning: Potential SQL injection risk (string concatenation) in $1"
+              exit 1
+            fi
+            
+            # Check for missing @Repository annotation
+            if ! grep -q "@Repository" "$1" ; then
+              echo "❌ Warning: Missing @Repository annotation in $1"
+              exit 1
+            fi
+            
+            # Check for proper interface naming convention
+            filename=$(basename "$1")
+            if [[ "$filename" =~ ^I.*Repository\.java$ ]] ; then
+              interface_name=$(grep -o "public interface [A-Za-z]*" "$1" | awk "{print \$3}")
+              expected_name=$(basename "$1" .java)
+              if [ "$interface_name" != "$expected_name" ] ; then
+                echo "❌ Warning: Interface name $interface_name does not match filename $expected_name in $1"
+                exit 1
+              fi
+            fi
+            
+            echo "✅ $1 passed static analysis"
+          ' _ {} \;
+
+      - name: JPQL Syntax Validation
+        run: |
+          echo "🔍 Checking JPQL syntax patterns..."
+          
+          # Check for common JPQL mistakes
+          find src/main/java -name "*Repository*.java" -exec bash -c '
+            echo "📁 Checking JPQL in: $1"
+            
+            # Check for improper JOIN syntax
+            if grep -n "@Query.*JOIN.*ON.*=" "$1" | grep -v "JOIN FETCH" ; then
+              echo "❌ Warning: Potentially incorrect JOIN syntax (should use implicit joins in JPQL) in $1:"
+              grep -n "@Query.*JOIN.*ON.*=" "$1"
+              exit 1
+            fi
+            
+            # Check for missing table aliases in complex queries
+            if grep -n "@Query.*SELECT.*FROM.*WHERE.*\." "$1" | grep -v -E "(a\.|u\.|uft\.|au\.|ft\.|c\.)" ; then
+              echo "❌ Warning: Complex query without proper table aliases in $1"
+              exit 1
+            fi
+            
+            # Check for parameter consistency
+            query_params=$(grep -o "@Param(\"[^\"]*\")" "$1" | sed "s/@Param(\"\([^\"]*\"))/\1/g" | sort)
+            used_params=$(grep -o ":[a-zA-Z][a-zA-Z0-9_]*" "$1" | sed "s/://g" | sort)
+            
+            if [ -n "$query_params" ] && [ -n "$used_params" ] ; then
+              if [ "$query_params" != "$used_params" ] ; then
+                echo "❌ Warning: Parameter mismatch between @Param and usage in $1"
+                echo "Declared params: $query_params"
+                echo "Used params: $used_params"
+                exit 1
+              fi
+            fi
+            
+            echo "✅ $1 passed JPQL validation"
+          ' _ {} \;
+
+      - name: Database Schema Consistency Check
+        run: |
+          echo "🔍 Checking native SQL queries for potential schema issues..."
+          
+          find src/main/java -name "*Repository*.java" -exec bash -c '
+            if grep -q "nativeQuery = true" "$1" ; then
+              echo "📁 Checking native SQL in: $1"
+              
+              # Extract native SQL queries and check for common issues
+              grep -A 10 "nativeQuery = true" "$1" | grep -o "\"[^\"]*\"" | while read -r query; do
+                # Remove quotes
+                clean_query=$(echo "$query" | sed "s/^\"\|\"$//g")
+                
+                # Check for inconsistent naming conventions
+                if echo "$clean_query" | grep -i -E "(userId|user_id)" | grep -q -E "userId.*user_id|user_id.*userId" ; then
+                  echo "❌ Warning: Inconsistent column naming (camelCase vs snake_case) in $1"
+                  echo "Query: $clean_query"
+                  exit 1
+                fi
+                
+                # Check for potential foreign key naming issues
+                if echo "$clean_query" | grep -i -E "_id" | grep -v -E "(user_id|friend_id|tag_id|activity_id|owner_id)" ; then
+                  echo "⚠️  Notice: Uncommon foreign key naming pattern in $1"
+                  echo "Query: $clean_query"
+                fi
+              done
+              
+              echo "✅ $1 passed native SQL validation"
+            fi
+          ' _ {} \;
+
+      - name: Build and Test Repository Layer
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/spawn_test
+          SPRING_DATASOURCE_USERNAME: testuser
+          SPRING_DATASOURCE_PASSWORD: testpassword
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          SPRING_PROFILES_ACTIVE: test
+        run: |
+          echo "🚀 Building project and running repository tests..."
+          
+          # Compile the project
+          mvn clean compile -DskipTests
+          
+          # Check if repository or persistence test files exist
+          if find src/test/java -name "*Repository*Test.java" -o -name "*Persistence*Test.java" | grep -q "."; then
+            echo "📝 Found repository/persistence tests, running them..."
+            mvn test -Dtest="**/*Repository*Test,**/*Persistence*Test"
+          else
+            echo "📝 No repository/persistence tests found, skipping test execution..."
+            echo "✅ This is expected if you haven't created repository tests yet"
+          fi
+          
+          echo "✅ Repository layer compilation and basic tests completed"
+
+      - name: Repository Method Naming Convention Check
+        run: |
+          echo "🔍 Checking JPA method naming conventions..."
+          
+          find src/main/java -name "*Repository*.java" -exec bash -c '
+            echo "📁 Checking method names in: $1"
+            
+            # Extract method declarations
+            grep -n "List<\|Optional<\|boolean \|void \|int \|long " "$1" | grep -v "@Query" | while read -r line; do
+              method_name=$(echo "$line" | grep -o "[a-zA-Z][a-zA-Z0-9]*(" | sed "s/(//g")
+              
+              if [ -n "$method_name" ] ; then
+                # Check for proper JPA method naming conventions
+                if ! echo "$method_name" | grep -E "^(find|get|exists|count|delete|save|update)" ; then
+                  echo "⚠️  Notice: Method $method_name might not follow JPA naming conventions in $1"
+                fi
+                
+                # Check for potential typos in common JPA keywords
+                if echo "$method_name" | grep -i -E "(finde|gett|exist|deletee)" ; then
+                  echo "❌ Warning: Potential typo in method name $method_name in $1"
+                  exit 1
+                fi
+              fi
+            done
+            
+            echo "✅ $1 passed method naming validation"
+          ' _ {} \;
+
+      - name: Generate Repository Validation Report
+        if: always()
+        run: |
+          echo "📊 Generating Repository Validation Summary..."
+          
+          total_repos=$(find src/main/java -name "*Repository*.java" | wc -l)
+          echo "Total repository interfaces analyzed: $total_repos"
+          
+          # Count different types of queries
+          jpql_queries=$(grep -r "@Query(" src/main/java --include="*Repository*.java" | grep -v "nativeQuery = true" | wc -l)
+          native_queries=$(grep -r "nativeQuery = true" src/main/java --include="*Repository*.java" | wc -l)
+          jpa_methods=$(grep -r "List<\|Optional<\|boolean " src/main/java --include="*Repository*.java" | grep -v "@Query" | wc -l)
+          
+          echo "JPQL queries found: $jpql_queries"
+          echo "Native SQL queries found: $native_queries"
+          echo "JPA method declarations found: $jpa_methods"
+          
+          echo "✅ Repository validation completed successfully!"
+
+      - name: Upload Validation Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repository-validation-results
+          path: |
+            target/surefire-reports/
+            *.log 
