@@ -181,14 +181,12 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     @Override
     public void deleteFeedback(UUID id) {
         try {
-            FeedbackSubmission feedback = repository.findById(id).orElse(null);
-            if (feedback != null) {
-                User submitter = feedback.getFromUser();
-                logger.info("Deleting feedback with ID: " + id + " from user: " +
-                        LoggingUtils.formatUserInfo(submitter));
-            } else {
-                logger.info("Deleting feedback with ID: " + id + " (feedback details not available)");
-            }
+            FeedbackSubmission feedback = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.FeedbackSubmission, id));
+
+            User submitter = feedback.getFromUser();
+            logger.info("Deleting feedback with ID: " + id + " from user: " +
+                    LoggingUtils.formatUserInfo(submitter));
 
             repository.deleteById(id);
             logger.info("Feedback with ID: " + id + " deleted successfully");

@@ -92,11 +92,42 @@ public class FeedbackSubmissionControllerIntegrationTest extends BaseIntegration
     void testDeleteFeedback() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete(FEEDBACK_BASE_URL + "/delete/" + testFeedbackId)
                 .header("Authorization", "Bearer " + createMockJwtToken("testuser")))
-                .andExpect(status().isInternalServerError()); // Should error since feedback doesn't exist
+                .andExpect(status().isNotFound()); // Should return 404 since feedback doesn't exist
     }
 
     @Test
-    @DisplayName("POST /api/v1/feedback - Should return bad request for invalid feedback data")
+    @DisplayName("DELETE /api/v1/feedback/delete/{id} - Should successfully delete existing feedback")
+    void testDeleteFeedback_Success() throws Exception {
+        // First create a feedback submission
+        String feedbackJson = "{"
+                + "\"type\":\"BUG\","
+                + "\"fromUserId\":\"" + testUserId + "\","
+                + "\"message\":\"This feedback will be deleted\""
+                + "}";
+
+        String response = mockMvc.perform(MockMvcRequestBuilders.post(FEEDBACK_BASE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(feedbackJson)
+                .header("Authorization", "Bearer " + createMockJwtToken("testuser")))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // Extract the feedback ID from the response (this is a simplified approach)
+        // In a real scenario, you might want to use a JSON parser
+        UUID createdFeedbackId = UUID.fromString(
+            response.substring(response.indexOf("\"id\":\"") + 6, response.indexOf("\",\"type\""))
+        );
+
+        // Now delete the created feedback
+        mockMvc.perform(MockMvcRequestBuilders.delete(FEEDBACK_BASE_URL + "/delete/" + createdFeedbackId)
+                .header("Authorization", "Bearer " + createMockJwtToken("testuser")))
+                .andExpect(status().isNoContent()); // Should return 204 for successful deletion
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/feedback - Should return not found for invalid user ID")
     void testSubmitFeedback_InvalidData() throws Exception {
         String invalidJson = "{}";
 
@@ -104,7 +135,7 @@ public class FeedbackSubmissionControllerIntegrationTest extends BaseIntegration
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(invalidJson)
                 .header("Authorization", "Bearer " + createMockJwtToken("testuser")))
-                .andExpect(status().isInternalServerError()); // Will be 500 due to null values
+                .andExpect(status().isNotFound()); // Will be 404 due to null user ID causing user not found
     }
 
     @Test
@@ -124,7 +155,7 @@ public class FeedbackSubmissionControllerIntegrationTest extends BaseIntegration
         UUID nonExistentId = UUID.randomUUID();
         mockMvc.perform(MockMvcRequestBuilders.delete(FEEDBACK_BASE_URL + "/delete/" + nonExistentId)
                 .header("Authorization", "Bearer " + createMockJwtToken("testuser")))
-                .andExpect(status().isInternalServerError()); // The service doesn't check if feedback exists before delete
+                .andExpect(status().isNotFound()); // The service now checks if feedback exists before delete
     }
 
     @Test
