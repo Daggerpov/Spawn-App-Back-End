@@ -40,59 +40,48 @@ public class ChatMessageControllerIntegrationTest extends BaseIntegrationTest {
 
     @Override
     protected void setupTestData() {
-        try {
-            // Create test user via auth service
-            AuthUserDTO authUserDTO = new AuthUserDTO(
-                null,
-                "Test User",
-                "testuser@example.com",
-                "testuser",
-                "Test bio",
-                "password123"
-            );
-            testUserId = authService.registerUser(authUserDTO).getId();
+        // Create test user via auth service
+        AuthUserDTO authUserDTO = new AuthUserDTO(
+            null,
+            "Test User",
+            "testuser@example.com",
+            "testuser",
+            "Test bio",
+            "password123"
+        );
+        testUserId = authService.registerUser(authUserDTO).getId();
 
-            // Create test location
-            LocationDTO locationDTO = new LocationDTO(
-                UUID.randomUUID(),
-                "Test Location", 
-                37.7749, // latitude
-                -122.4194 // longitude
-            );
+        // Create test location
+        LocationDTO locationDTO = new LocationDTO(
+            UUID.randomUUID(),
+            "Test Location", 
+            37.7749, // latitude
+            -122.4194 // longitude
+        );
 
-            // Create test activity
-            ActivityCreationDTO activityCreationDTO = new ActivityCreationDTO(
-                UUID.randomUUID(),
-                "Test Activity",
-                OffsetDateTime.now().plusDays(1),
-                OffsetDateTime.now().plusDays(1).plusHours(2),
-                locationDTO,
-                "Test note",
-                "🎯",
-                ActivityCategory.ACTIVE,
-                testUserId,
-                List.of(), // invitedFriendUserIds
-                Instant.now()
-            );
-            testActivityId = activityService.createActivity(activityCreationDTO).getId();
+        // Create test activity
+        ActivityCreationDTO activityCreationDTO = new ActivityCreationDTO(
+            UUID.randomUUID(),
+            "Test Activity",
+            OffsetDateTime.now().plusDays(1),
+            OffsetDateTime.now().plusDays(1).plusHours(2),
+            locationDTO,
+            "Test note",
+            "🎯",
+            ActivityCategory.ACTIVE,
+            testUserId,
+            List.of(), // invitedFriendUserIds
+            Instant.now()
+        );
+        testActivityId = activityService.createActivity(activityCreationDTO).getId();
 
-            // Create test chat message
-            CreateChatMessageDTO createChatMessageDTO = new CreateChatMessageDTO(
-                "Test chat message content",
-                testUserId,
-                testActivityId
-            );
-            testChatMessageId = chatMessageService.createChatMessage(createChatMessageDTO).getId();
-            
-        } catch (Exception e) {
-            // Log the error but don't fail the test setup
-            System.err.println("Error setting up test data: " + e.getMessage());
-            e.printStackTrace();
-            // Use random UUIDs as fallback
-            testUserId = UUID.randomUUID();
-            testActivityId = UUID.randomUUID();
-            testChatMessageId = UUID.randomUUID();
-        }
+        // Create test chat message
+        CreateChatMessageDTO createChatMessageDTO = new CreateChatMessageDTO(
+            "Test chat message content",
+            testUserId,
+            testActivityId
+        );
+        testChatMessageId = chatMessageService.createChatMessage(createChatMessageDTO).getId();
     }
 
     @Test
