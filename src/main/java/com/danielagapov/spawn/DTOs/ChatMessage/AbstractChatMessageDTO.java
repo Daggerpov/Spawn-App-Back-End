@@ -16,5 +16,5 @@ public abstract class AbstractChatMessageDTO implements Serializable{
     UUID id;
     String content;
     Instant timestamp;
-    UUID ActivityId;
+    UUID activityId;
 }

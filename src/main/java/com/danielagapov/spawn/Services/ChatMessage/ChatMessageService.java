@@ -115,7 +115,7 @@ public class ChatMessageService implements IChatMessageService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "ActivityById", key = "#newChatMessageDTO.ActivityId"),
+            @CacheEvict(value = "ActivityById", key = "#newChatMessageDTO.activityId"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "feedActivities", allEntries = true),
             @CacheEvict(value = "filteredFeedActivities", allEntries = true)
