@@ -1,7 +1,12 @@
 package com.danielagapov.spawn.Config;
 
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
+import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import com.danielagapov.spawn.Services.OAuth.OAuthStrategy;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @TestConfiguration
@@ -128,7 +134,11 @@ public class TestS3Config {
 
             @Override
             public String refreshAccessToken(HttpServletRequest request) {
-                // Mock implementation - not needed for these tests
+                // Mock implementation - simulate real behavior for testing
+                final String authHeader = request.getHeader("Authorization");
+                if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                    throw new com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException("No authorization token found");
+                }
                 return "mock-refreshed-token";
             }
 
@@ -146,6 +156,79 @@ public class TestS3Config {
 
     @Bean
     @Primary
+    public IOAuthService mockOAuthService() {
+        return new IOAuthService() {
+            @Override
+            public BaseUserDTO makeUser(UserDTO user, String externalUserId, byte[] profilePicture, OAuthProvider provider) {
+                // Mock implementation - just return a BaseUserDTO
+                return new BaseUserDTO(
+                    UUID.randomUUID(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getUsername(),
+                    user.getBio(),
+                    "https://test-cdn.example.com/mock-profile.jpg"
+                );
+            }
+
+            @Override
+            public Optional<BaseUserDTO> signInUser(String idToken, String email, OAuthProvider provider) {
+                // Mock implementation - return empty for new users (testing OAuth sign-in)
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
+                // Mock implementation - return empty for testing
+                return Optional.empty();
+            }
+
+            @Override
+            public BaseUserDTO createUserFromOAuth(UserCreationDTO userCreationDTO, String idToken, OAuthProvider provider) {
+                // Mock implementation - create a user from OAuth
+                return new BaseUserDTO(
+                    UUID.randomUUID(),
+                    userCreationDTO.getName(),
+                    userCreationDTO.getEmail(),
+                    userCreationDTO.getUsername(),
+                    userCreationDTO.getBio(),
+                    "https://test-cdn.example.com/mock-oauth-profile.jpg"
+                );
+            }
+        };
+    }
+
+    @Bean
+    @Primary
+    public List<OAuthStrategy> mockOAuthStrategies() {
+        return List.of(
+            new OAuthStrategy() {
+                @Override
+                public OAuthProvider getOAuthProvider() {
+                    return OAuthProvider.google;
+                }
+
+                @Override
+                public String verifyIdToken(String idToken) {
+                    return "mock-google-user-id";
+                }
+            },
+            new OAuthStrategy() {
+                @Override
+                public OAuthProvider getOAuthProvider() {
+                    return OAuthProvider.apple;
+                }
+
+                @Override
+                public String verifyIdToken(String idToken) {
+                    return "mock-apple-user-id";
+                }
+            }
+        );
+    }
+
+    @Bean
+    @Primary
     public UserDetailsService mockUserDetailsService() {
         return new UserDetailsService() {
             @Override
@@ -156,6 +239,22 @@ public class TestS3Config {
                         .password("password") // Not used in JWT validation
                         .authorities(List.of(new SimpleGrantedAuthority("ROLE_USER")))
                         .build();
+            }
+        };
+    }
+
+    @Bean
+    @Primary
+    public com.danielagapov.spawn.Services.Email.IEmailService mockEmailService() {
+        return new com.danielagapov.spawn.Services.Email.IEmailService() {
+            @Override
+            public void sendEmail(String to, String subject, String text) {
+                // Mock implementation - do nothing
+            }
+
+            @Override
+            public void sendVerifyAccountEmail(String to, String token) {
+                // Mock implementation - do nothing
             }
         };
     }

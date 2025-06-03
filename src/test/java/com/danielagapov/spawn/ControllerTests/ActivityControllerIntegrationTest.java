@@ -1,12 +1,22 @@
 package com.danielagapov.spawn.ControllerTests;
 
 import com.danielagapov.spawn.DTOs.Activity.*;
+import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
+import com.danielagapov.spawn.Models.Activity;
+import com.danielagapov.spawn.Models.FriendTag;
+import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Enums.ActivityCategory;
+import com.danielagapov.spawn.Services.Activity.ActivityService;
+import com.danielagapov.spawn.Services.Auth.AuthService;
+import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -15,13 +25,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ActivityControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String ACTIVITY_BASE_URL = "/api/v1/Activities";
-    private UUID testUserId = UUID.randomUUID();
-    private UUID testActivityId = UUID.randomUUID();
-    private UUID testFriendTagId = UUID.randomUUID();
+    private UUID testUserId;
+    private UUID testActivityId;
+    private UUID testFriendTagId;
+
+    @Autowired
+    private AuthService authService;
+    
+    @Autowired
+    private ActivityService activityService;
+    
+    @Autowired
+    private FriendTagService friendTagService;
 
     @Override
     protected void setupTestData() {
-        // Setup test activities and users for testing
+        // Use hardcoded UUIDs for testing
+        testUserId = UUID.fromString("12345678-1234-1234-1234-123456789012");
+        testActivityId = UUID.fromString("87654321-4321-4321-4321-210987654321");
+        testFriendTagId = UUID.fromString("11111111-2222-3333-4444-555555555555");
     }
 
     @Test

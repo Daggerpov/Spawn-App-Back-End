@@ -147,6 +147,8 @@ public class AuthService implements IAuthService {
         user.setId(UUID.randomUUID()); // can't be null
         user.setUsername(authUserDTO.getUsername());
         user.setEmail(authUserDTO.getEmail());
+        user.setName(authUserDTO.getName());
+        user.setBio(authUserDTO.getBio());
         user.setPassword(passwordEncoder.encode(authUserDTO.getPassword()));
         user.setVerified(false);
         user.setDateCreated(new Date());

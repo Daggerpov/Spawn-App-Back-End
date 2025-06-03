@@ -2,8 +2,10 @@ package com.danielagapov.spawn.ControllerTests;
 
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Services.Auth.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -16,9 +18,18 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String AUTH_BASE_URL = "/api/v1/auth";
 
+    @Autowired
+    private AuthService authService;
+
     @Override
     protected void setupTestData() {
-        // Setup test users and data needed for auth tests
+        try {
+            // Create a test user that the quickSignIn test expects
+            AuthUserDTO testUserDTO = new AuthUserDTO(null, "Test User", "testuser@example.com", "testuser", "Test bio", "password123");
+            authService.registerUser(testUserDTO);
+        } catch (Exception e) {
+            // User might already exist from previous tests, ignore
+        }
     }
 
     @Test
@@ -94,7 +105,7 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
     void testOAuthSignIn() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(AUTH_BASE_URL + "/sign-in")
                 .param("idToken", "mock-id-token")
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .param("email", "oauth@example.com"))
                 .andExpect(status().isOk());
     }
@@ -106,7 +117,7 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post(AUTH_BASE_URL + "/make-user")
                 .param("idToken", "mock-id-token")
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(asJsonString(userCreationDTO)))
                 .andExpect(status().isOk())
