@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 @RestController()
-@RequestMapping("api/v1/Activities")
+@RequestMapping("api/v1/activities")
 public class ActivityController {
     private final IActivityService ActivityService;
     private final ILogger logger;
@@ -32,8 +32,8 @@ public class ActivityController {
     // TL;DR: Don't remove this endpoint; it may become useful.
     @Deprecated(since = "Not being used on mobile currently." +
             "This may become a feature, as Owen has suggested, " +
-            "with showing a friend's recent Activities.")
-    // full path: /api/v1/Activities/user/{creatorUserId}
+            "with showing a friend's recent activities.")
+    // full path: /api/v1/activities/user/{creatorUserId}
     @GetMapping("user/{creatorUserId}")
     public ResponseEntity<?> getActivitiesCreatedByUserId(@PathVariable UUID creatorUserId) {
         try {
@@ -49,7 +49,7 @@ public class ActivityController {
         }
     }
     
-    // full path: /api/v1/Activities/profile/{profileUserId}?requestingUserId={requestingUserId}
+    // full path: /api/v1/activities/profile/{profileUserId}?requestingUserId={requestingUserId}
     @GetMapping("profile/{profileUserId}")
     public ResponseEntity<?> getProfileActivities(@PathVariable UUID profileUserId, @RequestParam UUID requestingUserId) {
         if (profileUserId == null || requestingUserId == null) {
@@ -70,7 +70,7 @@ public class ActivityController {
         }
     }
 
-    // full path: /api/v1/Activities/friendTag/{friendTagFilterId}
+    // full path: /api/v1/activities/friendTag/{friendTagFilterId}
     @GetMapping("friendTag/{friendTagFilterId}")
     public ResponseEntity<?> getActivitiesByFriendTag(@PathVariable UUID friendTagFilterId) {
         if (friendTagFilterId == null) {
@@ -101,7 +101,7 @@ public class ActivityController {
         }
     }
 
-    // full path: /api/v1/Activities
+    // full path: /api/v1/activities
     @PostMapping
     public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityCreationDTO activityCreationDTO) {
         try {
@@ -117,7 +117,7 @@ public class ActivityController {
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/Activities/{id}
+    // full path: /api/v1/activities/{id}
     @PutMapping("{id}")
     public ResponseEntity<?> replaceActivity(@RequestBody ActivityDTO newActivity, @PathVariable UUID id) {
         if (id == null) {
@@ -149,7 +149,7 @@ public class ActivityController {
     @Deprecated(since = "Not being used on mobile currently. " +
             "Pending mobile feature implementation, per:" +
             "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/Activities/{id}
+    // full path: /api/v1/activities/{id}
     @DeleteMapping("{id}")
     public ResponseEntity<?> deleteActivity(@PathVariable UUID id) {
         if (id == null) {
@@ -175,7 +175,7 @@ public class ActivityController {
     }
 
     // this corresponds to the button on the activity for invited users
-    // full path: /api/v1/Activities/{ActivityId}/toggleStatus/{userId}
+    // full path: /api/v1/activities/{ActivityId}/toggleStatus/{userId}
     @PutMapping("{ActivityId}/toggleStatus/{userId}")
     public ResponseEntity<?> toggleParticipation(@PathVariable UUID ActivityId, @PathVariable UUID userId) {
         if (userId == null || ActivityId == null) {
@@ -207,7 +207,7 @@ public class ActivityController {
         }
     }
 
-    // full path: /api/v1/Activities/feedActivities/{requestingUserId}
+    // full path: /api/v1/activities/feedActivities/{requestingUserId}
     // this method will return the activities created by a given user (like in `getActivitiesCreatedByUserId()`),
     // in the universal accent color, followed by feed activities (like in `getActivitiesInvitedTo()`
     @GetMapping("feedActivities/{requestingUserId}")
@@ -240,7 +240,7 @@ public class ActivityController {
         }
     }
 
-    // full path: /api/v1/Activities/{id}
+    // full path: /api/v1/activities/{id}
     @GetMapping("{id}")
     public ResponseEntity<?> getFullActivityById(@PathVariable UUID id, @RequestParam UUID requestingUserId) {
         if (id == null || requestingUserId == null) {
