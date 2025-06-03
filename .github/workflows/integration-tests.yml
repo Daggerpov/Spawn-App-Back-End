@@ -1,0 +1,111 @@
+name: Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_USER: testuser
+          POSTGRES_DB: spawn_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U testuser; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Compile the project
+        run: mvn clean compile -DskipTests
+
+      - name: Compile test classes
+        run: mvn test-compile -DskipTests
+
+      - name: Run Integration Tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/spawn_test
+          SPRING_DATASOURCE_USERNAME: testuser
+          SPRING_DATASOURCE_PASSWORD: testpassword
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          SPRING_PROFILES_ACTIVE: test
+        run: mvn test -Dtest="com.danielagapov.spawn.ControllerTests.**"
+
+      - name: Publish Integration Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Integration Test Results
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Upload Integration Test Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-reports
+          path: target/surefire-reports/
+
+      - name: Generate Integration Test Summary
+        if: always()
+        run: |
+          echo "📊 Integration Test Summary"
+          echo "Total controller test files: $(find src/test/java/com/danielagapov/spawn/ControllerTests -name "*Test.java" | wc -l)"
+          if [ -d "target/surefire-reports" ]; then
+            total_tests=$(grep -r "tests=" target/surefire-reports/*.xml | grep -o "tests=\"[0-9]*\"" | grep -o "[0-9]*" | awk '{sum += $1} END {print sum}')
+            failed_tests=$(grep -r "failures=" target/surefire-reports/*.xml | grep -o "failures=\"[0-9]*\"" | grep -o "[0-9]*" | awk '{sum += $1} END {print sum}')
+            echo "Tests run: ${total_tests:-0}"
+            echo "Tests failed: ${failed_tests:-0}"
+          fi
+
+      - name: Upload Integration Test Logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: integration-test-logs
+          path: |
+            *.log
+            target/surefire-reports/
+            target/*.log 

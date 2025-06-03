@@ -1,0 +1,73 @@
+name: Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Compile the project
+        run: mvn clean compile -DskipTests
+
+      - name: Compile test classes
+        run: mvn test-compile -DskipTests
+
+      - name: Run Unit Tests
+        run: mvn test -Dtest="com.danielagapov.spawn.ServiceTests.**"
+
+      - name: Publish Unit Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Unit Test Results
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+          fail-on-error: true
+
+      - name: Upload Unit Test Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-reports
+          path: target/surefire-reports/
+
+      - name: Generate Unit Test Summary
+        if: always()
+        run: |
+          echo "📊 Unit Test Summary"
+          echo "Total service test files: $(find src/test/java/com/danielagapov/spawn/ServiceTests -name "*.java" | wc -l)"
+          if [ -d "target/surefire-reports" ]; then
+            total_tests=$(grep -r "tests=" target/surefire-reports/*.xml | grep -o "tests=\"[0-9]*\"" | grep -o "[0-9]*" | awk '{sum += $1} END {print sum}')
+            failed_tests=$(grep -r "failures=" target/surefire-reports/*.xml | grep -o "failures=\"[0-9]*\"" | grep -o "[0-9]*" | awk '{sum += $1} END {print sum}')
+            echo "Tests run: ${total_tests:-0}"
+            echo "Tests failed: ${failed_tests:-0}"
+          fi 
