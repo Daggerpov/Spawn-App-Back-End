@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.DeviceTokenDTO;
 import com.danielagapov.spawn.DTOs.Notification.NotificationPreferencesDTO;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.PushNotification.FCMService;
 import com.danielagapov.spawn.Services.PushNotification.NotificationService;
@@ -36,6 +37,10 @@ public class NotificationController {
         try {
             notificationService.registerDeviceToken(deviceTokenDTO);
             return ResponseEntity.ok().build();
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for device token registration: " + LoggingUtils.formatUserIdInfo(deviceTokenDTO.getUserId()) + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error registering device token for user: " + LoggingUtils.formatUserIdInfo(deviceTokenDTO.getUserId()) + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -65,6 +70,10 @@ public class NotificationController {
         }
         try {
             return new ResponseEntity<>(notificationService.getNotificationPreferences(userId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for notification preferences: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error fetching notification preferences for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -82,14 +91,20 @@ public class NotificationController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            // Ensure user ID in path matches the one in the DTO
-            if (!userId.equals(preferencesDTO.getUserId())) {
+            // Set userId in DTO if it's null to match the path parameter
+            if (preferencesDTO.getUserId() == null) {
+                preferencesDTO.setUserId(userId);
+            } else if (!userId.equals(preferencesDTO.getUserId())) {
                 logger.error("User ID mismatch: path userId " + userId + " does not match DTO userId " + preferencesDTO.getUserId());
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
 
             NotificationPreferencesDTO savedPreferences = notificationService.saveNotificationPreferences(preferencesDTO);
             return new ResponseEntity<>(savedPreferences, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for notification preferences update: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error updating notification preferences for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
