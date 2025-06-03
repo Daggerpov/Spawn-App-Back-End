@@ -12,14 +12,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile("test")
 public class TestSecurityConfig {
 
-    @Bean
+    @Bean(name = "testSecurityFilterChain")
     @Primary
     public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
+        return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .anyRequest().permitAll() // Allow all requests without authentication
-                );
-        return http.build();
+                )
+                .build();
     }
 } 
