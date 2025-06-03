@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.ControllerTests;
 
 import com.danielagapov.spawn.Config.TestS3Config;
+import com.danielagapov.spawn.Config.TestSecurityConfig;
 import com.danielagapov.spawn.SpawnApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Base class for all controller integration tests.
  * Provides common configuration and utilities.
  */
-@SpringBootTest(classes = {SpawnApplication.class, TestS3Config.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = {SpawnApplication.class, TestS3Config.class, TestSecurityConfig.class}, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @SpringJUnitConfig
