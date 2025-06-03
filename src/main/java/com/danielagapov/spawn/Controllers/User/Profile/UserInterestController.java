@@ -1,6 +1,8 @@
 package com.danielagapov.spawn.Controllers.User.Profile;
 
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.UserInterest.IUserInterestService;
+import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,19 +16,26 @@ import java.util.UUID;
 public class UserInterestController {
 
     private final IUserInterestService userInterestService;
+    private final ILogger logger;
 
     @Autowired
-    public UserInterestController(IUserInterestService userInterestService) {
+    public UserInterestController(IUserInterestService userInterestService, ILogger logger) {
         this.userInterestService = userInterestService;
+        this.logger = logger;
     }
 
     @GetMapping
     public ResponseEntity<List<String>> getUserInterests(@PathVariable UUID userId) {
-        List<String> interests = userInterestService.getUserInterests(userId);
-        interests = interests.stream()
-                .map(interest -> interest.replaceAll("^\"|\"$", ""))
-                .toList();
-        return ResponseEntity.ok(interests);
+        try {
+            List<String> interests = userInterestService.getUserInterests(userId);
+            interests = interests.stream()
+                    .map(interest -> interest.replaceAll("^\"|\"$", ""))
+                    .toList();
+            return ResponseEntity.ok(interests);
+        } catch (Exception e) {
+            logger.error("Error getting user interests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
     }
 
     @PostMapping
@@ -34,6 +43,12 @@ public class UserInterestController {
             @PathVariable UUID userId,
             @RequestBody String userInterestName) {
         userInterestName = userInterestName.replaceAll("^\"|\"$", "");
-        return new ResponseEntity<>(userInterestService.addUserInterest(userId, userInterestName), HttpStatus.CREATED);
+        try {
+            String result = userInterestService.addUserInterest(userId, userInterestName);
+            return new ResponseEntity<>(result, HttpStatus.CREATED);
+        } catch (Exception e) {
+            logger.error("Error adding user interest for user: " + LoggingUtils.formatUserIdInfo(userId) + " - interest: " + userInterestName + ": " + e.getMessage());
+            throw e;
+        }
     }
 } 
