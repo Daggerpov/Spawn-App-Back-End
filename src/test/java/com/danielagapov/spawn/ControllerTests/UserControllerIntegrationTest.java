@@ -15,6 +15,7 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final String USER_BASE_URL = "/api/v1/users";
     private UUID testUserId = UUID.randomUUID();
+    private String testUsername = "testuser";
 
     @Override
     protected void setupTestData() {
@@ -24,7 +25,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/users/{id} - Should get user by ID successfully")
     void testGetUser_Success() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + testUserId))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + testUserId)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(testUserId.toString()));
     }
@@ -33,14 +35,16 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("GET /api/v1/users/{id} - Should return not found for non-existent user")
     void testGetUser_NotFound() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + nonExistentId))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + nonExistentId)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("DELETE /api/v1/users/{id} - Should delete user successfully")
     void testDeleteUser_Success() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete(USER_BASE_URL + "/" + testUserId))
+        mockMvc.perform(MockMvcRequestBuilders.delete(USER_BASE_URL + "/" + testUserId)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isNoContent());
     }
 
@@ -48,14 +52,16 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("DELETE /api/v1/users/{id} - Should return not found for non-existent user")
     void testDeleteUser_NotFound() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
-        mockMvc.perform(MockMvcRequestBuilders.delete(USER_BASE_URL + "/" + nonExistentId))
+        mockMvc.perform(MockMvcRequestBuilders.delete(USER_BASE_URL + "/" + nonExistentId)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("GET /api/v1/users/friends/{id} - Should get user friends")
     void testGetUserFriends() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/friends/" + testUserId))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/friends/" + testUserId)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -63,7 +69,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/users/recommended-friends/{id} - Should get recommended friends")
     void testGetRecommendedFriends() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/recommended-friends/" + testUserId))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/recommended-friends/" + testUserId)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -75,14 +82,16 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(MockMvcRequestBuilders.patch(USER_BASE_URL + "/update-pfp/" + testUserId)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(imageData))
+                .content(imageData)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("GET /api/v1/users/default-pfp - Should get default profile picture")
     void testGetDefaultProfilePicture() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/default-pfp"))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/default-pfp")
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.notNullValue()));
     }
@@ -94,7 +103,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(MockMvcRequestBuilders.patch(USER_BASE_URL + "/update/" + testUserId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(updateDTO)))
+                .content(asJsonString(updateDTO))
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("updateduser"));
     }
@@ -107,7 +117,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(MockMvcRequestBuilders.patch(USER_BASE_URL + "/update/" + nonExistentId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(updateDTO)))
+                .content(asJsonString(updateDTO))
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isNotFound());
     }
 
@@ -115,7 +126,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("GET /api/v1/users/filtered/{requestingUserId} - Should get filtered users")
     void testGetFilteredUsers() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/filtered/" + testUserId)
-                .param("query", "test"))
+                .param("query", "test")
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -125,7 +137,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     void testSearchUsers() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/search")
                 .param("query", "test")
-                .param("requestingUserId", testUserId.toString()))
+                .param("requestingUserId", testUserId.toString())
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -133,7 +146,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/users/{userId}/recent-users - Should get recent users")
     void testGetRecentUsers() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + testUserId + "/recent-users"))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + testUserId + "/recent-users")
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -142,7 +156,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @DisplayName("GET /api/v1/users/{userId}/is-friend/{potentialFriendId} - Should check if users are friends")
     void testIsFriend() throws Exception {
         UUID friendId = UUID.randomUUID();
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + testUserId + "/is-friend/" + friendId))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/" + testUserId + "/is-friend/" + friendId)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.anyOf(
                         org.hamcrest.Matchers.is("true"),
@@ -157,7 +172,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post(USER_BASE_URL + "/s3/test-s3")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .content(testFile))
+                .content(testFile)
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.notNullValue()));
     }
@@ -165,7 +181,8 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/users/search - Should return bad request for missing parameters")
     void testSearchUsers_MissingParams() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/search"))
+        mockMvc.perform(MockMvcRequestBuilders.get(USER_BASE_URL + "/search")
+                .header(AUTH_HEADER, BEARER_PREFIX + createMockJwtToken(testUsername)))
                 .andExpect(status().isBadRequest());
     }
 } 
