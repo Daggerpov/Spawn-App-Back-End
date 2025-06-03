@@ -23,8 +23,13 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Override
     protected void setupTestData() {
+        // Create test data only for specific tests that need it
+        // Don't create a generic "testuser" that conflicts with individual tests
+    }
+
+    private void createTestUserForQuickSignIn() {
         try {
-            // Create a test user that the quickSignIn test expects
+            // Create a test user specifically for quickSignIn test
             AuthUserDTO testUserDTO = new AuthUserDTO(null, "Test User", "testuser@example.com", "testuser", "Test bio", "password123");
             authService.registerUser(testUserDTO);
         } catch (Exception e) {
@@ -35,7 +40,7 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/v1/auth/register - Should register new user successfully")
     void testRegisterUser_Success() throws Exception {
-        AuthUserDTO authUserDTO = new AuthUserDTO(null, "Test User", "test@example.com", "testuser", "Test bio", "password123");
+        AuthUserDTO authUserDTO = new AuthUserDTO(null, "Test User", "test@example.com", "uniquetestuser", "Test bio", "password123");
 
         mockMvc.perform(MockMvcRequestBuilders.post(AUTH_BASE_URL + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -43,7 +48,7 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Authorization"))
                 .andExpect(header().exists("X-Refresh-Token"))
-                .andExpect(jsonPath("$.username").value("testuser"))
+                .andExpect(jsonPath("$.username").value("uniquetestuser"))
                 .andExpect(jsonPath("$.email").value("test@example.com"));
     }
 
@@ -168,6 +173,8 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/v1/auth/quick-sign-in - Should return user info for valid token")
     void testQuickSignIn() throws Exception {
+        createTestUserForQuickSignIn();
+        
         String token = createMockJwtToken("testuser");
 
         mockMvc.perform(MockMvcRequestBuilders.get(AUTH_BASE_URL + "/quick-sign-in")
