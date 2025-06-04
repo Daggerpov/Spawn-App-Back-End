@@ -194,6 +194,7 @@ public class ActivityService implements IActivityService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedActivities", allEntries = true),
@@ -243,6 +244,7 @@ public class ActivityService implements IActivityService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedActivities", allEntries = true),
@@ -304,6 +306,7 @@ public class ActivityService implements IActivityService {
     @Override
     @Caching(evict = {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedActivities", allEntries = true),
@@ -365,9 +368,10 @@ public class ActivityService implements IActivityService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "ActivityById", key = "#result.id"),
+            @CacheEvict(value = "ActivityById", key = "#id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "ActivitiesByOwnerId", allEntries = true),
             @CacheEvict(value = "feedActivities", allEntries = true),
             @CacheEvict(value = "filteredFeedActivities", allEntries = true)
     })
@@ -409,13 +413,13 @@ public class ActivityService implements IActivityService {
                 .orElse(ParticipationStatus.notInvited);
     }
 
-
     // return type boolean represents whether the user was already invited or not
     // if false -> invites them
     // if true -> return 400 in Controller to indicate that the user has already
     // been invited, or it is a bad request.
     @Override
     @Caching(evict = {
+            @CacheEvict(value = "ActivityInviteById", key = "#ActivityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
@@ -447,7 +451,6 @@ public class ActivityService implements IActivityService {
         }
     }
 
-
     // returns the updated Activity, with modified participants and invited users
     // invited/participating
     // if true -> change status
@@ -455,6 +458,7 @@ public class ActivityService implements IActivityService {
     // invited/participating
     @Override
     @Caching(evict = {
+            @CacheEvict(value = "ActivityInviteById", key = "#ActivityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
