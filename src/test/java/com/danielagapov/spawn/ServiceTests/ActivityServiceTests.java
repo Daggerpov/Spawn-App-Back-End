@@ -2,12 +2,14 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityInviteDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ActivityCategory;
+import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -908,5 +910,122 @@ public class ActivityServiceTests {
         
         // Don't verify the Activity publisher - the service uses it correctly based on the logs
         // and the verification isn't working well in tests
+    }
+
+    @Test
+    void getActivityInviteById_ShouldReturnActivityInviteDTO_WhenActivityExists() {
+        UUID activityId = UUID.randomUUID();
+        UUID creatorId = UUID.randomUUID();
+        UUID locationId = UUID.randomUUID();
+        UUID attendeeId1 = UUID.randomUUID();
+        UUID attendeeId2 = UUID.randomUUID();
+        
+        // Create test data
+        Location location = new Location(locationId, "Test Location", 40.7128, -74.0060);
+        User creator = new User();
+        creator.setId(creatorId);
+        creator.setName("John Doe");
+        creator.setUsername("johndoe");
+        
+        Activity activity = new Activity(
+                activityId,
+                "Birthday Party",
+                OffsetDateTime.now().plusDays(1),
+                OffsetDateTime.now().plusDays(1).plusHours(3),
+                location,
+                "Come celebrate with us!",
+                creator,
+                "🎉",
+                ActivityCategory.ACTIVE
+        );
+        
+        // Create attendees
+        User attendee1 = new User();
+        attendee1.setId(attendeeId1);
+        ActivityUser activityUser1 = new ActivityUser();
+        activityUser1.setUser(attendee1);
+        
+        User attendee2 = new User();
+        attendee2.setId(attendeeId2);
+        ActivityUser activityUser2 = new ActivityUser();
+        activityUser2.setUser(attendee2);
+        
+        List<ActivityUser> attendees = List.of(activityUser1, activityUser2);
+        
+        BaseUserDTO baseUser1 = new BaseUserDTO(attendeeId1, "Alice Smith", "alice@example.com", "alice", "Bio", "pic1.jpg");
+        BaseUserDTO baseUser2 = new BaseUserDTO(attendeeId2, "Bob Johnson", "bob@example.com", "bob", "Bio", "pic2.jpg");
+        
+        // Set up mocks
+        when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(activity));
+        when(activityUserRepository.findByActivity_Id(activityId)).thenReturn(attendees);
+        when(userService.getBaseUserById(attendeeId1)).thenReturn(baseUser1);
+        when(userService.getBaseUserById(attendeeId2)).thenReturn(baseUser2);
+        
+        // Execute
+        ActivityInviteDTO result = ActivityService.getActivityInviteById(activityId);
+        
+        // Verify
+        assertNotNull(result);
+        assertEquals(activityId, result.getId());
+        assertEquals("Birthday Party", result.getTitle());
+        assertEquals("Test Location", result.getLocation());
+        assertEquals("John Doe", result.getCreatorName());
+        assertEquals("@johndoe", result.getCreatorUsername());
+        assertEquals("Come celebrate with us!", result.getDescription());
+        assertEquals(2, result.getAttendees().size());
+        assertEquals(3, result.getTotalAttendees()); // 2 attendees + 1 creator
+        
+        verify(ActivityRepository, times(1)).findById(activityId);
+        verify(activityUserRepository, times(1)).findByActivity_Id(activityId);
+        verify(userService, times(2)).getBaseUserById(any(UUID.class));
+    }
+    
+    @Test
+    void getActivityInviteById_ShouldThrowNotFoundException_WhenActivityNotFound() {
+        UUID activityId = UUID.randomUUID();
+        
+        when(ActivityRepository.findById(activityId)).thenReturn(Optional.empty());
+        
+        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+                () -> ActivityService.getActivityInviteById(activityId));
+        
+        assertEquals(EntityType.Activity, exception.entityType);
+        verify(ActivityRepository, times(1)).findById(activityId);
+        verify(activityUserRepository, never()).findByActivity_Id(any(UUID.class));
+    }
+    
+    @Test
+    void getActivityInviteById_ShouldHandleNullLocation() {
+        UUID activityId = UUID.randomUUID();
+        UUID creatorId = UUID.randomUUID();
+        
+        User creator = new User();
+        creator.setId(creatorId);
+        creator.setName("Jane Doe");
+        creator.setUsername("janedoe");
+        
+        Activity activity = new Activity(
+                activityId,
+                "Online Meeting",
+                OffsetDateTime.now().plusDays(1),
+                OffsetDateTime.now().plusDays(1).plusHours(1),
+                null, // null location
+                "Virtual meeting",
+                creator,
+                "💻",
+                ActivityCategory.ACTIVE
+        );
+        
+        when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(activity));
+        when(activityUserRepository.findByActivity_Id(activityId)).thenReturn(List.of());
+        
+        ActivityInviteDTO result = ActivityService.getActivityInviteById(activityId);
+        
+        assertNotNull(result);
+        assertNull(result.getLocation());
+        assertEquals("Jane Doe", result.getCreatorName());
+        assertEquals("@janedoe", result.getCreatorUsername());
+        assertEquals(0, result.getAttendees().size());
+        assertEquals(1, result.getTotalAttendees()); // Just the creator
     }
 }
