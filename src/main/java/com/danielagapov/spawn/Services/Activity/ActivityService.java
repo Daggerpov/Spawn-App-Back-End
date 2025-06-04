@@ -252,6 +252,19 @@ public class ActivityService implements IActivityService {
     })
     public AbstractActivityDTO createActivity(ActivityCreationDTO ActivityCreationDTO) {
         try {
+            // Validate required fields
+            if (ActivityCreationDTO.getInvitedFriendUserIds() == null) {
+                throw new IllegalArgumentException("InvitedFriendUserIds cannot be null. Please provide a list of invited friend user IDs (can be empty).");
+            }
+            
+            if (ActivityCreationDTO.getCreatorUserId() == null) {
+                throw new IllegalArgumentException("CreatorUserId cannot be null.");
+            }
+            
+            if (ActivityCreationDTO.getLocation() == null) {
+                throw new IllegalArgumentException("Location cannot be null.");
+            }
+
             Location location = locationService.save(LocationMapper.toEntity(ActivityCreationDTO.getLocation()));
 
             User creator = userRepository.findById(ActivityCreationDTO.getCreatorUserId())
@@ -261,24 +274,35 @@ public class ActivityService implements IActivityService {
 
             Activity = repository.save(Activity);
 
-            for (UUID userId: ActivityCreationDTO.getInvitedFriendUserIds()) {
-                User invitedUser = userRepository.findById(userId)
-                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-                ActivityUsersId compositeId = new ActivityUsersId(Activity.getId(), userId);
-                ActivityUser ActivityUser = new ActivityUser();
-                ActivityUser.setId(compositeId);
-                ActivityUser.setActivity(Activity);
-                ActivityUser.setUser(invitedUser);
-                ActivityUser.setStatus(ParticipationStatus.invited);
-                activityUserRepository.save(ActivityUser);
+            // Only process invited users if the list is not empty
+            if (!ActivityCreationDTO.getInvitedFriendUserIds().isEmpty()) {
+                for (UUID userId: ActivityCreationDTO.getInvitedFriendUserIds()) {
+                    if (userId == null) {
+                        logger.warn("Skipping null user ID in invited friends list for activity: " + Activity.getId());
+                        continue;
+                    }
+                    
+                    User invitedUser = userRepository.findById(userId)
+                            .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+                    ActivityUsersId compositeId = new ActivityUsersId(Activity.getId(), userId);
+                    ActivityUser ActivityUser = new ActivityUser();
+                    ActivityUser.setId(compositeId);
+                    ActivityUser.setActivity(Activity);
+                    ActivityUser.setUser(invitedUser);
+                    ActivityUser.setStatus(ParticipationStatus.invited);
+                    activityUserRepository.save(ActivityUser);
+                }
+
+                // Create and publish Activity invite notification only if there are invited users
+                eventPublisher.publishEvent(
+                    new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, new HashSet<>(ActivityCreationDTO.getInvitedFriendUserIds()))
+                );
             }
 
-            // Create and publish Activity invite notification directly
-            eventPublisher.publishEvent(
-                new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, new HashSet<>(ActivityCreationDTO.getInvitedFriendUserIds()))
-            );
-
             return ActivityMapper.toDTO(Activity, creator.getId(), null, new ArrayList<>(ActivityCreationDTO.getInvitedFriendUserIds()), null);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid activity creation request: " + e.getMessage());
+            throw e; // This will be caught by the controller and return 400 Bad Request
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
             throw new ApplicationException("Failed to create Activity", e);
@@ -368,10 +392,10 @@ public class ActivityService implements IActivityService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "ActivityById", key = "#id"),
-            @CacheEvict(value = "ActivityInviteById", key = "#id"),
+            @CacheEvict(value = "ActivityById", key = "#result.id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "ActivitiesByOwnerId", allEntries = true),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedActivities", allEntries = true),
             @CacheEvict(value = "filteredFeedActivities", allEntries = true)
     })

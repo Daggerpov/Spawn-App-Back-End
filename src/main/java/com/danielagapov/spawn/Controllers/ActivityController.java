@@ -77,6 +77,9 @@ public class ActivityController {
         try {
             AbstractActivityDTO createdActivity = ActivityService.createActivity(activityCreationDTO);
             return new ResponseEntity<>(createdActivity, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid activity creation request: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             logger.error("Error creating activity: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
