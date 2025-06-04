@@ -71,7 +71,7 @@ public class SecurityConfig {
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(whitelistedUrls).permitAll()
-                        .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/v1/activities/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")).permitAll() // Allow GET requests to specific activity by UUID for external invites
+                        .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/v1/activities/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\\?.*)?")).permitAll() // Allow GET requests to specific activity by UUID for external invites (with optional query parameters)
                         .anyRequest()
                         .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
                 )
