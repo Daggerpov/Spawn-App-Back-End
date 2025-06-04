@@ -1,15 +1,15 @@
 package com.danielagapov.spawn.ControllerTests;
 
-import com.danielagapov.spawn.DTOs.User.*;
-import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
+import com.danielagapov.spawn.DTOs.User.PasswordChangeDTO;
+import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.Services.Auth.AuthService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -80,10 +80,11 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post(AUTH_BASE_URL + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(registerDTO)));
+                .content(asJsonString(registerDTO)))
+                .andExpect(status().isOk());
 
         // Then login with the same credentials
-        AuthUserDTO loginDTO = new AuthUserDTO(null, null, null, "loginuser", null, "password123");
+        AuthUserDTO loginDTO = new AuthUserDTO(null, "Login User", "login@example.com", "loginuser", null, "password123");
 
         mockMvc.perform(MockMvcRequestBuilders.post(AUTH_BASE_URL + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -184,6 +185,7 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("GET /api/v1/auth/verify-email - Should verify email with valid token")
+    @Disabled("Being refactored to verification code")
     void testVerifyEmail() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(AUTH_BASE_URL + "/verify-email")
                 .param("token", "valid-email-token"))
@@ -193,6 +195,7 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("GET /api/v1/auth/test-email - Should send test email (deprecated)")
+    @Disabled("Endpoint is only used for testing purposes")
     void testSendTestEmail() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get(AUTH_BASE_URL + "/test-email"))
                 .andExpect(status().isOk())

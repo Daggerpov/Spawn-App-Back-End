@@ -157,7 +157,7 @@ public class AuthController {
             HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
-            logger.warn("Login failed - bad credentials for user: " + authUserDTO.getUsername());
+            logger.warn("Login failed - bad credentials for user: " + authUserDTO.getUsername() + ". Exception: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during login: " + e.entityType);

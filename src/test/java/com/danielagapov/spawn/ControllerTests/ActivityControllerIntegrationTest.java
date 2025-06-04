@@ -1,11 +1,6 @@
 package com.danielagapov.spawn.ControllerTests;
 
-import com.danielagapov.spawn.DTOs.Activity.*;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
-import com.danielagapov.spawn.Models.Activity;
-import com.danielagapov.spawn.Models.FriendTag;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Services.Activity.ActivityService;
 import com.danielagapov.spawn.Services.Auth.AuthService;
 import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
@@ -15,11 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("Activity Controller Integration Tests")
 public class ActivityControllerIntegrationTest extends BaseIntegrationTest {

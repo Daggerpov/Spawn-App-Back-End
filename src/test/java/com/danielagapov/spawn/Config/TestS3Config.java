@@ -1,20 +1,14 @@
 package com.danielagapov.spawn.Config;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
-import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import com.danielagapov.spawn.Services.OAuth.OAuthStrategy;
 import com.danielagapov.spawn.Services.S3.IS3Service;
-import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,12 +16,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -111,268 +101,6 @@ public class TestS3Config {
             @Override
             public void deleteObjectByURL(String urlString) {
                 // Mock implementation - do nothing
-            }
-        };
-    }
-
-    @Bean
-    @Primary
-    public IUserService mockUserService() {
-        return new IUserService() {
-            @Override
-            public List<UserDTO> getAllUsers() {
-                return List.of();
-            }
-
-            @Override
-            public UserDTO getUserById(UUID id) {
-                BaseUserDTO baseUser = testUsers.get(id);
-                if (baseUser != null) {
-                    return new UserDTO(baseUser.getId(), List.of(), baseUser.getUsername(), 
-                                     baseUser.getProfilePicture(), baseUser.getName(), baseUser.getBio(), 
-                                     List.of(), baseUser.getEmail());
-                }
-                throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                    com.danielagapov.spawn.Enums.EntityType.User, id);
-            }
-
-            @Override
-            public com.danielagapov.spawn.Models.User.User getUserEntityById(UUID id) {
-                BaseUserDTO baseUser = testUsers.get(id);
-                if (baseUser != null) {
-                    com.danielagapov.spawn.Models.User.User user = new com.danielagapov.spawn.Models.User.User();
-                    user.setId(baseUser.getId());
-                    user.setName(baseUser.getName());
-                    user.setEmail(baseUser.getEmail());
-                    user.setUsername(baseUser.getUsername());
-                    user.setBio(baseUser.getBio());
-                    user.setProfilePictureUrlString(baseUser.getProfilePicture());
-                    return user;
-                }
-                throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                    com.danielagapov.spawn.Enums.EntityType.User, id);
-            }
-
-            @Override
-            public UserDTO saveUser(UserDTO user) {
-                return user;
-            }
-
-            @Override
-            public void deleteUserById(UUID id) {
-                if (!testUsers.containsKey(id)) {
-                    throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                        com.danielagapov.spawn.Enums.EntityType.User, id);
-                }
-                testUsers.remove(id);
-            }
-
-            @Override
-            public com.danielagapov.spawn.Models.User.User saveEntity(com.danielagapov.spawn.Models.User.User user) {
-                return user;
-            }
-
-            @Override
-            public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
-                return user;
-            }
-
-            @Override
-            public UserDTO getUserDTOByEntity(com.danielagapov.spawn.Models.User.User user) {
-                return new UserDTO(user.getId(), List.of(), user.getUsername(), 
-                                 user.getProfilePictureUrlString(), user.getName(), user.getBio(), 
-                                 List.of(), user.getEmail());
-            }
-
-            @Override
-            public List<UUID> getFriendUserIdsByUserId(UUID id) {
-                return List.of();
-            }
-
-            @Override
-            public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
-                return List.of();
-            }
-
-            @Override
-            public List<com.danielagapov.spawn.Models.User.User> getFriendUsersByUserId(UUID requestingUserId) {
-                return List.of();
-            }
-
-            @Override
-            public boolean isUserFriendOfUser(UUID userId, UUID potentialFriendId) {
-                return false; // Default to false for testing
-            }
-
-            @Override
-            public Map<FriendTag, UUID> getOwnerUserIdsMap() {
-                return Map.of();
-            }
-
-            @Override
-            public Map<FriendTag, List<UUID>> getFriendUserIdsMap() {
-                return Map.of();
-            }
-
-            @Override
-            public List<BaseUserDTO> getFriendsByFriendTagId(UUID friendTagId) {
-                return List.of();
-            }
-
-            @Override
-            public List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId) {
-                return List.of();
-            }
-
-            @Override
-            public void saveFriendToUser(UUID userId, UUID friendId) {
-                // Mock implementation - do nothing
-            }
-
-            @Override
-            public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
-                return List.of(); // Empty list to avoid Redis dependency
-            }
-
-            @Override
-            public Instant getLatestFriendProfileUpdateTimestamp(UUID userId) {
-                return Instant.now();
-            }
-
-            @Override
-            public List<BaseUserDTO> getParticipantsByActivityId(UUID ActivityId) {
-                return List.of();
-            }
-
-            @Override
-            public List<BaseUserDTO> getInvitedByActivityId(UUID ActivityId) {
-                return List.of();
-            }
-
-            @Override
-            public List<UUID> getParticipantUserIdsByActivityId(UUID ActivityId) {
-                return List.of();
-            }
-
-            @Override
-            public List<UUID> getInvitedUserIdsByActivityId(UUID ActivityId) {
-                return List.of();
-            }
-
-            @Override
-            public boolean existsByEmail(String email) {
-                return false;
-            }
-
-            @Override
-            public boolean existsByUsername(String username) {
-                return testUsersByUsername.containsKey(username);
-            }
-
-            @Override
-            public void verifyUserByUsername(String username) {
-                // Mock implementation - do nothing
-            }
-
-            @Override
-            public int getMutualFriendCount(UUID receiverId, UUID id) {
-                return 0;
-            }
-
-            @Override
-            public BaseUserDTO getBaseUserById(UUID id) {
-                BaseUserDTO user = testUsers.get(id);
-                if (user != null) {
-                    return user;
-                }
-                throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                    com.danielagapov.spawn.Enums.EntityType.User, id);
-            }
-
-            @Override
-            public BaseUserDTO updateUser(UUID id, UserUpdateDTO updateDTO) {
-                BaseUserDTO existingUser = testUsers.get(id);
-                if (existingUser != null) {
-                    BaseUserDTO updatedUser = new BaseUserDTO(
-                        existingUser.getId(),
-                        updateDTO.getName(),
-                        existingUser.getEmail(),
-                        updateDTO.getUsername(),
-                        updateDTO.getBio(),
-                        existingUser.getProfilePicture()
-                    );
-                    testUsers.put(id, updatedUser);
-                    return updatedUser;
-                }
-                throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                    com.danielagapov.spawn.Enums.EntityType.User, id);
-            }
-
-            @Override
-            public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
-                // Return empty result to avoid Redis dependency
-                return new SearchedUserResult(List.of(), List.of(), List.of());
-            }
-
-            @Override
-            public com.danielagapov.spawn.Models.User.User getUserEntityByUsername(String username) {
-                BaseUserDTO baseUser = testUsersByUsername.get(username);
-                if (baseUser != null) {
-                    com.danielagapov.spawn.Models.User.User user = new com.danielagapov.spawn.Models.User.User();
-                    user.setId(baseUser.getId());
-                    user.setName(baseUser.getName());
-                    user.setEmail(baseUser.getEmail());
-                    user.setUsername(baseUser.getUsername());
-                    user.setBio(baseUser.getBio());
-                    user.setProfilePictureUrlString(baseUser.getProfilePicture());
-                    return user;
-                }
-                throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                    com.danielagapov.spawn.Enums.EntityType.User, username, "username");
-            }
-
-            @Override
-            public List<BaseUserDTO> searchByQuery(String searchQuery) {
-                return List.of(); // Return empty list for testing
-            }
-
-            @Override
-            public com.danielagapov.spawn.Models.User.User getUserByEmail(String email) {
-                return testUsersByUsername.values().stream()
-                    .filter(user -> user.getEmail().equals(email))
-                    .findFirst()
-                    .map(baseUser -> {
-                        com.danielagapov.spawn.Models.User.User user = new com.danielagapov.spawn.Models.User.User();
-                        user.setId(baseUser.getId());
-                        user.setName(baseUser.getName());
-                        user.setEmail(baseUser.getEmail());
-                        user.setUsername(baseUser.getUsername());
-                        user.setBio(baseUser.getBio());
-                        user.setProfilePictureUrlString(baseUser.getProfilePicture());
-                        return user;
-                    })
-                    .orElseThrow(() -> new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                        com.danielagapov.spawn.Enums.EntityType.User, email, "email"));
-            }
-
-            @Override
-            public List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId) {
-                // Check if user exists first
-                if (!testUsers.containsKey(requestingUserId)) {
-                    throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                        com.danielagapov.spawn.Enums.EntityType.User, requestingUserId);
-                }
-                return List.of(); // Return empty list for testing
-            }
-
-            @Override
-            public BaseUserDTO getBaseUserByUsername(String username) {
-                BaseUserDTO user = testUsersByUsername.get(username);
-                if (user != null) {
-                    return user;
-                }
-                throw new com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException(
-                    com.danielagapov.spawn.Enums.EntityType.User, username, "username");
             }
         };
     }
@@ -530,22 +258,6 @@ public class TestS3Config {
                 }
             }
         );
-    }
-
-    @Bean
-    @Primary
-    public UserDetailsService mockUserDetailsService() {
-        return new UserDetailsService() {
-            @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                // Return a mock user for any username
-                return org.springframework.security.core.userdetails.User.builder()
-                        .username(username)
-                        .password("password") // Not used in JWT validation
-                        .authorities(List.of(new SimpleGrantedAuthority("ROLE_USER")))
-                        .build();
-            }
-        };
     }
 
     @Bean
