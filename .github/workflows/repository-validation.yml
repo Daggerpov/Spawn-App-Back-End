@@ -188,6 +188,18 @@ jobs:
           
           echo "✅ Repository layer compilation and basic tests completed"
 
+      - name: Run All Tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/spawn_test
+          SPRING_DATASOURCE_USERNAME: testuser
+          SPRING_DATASOURCE_PASSWORD: testpassword
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          SPRING_PROFILES_ACTIVE: test
+        run: |
+          echo "🚀 Running all tests..."
+          mvn test
+          echo "✅ All tests completed"
+
       - name: Repository Method Naming Convention Check
         run: |
           echo "🔍 Checking JPA method naming conventions..."
