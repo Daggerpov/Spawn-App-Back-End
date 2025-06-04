@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.Activity;
 import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityInviteDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -18,6 +19,14 @@ public interface IActivityService {
 
     // CRUD operations:
     ActivityDTO getActivityById(UUID id);
+    
+    /**
+     * Gets activity information for external invites without requiring authentication
+     * 
+     * @param id The activity ID
+     * @return ActivityInviteDTO with essential information for the invite page
+     */
+    ActivityInviteDTO getActivityInviteById(UUID id);
 
     AbstractActivityDTO saveActivity(AbstractActivityDTO activity);
 
