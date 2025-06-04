@@ -4,6 +4,7 @@ import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -69,6 +70,7 @@ public class SecurityConfig {
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(whitelistedUrls).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/activities/*").permitAll() // Allow GET requests to activity endpoints for external invites
                         .anyRequest()
                         .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
                 )
