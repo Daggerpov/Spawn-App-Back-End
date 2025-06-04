@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Arrays;
@@ -70,7 +71,7 @@ public class SecurityConfig {
                 // Below, the auth and oauth endpoints are unsecured
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(whitelistedUrls).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/activities/*").permitAll() // Allow GET requests to activity endpoints for external invites
+                        .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/v1/activities/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")).permitAll() // Allow GET requests to specific activity by UUID for external invites
                         .anyRequest()
                         .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
                 )
