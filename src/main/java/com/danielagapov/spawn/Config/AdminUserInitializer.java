@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Date;
@@ -17,6 +18,7 @@ import java.util.UUID;
  * It creates an admin user if one doesn't already exist.
  */
 @Configuration
+@Profile("!test") // Exclude from test profile
 public class AdminUserInitializer {
 
     @Value("${ADMIN_USERNAME:admin}")

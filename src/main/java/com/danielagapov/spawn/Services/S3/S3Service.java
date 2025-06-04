@@ -7,6 +7,7 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.User.UserService;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 
 @Service
+@Profile("!test") // Exclude this service from test profile
 public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
     private static final String CDN_BASE;

@@ -125,10 +125,10 @@ public class NotificationService {
 
             NotificationPreferences preferences = preferencesRepository.findByUser(user).orElse(null);
 
-            // throw e if no preferences exist
+            // If no preferences exist, return default preferences without saving them in this read-only transaction
             if (preferences == null) {
-                logger.info("No notification preferences found for user: " + LoggingUtils.formatUserInfo(user));
-                throw new Exception("No notification preferences found for user: " + LoggingUtils.formatUserInfo(user));
+                logger.info("No notification preferences found for user: " + LoggingUtils.formatUserInfo(user) + ", returning default preferences");
+                return new NotificationPreferencesDTO(true, true, true, true, userId);
             }
 
             // Map entity to DTO
@@ -137,10 +137,8 @@ public class NotificationService {
             logger.info("Retrieved notification preferences for user: " + LoggingUtils.formatUserInfo(user));
             return preferencesDTO;
         } catch (Exception e) {
-            // Return default preferences if not found
-            NotificationPreferencesDTO preferences = new NotificationPreferencesDTO(true, true, true, true, userId);
-            saveNotificationPreferences(preferences);
-            return preferences;
+            logger.error("Error getting notification preferences for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
         }
     }
 

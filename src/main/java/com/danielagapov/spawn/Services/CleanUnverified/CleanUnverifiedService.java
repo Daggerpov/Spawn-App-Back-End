@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
+import java.util.Date;
+
 @Service
 public class CleanUnverifiedService {
     private static final long RATE = 1000 * 60 * 60 * 24; // 24 hours
@@ -30,7 +33,12 @@ public class CleanUnverifiedService {
     public void cleanUnverifiedExpiredUsers() {
         logger.info("Cleaning unverified, expired users");
         try {
-            int numDeleted = userRepository.deleteAllExpiredUnverifiedUsers();
+            // Calculate cutoff date (24 hours ago)
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DAY_OF_MONTH, -1);
+            Date cutoffDate = calendar.getTime();
+            
+            int numDeleted = userRepository.deleteAllExpiredUnverifiedUsers(cutoffDate);
             logger.info(String.format("Successfully deleted %s users from database", numDeleted));
         } catch (Exception e) {
             logger.error("Unexpected error while deleting expired, unverified users: " + e.getMessage());

@@ -184,7 +184,14 @@ public class UserController {
     // full path: /api/v1/users/search
     @GetMapping("search")
     public ResponseEntity<List<BaseUserDTO>> searchForUsers(
-            @RequestParam(required = false, defaultValue = "") String searchQuery) {
+            @RequestParam(required = false, defaultValue = "") String searchQuery,
+            @RequestParam(required = false) UUID requestingUserId) {
+        // Validate that either we have a search query or this is a general search
+        if (searchQuery.trim().isEmpty() && requestingUserId == null) {
+            logger.error("Bad request: search query is empty and no requesting user ID provided");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
         try {
             return new ResponseEntity<>(userService.searchByQuery(searchQuery), HttpStatus.OK);
         } catch (Exception e) {

@@ -62,6 +62,9 @@ public class FriendRequestController {
         try {
             CreateFriendRequestDTO createdRequest = friendRequestService.saveFriendRequest(friendRequest);
             return new ResponseEntity<>(createdRequest, HttpStatus.CREATED);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found when creating friend request: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error creating friend request: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

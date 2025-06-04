@@ -12,8 +12,8 @@ import java.util.UUID;
 public class ChatMessageDTO extends AbstractChatMessageDTO{
     UUID senderUserId;
     List<UUID> likedByUserIds;
-    public ChatMessageDTO(UUID id, String content, Instant timestamp, UUID senderUserId, UUID ActivityId, List<UUID> likedByUserIds) {
-        super(id, content, timestamp, ActivityId);
+    public ChatMessageDTO(UUID id, String content, Instant timestamp, UUID senderUserId, UUID activityId, List<UUID> likedByUserIds) {
+        super(id, content, timestamp, activityId);
         this.senderUserId = senderUserId;
         this.likedByUserIds = likedByUserIds;
     }

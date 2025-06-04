@@ -12,6 +12,11 @@ public class CreateFriendRequestDTO extends AbstractFriendRequestDTO implements 
     private UUID senderUserId;
     private UUID receiverUserId;
 
+    // No-args constructor for JSON deserialization
+    public CreateFriendRequestDTO() {
+        super();
+    }
+
     public CreateFriendRequestDTO(UUID id, UUID senderUserId, UUID receiverUserId) {
         super(id);
         this.senderUserId = senderUserId;

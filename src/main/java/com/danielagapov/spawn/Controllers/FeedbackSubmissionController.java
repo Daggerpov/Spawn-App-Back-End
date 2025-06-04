@@ -155,6 +155,9 @@ public class FeedbackSubmissionController {
         try {
             service.deleteFeedback(id);
             return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+        } catch (BaseNotFoundException e) {
+            logger.error("Feedback not found for deletion: " + id + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error deleting feedback: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
