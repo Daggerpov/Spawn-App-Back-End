@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityInviteDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.Enums.EntityType;
@@ -211,9 +212,36 @@ public class ActivityController {
 
     // full path: /api/v1/activities/{id}
     @GetMapping("{id}")
-    public ResponseEntity<?> getFullActivityById(@PathVariable UUID id, @RequestParam UUID requestingUserId) {
-        if (id == null || requestingUserId == null) {
-            logger.error("Invalid parameters: activity ID or requestingUserId is null");
+    public ResponseEntity<?> getFullActivityById(@PathVariable UUID id, 
+                                                @RequestParam(required = false) UUID requestingUserId,
+                                                @RequestParam(required = false, defaultValue = "false") boolean isActivityExternalInvite) {
+        if (id == null) {
+            logger.error("Invalid parameter: activity ID is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        // For external invites, we don't require requestingUserId and return simplified DTO
+        if (isActivityExternalInvite) {
+            try {
+                return new ResponseEntity<>(ActivityService.getActivityInviteById(id), HttpStatus.OK);
+            } catch (BaseNotFoundException e) {
+                // Activity not found
+                if (e.entityType == EntityType.Activity) {
+                    logger.error("Activity not found for external invite: " + id + ": " + e.getMessage());
+                    return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+                } else {
+                    logger.error("Entity not found for external invite: " + e.getMessage());
+                    return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+                }
+            } catch (Exception e) {
+                logger.error("Error getting activity invite by ID: " + id + ": " + e.getMessage());
+                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        }
+        
+        // Original behavior for authenticated requests
+        if (requestingUserId == null) {
+            logger.error("Invalid parameter: requestingUserId is required for authenticated requests");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 

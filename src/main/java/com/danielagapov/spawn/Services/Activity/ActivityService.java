@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.Activity;
 
 import com.danielagapov.spawn.DTOs.Activity.*;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -115,6 +116,45 @@ public class ActivityService implements IActivityService {
     @Cacheable(value = "fullActivityById", key = "#id.toString() + ':' + #requestingUserId.toString()")
     public FullFeedActivityDTO getFullActivityById(UUID id, UUID requestingUserId) {
         return getFullActivityByActivity(getActivityById(id), requestingUserId, new HashSet<>());
+    }
+
+    @Override
+    @Cacheable(value = "ActivityInviteById", key = "#id")
+    public ActivityInviteDTO getActivityInviteById(UUID id) {
+        Activity activity = repository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
+
+        // Get creator information
+        User creator = activity.getCreator();
+        String creatorName = creator.getName();
+        String creatorUsername = "@" + creator.getUsername();
+        
+        // Get location name
+        String locationName = activity.getLocation() != null ? activity.getLocation().getName() : null;
+        
+        // Get all attendees (both participating and invited users)
+        List<ActivityUser> allActivityUsers = activityUserRepository.findByActivity_Id(id);
+        List<BaseUserDTO> attendees = allActivityUsers.stream()
+                .map(activityUser -> userService.getBaseUserById(activityUser.getUser().getId()))
+                .collect(Collectors.toList());
+        
+        int totalAttendees = attendees.size() + 1; // +1 for the creator
+        
+        return new ActivityInviteDTO(
+                activity.getId(),
+                activity.getTitle(),
+                activity.getStartTime(),
+                activity.getEndTime(),
+                activity.getNote(),
+                activity.getIcon(),
+                activity.getCategory(),
+                activity.getCreatedAt(),
+                locationName,
+                creatorName,
+                creatorUsername,
+                attendees,
+                totalAttendees
+        );
     }
 
     @Override
