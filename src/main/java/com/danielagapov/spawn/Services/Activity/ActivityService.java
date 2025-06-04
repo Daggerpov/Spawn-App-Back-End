@@ -274,6 +274,9 @@ public class ActivityService implements IActivityService {
 
             Activity = repository.save(Activity);
 
+            // Track successfully invited users for the final DTO
+            List<UUID> successfullyInvitedUserIds = new ArrayList<>();
+
             // Only process invited users if the list is not empty
             if (!ActivityCreationDTO.getInvitedFriendUserIds().isEmpty()) {
                 for (UUID userId: ActivityCreationDTO.getInvitedFriendUserIds()) {
@@ -282,24 +285,37 @@ public class ActivityService implements IActivityService {
                         continue;
                     }
                     
-                    User invitedUser = userRepository.findById(userId)
-                            .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-                    ActivityUsersId compositeId = new ActivityUsersId(Activity.getId(), userId);
-                    ActivityUser ActivityUser = new ActivityUser();
-                    ActivityUser.setId(compositeId);
-                    ActivityUser.setActivity(Activity);
-                    ActivityUser.setUser(invitedUser);
-                    ActivityUser.setStatus(ParticipationStatus.invited);
-                    activityUserRepository.save(ActivityUser);
+                    // Handle invalid user IDs gracefully instead of throwing exceptions
+                    userRepository.findById(userId).ifPresentOrElse(
+                        invitedUser -> {
+                            try {
+                                ActivityUsersId compositeId = new ActivityUsersId(Activity.getId(), userId);
+                                ActivityUser ActivityUser = new ActivityUser();
+                                ActivityUser.setId(compositeId);
+                                ActivityUser.setActivity(Activity);
+                                ActivityUser.setUser(invitedUser);
+                                ActivityUser.setStatus(ParticipationStatus.invited);
+                                activityUserRepository.save(ActivityUser);
+                                successfullyInvitedUserIds.add(userId);
+                            } catch (Exception e) {
+                                logger.error("Failed to invite user " + userId + " to activity " + Activity.getId() + ": " + e.getMessage());
+                            }
+                        },
+                        () -> {
+                            logger.warn("Skipping invalid user ID " + userId + " in invited friends list for activity: " + Activity.getId() + " - user not found");
+                        }
+                    );
                 }
 
-                // Create and publish Activity invite notification only if there are invited users
-                eventPublisher.publishEvent(
-                    new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, new HashSet<>(ActivityCreationDTO.getInvitedFriendUserIds()))
-                );
+                // Create and publish Activity invite notification only if there are successfully invited users
+                if (!successfullyInvitedUserIds.isEmpty()) {
+                    eventPublisher.publishEvent(
+                        new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, new HashSet<>(successfullyInvitedUserIds))
+                    );
+                }
             }
 
-            return ActivityMapper.toDTO(Activity, creator.getId(), null, new ArrayList<>(ActivityCreationDTO.getInvitedFriendUserIds()), null);
+            return ActivityMapper.toDTO(Activity, creator.getId(), null, successfullyInvitedUserIds, null);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid activity creation request: " + e.getMessage());
             throw e; // This will be caught by the controller and return 400 Bad Request
