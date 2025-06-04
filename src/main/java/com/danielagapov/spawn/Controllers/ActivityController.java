@@ -70,37 +70,6 @@ public class ActivityController {
         }
     }
 
-    // full path: /api/v1/activities/friendTag/{friendTagFilterId}
-    @GetMapping("friendTag/{friendTagFilterId}")
-    public ResponseEntity<?> getActivitiesByFriendTag(@PathVariable UUID friendTagFilterId) {
-        if (friendTagFilterId == null) {
-            logger.error("Invalid parameter: friendTagFilterId is null");
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        try {
-            return new ResponseEntity<>(ActivityService.getFilteredFeedActivitiesByFriendTagId(friendTagFilterId), HttpStatus.OK);
-        } catch (BasesNotFoundException e) {
-            // thrown list of activities not found for given user id
-            // if entities not found is Activity: return response with empty list and 200 status
-            // otherwise: bad request http status
-            if (e.entityType == EntityType.Activity) {
-                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-            } else {
-                logger.error("Bad request for friend tag activities: " + e.getMessage());
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            }
-        } catch (BaseNotFoundException e) {
-            // friend tag filter not found for friend tag id
-            logger.error("Friend tag not found: " + friendTagFilterId + ": " + e.getMessage());
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            // any other exception
-            logger.error("Error getting activities by friend tag: " + friendTagFilterId + ": " + e.getMessage());
-            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/activities
     @PostMapping
     public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityCreationDTO activityCreationDTO) {
