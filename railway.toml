@@ -1,0 +1,14 @@
+[build]
+# Use buildpack optimization
+builder = "nixpacks"
+
+[deploy]
+# Reduce startup time by disabling health checks during build
+startCommand = "java $JAVA_OPTS -jar target/*.jar"
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+
+[environments.production]
+# Production specific optimizations
+variables = { MAVEN_OPTS = "-Xmx2g -XX:+UseG1GC", JAVA_OPTS = "-Xms512m -Xmx1g -XX:+UseG1GC -XX:+UseStringDeduplication -Dspring.jpa.defer-datasource-initialization=false" } 

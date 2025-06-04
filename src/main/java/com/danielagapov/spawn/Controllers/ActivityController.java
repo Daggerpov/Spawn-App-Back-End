@@ -77,6 +77,9 @@ public class ActivityController {
         try {
             AbstractActivityDTO createdActivity = ActivityService.createActivity(activityCreationDTO);
             return new ResponseEntity<>(createdActivity, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid activity creation request: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             logger.error("Error creating activity: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -228,7 +231,7 @@ public class ActivityController {
                 // Activity not found
                 if (e.entityType == EntityType.Activity) {
                     logger.error("Activity not found for external invite: " + id + ": " + e.getMessage());
-                    return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
                 } else {
                     logger.error("Entity not found for external invite: " + e.getMessage());
                     return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
