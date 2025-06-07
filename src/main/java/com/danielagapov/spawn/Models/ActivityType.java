@@ -19,10 +19,10 @@ public class ActivityType {
     @Id
     @GeneratedValue
     private UUID id;
-    private String name;
+    private String title;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<UserFriendTag> associatedFriends; // TODO: refactor to friend table when possible
+    private List<User> associatedFriends; // TODO: refactor to friend table when possible
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
