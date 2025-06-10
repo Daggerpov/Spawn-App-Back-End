@@ -25,4 +25,21 @@ public class ActivityTypeMapper {
                 .map(dto -> toEntity(dto, creator))
                 .toList();
     }
+
+    public static List<ActivityTypeDTO> toDTOList(List<ActivityType> entities) {
+        return entities.stream()
+                .map(ActivityTypeMapper::toDTO)
+                .toList();
+    }
+
+    public static ActivityTypeDTO toDTO(ActivityType entity) {
+        return new ActivityTypeDTO(
+                entity.getId(),
+                entity.getTitle(),
+                UserMapper.toDTOList(entity.getAssociatedFriends()),
+                entity.getIcon(),
+                entity.getColorHexCode(),
+                entity.getOrderNum()
+        );
+    }
 }

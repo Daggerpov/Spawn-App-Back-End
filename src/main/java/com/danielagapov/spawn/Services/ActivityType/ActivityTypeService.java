@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.ActivityType;
 
 import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ActivityTypeMapper;
 import com.danielagapov.spawn.Models.ActivityType;
@@ -21,15 +22,18 @@ public class ActivityTypeService implements IActivityTypeService {
     private IUserService userService;
 
     @Override
-    public List<ActivityType> getActivityTypesByUserId(UUID userId) {
-        return repository.findActivityTypesByCreatorId(userId);
+    public List<ActivityTypeDTO> getActivityTypesByUserId(UUID userId) {
+        return ActivityTypeMapper.toDTOList(repository.findActivityTypesByCreatorId(userId));
     }
 
     @Override
-    public void updateActivityTypes(UUID userId, List<ActivityTypeDTO> activityTypeDTOs) {
+    public void updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
             User creator = userService.getUserEntityById(userId);
-            List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs, creator);
+            logger.info("Deleting activity types for user: " + creator.getUsername());
+            repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
+            logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
+            List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
             repository.saveAll(activityTypes);
         } catch (Exception e) {
             logger.error("Error batch saving activity types. Error: " + e.getMessage());
