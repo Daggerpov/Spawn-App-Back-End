@@ -15,6 +15,5 @@ public class ActivityTypeDTO implements Serializable {
     private String title;
     private List<BaseUserDTO> associatedFriends;
     private String icon;
-    private String colorHexCode;
     private int orderNum;
 }

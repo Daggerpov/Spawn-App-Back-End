@@ -15,8 +15,7 @@ public class ActivityTypeMapper {
                 UserMapper.toEntityList(dto.getAssociatedFriends()),
                 creator,
                 dto.getOrderNum(),
-                dto.getIcon(),
-                dto.getColorHexCode()
+                dto.getIcon()
         );
     }
 
@@ -38,7 +37,6 @@ public class ActivityTypeMapper {
                 entity.getTitle(),
                 UserMapper.toDTOList(entity.getAssociatedFriends()),
                 entity.getIcon(),
-                entity.getColorHexCode(),
                 entity.getOrderNum()
         );
     }

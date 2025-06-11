@@ -31,6 +31,5 @@ public class ActivityType {
     private int orderNum;
 
     private String icon;
-    private String colorHexCode;
 
 }
