@@ -34,9 +34,11 @@ public class ActivityTypeService implements IActivityTypeService {
                 logger.info("Deleting activity types for user: " + creator.getUsername());
                 repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
             }
-            logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
-            List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
-            repository.saveAll(activityTypes);
+            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
+                List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
+                repository.saveAll(activityTypes);
+            }
         } catch (Exception e) {
             logger.error("Error batch saving activity types. Error: " + e.getMessage());
         }
