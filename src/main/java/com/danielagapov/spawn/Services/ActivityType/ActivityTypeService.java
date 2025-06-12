@@ -30,8 +30,10 @@ public class ActivityTypeService implements IActivityTypeService {
     public void updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
             User creator = userService.getUserEntityById(userId);
-            logger.info("Deleting activity types for user: " + creator.getUsername());
-            repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
+            if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                logger.info("Deleting activity types for user: " + creator.getUsername());
+                repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
+            }
             logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
             List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
             repository.saveAll(activityTypes);
