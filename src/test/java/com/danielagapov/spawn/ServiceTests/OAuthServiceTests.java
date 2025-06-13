@@ -65,7 +65,7 @@ public class OAuthServiceTests {
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
         when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
-        when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
+        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
 
         BaseUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
@@ -141,7 +141,7 @@ public class OAuthServiceTests {
 
         when(externalIdMapRepository.existsById("externalId456")).thenReturn(false);
         when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
-        when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
+        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
 
         BaseUserDTO result = oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple);
 
@@ -248,7 +248,7 @@ public class OAuthServiceTests {
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
         when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
-        when(userService.saveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
+        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
 
         BaseUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
