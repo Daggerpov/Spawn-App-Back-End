@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,16 +35,6 @@ public class ActivityType {
     @Column(length = 100, columnDefinition = "VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci") // For Emojis
     private String icon = "⭐"; // Default value
 
-    @Transient
-    private IActivityTypeService activityTypeService;
-
-    @PrePersist
-    public void prePersist() {
-        if (orderNum == null) {
-            // This will be set by the service layer
-            activityTypeService.setOrderNumber(this);
-        }
-    }
 
     public ActivityType(User creator, String title, String icon) {
         this.creator = creator;

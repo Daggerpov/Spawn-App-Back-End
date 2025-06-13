@@ -33,6 +33,10 @@ public interface IUserService {
 
     UserDTO getUserDTOByEntity(User user);
 
+    User createAndSaveUser(User user);
+
+    UserDTO createAndSaveUserWithProfilePicture(UserDTO user, byte[] profilePicture);
+
 
     // For Friends:
 

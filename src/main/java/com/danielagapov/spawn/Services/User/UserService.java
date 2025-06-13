@@ -25,6 +25,7 @@ import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
@@ -57,7 +58,7 @@ public class UserService implements IUserService {
     private final ILogger logger;
     private final IUserSearchService userSearchService;
     private final CacheManager cacheManager;
-    private final IFriendRequestService friendRequestService;
+    private final IActivityTypeService activityTypeService;
 
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
@@ -69,7 +70,7 @@ public class UserService implements IUserService {
                        IS3Service s3Service, ILogger logger,
                        IUserSearchService userSearchService,
                        CacheManager cacheManager,
-                       IFriendRequestService friendRequestService) {
+                       IFriendRequestService friendRequestService, IActivityTypeService activityTypeService) {
         this.repository = repository;
         this.activityUserRepository = activityUserRepository;
         this.uftRepository = uftRepository;
@@ -79,7 +80,7 @@ public class UserService implements IUserService {
         this.logger = logger;
         this.userSearchService = userSearchService;
         this.cacheManager = cacheManager;
-        this.friendRequestService = friendRequestService;
+        this.activityTypeService = activityTypeService;
     }
 
     @Override
@@ -252,6 +253,19 @@ public class UserService implements IUserService {
 
         // Pass in the friendTagIds and friendTags as needed
         return UserMapper.toDTO(user, friendUserIds, friendTagIds);
+    }
+
+    @Override
+    public UserDTO createAndSaveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
+        user = saveUserWithProfilePicture(user, profilePicture);
+        createAndSaveUser(UserMapper.toEntity(user));
+        return user;
+    }
+
+    @Override
+    public User createAndSaveUser(User user) {
+        activityTypeService.initializeDefaultActivityTypesForUser(user);
+        return user;
     }
 
     @Override
