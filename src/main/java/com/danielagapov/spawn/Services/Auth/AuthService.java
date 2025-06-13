@@ -151,7 +151,7 @@ public class AuthService implements IAuthService {
         user.setVerified(false);
         user.setDateCreated(new Date());
 
-        user = userService.saveEntity(user);
+        user = userService.createAndSaveUser(user);
         return UserMapper.toDTO(user, List.of(), List.of());
     }
 

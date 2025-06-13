@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Enums.ActivityCategory;
+import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -38,7 +38,11 @@ public class Activity implements Serializable {
     private String colorHexCode;
     
     @Enumerated(EnumType.STRING)
-    private ActivityCategory category;
+    private ActivityCategory category; // TODO: remove
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private ActivityType activityType;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "location_id", referencedColumnName = "id", nullable = false)

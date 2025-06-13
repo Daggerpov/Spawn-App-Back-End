@@ -72,7 +72,7 @@ public class OAuthService implements IOAuthService {
             
             // Case 3: This is a new user, neither the externalId nor the email exists in our database
             // Save the user with profile picture
-            UserDTO userDTO = userService.saveUserWithProfilePicture(user, profilePicture);
+            UserDTO userDTO = userService.createAndSaveUserWithProfilePicture(user, profilePicture);
             
             // Save the mapping for the new user to the external id
             logger.info(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));

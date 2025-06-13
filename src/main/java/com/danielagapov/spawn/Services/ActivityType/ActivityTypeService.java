@@ -1,0 +1,61 @@
+package com.danielagapov.spawn.Services.ActivityType;
+
+import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
+import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Mappers.ActivityTypeMapper;
+import com.danielagapov.spawn.Models.ActivityType;
+import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
+import com.danielagapov.spawn.Services.ActivityType.DefaultActivityType.IDefaultActivityType;
+import com.danielagapov.spawn.Services.User.IUserService;
+import lombok.AllArgsConstructor;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@AllArgsConstructor
+public class ActivityTypeService implements IActivityTypeService {
+    private IActivityTypeRepository repository;
+    private ILogger logger;
+    private IUserService userService;
+    @Lazy
+    private List<IDefaultActivityType> defaultActivityTypes;
+
+    @Override
+    public List<ActivityTypeDTO> getActivityTypesByUserId(UUID userId) {
+        return ActivityTypeMapper.toDTOList(repository.findActivityTypesByCreatorId(userId));
+    }
+
+    @Override
+    public void updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
+        try {
+            User creator = userService.getUserEntityById(userId);
+            if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                logger.info("Deleting activity types for user: " + creator.getUsername());
+                repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
+            }
+            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
+                List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
+                repository.saveAll(activityTypes);
+            }
+        } catch (Exception e) {
+            logger.error("Error batch saving activity types. Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void initializeDefaultActivityTypesForUser(User user) {
+        defaultActivityTypes.forEach(activityType -> repository.save(activityType.getDefaultActivityType(user)));
+    }
+
+    @Override
+    public void setOrderNumber(ActivityType activityType) {
+        Integer maxOrder = repository.findMaxOrderNumberByCreatorId(activityType.getCreator().getId());
+        activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 0);
+    }
+}
