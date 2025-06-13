@@ -33,6 +33,7 @@ public interface IUserService {
 
     UserDTO getUserDTOByEntity(User user);
 
+
     // For Friends:
 
     List<UUID> getFriendUserIdsByUserId(UUID id);

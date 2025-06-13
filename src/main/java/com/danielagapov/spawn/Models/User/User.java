@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Models.User;
 
 import com.danielagapov.spawn.Models.NotificationPreferences;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -73,5 +74,13 @@ public class User implements Serializable {
         this.bio = bio;
         this.email = email;
         this.lastUpdated = Instant.now();
+    }
+
+    @Transient
+    public IActivityTypeService activityTypeService;
+
+    @PostPersist
+    public void postPersist() {
+        activityTypeService.initializeDefaultActivityTypesForUser(this);
     }
 }

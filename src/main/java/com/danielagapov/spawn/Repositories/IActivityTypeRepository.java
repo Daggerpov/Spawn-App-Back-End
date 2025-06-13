@@ -13,4 +13,6 @@ public interface IActivityTypeRepository extends JpaRepository<ActivityType, UUI
 
     @Query("SELECT at FROM ActivityType at WHERE at.creator.id == :creatorId")
     List<ActivityType> findActivityTypesByCreatorId(UUID creatorId);
+
+    Integer findMaxOrderNumberByCreatorId(UUID creatorId);
 }

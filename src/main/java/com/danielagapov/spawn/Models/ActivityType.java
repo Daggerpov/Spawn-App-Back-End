@@ -1,10 +1,12 @@
 package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -15,6 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Getter
+@Setter
 public class ActivityType {
     @Id
     @GeneratedValue
@@ -28,8 +31,25 @@ public class ActivityType {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "creator_id", referencedColumnName = "id", nullable = false)
     private User creator;
-    private int orderNum;
+    @Column(unique = true)
+    private Integer orderNum;
+    @Column(length = 100, columnDefinition = "VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci") // For Emojis
+    private String icon = "⭐"; // Default value
 
-    private String icon;
+    @Transient
+    private IActivityTypeService activityTypeService;
 
+    @PrePersist
+    public void prePersist() {
+        if (orderNum == null) {
+            // This will be set by the service layer
+            activityTypeService.setOrderNumber(this);
+        }
+    }
+
+    public ActivityType(User creator, String title, String icon) {
+        this.creator = creator;
+        this.title = title;
+        this.icon = icon;
+    }
 }
