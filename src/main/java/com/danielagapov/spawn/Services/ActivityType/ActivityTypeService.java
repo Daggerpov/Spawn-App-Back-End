@@ -7,10 +7,8 @@ import com.danielagapov.spawn.Mappers.ActivityTypeMapper;
 import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
-import com.danielagapov.spawn.Services.ActivityType.DefaultActivityType.IDefaultActivityType;
 import com.danielagapov.spawn.Services.User.IUserService;
 import lombok.AllArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,8 +20,6 @@ public class ActivityTypeService implements IActivityTypeService {
     private IActivityTypeRepository repository;
     private ILogger logger;
     private IUserService userService;
-    @Lazy
-    private List<IDefaultActivityType> defaultActivityTypes;
 
     @Override
     public List<ActivityTypeDTO> getActivityTypesByUserId(UUID userId) {
@@ -50,7 +46,10 @@ public class ActivityTypeService implements IActivityTypeService {
 
     @Override
     public void initializeDefaultActivityTypesForUser(User user) {
-        defaultActivityTypes.forEach(activityType -> repository.save(activityType.getDefaultActivityType(user)));
+        repository.save(new ActivityType(user, "Chill","🛋️"));
+        repository.save(new ActivityType(user, "Food", "🍽️"));
+        repository.save(new ActivityType(user, "Active", "🏃"));
+        repository.save(new ActivityType(user, "Study", "✏️"));
     }
 
     @Override
