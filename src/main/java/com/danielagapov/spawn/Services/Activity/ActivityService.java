@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.Activity;
 
 import com.danielagapov.spawn.DTOs.Activity.*;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -726,6 +727,11 @@ public class ActivityService implements IActivityService {
             logger.error("Error fetching latest updated Activity timestamp for user: " + userId + " - " + e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public List<FullActivityChatMessageDTO> getChatMessagesByActivityId(UUID activityId) {
+        return chatMessageService.getFullChatMessagesByActivityId(activityId);
     }
 
     /**

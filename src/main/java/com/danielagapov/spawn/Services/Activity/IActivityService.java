@@ -1,11 +1,7 @@
 package com.danielagapov.spawn.Services.Activity;
 
-import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
-import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
-import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
-import com.danielagapov.spawn.DTOs.Activity.ActivityInviteDTO;
-import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
-import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.*;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 
@@ -116,4 +112,6 @@ public interface IActivityService {
      * @return The timestamp of the latest updated activity, or null if none found
      */
     Instant getLatestUpdatedActivityTimestamp(UUID userId);
+
+    List<FullActivityChatMessageDTO> getChatMessagesByActivityId(UUID activityId);
 }

@@ -16,11 +16,14 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ChatMessageLikesMapper;
 import com.danielagapov.spawn.Mappers.ChatMessageMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
+import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.ChatMessageLikes;
-import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.*;
+import com.danielagapov.spawn.Repositories.IActivityRepository;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
+import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
+import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
@@ -151,9 +154,9 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public List<FullActivityChatMessageDTO> getFullChatMessagesByActivityId(UUID ActivityId) {
+    public List<FullActivityChatMessageDTO> getFullChatMessagesByActivityId(UUID activityId) {
         ArrayList<FullActivityChatMessageDTO> fullChatMessages = new ArrayList<>();
-        for (ChatMessageDTO cm : getChatMessagesByActivityId(ActivityId)) {
+        for (ChatMessageDTO cm : getChatMessagesByActivityId(activityId)) {
             fullChatMessages.add(getFullChatMessageByChatMessage(cm));
         }
         return fullChatMessages;
