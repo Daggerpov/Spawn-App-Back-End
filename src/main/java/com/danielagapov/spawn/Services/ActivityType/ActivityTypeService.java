@@ -29,6 +29,34 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
+    public List<UUID> getPinnedActivityTypeIds(UUID userId) {
+        // TODO: Implement pinned activity types functionality
+        // This will require additional repository methods and possibly a UserActivityTypePin entity
+        return List.of();
+    }
+
+    @Override
+    public void toggleActivityTypePin(UUID userId, UUID activityTypeId, Boolean isPinned) {
+        // TODO: Implement pinning functionality
+        // This will require additional repository methods and possibly a UserActivityTypePin entity
+        logger.info("Toggling pin status for activity type " + activityTypeId + " to " + isPinned + " for user: " + userId);
+    }
+
+    @Override
+    public ActivityTypeDTO createActivityType(ActivityTypeDTO activityTypeDTO) {
+        try {
+            // For now, we'll assume the creator ID comes from the userId parameter in the controller
+            // This method signature might need to be updated to include userId parameter
+            logger.info("Creating activity type: " + activityTypeDTO.getTitle());
+            // TODO: Implement proper creation logic with user ID
+            return activityTypeDTO;
+        } catch (Exception e) {
+            logger.error("Error creating activity type: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public BatchActivityTypeUpdateDTO updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
             User creator = userService.getUserEntityById(userId);
@@ -41,8 +69,10 @@ public class ActivityTypeService implements IActivityTypeService {
                 List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
                 repository.saveAll(activityTypes);
             }
+            return activityTypeDTOs;
         } catch (Exception e) {
             logger.error("Error batch saving activity types. Error: " + e.getMessage());
+            throw e;
         }
     }
 
