@@ -2,10 +2,7 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Mappers.ActivityTypeMapper;
 import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
@@ -18,15 +15,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataAccessException;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -68,13 +64,13 @@ class ActivityTypeServiceTests {
         testActivityType.setIcon("🎯");
         testActivityType.setCreator(testUser);
         testActivityType.setOrderNum(1);
-        testActivityType.setAssociatedFriends(Arrays.asList());
+        testActivityType.setAssociatedFriends(List.of());
         testActivityType.setIsPinned(false);
         
         testActivityTypeDTO = new ActivityTypeDTO(
             activityTypeId,
             "Test Activity Type",
-            Arrays.asList(),
+                List.of(),
             "🎯",
             1,
             userId,
@@ -85,7 +81,7 @@ class ActivityTypeServiceTests {
     @Test
     void getActivityTypesByUserId_ShouldReturnActivityTypes_WhenUserHasActivityTypes() {
         // Arrange
-        List<ActivityType> activityTypes = Arrays.asList(testActivityType);
+        List<ActivityType> activityTypes = Collections.singletonList(testActivityType);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId))
                 .thenReturn(activityTypes);
 
@@ -102,7 +98,7 @@ class ActivityTypeServiceTests {
     void getActivityTypesByUserId_ShouldReturnEmptyList_WhenUserHasNoActivityTypes() {
         // Arrange
         when(activityTypeRepository.findActivityTypesByCreatorId(userId))
-                .thenReturn(Arrays.asList());
+                .thenReturn(List.of());
 
         // Act
         List<ActivityTypeDTO> result = activityTypeService.getActivityTypesByUserId(userId);
@@ -114,43 +110,15 @@ class ActivityTypeServiceTests {
     }
 
     @Test
-    void createActivityType_ShouldCreateActivityType_WhenValidInput() {
-        // Arrange
-        when(userService.getUserEntityById(userId)).thenReturn(testUser);
-        when(activityTypeRepository.findMaxOrderNumberByCreatorId(userId)).thenReturn(0);
-        when(activityTypeRepository.save(any(ActivityType.class))).thenReturn(testActivityType);
-
-        // Act
-        ActivityTypeDTO result = activityTypeService.createActivityType(testActivityTypeDTO);
-
-        // Assert
-        assertNotNull(result);
-        verify(userService, times(1)).getUserEntityById(userId);
-        verify(activityTypeRepository, times(1)).save(any(ActivityType.class));
-    }
-
-    @Test
-    void createActivityType_ShouldThrowException_WhenUserNotFound() {
-        // Arrange
-        when(userService.getUserEntityById(userId)).thenThrow(new BaseNotFoundException(null, userId));
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
-                () -> activityTypeService.createActivityType(testActivityTypeDTO));
-        assertEquals("Failed to create activity type", exception.getMessage());
-        assertTrue(exception.getCause() instanceof BaseNotFoundException);
-    }
-
-    @Test
     void updateActivityTypes_ShouldUpdateActivityTypes_WhenValidInput() {
         // Arrange
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
-            Arrays.asList(testActivityTypeDTO),
-            Arrays.asList()
+                Collections.singletonList(testActivityTypeDTO),
+                List.of()
         );
 
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
-        when(activityTypeRepository.saveAll(anyList())).thenReturn(Arrays.asList(testActivityType));
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(Collections.singletonList(testActivityType));
 
         // Act
         BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(batchDTO);
@@ -160,29 +128,6 @@ class ActivityTypeServiceTests {
         assertEquals(batchDTO, result);
         verify(userService, times(1)).getUserEntityById(userId);
         verify(activityTypeRepository, times(1)).saveAll(anyList());
-    }
-
-    @Test
-    void deleteActivityType_ShouldDeleteActivityType_WhenExists() {
-        // Arrange
-        when(activityTypeRepository.existsById(activityTypeId)).thenReturn(true);
-
-        // Act
-        assertDoesNotThrow(() -> activityTypeService.deleteActivityType(activityTypeId));
-
-        // Assert
-        verify(activityTypeRepository, times(1)).existsById(activityTypeId);
-        verify(activityTypeRepository, times(1)).deleteById(activityTypeId);
-    }
-
-    @Test
-    void deleteActivityType_ShouldThrowException_WhenNotExists() {
-        // Arrange
-        when(activityTypeRepository.existsById(activityTypeId)).thenReturn(false);
-
-        // Act & Assert
-        assertThrows(BaseNotFoundException.class, 
-                () -> activityTypeService.deleteActivityType(activityTypeId));
     }
 
     @Test

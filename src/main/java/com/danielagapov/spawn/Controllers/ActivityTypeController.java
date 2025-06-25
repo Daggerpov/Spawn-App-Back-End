@@ -60,6 +60,4 @@ public class ActivityTypeController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
-} 
+}
