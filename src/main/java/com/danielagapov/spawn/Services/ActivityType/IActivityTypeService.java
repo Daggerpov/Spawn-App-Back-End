@@ -34,10 +34,11 @@ public interface IActivityTypeService {
     
     /**
      * Create a new activity type
+     * @param userId The user ID who is creating the activity type
      * @param activityTypeDTO The activity type to create
      * @return The created activity type
      */
-    ActivityTypeDTO createActivityType(ActivityTypeDTO activityTypeDTO);
+    ActivityTypeDTO createActivityType(UUID userId, ActivityTypeDTO activityTypeDTO);
     
     /**
      * Batch update activity types (create, update, delete)

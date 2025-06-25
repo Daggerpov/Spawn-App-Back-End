@@ -89,7 +89,7 @@ public class ActivityTypeController {
             @RequestBody ActivityTypeDTO activityTypeDTO) {
         try {
             logger.info("Creating new activity type: " + activityTypeDTO.getTitle() + " for user: " + LoggingUtils.formatUserIdInfo(userId));
-            ActivityTypeDTO createdActivityType = activityTypeService.createActivityType(activityTypeDTO);
+            ActivityTypeDTO createdActivityType = activityTypeService.createActivityType(userId, activityTypeDTO);
             return new ResponseEntity<>(createdActivityType, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error creating activity type: " + e.getMessage());
