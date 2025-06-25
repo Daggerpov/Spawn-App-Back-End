@@ -163,49 +163,6 @@ class ActivityTypeServiceTests {
     }
 
     @Test
-    void togglePin_ShouldTogglePinStatus_WhenUserOwnsActivityType() {
-        // Arrange
-        when(activityTypeRepository.findById(activityTypeId)).thenReturn(Optional.of(testActivityType));
-        when(activityTypeRepository.save(any(ActivityType.class))).thenReturn(testActivityType);
-
-        // Act
-        ActivityTypeDTO result = activityTypeService.togglePin(activityTypeId, userId);
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(testActivityType.getIsPinned());
-        verify(activityTypeRepository, times(1)).findById(activityTypeId);
-        verify(activityTypeRepository, times(1)).save(testActivityType);
-    }
-
-    @Test
-    void togglePin_ShouldThrowSecurityException_WhenUserDoesNotOwnActivityType() {
-        // Arrange
-        UUID otherUserId = UUID.randomUUID();
-        when(activityTypeRepository.findById(activityTypeId)).thenReturn(Optional.of(testActivityType));
-
-        // Act & Assert
-        SecurityException exception = assertThrows(SecurityException.class,
-                () -> activityTypeService.togglePin(activityTypeId, otherUserId));
-        assertTrue(exception.getMessage().contains("not authorized"));
-        verify(activityTypeRepository, times(1)).findById(activityTypeId);
-        verify(activityTypeRepository, never()).save(any(ActivityType.class));
-    }
-
-    @Test
-    void togglePin_ShouldThrowNotFoundException_WhenActivityTypeNotFound() {
-        // Arrange
-        when(activityTypeRepository.findById(activityTypeId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> activityTypeService.togglePin(activityTypeId, userId));
-        assertEquals(EntityType.ActivityType, exception.entityType);
-        verify(activityTypeRepository, times(1)).findById(activityTypeId);
-        verify(activityTypeRepository, never()).save(any(ActivityType.class));
-    }
-
-    @Test
     void deleteActivityType_ShouldDeleteActivityType_WhenExists() {
         // Arrange
         when(activityTypeRepository.existsById(activityTypeId)).thenReturn(true);

@@ -6,6 +6,7 @@ import com.danielagapov.spawn.Models.User.User;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 public class ActivityTypeMapper {
 
@@ -43,5 +44,29 @@ public class ActivityTypeMapper {
                 entity.getCreator().getId(),
                 entity.getIsPinned()
         );
+    }
+
+    /**
+     * Map ActivityTypeDTO with ownerUserId for batch operations
+     */
+    public static ActivityTypeDTO withOwnerUserId(ActivityTypeDTO dto, UUID ownerUserId) {
+        return new ActivityTypeDTO(
+                dto.getId(),
+                dto.getTitle(),
+                dto.getAssociatedFriends(),
+                dto.getIcon(),
+                dto.getOrderNum(),
+                ownerUserId,
+                dto.getIsPinned() != null ? dto.getIsPinned() : false
+        );
+    }
+
+    /**
+     * Map list of ActivityTypeDTOs with ownerUserId for batch operations
+     */
+    public static List<ActivityTypeDTO> withOwnerUserId(List<ActivityTypeDTO> dtos, UUID ownerUserId) {
+        return dtos.stream()
+                .map(dto -> withOwnerUserId(dto, ownerUserId))
+                .toList();
     }
 }

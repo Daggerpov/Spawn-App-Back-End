@@ -30,20 +30,20 @@ public interface IActivityTypeService {
      * @return The batch update result
      */
     BatchActivityTypeUpdateDTO updateActivityTypes(BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO);
+
+    /**
+     * Batch update activity types (create, update, delete) with userId
+     * @param userId The user ID who owns the activity types
+     * @param batchActivityTypeUpdateDTO The batch update data (activity types do not need ownerUserId)
+     * @return The batch update result
+     */
+    BatchActivityTypeUpdateDTO updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO);
     
     /**
      * Delete an activity type
      * @param activityTypeId The activity type ID to delete
      */
     void deleteActivityType(UUID activityTypeId);
-    
-    /**
-     * Toggle the pinned status of an activity type
-     * @param activityTypeId The activity type ID to toggle pin status
-     * @param userId The user ID who owns the activity type (for authorization)
-     * @return The updated activity type DTO
-     */
-    ActivityTypeDTO togglePin(UUID activityTypeId, UUID userId);
     
     /**
      * Initialize default activity types for a new user

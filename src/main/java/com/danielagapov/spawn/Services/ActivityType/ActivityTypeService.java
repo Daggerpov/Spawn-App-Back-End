@@ -90,35 +90,28 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
-    public ActivityTypeDTO togglePin(UUID activityTypeId, UUID userId) {
+    public BatchActivityTypeUpdateDTO updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
-            logger.info("Toggling pin status for activity type: " + activityTypeId + " by user: " + userId);
-            
-            // Find the activity type
-            ActivityType activityType = repository.findById(activityTypeId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ActivityType, activityTypeId));
-            
-            // Verify that the user owns this activity type
-            if (!activityType.getCreator().getId().equals(userId)) {
-                throw new SecurityException("User " + userId + " is not authorized to modify activity type " + activityTypeId);
+            if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                throw new IllegalArgumentException("No activity types to update or delete");
             }
-            
-            // Toggle the pinned status
-            boolean newPinnedStatus = !activityType.getIsPinned();
-            activityType.setIsPinned(newPinnedStatus);
-            
-            // Save the updated activity type
-            ActivityType savedActivityType = repository.save(activityType);
-            
-            logger.info("Successfully toggled pin status for activity type " + activityTypeId + " to " + newPinnedStatus);
-            return ActivityTypeMapper.toDTO(savedActivityType);
-            
-        } catch (BaseNotFoundException | SecurityException e) {
-            logger.error("Error toggling pin for activity type " + activityTypeId + ": " + e.getMessage());
-            throw e;
+
+            // Set ownerUserId for all updated activity types using mapper
+            List<ActivityTypeDTO> updatedWithOwner = ActivityTypeMapper.withOwnerUserId(
+                activityTypeDTOs.getUpdatedActivityTypes(), 
+                userId
+            );
+
+            BatchActivityTypeUpdateDTO batchWithOwner = new BatchActivityTypeUpdateDTO(
+                updatedWithOwner,
+                activityTypeDTOs.getDeletedActivityTypeIds()
+            );
+
+            // Reuse existing logic
+            return updateActivityTypes(batchWithOwner);
         } catch (Exception e) {
-            logger.error("Unexpected error toggling pin for activity type " + activityTypeId + ": " + e.getMessage());
-            throw new RuntimeException("Failed to toggle pin status", e);
+            logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
+            throw e;
         }
     }
 

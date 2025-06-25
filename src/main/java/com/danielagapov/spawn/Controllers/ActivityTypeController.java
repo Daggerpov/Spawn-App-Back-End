@@ -42,8 +42,6 @@ public class ActivityTypeController {
         }
     }
 
-
-
     /**
      * Batch update activity types (create, update, delete)
      * PUT /api/v1/{userId}/activity-types
@@ -55,49 +53,10 @@ public class ActivityTypeController {
         try {
             logger.info("Batch updating activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
             
-            // Set ownerUserId for all updated activity types
-            List<ActivityTypeDTO> updatedWithOwner = batchActivityTypeUpdateDTO.getUpdatedActivityTypes().stream()
-                .map(dto -> new ActivityTypeDTO(
-                    dto.getId(),
-                    dto.getTitle(),
-                    dto.getAssociatedFriends(),
-                    dto.getIcon(),
-                    dto.getOrderNum(),
-                    userId, // Set ownerUserId from path parameter
-                    dto.getIsPinned() != null ? dto.getIsPinned() : false // Handle isPinned
-                ))
-                .toList();
-            
-            BatchActivityTypeUpdateDTO batchWithOwner = new BatchActivityTypeUpdateDTO(
-                updatedWithOwner,
-                batchActivityTypeUpdateDTO.getDeletedActivityTypeIds()
-            );
-            
-            BatchActivityTypeUpdateDTO updatedBatch = activityTypeService.updateActivityTypes(batchWithOwner);
+            BatchActivityTypeUpdateDTO updatedBatch = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
             return new ResponseEntity<>(updatedBatch, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error batch updating activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Toggle pin status of an activity type
-     * PATCH /api/v1/{userId}/activity-types/{activityTypeId}/pin
-     */
-    @PatchMapping("/{activityTypeId}/pin")
-    public ResponseEntity<ActivityTypeDTO> togglePinActivityType(
-            @PathVariable UUID userId,
-            @PathVariable UUID activityTypeId) {
-        try {
-            logger.info("Toggling pin status for activity type: " + activityTypeId + " by user: " + LoggingUtils.formatUserIdInfo(userId));
-            ActivityTypeDTO updatedActivityType = activityTypeService.togglePin(activityTypeId, userId);
-            return new ResponseEntity<>(updatedActivityType, HttpStatus.OK);
-        } catch (SecurityException e) {
-            logger.error("Unauthorized pin toggle attempt for activity type " + activityTypeId + " by user " + userId + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        } catch (Exception e) {
-            logger.error("Error toggling pin for activity type " + activityTypeId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
