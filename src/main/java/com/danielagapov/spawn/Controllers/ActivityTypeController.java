@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.Activity.ActivityTypeDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityTypePinUpdateDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -29,9 +29,9 @@ public class ActivityTypeController {
 
     /**
      * Get all activity types for a user with pinning information
-     * GET /api/v1/activity-type/{userId}
+     * GET /api/v1/{userId}/activity-types
      */
-    @GetMapping("/{userId}")
+    @GetMapping
     public ResponseEntity<List<ActivityTypeDTO>> getActivityTypesForUser(@PathVariable UUID userId) {
         try {
             logger.info("Fetching activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
@@ -45,9 +45,9 @@ public class ActivityTypeController {
 
     /**
      * Get pinned activity type IDs for a user
-     * GET /api/v1/activity-type/pinned/{userId}
+     * GET /api/v1/{userId}/activity-types/pinned
      */
-    @GetMapping("/pinned/{userId}")
+    @GetMapping("/pinned")
     public ResponseEntity<List<UUID>> getPinnedActivityTypes(@PathVariable UUID userId) {
         try {
             logger.info("Fetching pinned activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
@@ -61,9 +61,9 @@ public class ActivityTypeController {
 
     /**
      * Toggle pin status for an activity type
-     * PUT /api/v1/activity-type/pin/{userId}
+     * PUT /api/v1/{userId}/activity-types/pin
      */
-    @PutMapping("/pin/{userId}")
+    @PutMapping("/pin")
     public ResponseEntity<Void> toggleActivityTypePin(
             @PathVariable UUID userId,
             @RequestBody ActivityTypePinUpdateDTO pinUpdateDTO) {
@@ -81,12 +81,14 @@ public class ActivityTypeController {
 
     /**
      * Create a new activity type
-     * POST /api/v1/activity-type
+     * POST /api/v1/{userId}/activity-types
      */
     @PostMapping
-    public ResponseEntity<ActivityTypeDTO> createActivityType(@RequestBody ActivityTypeDTO activityTypeDTO) {
+    public ResponseEntity<ActivityTypeDTO> createActivityType(
+            @PathVariable UUID userId,
+            @RequestBody ActivityTypeDTO activityTypeDTO) {
         try {
-            logger.info("Creating new activity type: " + activityTypeDTO.getTitle());
+            logger.info("Creating new activity type: " + activityTypeDTO.getTitle() + " for user: " + LoggingUtils.formatUserIdInfo(userId));
             ActivityTypeDTO createdActivityType = activityTypeService.createActivityType(activityTypeDTO);
             return new ResponseEntity<>(createdActivityType, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -96,30 +98,33 @@ public class ActivityTypeController {
     }
 
     /**
-     * Update an existing activity type
-     * PUT /api/v1/activity-type/{activityTypeId}
+     * Batch update activity types (create, update, delete)
+     * PUT /api/v1/{userId}/activity-types
      */
-    @PutMapping("/{activityTypeId}")
-    public ResponseEntity<ActivityTypeDTO> updateActivityTypes(
+    @PutMapping
+    public ResponseEntity<BatchActivityTypeUpdateDTO> updateActivityTypes(
+            @PathVariable UUID userId,
             @RequestBody BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO) {
         try {
-            logger.info("Updating activity type: " + activityTypeId);
-            ActivityTypeDTO updatedActivityType = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
-            return new ResponseEntity<>(updatedActivityType, HttpStatus.OK);
+            logger.info("Batch updating activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
+            BatchActivityTypeUpdateDTO updatedBatch = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
+            return new ResponseEntity<>(updatedBatch, HttpStatus.OK);
         } catch (Exception e) {
-            logger.error("Error updating activity type " + activityTypeId + ": " + e.getMessage());
+            logger.error("Error batch updating activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
      * Delete an activity type
-     * DELETE /api/v1/activity-type/{activityTypeId}
+     * DELETE /api/v1/{userId}/activity-types/{activityTypeId}
      */
     @DeleteMapping("/{activityTypeId}")
-    public ResponseEntity<Void> deleteActivityType(@PathVariable UUID activityTypeId) {
+    public ResponseEntity<Void> deleteActivityType(
+            @PathVariable UUID userId,
+            @PathVariable UUID activityTypeId) {
         try {
-            logger.info("Deleting activity type: " + activityTypeId);
+            logger.info("Deleting activity type: " + activityTypeId + " for user: " + LoggingUtils.formatUserIdInfo(userId));
             activityTypeService.deleteActivityType(activityTypeId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
