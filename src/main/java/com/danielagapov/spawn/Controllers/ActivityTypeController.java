@@ -42,35 +42,7 @@ public class ActivityTypeController {
         }
     }
 
-    /**
-     * Create a new activity type
-     * POST /api/v1/{userId}/activity-types
-     */
-    @PostMapping
-    public ResponseEntity<ActivityTypeDTO> createActivityType(
-            @PathVariable UUID userId,
-            @RequestBody ActivityTypeDTO activityTypeDTO) {
-        try {
-            logger.info("Creating new activity type: " + activityTypeDTO.getTitle() + " for user: " + LoggingUtils.formatUserIdInfo(userId));
-            
-            // Create a new DTO with the ownerUserId set from the path parameter
-            ActivityTypeDTO dtoWithOwner = new ActivityTypeDTO(
-                activityTypeDTO.getId(),
-                activityTypeDTO.getTitle(),
-                activityTypeDTO.getAssociatedFriends(),
-                activityTypeDTO.getIcon(),
-                activityTypeDTO.getOrderNum(),
-                userId, // Set ownerUserId from path parameter
-                activityTypeDTO.getIsPinned() != null ? activityTypeDTO.getIsPinned() : false // Handle isPinned
-            );
-            
-            ActivityTypeDTO createdActivityType = activityTypeService.createActivityType(dtoWithOwner);
-            return new ResponseEntity<>(createdActivityType, HttpStatus.CREATED);
-        } catch (Exception e) {
-            logger.error("Error creating activity type: " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+
 
     /**
      * Batch update activity types (create, update, delete)
