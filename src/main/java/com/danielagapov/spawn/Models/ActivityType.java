@@ -9,6 +9,7 @@ import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,7 +25,7 @@ public class ActivityType {
     private String title;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<User> associatedFriends; // TODO: refactor to friend table when possible
+    private List<User> associatedFriends = new ArrayList<>(); // Initialize with empty list
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -40,5 +41,6 @@ public class ActivityType {
         this.creator = creator;
         this.title = title;
         this.icon = icon;
+        this.associatedFriends = new ArrayList<>(); // Initialize with empty list
     }
 }

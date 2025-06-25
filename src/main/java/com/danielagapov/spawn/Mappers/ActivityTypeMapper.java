@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.User.User;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ActivityTypeMapper {
@@ -12,7 +13,7 @@ public class ActivityTypeMapper {
         return new ActivityType(
                 dto.getId(),
                 dto.getTitle(),
-                UserMapper.toEntityList(dto.getAssociatedFriends()),
+                dto.getAssociatedFriends() != null ? UserMapper.toEntityList(dto.getAssociatedFriends()) : Collections.emptyList(),
                 creator,
                 dto.getOrderNum(),
                 dto.getIcon()
@@ -35,7 +36,7 @@ public class ActivityTypeMapper {
         return new ActivityTypeDTO(
                 entity.getId(),
                 entity.getTitle(),
-                UserMapper.toDTOList(entity.getAssociatedFriends()),
+                entity.getAssociatedFriends() != null ? UserMapper.toDTOList(entity.getAssociatedFriends()) : Collections.emptyList(),
                 entity.getIcon(),
                 entity.getOrderNum()
         );

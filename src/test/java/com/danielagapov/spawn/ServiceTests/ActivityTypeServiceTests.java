@@ -68,6 +68,7 @@ class ActivityTypeServiceTests {
         testActivityType.setIcon("🎯");
         testActivityType.setCreator(testUser);
         testActivityType.setOrderNum(1);
+        testActivityType.setAssociatedFriends(Arrays.asList());
         
         testActivityTypeDTO = new ActivityTypeDTO(
             activityTypeId,
@@ -131,8 +132,10 @@ class ActivityTypeServiceTests {
         when(userService.getUserEntityById(userId)).thenThrow(new BaseNotFoundException(null, userId));
 
         // Act & Assert
-        assertThrows(BaseNotFoundException.class, 
+        RuntimeException exception = assertThrows(RuntimeException.class, 
                 () -> activityTypeService.createActivityType(userId, testActivityTypeDTO));
+        assertEquals("Failed to create activity type", exception.getMessage());
+        assertTrue(exception.getCause() instanceof BaseNotFoundException);
     }
 
     @Test
