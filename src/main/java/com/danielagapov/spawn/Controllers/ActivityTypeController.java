@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.Activity.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityTypePinUpdateDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Util.LoggingUtils;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/activity-type")
+@RequestMapping("/api/v1/{userId}/activity-types")
 public class ActivityTypeController {
 
     private final IActivityTypeService activityTypeService;
@@ -34,7 +35,7 @@ public class ActivityTypeController {
     public ResponseEntity<List<ActivityTypeDTO>> getActivityTypesForUser(@PathVariable UUID userId) {
         try {
             logger.info("Fetching activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
-            List<ActivityTypeDTO> activityTypes = activityTypeService.getActivityTypesForUser(userId);
+            List<ActivityTypeDTO> activityTypes = activityTypeService.getActivityTypesByUserId(userId);
             return new ResponseEntity<>(activityTypes, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error fetching activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -99,12 +100,11 @@ public class ActivityTypeController {
      * PUT /api/v1/activity-type/{activityTypeId}
      */
     @PutMapping("/{activityTypeId}")
-    public ResponseEntity<ActivityTypeDTO> updateActivityType(
-            @PathVariable UUID activityTypeId,
-            @RequestBody ActivityTypeDTO activityTypeDTO) {
+    public ResponseEntity<ActivityTypeDTO> updateActivityTypes(
+            @RequestBody BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO) {
         try {
             logger.info("Updating activity type: " + activityTypeId);
-            ActivityTypeDTO updatedActivityType = activityTypeService.updateActivityType(activityTypeId, activityTypeDTO);
+            ActivityTypeDTO updatedActivityType = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
             return new ResponseEntity<>(updatedActivityType, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error updating activity type " + activityTypeId + ": " + e.getMessage());

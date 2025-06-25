@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.ActivityType;
 
 import com.danielagapov.spawn.DTOs.Activity.ActivityTypeDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,7 +13,7 @@ public interface IActivityTypeService {
      * @param userId The user ID
      * @return List of activity types with pinning information
      */
-    List<ActivityTypeDTO> getActivityTypesForUser(UUID userId);
+    List<ActivityTypeDTO> getActivityTypesByUserId(UUID userId);
     
     /**
      * Get the IDs of pinned activity types for a user
@@ -38,11 +39,10 @@ public interface IActivityTypeService {
     
     /**
      * Update an existing activity type
-     * @param activityTypeId The activity type ID to update
-     * @param activityTypeDTO The updated activity type data
+     * @param batchActivityTypeUpdateDTO The updated activity type data
      * @return The updated activity type
      */
-    ActivityTypeDTO updateActivityType(UUID activityTypeId, ActivityTypeDTO activityTypeDTO);
+    BatchActivityTypeUpdateDTO updateActivityTypes(BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO);
     
     /**
      * Delete an activity type
