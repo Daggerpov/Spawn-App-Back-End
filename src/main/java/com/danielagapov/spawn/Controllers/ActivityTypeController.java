@@ -61,21 +61,5 @@ public class ActivityTypeController {
         }
     }
 
-    /**
-     * Delete an activity type
-     * DELETE /api/v1/{userId}/activity-types/{activityTypeId}
-     */
-    @DeleteMapping("/{activityTypeId}")
-    public ResponseEntity<Void> deleteActivityType(
-            @PathVariable UUID userId,
-            @PathVariable UUID activityTypeId) {
-        try {
-            logger.info("Deleting activity type: " + activityTypeId + " for user: " + LoggingUtils.formatUserIdInfo(userId));
-            activityTypeService.deleteActivityType(activityTypeId);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            logger.error("Error deleting activity type " + activityTypeId + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+
 } 
