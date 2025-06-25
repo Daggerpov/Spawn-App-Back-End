@@ -16,7 +16,8 @@ public class ActivityTypeMapper {
                 dto.getAssociatedFriends() != null ? UserMapper.toEntityList(dto.getAssociatedFriends()) : Collections.emptyList(),
                 creator,
                 dto.getOrderNum(),
-                dto.getIcon()
+                dto.getIcon(),
+                dto.getIsPinned() != null ? dto.getIsPinned() : false
         );
     }
 
@@ -39,7 +40,8 @@ public class ActivityTypeMapper {
                 entity.getAssociatedFriends() != null ? UserMapper.toDTOList(entity.getAssociatedFriends()) : Collections.emptyList(),
                 entity.getIcon(),
                 entity.getOrderNum(),
-                entity.getCreator().getId()
+                entity.getCreator().getId(),
+                entity.getIsPinned()
         );
     }
 }

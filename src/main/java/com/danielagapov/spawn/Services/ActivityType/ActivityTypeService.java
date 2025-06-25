@@ -90,6 +90,39 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
+    public ActivityTypeDTO togglePin(UUID activityTypeId, UUID userId) {
+        try {
+            logger.info("Toggling pin status for activity type: " + activityTypeId + " by user: " + userId);
+            
+            // Find the activity type
+            ActivityType activityType = repository.findById(activityTypeId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ActivityType, activityTypeId));
+            
+            // Verify that the user owns this activity type
+            if (!activityType.getCreator().getId().equals(userId)) {
+                throw new SecurityException("User " + userId + " is not authorized to modify activity type " + activityTypeId);
+            }
+            
+            // Toggle the pinned status
+            boolean newPinnedStatus = !activityType.getIsPinned();
+            activityType.setIsPinned(newPinnedStatus);
+            
+            // Save the updated activity type
+            ActivityType savedActivityType = repository.save(activityType);
+            
+            logger.info("Successfully toggled pin status for activity type " + activityTypeId + " to " + newPinnedStatus);
+            return ActivityTypeMapper.toDTO(savedActivityType);
+            
+        } catch (BaseNotFoundException | SecurityException e) {
+            logger.error("Error toggling pin for activity type " + activityTypeId + ": " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error toggling pin for activity type " + activityTypeId + ": " + e.getMessage());
+            throw new RuntimeException("Failed to toggle pin status", e);
+        }
+    }
+
+    @Override
     public void initializeDefaultActivityTypesForUser(User user) {
         repository.save(new ActivityType(user, "Chill","🛋️"));
         repository.save(new ActivityType(user, "Food", "🍽️"));

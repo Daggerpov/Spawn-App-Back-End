@@ -38,6 +38,14 @@ public interface IActivityTypeService {
     void deleteActivityType(UUID activityTypeId);
     
     /**
+     * Toggle the pinned status of an activity type
+     * @param activityTypeId The activity type ID to toggle pin status
+     * @param userId The user ID who owns the activity type (for authorization)
+     * @return The updated activity type DTO
+     */
+    ActivityTypeDTO togglePin(UUID activityTypeId, UUID userId);
+    
+    /**
      * Initialize default activity types for a new user
      * @param user The user to initialize activity types for
      */

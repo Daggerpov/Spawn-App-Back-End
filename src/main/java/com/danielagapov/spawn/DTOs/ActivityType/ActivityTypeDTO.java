@@ -17,4 +17,5 @@ public class ActivityTypeDTO implements Serializable {
     private String icon;
     private int orderNum;
     private UUID ownerUserId;
+    private Boolean isPinned;
 }
