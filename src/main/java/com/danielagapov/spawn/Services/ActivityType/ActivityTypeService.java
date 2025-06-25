@@ -30,12 +30,12 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
-    public ActivityTypeDTO createActivityType(UUID userId, ActivityTypeDTO activityTypeDTO) {
+    public ActivityTypeDTO createActivityType(ActivityTypeDTO activityTypeDTO) {
         try {
-            logger.info("Creating activity type: " + activityTypeDTO.getTitle() + " for user: " + userId);
+            logger.info("Creating activity type: " + activityTypeDTO.getTitle() + " for user: " + activityTypeDTO.getOwnerUserId());
             
             // Validate that the user exists
-            User creator = userService.getUserEntityById(userId);
+            User creator = userService.getUserEntityById(activityTypeDTO.getOwnerUserId());
             
             // Create the activity type entity
             ActivityType activityType = ActivityTypeMapper.toEntity(activityTypeDTO, creator);
@@ -44,19 +44,35 @@ public class ActivityTypeService implements IActivityTypeService {
             // Save the activity type
             ActivityType savedActivityType = repository.save(activityType);
             
-            logger.info("Successfully created activity type " + savedActivityType.getId() + " for user " + userId);
+            logger.info("Successfully created activity type " + savedActivityType.getId() + " for user " + activityTypeDTO.getOwnerUserId());
             return ActivityTypeMapper.toDTO(savedActivityType);
             
         } catch (Exception e) {
-            logger.error("Error creating activity type for user " + userId + ": " + e.getMessage());
+            logger.error("Error creating activity type for user " + activityTypeDTO.getOwnerUserId() + ": " + e.getMessage());
             throw new RuntimeException("Failed to create activity type", e);
         }
     }
 
     @Override
-    public BatchActivityTypeUpdateDTO updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
+    public BatchActivityTypeUpdateDTO updateActivityTypes(BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
+            // Extract userId from the first activity type in the batch (they should all belong to the same user)
+            if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                throw new IllegalArgumentException("No activity types to update or delete");
+            }
+            
+            UUID userId = null;
+            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                userId = activityTypeDTOs.getUpdatedActivityTypes().get(0).getOwnerUserId();
+            } else {
+                // If only deleting, we need to get userId from an existing activity type
+                ActivityType existingActivityType = repository.findById(activityTypeDTOs.getDeletedActivityTypeIds().get(0))
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ActivityType, activityTypeDTOs.getDeletedActivityTypeIds().get(0)));
+                userId = existingActivityType.getCreator().getId();
+            }
+            
             User creator = userService.getUserEntityById(userId);
+            
             if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
                 logger.info("Deleting activity types for user: " + creator.getUsername());
                 repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());

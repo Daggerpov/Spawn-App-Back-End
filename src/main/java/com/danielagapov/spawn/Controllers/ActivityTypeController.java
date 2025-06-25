@@ -52,7 +52,18 @@ public class ActivityTypeController {
             @RequestBody ActivityTypeDTO activityTypeDTO) {
         try {
             logger.info("Creating new activity type: " + activityTypeDTO.getTitle() + " for user: " + LoggingUtils.formatUserIdInfo(userId));
-            ActivityTypeDTO createdActivityType = activityTypeService.createActivityType(userId, activityTypeDTO);
+            
+            // Create a new DTO with the ownerUserId set from the path parameter
+            ActivityTypeDTO dtoWithOwner = new ActivityTypeDTO(
+                activityTypeDTO.getId(),
+                activityTypeDTO.getTitle(),
+                activityTypeDTO.getAssociatedFriends(),
+                activityTypeDTO.getIcon(),
+                activityTypeDTO.getOrderNum(),
+                userId // Set ownerUserId from path parameter
+            );
+            
+            ActivityTypeDTO createdActivityType = activityTypeService.createActivityType(dtoWithOwner);
             return new ResponseEntity<>(createdActivityType, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error creating activity type: " + e.getMessage());
@@ -70,7 +81,25 @@ public class ActivityTypeController {
             @RequestBody BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO) {
         try {
             logger.info("Batch updating activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
-            BatchActivityTypeUpdateDTO updatedBatch = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
+            
+            // Set ownerUserId for all updated activity types
+            List<ActivityTypeDTO> updatedWithOwner = batchActivityTypeUpdateDTO.getUpdatedActivityTypes().stream()
+                .map(dto -> new ActivityTypeDTO(
+                    dto.getId(),
+                    dto.getTitle(),
+                    dto.getAssociatedFriends(),
+                    dto.getIcon(),
+                    dto.getOrderNum(),
+                    userId // Set ownerUserId from path parameter
+                ))
+                .toList();
+            
+            BatchActivityTypeUpdateDTO batchWithOwner = new BatchActivityTypeUpdateDTO(
+                updatedWithOwner,
+                batchActivityTypeUpdateDTO.getDeletedActivityTypeIds()
+            );
+            
+            BatchActivityTypeUpdateDTO updatedBatch = activityTypeService.updateActivityTypes(batchWithOwner);
             return new ResponseEntity<>(updatedBatch, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error batch updating activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());

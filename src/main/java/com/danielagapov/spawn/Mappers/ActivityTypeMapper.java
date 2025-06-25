@@ -38,7 +38,8 @@ public class ActivityTypeMapper {
                 entity.getTitle(),
                 entity.getAssociatedFriends() != null ? UserMapper.toDTOList(entity.getAssociatedFriends()) : Collections.emptyList(),
                 entity.getIcon(),
-                entity.getOrderNum()
+                entity.getOrderNum(),
+                entity.getCreator().getId()
         );
     }
 }

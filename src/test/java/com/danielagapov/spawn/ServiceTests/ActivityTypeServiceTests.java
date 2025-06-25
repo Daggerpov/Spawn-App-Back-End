@@ -75,7 +75,8 @@ class ActivityTypeServiceTests {
             "Test Activity Type",
             Arrays.asList(),
             "🎯",
-            1
+            1,
+            userId
         );
     }
 
@@ -118,7 +119,7 @@ class ActivityTypeServiceTests {
         when(activityTypeRepository.save(any(ActivityType.class))).thenReturn(testActivityType);
 
         // Act
-        ActivityTypeDTO result = activityTypeService.createActivityType(userId, testActivityTypeDTO);
+        ActivityTypeDTO result = activityTypeService.createActivityType(testActivityTypeDTO);
 
         // Assert
         assertNotNull(result);
@@ -133,7 +134,7 @@ class ActivityTypeServiceTests {
 
         // Act & Assert
         RuntimeException exception = assertThrows(RuntimeException.class, 
-                () -> activityTypeService.createActivityType(userId, testActivityTypeDTO));
+                () -> activityTypeService.createActivityType(testActivityTypeDTO));
         assertEquals("Failed to create activity type", exception.getMessage());
         assertTrue(exception.getCause() instanceof BaseNotFoundException);
     }
@@ -150,7 +151,7 @@ class ActivityTypeServiceTests {
         when(activityTypeRepository.saveAll(anyList())).thenReturn(Arrays.asList(testActivityType));
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(batchDTO);
 
         // Assert
         assertNotNull(result);
