@@ -123,7 +123,13 @@ public class ActivityTypeServiceTests {
 
     // Tests for toggleActivityTypePin
     @Test
-    void toggleActivityTypePin_ShouldPinActivityType_WhenNotCurrentlyPinned() {
+    void toggleActivityTypePin_ShouldPinActivityType_WhenNotCurrentlyPinnedAndNotOwnedByUser() {
+        // Create a different user as the creator of the activity type
+        UUID otherUserId = UUID.randomUUID();
+        User otherUser = new User();
+        otherUser.setId(otherUserId);
+        testActivityType.setCreator(otherUser); // Activity type is owned by another user
+        
         when(activityTypeRepository.findById(activityTypeId)).thenReturn(Optional.of(testActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(userActivityTypePinRepository.existsByUserIdAndActivityTypeId(userId, activityTypeId))
@@ -139,6 +145,12 @@ public class ActivityTypeServiceTests {
 
     @Test
     void toggleActivityTypePin_ShouldUnpinActivityType_WhenCurrentlyPinned() {
+        // Create a different user as the creator 
+        UUID otherUserId = UUID.randomUUID();
+        User otherUser = new User();
+        otherUser.setId(otherUserId);
+        testActivityType.setCreator(otherUser);
+        
         when(activityTypeRepository.findById(activityTypeId)).thenReturn(Optional.of(testActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(userActivityTypePinRepository.existsByUserIdAndActivityTypeId(userId, activityTypeId))
@@ -181,7 +193,30 @@ public class ActivityTypeServiceTests {
     }
 
     @Test
+    void toggleActivityTypePin_ShouldThrowException_WhenUserTriesToPinOwnActivityType() {
+        // Set up so user tries to pin their own activity type
+        testActivityType.setCreator(testUser); // Same user owns the activity type
+        
+        when(activityTypeRepository.findById(activityTypeId)).thenReturn(Optional.of(testActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+            () -> activityTypeService.toggleActivityTypePin(userId, activityTypeId, true));
+
+        assertEquals("Cannot pin your own activity type - you already own it", exception.getMessage());
+        verify(activityTypeRepository, times(1)).findById(activityTypeId);
+        verify(userService, times(1)).getUserEntityById(userId);
+        verify(userActivityTypePinRepository, never()).save(any(UserActivityTypePin.class));
+    }
+
+    @Test
     void toggleActivityTypePin_ShouldThrowException_WhenUserNotFound() {
+        // Create a different user as the creator 
+        UUID otherUserId = UUID.randomUUID();
+        User otherUser = new User();
+        otherUser.setId(otherUserId);
+        testActivityType.setCreator(otherUser);
+        
         when(activityTypeRepository.findById(activityTypeId)).thenReturn(Optional.of(testActivityType));
         when(userService.getUserEntityById(userId))
             .thenThrow(new BaseNotFoundException(EntityType.User, userId));
@@ -256,7 +291,7 @@ public class ActivityTypeServiceTests {
 
     // Tests for existing methods to ensure they still work
     @Test
-    void getActivityTypesByUserId_ShouldReturnActivityTypes_WhenUserExists() {
+    void getActivityTypesByUserId_ShouldReturnOwnedActivityTypes_WhenUserExists() {
         List<ActivityType> activityTypes = Arrays.asList(testActivityType);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(activityTypes);
 
@@ -266,6 +301,67 @@ public class ActivityTypeServiceTests {
         assertEquals(1, result.size());
         assertEquals("Test Activity Type", result.get(0).getTitle());
         verify(activityTypeRepository, times(1)).findActivityTypesByCreatorId(userId);
+    }
+
+    @Test
+    void getAllAvailableActivityTypesForUser_ShouldReturnOwnedAndPinnedActivityTypes() {
+        // Create owned activity type
+        ActivityType ownedActivityType = new ActivityType();
+        ownedActivityType.setId(UUID.randomUUID());
+        ownedActivityType.setTitle("My Activity Type");
+        ownedActivityType.setCreator(testUser);
+        
+        // Create pinned activity type (owned by another user)
+        UUID otherUserId = UUID.randomUUID();
+        User otherUser = new User();
+        otherUser.setId(otherUserId);
+        ActivityType pinnedActivityType = new ActivityType();
+        pinnedActivityType.setId(UUID.randomUUID());
+        pinnedActivityType.setTitle("Pinned Activity Type");
+        pinnedActivityType.setCreator(otherUser);
+        
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+            .thenReturn(Arrays.asList(ownedActivityType));
+        when(userActivityTypePinRepository.findPinnedActivityTypeIdsByUserId(userId))
+            .thenReturn(Arrays.asList(pinnedActivityType.getId()));
+        when(activityTypeRepository.findAllById(Arrays.asList(pinnedActivityType.getId())))
+            .thenReturn(Arrays.asList(pinnedActivityType));
+
+        List<ActivityTypeDTO> result = activityTypeService.getAllAvailableActivityTypesForUser(userId);
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        // Should contain both owned and pinned activity types
+        assertTrue(result.stream().anyMatch(dto -> dto.getTitle().equals("My Activity Type")));
+        assertTrue(result.stream().anyMatch(dto -> dto.getTitle().equals("Pinned Activity Type")));
+        
+        verify(activityTypeRepository, times(1)).findActivityTypesByCreatorId(userId);
+        verify(userActivityTypePinRepository, times(1)).findPinnedActivityTypeIdsByUserId(userId);
+        verify(activityTypeRepository, times(1)).findAllById(any(List.class));
+    }
+
+    @Test
+    void getAllAvailableActivityTypesForUser_ShouldReturnOnlyOwnedActivityTypes_WhenNoPinnedTypes() {
+        ActivityType ownedActivityType = new ActivityType();
+        ownedActivityType.setId(UUID.randomUUID());
+        ownedActivityType.setTitle("My Activity Type");
+        ownedActivityType.setCreator(testUser);
+        
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+            .thenReturn(Arrays.asList(ownedActivityType));
+        when(userActivityTypePinRepository.findPinnedActivityTypeIdsByUserId(userId))
+            .thenReturn(List.of()); // No pinned types
+        when(activityTypeRepository.findAllById(List.of()))
+            .thenReturn(List.of());
+
+        List<ActivityTypeDTO> result = activityTypeService.getAllAvailableActivityTypesForUser(userId);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("My Activity Type", result.get(0).getTitle());
+        
+        verify(activityTypeRepository, times(1)).findActivityTypesByCreatorId(userId);
+        verify(userActivityTypePinRepository, times(1)).findPinnedActivityTypeIdsByUserId(userId);
     }
 
     @Test
