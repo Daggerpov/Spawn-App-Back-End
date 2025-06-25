@@ -8,9 +8,7 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ActivityTypeMapper;
 import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Models.UserActivityTypePin;
 import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
-import com.danielagapov.spawn.Repositories.IUserActivityTypePinRepository;
 import com.danielagapov.spawn.Services.ActivityType.ActivityTypeService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,9 +34,6 @@ class ActivityTypeServiceTests {
 
     @Mock
     private IActivityTypeRepository activityTypeRepository;
-
-    @Mock
-    private IUserActivityTypePinRepository userActivityTypePinRepository;
 
     @Mock
     private IUserService userService;
@@ -77,7 +72,7 @@ class ActivityTypeServiceTests {
         testActivityTypeDTO = new ActivityTypeDTO(
             activityTypeId,
             "Test Activity Type",
-            List.of(),
+            Arrays.asList(),
             "🎯",
             1
         );
@@ -143,9 +138,10 @@ class ActivityTypeServiceTests {
     @Test
     void updateActivityTypes_ShouldUpdateActivityTypes_WhenValidInput() {
         // Arrange
-        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO();
-        batchDTO.setUpdatedActivityTypes(Arrays.asList(testActivityTypeDTO));
-        batchDTO.setDeletedActivityTypeIds(Arrays.asList());
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            Arrays.asList(testActivityTypeDTO),
+            Arrays.asList()
+        );
 
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(Arrays.asList(testActivityType));
