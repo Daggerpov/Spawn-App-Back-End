@@ -41,7 +41,7 @@ public interface IChatMessageService {
 
     FullActivityChatMessageDTO getFullChatMessageById(UUID id);
 
-    List<FullActivityChatMessageDTO> getFullChatMessagesByActivityId(UUID ActivityId);
+    List<FullActivityChatMessageDTO> getFullChatMessagesByActivityId(UUID activityId);
 
     List<FullActivityChatMessageDTO> convertChatMessagesToFullFeedActivityChatMessages(List<ChatMessageDTO> chatMessages);
 }
