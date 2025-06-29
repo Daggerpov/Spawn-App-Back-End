@@ -29,7 +29,6 @@ public class ActivityType {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "creator_id", referencedColumnName = "id", nullable = false)
     private User creator;
-    @Column(unique = true)
     private Integer orderNum;
     @Column(length = 100, columnDefinition = "VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci") // For Emojis
     private String icon = "⭐"; // Default value
