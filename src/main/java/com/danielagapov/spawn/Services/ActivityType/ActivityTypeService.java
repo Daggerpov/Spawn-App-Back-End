@@ -116,5 +116,72 @@ public class ActivityTypeService implements IActivityTypeService {
         activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 0);
     }
 
-
+    /**
+     * Validates activity type updates for pinned count, orderNum range, and orderNum uniqueness
+     */
+    private void validateActivityTypeUpdate(UUID userId, BatchActivityTypeUpdateDTO batchDTO) {
+        // Get current state
+        long currentPinnedCount = repository.countPinnedActivityTypesByCreatorId(userId);
+        long currentTotalCount = repository.countActivityTypesByCreatorId(userId);
+        
+        // Calculate final state after update
+        long deletedCount = batchDTO.getDeletedActivityTypeIds().size();
+        long updatedCount = batchDTO.getUpdatedActivityTypes().size();
+        
+        // Count how many of the deleted items are pinned
+        List<ActivityType> existingActivityTypes = repository.findActivityTypesByCreatorId(userId);
+        Set<UUID> deletedIds = Set.copyOf(batchDTO.getDeletedActivityTypeIds());
+        long deletedPinnedCount = existingActivityTypes.stream()
+                .filter(at -> deletedIds.contains(at.getId()) && at.getIsPinned())
+                .count();
+        
+        // Count how many updated items are pinned
+        long updatedPinnedCount = batchDTO.getUpdatedActivityTypes().stream()
+                .filter(dto -> dto.getIsPinned() != null && dto.getIsPinned())
+                .count();
+        
+        // Calculate final pinned count
+        long finalPinnedCount = currentPinnedCount - deletedPinnedCount + updatedPinnedCount;
+        
+        // Calculate final total count (accounting for new vs existing updates)
+        Set<UUID> existingIds = existingActivityTypes.stream()
+                .map(ActivityType::getId)
+                .collect(Collectors.toSet());
+        long newActivityTypeCount = batchDTO.getUpdatedActivityTypes().stream()
+                .filter(dto -> !existingIds.contains(dto.getId()))
+                .count();
+        long finalTotalCount = currentTotalCount - deletedCount + newActivityTypeCount;
+        
+        // Validate pinned count
+        if (finalPinnedCount > MAX_PINNED_ACTIVITY_TYPES) {
+            throw new ActivityTypeValidationException(
+                String.format("Cannot have more than %d pinned activity types. Requested: %d", 
+                              MAX_PINNED_ACTIVITY_TYPES, finalPinnedCount)
+            );
+        }
+        
+        // Validate orderNum range for all updated activity types
+        for (ActivityTypeDTO dto : batchDTO.getUpdatedActivityTypes()) {
+            if (dto.getOrderNum() < 0 || dto.getOrderNum() >= finalTotalCount) {
+                throw new ActivityTypeValidationException(
+                    String.format("Invalid orderNum %d for activity type '%s'. Must be in range [0, %d]", 
+                                  dto.getOrderNum(), dto.getTitle(), finalTotalCount - 1)
+                );
+            }
+        }
+        
+        // Validate orderNum uniqueness within the updated activity types
+        Set<Integer> orderNums = batchDTO.getUpdatedActivityTypes().stream()
+                .map(ActivityTypeDTO::getOrderNum)
+                .collect(Collectors.toSet());
+        
+        if (orderNums.size() != batchDTO.getUpdatedActivityTypes().size()) {
+            throw new ActivityTypeValidationException(
+                "Duplicate orderNum values detected in update. Each activity type must have a unique orderNum."
+            );
+        }
+        
+        logger.info(String.format("✅ Activity type validation passed: %d pinned (max %d), orderNum range [0, %d], unique orderNums", 
+                                  finalPinnedCount, MAX_PINNED_ACTIVITY_TYPES, finalTotalCount - 1));
+    }
 }
