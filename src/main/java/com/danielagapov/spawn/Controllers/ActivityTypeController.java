@@ -47,14 +47,14 @@ public class ActivityTypeController {
      * PUT /api/v1/{userId}/activity-types
      */
     @PutMapping
-    public ResponseEntity<BatchActivityTypeUpdateDTO> updateActivityTypes(
+    public ResponseEntity<List<ActivityTypeDTO>> updateActivityTypes(
             @PathVariable UUID userId,
             @RequestBody BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO) {
         try {
             logger.info("Batch updating activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
             
-            BatchActivityTypeUpdateDTO updatedBatch = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
-            return new ResponseEntity<>(updatedBatch, HttpStatus.OK);
+            List<ActivityTypeDTO> updatedActivityTypes = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
+            return new ResponseEntity<>(updatedActivityTypes, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error batch updating activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
