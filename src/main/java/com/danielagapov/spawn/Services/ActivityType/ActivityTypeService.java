@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.ActivityType;
 import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Exceptions.ActivityTypeValidationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ActivityTypeMapper;
@@ -14,7 +15,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -23,19 +26,29 @@ public class ActivityTypeService implements IActivityTypeService {
     private ILogger logger;
     private IUserService userService;
 
+    // Constants for validation
+    private static final int MAX_PINNED_ACTIVITY_TYPES = 3;
+
     @Override
     public List<ActivityTypeDTO> getActivityTypesByUserId(UUID userId) {
         // Returns activity types owned by this user
         return ActivityTypeMapper.toDTOList(repository.findActivityTypesByCreatorId(userId));
     }
 
-
-
     @Override
-    public BatchActivityTypeUpdateDTO updateActivityTypes(BatchActivityTypeUpdateDTO activityTypeDTOs) {
+    public List<ActivityTypeDTO> updateActivityTypes(BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
             if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
                 throw new IllegalArgumentException("No activity types to update or delete");
+            }
+            
+            // Get userId for validation
+            UUID userId = null;
+            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                userId = activityTypeDTOs.getUpdatedActivityTypes().get(0).getOwnerUserId();
+                
+                // Validate the batch update
+                validateActivityTypeUpdate(userId, activityTypeDTOs);
             }
             
             // Handle deletions first - no need to get userId for deletion
@@ -46,7 +59,6 @@ public class ActivityTypeService implements IActivityTypeService {
             
             // Handle updates/creations - need userId for these operations
             if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
-                UUID userId = activityTypeDTOs.getUpdatedActivityTypes().get(0).getOwnerUserId();
                 User creator = userService.getUserEntityById(userId);
                 
                 logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
@@ -54,7 +66,10 @@ public class ActivityTypeService implements IActivityTypeService {
                 repository.saveAll(activityTypes);
             }
             
-            return activityTypeDTOs;
+            // Return all activity types for the user after updates
+            return getActivityTypesByUserId(userId != null ? userId : 
+                activityTypeDTOs.getUpdatedActivityTypes().isEmpty() ? 
+                null : activityTypeDTOs.getUpdatedActivityTypes().get(0).getOwnerUserId());
         } catch (Exception e) {
             logger.error("Error batch saving activity types. Error: " + e.getMessage());
             throw e;
@@ -62,7 +77,7 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
-    public BatchActivityTypeUpdateDTO updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
+    public List<ActivityTypeDTO> updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
             if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
                 throw new IllegalArgumentException("No activity types to update or delete");

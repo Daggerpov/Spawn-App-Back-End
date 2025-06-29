@@ -20,17 +20,17 @@ public interface IActivityTypeService {
     /**
      * Batch update activity types (create, update, delete)
      * @param batchActivityTypeUpdateDTO The batch update data (activity types contain ownerUserId)
-     * @return The batch update result
+     * @return List of updated activity types
      */
-    BatchActivityTypeUpdateDTO updateActivityTypes(BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO);
+    List<ActivityTypeDTO> updateActivityTypes(BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO);
 
     /**
      * Batch update activity types (create, update, delete) with userId
      * @param userId The user ID who owns the activity types
      * @param batchActivityTypeUpdateDTO The batch update data (activity types do not need ownerUserId)
-     * @return The batch update result
+     * @return List of updated activity types
      */
-    BatchActivityTypeUpdateDTO updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO);
+    List<ActivityTypeDTO> updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO);
     
     /**
      * Initialize default activity types for a new user
