@@ -121,8 +121,8 @@ public class ActivityTypeService implements IActivityTypeService {
      */
     private void validateActivityTypeUpdate(UUID userId, BatchActivityTypeUpdateDTO batchDTO) {
         // Get current state
-        long currentPinnedCount = repository.countPinnedActivityTypesByCreatorId(userId);
-        long currentTotalCount = repository.countActivityTypesByCreatorId(userId);
+        long currentPinnedCount = repository.countByCreatorIdAndIsPinnedTrue(userId);
+        long currentTotalCount = repository.countByCreatorId(userId);
         
         // Calculate final state after update
         long deletedCount = batchDTO.getDeletedActivityTypeIds().size();

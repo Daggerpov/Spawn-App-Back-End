@@ -196,8 +196,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
@@ -249,8 +249,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(
@@ -293,8 +293,8 @@ class ActivityTypeServiceTests {
         newStudyActivityType.setOrderNum(3);
         newStudyActivityType.setIsPinned(false);
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(newStudyActivityType));
@@ -353,8 +353,8 @@ class ActivityTypeServiceTests {
                 List.of(activityTypeId3) // Delete Active
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(new ActivityType(), chillActivityType, foodActivityType));
@@ -472,8 +472,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L); // Current: 1 pinned
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L); // Current: 3 total
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L); // Current: 1 pinned
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L); // Current: 3 total
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
 
         // Act & Assert
@@ -496,8 +496,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L); // Current: 0 pinned
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L); // Current: 3 total
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L); // Current: 0 pinned
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L); // Current: 3 total
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
@@ -521,8 +521,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
 
         // Act & Assert
@@ -544,8 +544,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
 
         // Act & Assert
@@ -568,8 +568,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
 
         // Act & Assert
@@ -593,8 +593,8 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L);
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
@@ -628,8 +628,8 @@ class ActivityTypeServiceTests {
         // Mock current state: foodActivityType is pinned
         foodActivityType.setIsPinned(true);
         
-        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L); // 1 currently pinned
-        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L); // 3 total
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L); // 1 currently pinned
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L); // 3 total
         when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of());
