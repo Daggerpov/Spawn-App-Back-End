@@ -4,7 +4,9 @@ import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
-import lombok.AllArgsConstructor;
+import com.danielagapov.spawn.Util.LoggingUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,31 +14,50 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/v1/activity-type")
-@AllArgsConstructor
+@RequestMapping("/api/v1/{userId}/activity-types")
 public class ActivityTypeController {
+
     private final IActivityTypeService activityTypeService;
     private final ILogger logger;
 
+    @Autowired
+    public ActivityTypeController(IActivityTypeService activityTypeService, ILogger logger) {
+        this.activityTypeService = activityTypeService;
+        this.logger = logger;
+    }
 
-    @GetMapping("{userId}")
-    public ResponseEntity<List<ActivityTypeDTO>> getActivityTypes(@PathVariable UUID userId) {
+    /**
+     * Get activity types owned by a user
+     * GET /api/v1/{userId}/activity-types
+     */
+    @GetMapping
+    public ResponseEntity<List<ActivityTypeDTO>> getOwnedActivityTypesForUser(@PathVariable UUID userId) {
         try {
-            return ResponseEntity.ok(activityTypeService.getActivityTypesByUserId(userId));
+            logger.info("Fetching owned activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
+            List<ActivityTypeDTO> activityTypes = activityTypeService.getActivityTypesByUserId(userId);
+            return new ResponseEntity<>(activityTypes, HttpStatus.OK);
         } catch (Exception e) {
-            logger.error("Error getting activity types for user: " + userId + ": " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
+            logger.error("Error fetching owned activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @PostMapping("{userId}")
-    public ResponseEntity<?> updateActivityTypes(@PathVariable UUID userId, @RequestBody BatchActivityTypeUpdateDTO batchUpdateDTO) {
+    /**
+     * Batch update activity types (create, update, delete)
+     * PUT /api/v1/{userId}/activity-types
+     */
+    @PutMapping
+    public ResponseEntity<List<ActivityTypeDTO>> updateActivityTypes(
+            @PathVariable UUID userId,
+            @RequestBody BatchActivityTypeUpdateDTO batchActivityTypeUpdateDTO) {
         try {
-            activityTypeService.updateActivityTypes(userId, batchUpdateDTO);
-            return ResponseEntity.ok().build();
+            logger.info("Batch updating activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
+            
+            List<ActivityTypeDTO> updatedActivityTypes = activityTypeService.updateActivityTypes(userId, batchActivityTypeUpdateDTO);
+            return new ResponseEntity<>(updatedActivityTypes, HttpStatus.OK);
         } catch (Exception e) {
-            logger.error("Error updating or deleting activity types for user: " + userId + ": " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
+            logger.error("Error batch updating activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

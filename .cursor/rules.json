@@ -198,6 +198,7 @@
     "entity_relationships": "Use @OneToMany, @ManyToOne, @ManyToMany appropriately for entity relationships",
     "controller_api": "Consider using @Valid for request validation",
     "security": "Ensure proper authorization checks in controllers",
-    "exception_handling": "Use @ExceptionHandler or @ControllerAdvice for centralized exception handling"
+    "exception_handling": "Use @ExceptionHandler or @ControllerAdvice for centralized exception handling",
+    "spring_data_queries": "Prefer native Spring Data JPA method names (e.g., countByField, findByFieldAndOtherField) over custom @Query JPQL when possible - they are cleaner, more maintainable, and provide automatic validation"
   }
 } 
