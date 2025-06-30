@@ -196,17 +196,18 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
+        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L);
+        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(1, result.getUpdatedActivityTypes().size());
-        assertTrue(result.getUpdatedActivityTypes().get(0).getIsPinned());
-        assertEquals(0, result.getDeletedActivityTypeIds().size());
+        assertEquals(3, result.size()); // Returns all user's activity types
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
     
@@ -248,28 +249,20 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
+        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(
             List.of(activeActivityType, chillActivityType, foodActivityType)
         );
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(3, result.getUpdatedActivityTypes().size());
-        
-        // Verify order numbers are updated correctly
-        Map<String, Integer> orderMap = new HashMap<>();
-        for (ActivityTypeDTO dto : result.getUpdatedActivityTypes()) {
-            orderMap.put(dto.getTitle(), dto.getOrderNum());
-        }
-        
-        assertEquals(0, orderMap.get("Active"));
-        assertEquals(1, orderMap.get("Chill"));
-        assertEquals(2, orderMap.get("Food"));
-        
+        assertEquals(3, result.size()); // Returns all user's activity types
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
     
@@ -300,18 +293,18 @@ class ActivityTypeServiceTests {
         newStudyActivityType.setOrderNum(3);
         newStudyActivityType.setIsPinned(false);
 
+        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(newStudyActivityType));
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(1, result.getUpdatedActivityTypes().size());
-        assertEquals("Study", result.getUpdatedActivityTypes().get(0).getTitle());
-        assertEquals("✏️", result.getUpdatedActivityTypes().get(0).getIcon());
-        assertEquals(3, result.getUpdatedActivityTypes().get(0).getOrderNum());
+        assertEquals(3, result.size()); // Returns all user's activity types
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
     
@@ -324,13 +317,11 @@ class ActivityTypeServiceTests {
         );
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(0, result.getUpdatedActivityTypes().size());
-        assertEquals(1, result.getDeletedActivityTypeIds().size());
-        assertEquals(activityTypeId3, result.getDeletedActivityTypeIds().get(0));
+        assertEquals(2, result.size()); // Returns all user's activity types except the deleted one
         verify(activityTypeRepository, times(1)).deleteAllById(List.of(activityTypeId3));
     }
     
@@ -362,31 +353,18 @@ class ActivityTypeServiceTests {
                 List.of(activityTypeId3) // Delete Active
         );
 
+        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
-        when(activityTypeRepository.saveAll(anyList())).thenReturn(
-            List.of(new ActivityType(), chillActivityType, foodActivityType)
-        );
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(new ActivityType(), chillActivityType, foodActivityType));
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(3, result.getUpdatedActivityTypes().size());
-        assertEquals(1, result.getDeletedActivityTypeIds().size());
-        
-        // Verify all changes are included
-        Map<String, ActivityTypeDTO> resultMap = new HashMap<>();
-        for (ActivityTypeDTO dto : result.getUpdatedActivityTypes()) {
-            resultMap.put(dto.getTitle(), dto);
-        }
-        
-        assertTrue(resultMap.containsKey("Study"));
-        assertTrue(resultMap.containsKey("Chill"));
-        assertTrue(resultMap.containsKey("Food & Drinks"));
-        assertTrue(resultMap.get("Chill").getIsPinned());
-        assertEquals(activityTypeId3, result.getDeletedActivityTypeIds().get(0));
-        
+        assertEquals(3, result.size()); // Returns all user's activity types after changes
         verify(activityTypeRepository, times(1)).deleteAllById(List.of(activityTypeId3));
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
@@ -525,11 +503,11 @@ class ActivityTypeServiceTests {
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(3, result.getUpdatedActivityTypes().size());
+        assertEquals(3, result.size());
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
     
@@ -580,6 +558,30 @@ class ActivityTypeServiceTests {
     }
     
     @Test
+    void batchUpdate_ShouldThrowValidationException_WhenDuplicateOrderNums() {
+        // Arrange - User sets duplicate orderNum values (both set to 1)
+        ActivityTypeDTO duplicate1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false);
+        ActivityTypeDTO duplicate2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 1, userId, false); // Same orderNum
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(duplicate1, duplicate2),
+                List.of()
+        );
+
+        when(activityTypeRepository.countPinnedActivityTypesByCreatorId(userId)).thenReturn(0L);
+        when(activityTypeRepository.countActivityTypesByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+
+        // Act & Assert
+        ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Duplicate orderNum values detected"));
+        assertTrue(exception.getMessage().contains("unique orderNum"));
+        verify(activityTypeRepository, never()).saveAll(anyList());
+    }
+    
+    @Test
     void batchUpdate_ShouldAllowValidOrderNum_WhenInCorrectRange() {
         // Arrange - User sets valid orderNum values
         ActivityTypeDTO validOrder1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false);
@@ -598,11 +600,11 @@ class ActivityTypeServiceTests {
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(3, result.getUpdatedActivityTypes().size());
+        assertEquals(3, result.size());
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
     
@@ -633,12 +635,11 @@ class ActivityTypeServiceTests {
         when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of());
 
         // Act
-        BatchActivityTypeUpdateDTO result = activityTypeService.updateActivityTypes(userId, batchDTO);
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert - Should pass validation: 1 - 1 + 2 = 2 pinned (within limit of 3)
         assertNotNull(result);
-        assertEquals(2, result.getUpdatedActivityTypes().size());
-        assertEquals(1, result.getDeletedActivityTypeIds().size());
+        assertEquals(3, result.size()); // Returns all user's activity types
         verify(activityTypeRepository, times(1)).deleteAllById(anyList());
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
