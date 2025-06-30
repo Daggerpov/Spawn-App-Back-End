@@ -42,22 +42,26 @@ public class ActivityTypeService implements IActivityTypeService {
                 throw new IllegalArgumentException("No activity types to update or delete");
             }
             
-            // Get userId for validation
+            // Get userId - required for all operations
             UUID userId = null;
             if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
                 userId = activityTypeDTOs.getUpdatedActivityTypes().get(0).getOwnerUserId();
                 
                 // Validate the batch update
                 validateActivityTypeUpdate(userId, activityTypeDTOs);
+            } else {
+                // For deletion-only operations, we need to get userId from the deleted items
+                // This is a limitation of the current design - we should pass userId explicitly
+                throw new IllegalArgumentException("Cannot determine user ID for deletion-only operations. Use updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO) instead.");
             }
             
-            // Handle deletions first - no need to get userId for deletion
+            // Handle deletions first
             if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
                 logger.info("Deleting activity types with IDs: " + activityTypeDTOs.getDeletedActivityTypeIds());
                 repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
             }
             
-            // Handle updates/creations - need userId for these operations
+            // Handle updates/creations
             if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
                 User creator = userService.getUserEntityById(userId);
                 
@@ -67,9 +71,7 @@ public class ActivityTypeService implements IActivityTypeService {
             }
             
             // Return all activity types for the user after updates
-            return getActivityTypesByUserId(userId != null ? userId : 
-                activityTypeDTOs.getUpdatedActivityTypes().isEmpty() ? 
-                null : activityTypeDTOs.getUpdatedActivityTypes().get(0).getOwnerUserId());
+            return getActivityTypesByUserId(userId);
         } catch (Exception e) {
             logger.error("Error batch saving activity types. Error: " + e.getMessage());
             throw e;
@@ -83,19 +85,28 @@ public class ActivityTypeService implements IActivityTypeService {
                 throw new IllegalArgumentException("No activity types to update or delete");
             }
 
-            // Set ownerUserId for all updated activity types using mapper
-            List<ActivityTypeDTO> updatedWithOwner = ActivityTypeMapper.withOwnerUserId(
-                activityTypeDTOs.getUpdatedActivityTypes(), 
-                userId
-            );
-
-            BatchActivityTypeUpdateDTO batchWithOwner = new BatchActivityTypeUpdateDTO(
-                updatedWithOwner,
-                activityTypeDTOs.getDeletedActivityTypeIds()
-            );
-
-            // Reuse existing logic
-            return updateActivityTypes(batchWithOwner);
+            // Validate if there are updates
+            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                validateActivityTypeUpdate(userId, activityTypeDTOs);
+            }
+            
+            // Handle deletions first
+            if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                logger.info("Deleting activity types with IDs: " + activityTypeDTOs.getDeletedActivityTypeIds());
+                repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
+            }
+            
+            // Handle updates/creations
+            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                User creator = userService.getUserEntityById(userId);
+                
+                logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
+                List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
+                repository.saveAll(activityTypes);
+            }
+            
+            // Return all activity types for the user after updates
+            return getActivityTypesByUserId(userId);
         } catch (Exception e) {
             logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
             throw e;

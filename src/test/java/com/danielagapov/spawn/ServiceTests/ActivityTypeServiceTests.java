@@ -316,6 +316,10 @@ class ActivityTypeServiceTests {
                 List.of(activityTypeId3) // Delete Active activity type
         );
 
+        // Mock the final result after deletion (should return remaining 2 activity types)
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType, foodActivityType)); // Final result after deletion
+
         // Act
         List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
