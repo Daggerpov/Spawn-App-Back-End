@@ -45,21 +45,13 @@ public class TestConfig {
         
         @Override
         public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
-            return new UserDTO(
-                    user.getId(),
-                    user.getFriendUserIds(),
-                    user.getUsername(),
-                    file == null ? MOCK_DEFAULT_PFP : putObject(file),
-                    user.getName(),
-                    user.getBio(),
-                    user.getFriendTagIds(),
-                    user.getEmail()
-            );
+            // Return the same user for testing purposes
+            return user;
         }
         
         @Override
         public UserDTO updateProfilePicture(byte[] file, UUID userId) {
-            // For test, return a mock UserDTO with updated profile picture
+            // For test, return a simple mock UserDTO
             return new UserDTO(
                     userId,
                     null,
