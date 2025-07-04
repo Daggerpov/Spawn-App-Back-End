@@ -10,7 +10,8 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(properties = {
     "spring.jpa.hibernate.ddl-auto=create-drop",
     "spring.jpa.show-sql=true",
-    "spring.jpa.properties.hibernate.format_sql=true"
+    "spring.jpa.properties.hibernate.format_sql=true",
+    "spring.profiles.active=test"
 })
 public class RepositoryValidationTest {
     

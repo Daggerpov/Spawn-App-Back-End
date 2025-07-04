@@ -18,7 +18,9 @@ public class SpawnApplication {
         // Skip environment variable loading for test profile
         String activeProfile = System.getProperty("spring.profiles.active", 
                                                   System.getenv("SPRING_PROFILES_ACTIVE"));
-        boolean isTestProfile = "test".equals(activeProfile);
+        // Also check if we're running in a test environment (e.g., via JUnit)
+        boolean isTestProfile = "test".equals(activeProfile) || 
+                               isRunningInTestEnvironment();
         
         if (!isTestProfile) {
             Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
@@ -82,5 +84,35 @@ public class SpawnApplication {
         }
         
         SpringApplication.run(SpawnApplication.class, args);
+    }
+
+    /**
+     * Checks if the application is running in a test environment.
+     * This method looks for common test indicators like JUnit classes on the classpath.
+     */
+    private static boolean isRunningInTestEnvironment() {
+        try {
+            // Check if JUnit is on the classpath
+            Class.forName("org.junit.jupiter.api.Test");
+            
+            // Check for test-specific system properties
+            String testProperty = System.getProperty("java.class.path");
+            if (testProperty != null && testProperty.contains("test-classes")) {
+                return true;
+            }
+            
+            // Check if running from a test runner
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            for (StackTraceElement element : stackTrace) {
+                String className = element.getClassName();
+                if (className.contains("junit") || className.contains("Test")) {
+                    return true;
+                }
+            }
+            
+            return false;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 }
