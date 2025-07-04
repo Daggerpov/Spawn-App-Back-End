@@ -72,10 +72,22 @@ public class ActivityTypeService implements IActivityTypeService {
 
     @Override
     public void initializeDefaultActivityTypesForUser(User user) {
-        repository.save(new ActivityType(user, "Chill","🛋️"));
-        repository.save(new ActivityType(user, "Food", "🍽️"));
-        repository.save(new ActivityType(user, "Active", "🏃"));
-        repository.save(new ActivityType(user, "Study", "✏️"));
+        // Create default activity types with proper order numbers
+        ActivityType chillType = new ActivityType(user, "Chill","🛋️");
+        chillType.setOrderNum(0);
+        repository.save(chillType);
+        
+        ActivityType foodType = new ActivityType(user, "Food", "🍽️");
+        foodType.setOrderNum(1);
+        repository.save(foodType);
+        
+        ActivityType activeType = new ActivityType(user, "Active", "🏃");
+        activeType.setOrderNum(2);
+        repository.save(activeType);
+        
+        ActivityType studyType = new ActivityType(user, "Study", "✏️");
+        studyType.setOrderNum(3);
+        repository.save(studyType);
     }
 
     @Override
