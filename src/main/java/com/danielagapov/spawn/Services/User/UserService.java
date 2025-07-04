@@ -264,6 +264,9 @@ public class UserService implements IUserService {
 
     @Override
     public User createAndSaveUser(User user) {
+        // Save the user first so it has a valid ID for foreign key relationships
+        user = repository.save(user);
+        // Now initialize default activity types with the persisted user
         activityTypeService.initializeDefaultActivityTypesForUser(user);
         return user;
     }
