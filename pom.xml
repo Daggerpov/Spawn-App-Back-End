@@ -121,7 +121,9 @@
             <artifactId>firebase-admin</artifactId>
             <version>9.4.1</version>
         </dependency>
-        <!-- Flyway for database migrations -->
+        <!-- Flyway for database migrations - DISABLED -->
+        <!-- Using Hibernate DDL auto-update instead of Flyway migrations -->
+        <!--
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
@@ -134,6 +136,7 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
+        -->
         <!-- Google API Client Libraries for token verification -->
         <dependency>
             <groupId>com.google.api-client</groupId>
