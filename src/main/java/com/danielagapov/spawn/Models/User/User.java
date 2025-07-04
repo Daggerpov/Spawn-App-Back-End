@@ -23,7 +23,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Table(
-        name = "user",
+        name = "`user`",
         indexes = {
                 @Index(name = "idx_name", columnList = "name")
         }
