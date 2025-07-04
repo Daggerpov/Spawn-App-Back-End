@@ -226,7 +226,7 @@ public class ActivityController {
                 // Activity not found
                 if (e.entityType == EntityType.Activity) {
                     logger.error("Activity not found for external invite: " + id + ": " + e.getMessage());
-                    return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+                    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
                 } else {
                     logger.error("Entity not found for external invite: " + e.getMessage());
                     return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
