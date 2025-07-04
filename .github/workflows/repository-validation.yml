@@ -18,20 +18,7 @@ jobs:
     name: Repository Validation
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: testpassword
-          POSTGRES_USER: testuser
-          POSTGRES_DB: spawn_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+
 
     steps:
       - name: Checkout repository
@@ -53,7 +40,7 @@ jobs:
       - name: Install repository validation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client ripgrep
+          sudo apt-get install -y ripgrep
 
       - name: Repository Static Analysis
         run: |
@@ -104,6 +91,26 @@ jobs:
           find src/main/java -name "*Repository*.java" -exec bash -c '
             echo "📁 Checking JPQL in: $1"
             
+            # Check for Java-style equality operators in JPQL (== instead of =)
+            if grep -n "@Query.*==" "$1" ; then
+              echo "❌ ERROR: Found Java-style equality operator (==) in JPQL query in $1:"
+              echo "JPQL uses single = for equality comparison, not double =="
+              grep -n "@Query.*==" "$1" | while read -r line; do
+                echo "  Line: $line"
+              done
+              exit 1
+            fi
+            
+            # Check for Java-style inequality operators in JPQL (!= instead of <>)
+            if grep -n "@Query.*!=" "$1" ; then
+              echo "❌ ERROR: Found Java-style inequality operator (!=) in JPQL query in $1:"
+              echo "JPQL uses <> for inequality comparison, not !="
+              grep -n "@Query.*!=" "$1" | while read -r line; do
+                echo "  Line: $line"
+              done
+              exit 1
+            fi
+            
             # Check for improper JOIN syntax
             if grep -n "@Query.*JOIN.*ON.*=" "$1" | grep -v "JOIN FETCH" ; then
               echo "❌ Warning: Potentially incorrect JOIN syntax (should use implicit joins in JPQL) in $1:"
@@ -114,6 +121,14 @@ jobs:
             # Check for missing table aliases in complex queries
             if grep -n "@Query.*SELECT.*FROM.*WHERE.*\." "$1" | grep -v -E "(a\.|u\.|uft\.|au\.|ft\.|c\.)" ; then
               echo "❌ Warning: Complex query without proper table aliases in $1"
+              exit 1
+            fi
+            
+            # Check for SQL keywords used incorrectly in JPQL context
+            if grep -n "@Query.*LIMIT\|@Query.*OFFSET" "$1" ; then
+              echo "❌ Warning: Found SQL LIMIT/OFFSET in JPQL query in $1:"
+              echo "Use Pageable parameter or setMaxResults() instead"
+              grep -n "@Query.*LIMIT\|@Query.*OFFSET" "$1"
               exit 1
             fi
             
@@ -128,6 +143,12 @@ jobs:
                 echo "Used params: $used_params"
                 exit 1
               fi
+            fi
+            
+            # Check for common JPQL reserved word issues
+            if grep -n "@Query.*\sorder\s.*=" "$1" | grep -v "ORDER BY" ; then
+              echo "❌ Warning: Possible confusion between ORDER BY clause and property named order in $1"
+              exit 1
             fi
             
             echo "✅ $1 passed JPQL validation"
@@ -164,12 +185,57 @@ jobs:
             fi
           ' _ {} \;
 
+      - name: Spring Boot Context Validation
+        env:
+          SPRING_PROFILES_ACTIVE: test
+        run: |
+          echo "🚀 Validating Spring Boot context and JPA repository queries..."
+          
+          # Check if RepositoryValidationTest exists, if not create a minimal one
+          if [ ! -f "src/test/java/com/danielagapov/spawn/RepositoryValidationTest.java" ]; then
+            echo "📝 Creating RepositoryValidationTest as it doesn't exist..."
+            cat > src/test/java/com/danielagapov/spawn/RepositoryValidationTest.java << 'EOF'
+          package com.danielagapov.spawn;
+          
+          import org.junit.jupiter.api.Test;
+          import org.springframework.boot.test.context.SpringBootTest;
+          import org.springframework.test.context.ActiveProfiles;
+          import org.springframework.test.context.TestPropertySource;
+          
+          @SpringBootTest
+          @ActiveProfiles("test")
+          @TestPropertySource(properties = {
+              "spring.datasource.url=jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1",
+              "spring.datasource.username=sa",
+              "spring.datasource.password=",
+              "spring.datasource.driver-class-name=org.h2.Driver",
+              "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+              "spring.jpa.hibernate.ddl-auto=create-drop",
+              "spring.jpa.show-sql=true",
+              "spring.jpa.properties.hibernate.format_sql=true",
+              "spring.profiles.active=test"
+          })
+          public class RepositoryValidationTest {
+              
+              @Test
+              public void contextLoads() {
+                  // This test will fail if there are any JPQL syntax errors
+                  // Spring will validate all @Query annotations during context initialization
+                  // Success means all repository queries are syntactically correct
+              }
+          }
+          EOF
+          else
+            echo "📝 Using existing RepositoryValidationTest..."
+          fi
+          
+          echo "📝 Running Spring Boot context validation test..."
+          mvn test -Dtest="RepositoryValidationTest" -Dfailsafe.useSystemClassLoader=false
+          
+          echo "✅ Spring Boot context validation completed successfully"
+
       - name: Build and Test Repository Layer
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/spawn_test
-          SPRING_DATASOURCE_USERNAME: testuser
-          SPRING_DATASOURCE_PASSWORD: testpassword
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
           SPRING_PROFILES_ACTIVE: test
         run: |
           echo "🚀 Building project and running repository tests..."

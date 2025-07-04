@@ -2,17 +2,16 @@ package com.danielagapov.spawn.Models;
 
 import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Getter
@@ -24,21 +23,36 @@ public class ActivityType {
     private String title;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    private List<User> associatedFriends; // TODO: refactor to friend table when possible
+    private List<User> associatedFriends = new ArrayList<>(); // Initialize with empty list
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "creator_id", referencedColumnName = "id", nullable = false)
     private User creator;
-    @Column(unique = true)
     private Integer orderNum;
     @Column(length = 100, columnDefinition = "VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci") // For Emojis
     private String icon = "⭐"; // Default value
+    
+    @Column(nullable = false)
+    private Boolean isPinned = false; // Default value for pinned status
 
-
+    // Constructor for basic creation
     public ActivityType(User creator, String title, String icon) {
         this.creator = creator;
         this.title = title;
         this.icon = icon;
+        this.associatedFriends = new ArrayList<>(); // Initialize with empty list
+        this.isPinned = false; // Default to unpinned
+    }
+    
+    // Comprehensive constructor for mapper usage
+    public ActivityType(UUID id, String title, List<User> associatedFriends, User creator, Integer orderNum, String icon, Boolean isPinned) {
+        this.id = id;
+        this.title = title;
+        this.associatedFriends = associatedFriends != null ? associatedFriends : new ArrayList<>();
+        this.creator = creator;
+        this.orderNum = orderNum;
+        this.icon = icon != null ? icon : "⭐";
+        this.isPinned = isPinned != null ? isPinned : false;
     }
 }
