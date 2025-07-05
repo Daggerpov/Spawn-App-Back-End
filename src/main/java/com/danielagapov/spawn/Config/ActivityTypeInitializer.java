@@ -81,8 +81,6 @@ public class ActivityTypeInitializer {
                                 usersWithErrors++;
                             }
                         } else {
-                            logger.info("User " + user.getUsername() + " already has " + 
-                                existingActivityTypes.size() + " activity types. Skipping.");
                             usersSkipped++;
                         }
                     } catch (Exception e) {
