@@ -76,6 +76,13 @@ public class ActivityTypeService implements IActivityTypeService {
     @Transactional
     public void initializeDefaultActivityTypesForUser(User user) {
         try {
+            // Double-check if user already has activity types to avoid duplicate initialization
+            List<ActivityType> existingTypes = repository.findActivityTypesByCreatorId(user.getId());
+            if (!existingTypes.isEmpty()) {
+                logger.info("User " + user.getUsername() + " already has " + existingTypes.size() + " activity types. Skipping initialization.");
+                return;
+            }
+            
             // Get the current max order number for this user
             Integer maxOrder = repository.findMaxOrderNumberByCreatorId(user.getId());
             int startingOrder = maxOrder != null ? maxOrder + 1 : 0;
@@ -83,24 +90,34 @@ public class ActivityTypeService implements IActivityTypeService {
             // Create default activity types with sequential order numbers
             List<ActivityType> defaultActivityTypes = new ArrayList<>();
             
-            ActivityType chillType = new ActivityType(user, "Chill","🛋️");
-            chillType.setOrderNum(startingOrder);
-            defaultActivityTypes.add(chillType);
+            // Define the default activity types
+            String[][] defaultTypes = {
+                {"Chill", "🛋️"},
+                {"Food", "🍽️"},
+                {"Active", "🏃"},
+                {"Study", "✏️"}
+            };
             
-            ActivityType foodType = new ActivityType(user, "Food", "🍽️");
-            foodType.setOrderNum(startingOrder + 1);
-            defaultActivityTypes.add(foodType);
+            // Create each activity type with unique order numbers
+            for (int i = 0; i < defaultTypes.length; i++) {
+                try {
+                    ActivityType activityType = new ActivityType(user, defaultTypes[i][0], defaultTypes[i][1]);
+                    activityType.setOrderNum(startingOrder + i);
+                    
+                    // Save individually to handle potential constraint violations
+                    ActivityType savedType = repository.save(activityType);
+                    defaultActivityTypes.add(savedType);
+                    
+                } catch (Exception e) {
+                    logger.warn("Failed to create activity type '" + defaultTypes[i][0] + "' for user " + user.getUsername() + 
+                        ": " + e.getMessage() + ". Continuing with next type.");
+                }
+            }
             
-            ActivityType activeType = new ActivityType(user, "Active", "🏃");
-            activeType.setOrderNum(startingOrder + 2);
-            defaultActivityTypes.add(activeType);
-            
-            ActivityType studyType = new ActivityType(user, "Study", "✏️");
-            studyType.setOrderNum(startingOrder + 3);
-            defaultActivityTypes.add(studyType);
-            
-            // Save all activity types in a single transaction
-            repository.saveAll(defaultActivityTypes);
+            if (defaultActivityTypes.isEmpty()) {
+                logger.error("Failed to initialize any default activity types for user: " + user.getUsername());
+                throw new RuntimeException("No activity types were successfully created");
+            }
             
             logger.info("Successfully initialized " + defaultActivityTypes.size() + " default activity types for user: " + user.getUsername());
             
