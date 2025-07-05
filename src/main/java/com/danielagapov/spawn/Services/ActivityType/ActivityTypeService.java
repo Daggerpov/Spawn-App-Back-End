@@ -13,7 +13,6 @@ import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +72,6 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
-    @Transactional
     public void initializeDefaultActivityTypesForUser(User user) {
         try {
             // Double-check if user already has activity types to avoid duplicate initialization
