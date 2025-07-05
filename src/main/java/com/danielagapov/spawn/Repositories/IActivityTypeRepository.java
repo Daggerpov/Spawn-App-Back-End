@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface IActivityTypeRepository extends JpaRepository<ActivityType, UUID> {
 
-    @Query("SELECT at FROM ActivityType at WHERE at.creator.id = :creatorId")
+    @Query("SELECT DISTINCT at FROM ActivityType at LEFT JOIN FETCH at.associatedFriends WHERE at.creator.id = :creatorId")
     List<ActivityType> findActivityTypesByCreatorId(UUID creatorId);
 
     @Query("SELECT MAX(at.orderNum) FROM ActivityType at WHERE at.creator.id = :creatorId")
