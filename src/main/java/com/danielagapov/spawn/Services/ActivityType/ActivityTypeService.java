@@ -13,7 +13,9 @@ import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -30,12 +32,14 @@ public class ActivityTypeService implements IActivityTypeService {
     private static final int MAX_PINNED_ACTIVITY_TYPES = 3;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ActivityTypeDTO> getActivityTypesByUserId(UUID userId) {
         // Returns activity types owned by this user
         return ActivityTypeMapper.toDTOList(repository.findActivityTypesByCreatorId(userId));
     }
 
     @Override
+    @Transactional
     public List<ActivityTypeDTO> updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
             if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
@@ -71,11 +75,47 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
+    @Transactional
     public void initializeDefaultActivityTypesForUser(User user) {
-        repository.save(new ActivityType(user, "Chill","🛋️"));
-        repository.save(new ActivityType(user, "Food", "🍽️"));
-        repository.save(new ActivityType(user, "Active", "🏃"));
-        repository.save(new ActivityType(user, "Study", "✏️"));
+        try {
+            // Double-check if user already has activity types to avoid duplicate initialization
+            List<ActivityType> existingTypes = repository.findActivityTypesByCreatorId(user.getId());
+            if (!existingTypes.isEmpty()) {
+                logger.info("User " + user.getUsername() + " already has " + existingTypes.size() + " activity types. Skipping initialization.");
+                return;
+            }
+            
+            // Get the current max order number for this user
+            Integer maxOrder = repository.findMaxOrderNumberByCreatorId(user.getId());
+            int startingOrder = maxOrder != null ? maxOrder + 1 : 0;
+            
+            // Create default activity types with sequential order numbers
+            List<ActivityType> defaultActivityTypes = new ArrayList<>();
+            
+            // Define the default activity types
+            String[][] defaultTypes = {
+                {"Chill", "🛋️"},
+                {"Food", "🍽️"},
+                {"Active", "🏃"},
+                {"Study", "✏️"}
+            };
+            
+            // Create each activity type with unique order numbers
+            for (int i = 0; i < defaultTypes.length; i++) {
+                ActivityType activityType = new ActivityType(user, defaultTypes[i][0], defaultTypes[i][1]);
+                activityType.setOrderNum(startingOrder + i);
+                defaultActivityTypes.add(activityType);
+            }
+            
+            // Save all activity types at once for better performance
+            List<ActivityType> savedTypes = repository.saveAll(defaultActivityTypes);
+            
+            logger.info("Successfully initialized " + savedTypes.size() + " default activity types for user: " + user.getUsername());
+            
+        } catch (Exception e) {
+            logger.error("Failed to initialize default activity types for user " + user.getUsername() + ": " + e.getMessage());
+            throw e;
+        }
     }
 
     @Override

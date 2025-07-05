@@ -423,8 +423,8 @@ class ActivityTypeServiceTests {
         // Act
         assertDoesNotThrow(() -> activityTypeService.initializeDefaultActivityTypesForUser(testUser));
 
-        // Assert - Verify 4 default activity types are created (Chill, Food, Active, Study)
-        verify(activityTypeRepository, times(4)).save(any(ActivityType.class));
+        // Assert - Verify 4 default activity types are created (Chill, Food, Active, Study) using saveAll
+        verify(activityTypeRepository, times(1)).saveAll(argThat(list -> ((List<ActivityType>) list).size() == 4));
     }
 
     @Test
