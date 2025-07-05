@@ -154,11 +154,26 @@ public class BlockedUserService implements IBlockedUserService {
             User blocker = userService.getUserEntityById(blockerId);
             logger.info("Getting blocked users for blocker: " + LoggingUtils.formatUserInfo(blocker));
 
-            List<BlockedUserDTO> blockedUsers = repository.findAllByBlocker_Id(blockerId).stream()
+            List<BlockedUser> blockedUserEntities = repository.findAllByBlocker_Id(blockerId);
+            logger.info("Found " + blockedUserEntities.size() + " blocked user entities for blocker: " +
+                    LoggingUtils.formatUserInfo(blocker));
+
+            List<BlockedUserDTO> blockedUsers = blockedUserEntities.stream()
+                    .filter(entity -> {
+                        if (entity.getBlocker() == null) {
+                            logger.warn("Blocked user entity " + entity.getId() + " has null blocker - skipping");
+                            return false;
+                        }
+                        if (entity.getBlocked() == null) {
+                            logger.warn("Blocked user entity " + entity.getId() + " has null blocked user - skipping");
+                            return false;
+                        }
+                        return true;
+                    })
                     .map(BlockedUserMapper::toDTO)
                     .collect(Collectors.toList());
 
-            logger.info("Found " + blockedUsers.size() + " blocked users for blocker: " +
+            logger.info("Successfully mapped " + blockedUsers.size() + " blocked users for blocker: " +
                     LoggingUtils.formatUserInfo(blocker));
             return blockedUsers;
         } catch (Exception e) {
