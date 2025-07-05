@@ -32,13 +32,6 @@ public interface IActivityTypeService {
     void initializeDefaultActivityTypesForUser(User user);
     
     /**
-     * Initialize default activity types for existing users if they don't have any
-     * @param userId The user ID to initialize activity types for
-     * @return List of activity types after initialization
-     */
-    List<ActivityTypeDTO> initializeDefaultActivityTypesForExistingUser(UUID userId);
-    
-    /**
      * Set the order number for an activity type
      * @param activityType The activity type to set order for
      */

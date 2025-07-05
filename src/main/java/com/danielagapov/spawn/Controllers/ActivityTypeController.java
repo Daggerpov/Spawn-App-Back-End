@@ -43,22 +43,6 @@ public class ActivityTypeController {
     }
 
     /**
-     * Initialize default activity types for existing users
-     * POST /api/v1/{userId}/activity-types/initialize
-     */
-    @PostMapping("/initialize")
-    public ResponseEntity<List<ActivityTypeDTO>> initializeDefaultActivityTypesForExistingUser(@PathVariable UUID userId) {
-        try {
-            logger.info("Initializing default activity types for user: " + LoggingUtils.formatUserIdInfo(userId));
-            List<ActivityTypeDTO> activityTypes = activityTypeService.initializeDefaultActivityTypesForExistingUser(userId);
-            return new ResponseEntity<>(activityTypes, HttpStatus.OK);
-        } catch (Exception e) {
-            logger.error("Error initializing default activity types for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
      * Batch update activity types (create, update, delete)
      * PUT /api/v1/{userId}/activity-types
      */
