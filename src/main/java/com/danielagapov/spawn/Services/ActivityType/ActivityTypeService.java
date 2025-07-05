@@ -72,21 +72,25 @@ public class ActivityTypeService implements IActivityTypeService {
 
     @Override
     public void initializeDefaultActivityTypesForUser(User user) {
-        // Create default activity types using setOrderNumber to avoid conflicts
+        // Get the current max order number for this user
+        Integer maxOrder = repository.findMaxOrderNumberByCreatorId(user.getId());
+        int startingOrder = maxOrder != null ? maxOrder + 1 : 0;
+        
+        // Create default activity types with sequential order numbers
         ActivityType chillType = new ActivityType(user, "Chill","🛋️");
-        setOrderNumber(chillType);
+        chillType.setOrderNum(startingOrder);
         repository.save(chillType);
         
         ActivityType foodType = new ActivityType(user, "Food", "🍽️");
-        setOrderNumber(foodType);
+        foodType.setOrderNum(startingOrder + 1);
         repository.save(foodType);
         
         ActivityType activeType = new ActivityType(user, "Active", "🏃");
-        setOrderNumber(activeType);
+        activeType.setOrderNum(startingOrder + 2);
         repository.save(activeType);
         
         ActivityType studyType = new ActivityType(user, "Study", "✏️");
-        setOrderNumber(studyType);
+        studyType.setOrderNum(startingOrder + 3);
         repository.save(studyType);
     }
 
