@@ -91,6 +91,32 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
+    public List<ActivityTypeDTO> initializeDefaultActivityTypesForExistingUser(UUID userId) {
+        try {
+            // Check if user already has activity types
+            List<ActivityTypeDTO> existingActivityTypes = getActivityTypesByUserId(userId);
+            
+            if (!existingActivityTypes.isEmpty()) {
+                logger.info("User " + userId + " already has " + existingActivityTypes.size() + " activity types. Skipping initialization.");
+                return existingActivityTypes;
+            }
+            
+            // User has no activity types, initialize them
+            User user = userService.getUserEntityById(userId);
+            logger.info("Initializing default activity types for existing user: " + user.getUsername());
+            
+            initializeDefaultActivityTypesForUser(user);
+            
+            // Return the newly created activity types
+            return getActivityTypesByUserId(userId);
+            
+        } catch (Exception e) {
+            logger.error("Error initializing default activity types for user " + userId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public void setOrderNumber(ActivityType activityType) {
         Integer maxOrder = repository.findMaxOrderNumberByCreatorId(activityType.getCreator().getId());
         activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 0);
