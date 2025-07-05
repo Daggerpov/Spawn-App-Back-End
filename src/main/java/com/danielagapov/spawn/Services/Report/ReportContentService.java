@@ -66,11 +66,17 @@ public class ReportContentService implements IReportContentService {
         report.setTimeReported(OffsetDateTime.now());
         report.setResolution(PENDING);
 
+        // Set the reporter User entity if not already set but we have a reporter
+        if (report.getReporter() == null && reportDTO.getReporter() != null && reportDTO.getReporter().getId() != null) {
+            User reporter = userService.getUserEntityById(reportDTO.getReporter().getId());
+            report.setReporter(reporter);
+        }
+
         User contentOwner = findContentOwnerByContentId(reportDTO.getContentId(), reportDTO.getContentType());
         report.setContentOwner(contentOwner);
 
-        report = repository.save(report);
-        return ReportedContentDTO.fromEntity(report);
+        ReportedContent savedReport = repository.save(report);
+        return ReportedContentDTO.fromEntity(savedReport);
     }
 
     @Override

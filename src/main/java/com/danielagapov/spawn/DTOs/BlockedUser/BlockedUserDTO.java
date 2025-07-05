@@ -16,16 +16,21 @@ public class BlockedUserDTO {
     private UUID blockedId;
     private String blockerUsername;
     private String blockedUsername;
+    private String blockedName;
+    private String blockedProfilePicture;
 
     @JsonProperty("reason")
     private String reason;
 
-    public BlockedUserDTO(UUID id, UUID blockerId, UUID blockedId, String blockerUsername, String blockedUsername, String reason) {
+    public BlockedUserDTO(UUID id, UUID blockerId, UUID blockedId, String blockerUsername, String blockedUsername, 
+                          String blockedName, String blockedProfilePicture, String reason) {
         this.id = id;
         this.blockerId = blockerId;
         this.blockedId = blockedId;
         this.blockerUsername = blockerUsername;
         this.blockedUsername = blockedUsername;
+        this.blockedName = blockedName;
+        this.blockedProfilePicture = blockedProfilePicture;
         this.reason = reason;
     }
 

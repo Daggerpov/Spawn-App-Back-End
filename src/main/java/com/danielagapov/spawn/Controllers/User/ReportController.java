@@ -58,7 +58,7 @@ public class ReportController {
             return ResponseEntity.status(HttpStatus.CREATED).body(newReport);
         } catch (Exception e) {
             logger.error("Error creating report: " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
