@@ -2,10 +2,12 @@ package com.danielagapov.spawn.Controllers.User;
 
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Services.UserProfileInfo.IUserProfileInfoService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,12 +23,14 @@ import java.util.UUID;
 public class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
+    private final IUserProfileInfoService userProfileInfoService;
     private final ILogger logger;
 
     @Autowired
-    public UserController(IUserService userService, IS3Service s3Service, ILogger logger) {
+    public UserController(IUserService userService, IS3Service s3Service, IUserProfileInfoService userProfileInfoService, ILogger logger) {
         this.userService = userService;
         this.s3Service = s3Service;
+        this.userProfileInfoService = userProfileInfoService;
         this.logger = logger;
     }
 
@@ -222,6 +226,18 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error checking if user " + LoggingUtils.formatUserIdInfo(userId) + " is friend of user " + LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/{userId}/profile-info
+    @GetMapping("{userId}/profile-info")
+    public ResponseEntity<UserProfileInfoDTO> getUserProfileInfo(@PathVariable UUID userId) {
+        try {
+            UserProfileInfoDTO profileInfo = userProfileInfoService.getUserProfileInfo(userId);
+            return ResponseEntity.ok(profileInfo);
+        } catch (Exception e) {
+            logger.error("Error getting user profile info for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
