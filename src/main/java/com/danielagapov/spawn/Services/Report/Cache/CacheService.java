@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.Report.Cache;
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
@@ -12,6 +13,7 @@ import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.Activity.IActivityService;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
@@ -46,6 +48,7 @@ public class CacheService implements ICacheService {
     // Define cache categories
     private static final String FRIENDS_CACHE = "friends";
     private static final String EVENTS_CACHE = "events";
+    private static final String ACTIVITY_TYPES_CACHE = "activityTypes";
     private static final String PROFILE_PICTURE_CACHE = "profilePicture";
     private static final String OTHER_PROFILES_CACHE = "otherProfiles";
     private static final String RECOMMENDED_FRIENDS_CACHE = "recommendedFriends";
@@ -58,6 +61,7 @@ public class CacheService implements ICacheService {
     private final IUserRepository userRepository;
     private final IUserService userService;
     private final IActivityService ActivityService;
+    private final IActivityTypeService activityTypeService;
     private final IFriendRequestService friendRequestService;
     private final ObjectMapper objectMapper;
     private final IUserStatsService userStatsService;
@@ -69,6 +73,7 @@ public class CacheService implements ICacheService {
             IUserRepository userRepository,
             IUserService userService,
             IActivityService ActivityService,
+            IActivityTypeService activityTypeService,
             IFriendRequestService friendRequestService,
             ObjectMapper objectMapper,
             IUserStatsService userStatsService,
@@ -77,6 +82,7 @@ public class CacheService implements ICacheService {
         this.userRepository = userRepository;
         this.userService = userService;
         this.ActivityService = ActivityService;
+        this.activityTypeService = activityTypeService;
         this.friendRequestService = friendRequestService;
         this.objectMapper = objectMapper;
         this.userStatsService = userStatsService;
@@ -116,6 +122,7 @@ public class CacheService implements ICacheService {
             // Return response with all caches marked as needing refresh
             response.put(FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(EVENTS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(ACTIVITY_TYPES_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(PROFILE_PICTURE_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(OTHER_PROFILES_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(RECOMMENDED_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
@@ -136,6 +143,11 @@ public class CacheService implements ICacheService {
         // Validate events cache
         if (clientCacheTimestamps.containsKey(EVENTS_CACHE)) {
             response.put(EVENTS_CACHE, validateEventsCache(user, clientCacheTimestamps.get(EVENTS_CACHE)));
+        }
+
+        // Validate activity types cache
+        if (clientCacheTimestamps.containsKey(ACTIVITY_TYPES_CACHE)) {
+            response.put(ACTIVITY_TYPES_CACHE, validateActivityTypesCache(user, clientCacheTimestamps.get(ACTIVITY_TYPES_CACHE)));
         }
 
         // Validate profile picture cache
