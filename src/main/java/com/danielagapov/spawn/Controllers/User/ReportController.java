@@ -11,7 +11,6 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Report.IReportContentService;
 import com.danielagapov.spawn.Util.LoggingUtils;
-import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,39 +28,6 @@ public class ReportController {
     public ReportController(IReportContentService reportService, ILogger logger) {
         this.reportService = reportService;
         this.logger = logger;
-    }
-
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/reports?reportType=?<ReportType>&contentType=<EntityType>
-    @GetMapping
-    public ResponseEntity<List<ReportedContentDTO>> getReports(
-            @RequestParam(value = "reportType", required = false) ReportType reportType,
-            @RequestParam(value = "contentType", required = false) EntityType contentType
-    ) {
-        try {
-            List<ReportedContentDTO> reports = reportService.getReportsByFilters(reportType, contentType);
-            return ResponseEntity.ok(reports);
-        } catch (Exception e) {
-            logger.error("Error getting reports with filters: " + e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
-    }
-
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
-    // full path: /api/v1/reports
-    @PostMapping
-    public ResponseEntity<ReportedContentDTO> createReport(@RequestBody ReportedContentDTO report) {
-        try {
-            ReportedContentDTO newReport = reportService.fileReport(report);
-            return ResponseEntity.status(HttpStatus.CREATED).body(newReport);
-        } catch (Exception e) {
-            logger.error("Error creating report: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
     // full path: /api/v1/reports/create
@@ -266,5 +232,4 @@ public class ReportController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
 }

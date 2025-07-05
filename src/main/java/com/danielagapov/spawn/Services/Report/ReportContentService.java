@@ -5,8 +5,6 @@ import com.danielagapov.spawn.DTOs.FetchReportedContentDTO;
 import com.danielagapov.spawn.DTOs.ReportedContentDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
-import com.danielagapov.spawn.Enums.ResolutionStatus;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Models.ReportedContent;
 import com.danielagapov.spawn.Models.User.User;
@@ -34,32 +32,7 @@ public class ReportContentService implements IReportContentService {
     private final IChatMessageService chatMessageService;
     private final Logger logger;
 
-    @Override
-    public List<ReportedContentDTO> getReportsByFilters(ReportType reportType, EntityType contentType) {
-        List<ReportedContent> reports;
-        try {
-            if (reportType != null && contentType != null) {
-                // both filters
-                logger.info("Getting reports by report type and content type");
-                reports = repository.getAllByContentTypeAndReportType(contentType, reportType);
-            } else if (reportType != null) {
-                // only report type filter
-                logger.info("Getting reports by report type");
-                reports = repository.getAllByReportType(reportType);
-            } else if (contentType != null) {
-                // only content type filter
-                logger.info("Getting reports by content type");
-                reports = repository.getAllByContentType(contentType);
-            } else {
-                // no filter
-                reports = repository.findAll();
-            }
-            return ReportedContentDTO.fromEntityList(reports);
-        } catch (Exception e) {
-            logger.error("Unexpected error while getting reports: " + e.getMessage());
-            throw e;
-        }
-    }
+
 
     @Override
     public ReportedContentDTO fileReport(CreateReportedContentDTO createReportDTO) {
@@ -84,73 +57,7 @@ public class ReportContentService implements IReportContentService {
         return ReportedContentDTO.fromEntity(savedReport);
     }
 
-    @Override
-    public ReportedContentDTO fileReport(ReportedContentDTO reportDTO) {
-        ReportedContent report = reportDTO.toEntity();
 
-        report.setTimeReported(OffsetDateTime.now());
-        report.setResolution(PENDING);
-
-        // Set the reporter User entity if not already set but we have a reporter
-        if (report.getReporter() == null && reportDTO.getReporter() != null && reportDTO.getReporter().getId() != null) {
-            User reporter = userService.getUserEntityById(reportDTO.getReporter().getId());
-            report.setReporter(reporter);
-        }
-
-        User contentOwner = findContentOwnerByContentId(reportDTO.getContentId(), reportDTO.getContentType());
-        report.setContentOwner(contentOwner);
-
-        ReportedContent savedReport = repository.save(report);
-        return ReportedContentDTO.fromEntity(savedReport);
-    }
-
-    @Override
-    public ReportedContentDTO resolveReport(UUID reportId, ResolutionStatus resolution) {
-        try {
-            ReportedContent report = repository.findById(reportId).
-                    orElseThrow(() -> new BaseNotFoundException(EntityType.ReportedContent, reportId));
-            report.setResolution(resolution);
-            report = repository.save(report);
-            return ReportedContentDTO.fromEntity(report);
-        } catch (Exception e) {
-            if (!(e instanceof BaseNotFoundException)) {
-                logger.error("Unexpected error while resolving report: " + e.getMessage());
-            }
-            throw e;
-        }
-    }
-
-    @Override
-    public List<ReportedContentDTO> getReportsByReporterId(UUID reporterId) {
-        try {
-            return repository.getAllByReporterId(reporterId)
-                    .stream()
-                    .map(ReportedContentDTO::fromEntity)
-                    .toList();
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new BasesNotFoundException(EntityType.ReportedContent);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<ReportedContentDTO> getReportsByContentOwnerId(UUID contentOwnerId) {
-        try {
-            return repository.getAllByContentOwnerId(contentOwnerId)
-                    .stream()
-                    .map(ReportedContentDTO::fromEntity)
-                    .toList();
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new BasesNotFoundException(EntityType.ReportedContent);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
 
     @Override
     public List<FetchReportedContentDTO> getFetchReportsByReporterId(UUID reporterId) {
@@ -211,35 +118,6 @@ public class ReportContentService implements IReportContentService {
         }
     }
 
-    @Override
-    public void deleteReportById(UUID reportId) {
-        try {
-            if (repository.existsById(reportId)) {
-                repository.deleteById(reportId);
-            } else {
-                throw new BaseNotFoundException(EntityType.ReportedContent, reportId);
-            }
-        } catch (Exception e) {
-            if (!(e instanceof BaseNotFoundException)) {
-                logger.error("Unexpected error while deleting report by id: " + e.getMessage());
-            }
-            throw e;
-        }
-    }
-
-    @Override
-    public ReportedContentDTO getReportById(UUID reportId) {
-        try {
-            ReportedContent report = repository.findById(reportId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ReportedContent, reportId));
-            return ReportedContentDTO.fromEntity(report);
-        } catch (Exception e) {
-            if (!(e instanceof BaseNotFoundException)) {
-                logger.error("Unexpected error while deleting report by id: " + e.getMessage());
-            }
-            throw e;
-        }
-    }
 
 
     /* ------------------------------ HELPERS ------------------------------ */
