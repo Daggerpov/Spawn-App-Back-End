@@ -93,6 +93,12 @@ public class FriendRequestService implements IFriendRequestService {
             repository.save(friendRequest);
             logger.info("Friend request saved successfully");
 
+            // Evict recommended friends cache for both users since their recommendation status has changed
+            if (cacheManager.getCache("recommendedFriends") != null) {
+                cacheManager.getCache("recommendedFriends").evict(senderId);
+                cacheManager.getCache("recommendedFriends").evict(receiverId);
+            }
+
             // Publish friend request notification Activity
             eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
 
@@ -207,6 +213,12 @@ public class FriendRequestService implements IFriendRequestService {
                 User receiver = fr.getReceiver();
                 logger.info("Deleting friend request with ID: " + id + " from sender: " +
                         LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));
+                
+                // Evict recommended friends cache for both users since their recommendation status has changed
+                if (cacheManager.getCache("recommendedFriends") != null) {
+                    cacheManager.getCache("recommendedFriends").evict(sender.getId());
+                    cacheManager.getCache("recommendedFriends").evict(receiver.getId());
+                }
             } else {
                 logger.info("Deleting friend request with ID: " + id + " (request details not available)");
             }
@@ -231,6 +243,12 @@ public class FriendRequestService implements IFriendRequestService {
             List<FriendRequest> requests = repository.findBySenderIdAndReceiverId(senderId, receiverId);
             for (FriendRequest fr : requests) {
                 repository.delete(fr);
+            }
+
+            // Evict recommended friends cache for both users since their recommendation status has changed
+            if (cacheManager.getCache("recommendedFriends") != null) {
+                cacheManager.getCache("recommendedFriends").evict(senderId);
+                cacheManager.getCache("recommendedFriends").evict(receiverId);
             }
 
             logger.info("Deleted " + requests.size() + " friend requests between users");
