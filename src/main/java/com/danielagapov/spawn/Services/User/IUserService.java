@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.User;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
@@ -117,4 +118,9 @@ public interface IUserService {
     List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
 
     BaseUserDTO getBaseUserByUsername(String username);
+
+    /**
+     * Get user profile information
+     */
+    UserProfileInfoDTO getUserProfileInfo(UUID userId);
 }

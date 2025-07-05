@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
@@ -692,6 +693,26 @@ public class UserService implements IUserService {
             logger.error("Error checking if user is friend of user: " + 
                          LoggingUtils.formatUserIdInfo(userId) + " and " + 
                          LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public UserProfileInfoDTO getUserProfileInfo(UUID userId) {
+        try {
+            User user = repository.findById(userId)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+
+            return new UserProfileInfoDTO(
+                    user.getId(),
+                    user.getName(),
+                    user.getUsername(),
+                    user.getBio(),
+                    user.getProfilePictureUrlString(),
+                    user.getDateCreated()
+            );
+        } catch (Exception e) {
+            logger.error("Error getting user profile info for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }
