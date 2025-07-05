@@ -1,5 +1,7 @@
 package com.danielagapov.spawn.Services.Report;
 
+import com.danielagapov.spawn.DTOs.CreateReportedContentDTO;
+import com.danielagapov.spawn.DTOs.FetchReportedContentDTO;
 import com.danielagapov.spawn.DTOs.ReportedContentDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
@@ -18,8 +20,15 @@ public interface IReportContentService {
     List<ReportedContentDTO> getReportsByFilters(ReportType reportType, EntityType contentType);
 
     /**
-     * Creates and saves a new report with the given report DTO
+     * Creates and saves a new report with the given simplified creation DTO
      */
+    ReportedContentDTO fileReport(CreateReportedContentDTO createReportDTO);
+
+    /**
+     * Creates and saves a new report with the given report DTO
+     * @deprecated Use fileReport(CreateReportedContentDTO) for new implementations
+     */
+    @Deprecated
     ReportedContentDTO fileReport(ReportedContentDTO report);
 
     /**
@@ -36,6 +45,21 @@ public interface IReportContentService {
      * Gets all reports by reported user id
      */
     List<ReportedContentDTO> getReportsByContentOwnerId(UUID contentOwnerId);
+
+    /**
+     * Gets all reports by reporter id (simplified for "my reports" page)
+     */
+    List<FetchReportedContentDTO> getFetchReportsByReporterId(UUID reporterId);
+
+    /**
+     * Gets all reports by reported user id (simplified for admin dashboard)
+     */
+    List<FetchReportedContentDTO> getFetchReportsByContentOwnerId(UUID contentOwnerId);
+
+    /**
+     * Gets all reports with given reportType and contentType (simplified for admin dashboard)
+     */
+    List<FetchReportedContentDTO> getFetchReportsByFilters(ReportType reportType, EntityType contentType);
 
     /**
      * Deletes report with the given report id
