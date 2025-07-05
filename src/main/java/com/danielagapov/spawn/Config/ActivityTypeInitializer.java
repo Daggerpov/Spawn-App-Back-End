@@ -50,6 +50,17 @@ public class ActivityTypeInitializer {
                                 existingActivityTypes.size() + " activity types. Skipping.");
                             usersSkipped++;
                         }
+                    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                        logger.error("Database constraint violation for user " + user.getUsername() + 
+                            ". This user might have partial activity types or constraint issues: " + e.getMessage());
+                        // Try to fetch activity types again to log current state
+                        try {
+                            List<com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO> currentActivityTypes = 
+                                activityTypeService.getActivityTypesByUserId(user.getId());
+                            logger.info("User " + user.getUsername() + " now has " + currentActivityTypes.size() + " activity types");
+                        } catch (Exception ex) {
+                            logger.error("Could not fetch activity types for user " + user.getUsername() + ": " + ex.getMessage());
+                        }
                     } catch (Exception e) {
                         logger.error("Error initializing activity types for user " + user.getUsername() + ": " + e.getMessage());
                     }
