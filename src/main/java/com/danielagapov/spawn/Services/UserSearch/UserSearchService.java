@@ -65,7 +65,7 @@ public class UserSearchService implements IUserSearchService {
 
             // If searchQuery is empty, return all recommended friends
             if (searchQuery.isEmpty()) {
-                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
+                recommendedFriends = userService.getLimitedRecommendedFriendsForUserId(requestingUserId);
                 friends = userService.getFullFriendUsersByUserId(requestingUserId);
             } else {
                 // First search with query
@@ -111,6 +111,8 @@ public class UserSearchService implements IUserSearchService {
     @Override
     public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
         try {
+            // This method is cached at the UserService level via @Cacheable("recommendedFriends")
+            // Cache is automatically invalidated when friend relationships change
             // First get mutuals-based recommendations
             List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId);
 
