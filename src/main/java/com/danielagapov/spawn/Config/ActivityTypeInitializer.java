@@ -53,7 +53,7 @@ public class ActivityTypeInitializer {
                                 logger.info("Successfully initialized activity types for user: " + user.getUsername());
                             } catch (DataIntegrityViolationException e) {
                                 // Handle constraint violation more gracefully
-                                if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("order_num")) {
+                                if (e.getMessage().contains("Duplicate entry") || e.getMessage().contains("constraint")) {
                                     logger.warn("Constraint violation during initialization for user " + user.getUsername() + 
                                         ". Attempting to recover by checking current state...");
                                     
@@ -63,11 +63,11 @@ public class ActivityTypeInitializer {
                                     
                                     if (currentActivityTypes.isEmpty()) {
                                         logger.error("User " + user.getUsername() + " still has no activity types after constraint violation. " +
-                                            "This indicates a database constraint issue that needs manual intervention.");
+                                            "This may indicate a database constraint issue. Will skip this user for now.");
                                         usersWithErrors++;
                                     } else {
                                         logger.info("User " + user.getUsername() + " now has " + currentActivityTypes.size() + 
-                                            " activity types after constraint violation recovery.");
+                                            " activity types. Initialization appears to have succeeded despite constraint error.");
                                         usersInitialized++;
                                     }
                                 } else {
@@ -75,6 +75,10 @@ public class ActivityTypeInitializer {
                                         ": " + e.getMessage());
                                     usersWithErrors++;
                                 }
+                            } catch (Exception e) {
+                                logger.error("Unexpected error during initialization for user " + user.getUsername() + 
+                                    ": " + e.getMessage());
+                                usersWithErrors++;
                             }
                         } else {
                             logger.info("User " + user.getUsername() + " already has " + 
