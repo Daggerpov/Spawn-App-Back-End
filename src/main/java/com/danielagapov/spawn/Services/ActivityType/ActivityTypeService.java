@@ -13,7 +13,9 @@ import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -71,27 +73,41 @@ public class ActivityTypeService implements IActivityTypeService {
     }
 
     @Override
+    @Transactional
     public void initializeDefaultActivityTypesForUser(User user) {
-        // Get the current max order number for this user
-        Integer maxOrder = repository.findMaxOrderNumberByCreatorId(user.getId());
-        int startingOrder = maxOrder != null ? maxOrder + 1 : 0;
-        
-        // Create default activity types with sequential order numbers
-        ActivityType chillType = new ActivityType(user, "Chill","🛋️");
-        chillType.setOrderNum(startingOrder);
-        repository.save(chillType);
-        
-        ActivityType foodType = new ActivityType(user, "Food", "🍽️");
-        foodType.setOrderNum(startingOrder + 1);
-        repository.save(foodType);
-        
-        ActivityType activeType = new ActivityType(user, "Active", "🏃");
-        activeType.setOrderNum(startingOrder + 2);
-        repository.save(activeType);
-        
-        ActivityType studyType = new ActivityType(user, "Study", "✏️");
-        studyType.setOrderNum(startingOrder + 3);
-        repository.save(studyType);
+        try {
+            // Get the current max order number for this user
+            Integer maxOrder = repository.findMaxOrderNumberByCreatorId(user.getId());
+            int startingOrder = maxOrder != null ? maxOrder + 1 : 0;
+            
+            // Create default activity types with sequential order numbers
+            List<ActivityType> defaultActivityTypes = new ArrayList<>();
+            
+            ActivityType chillType = new ActivityType(user, "Chill","🛋️");
+            chillType.setOrderNum(startingOrder);
+            defaultActivityTypes.add(chillType);
+            
+            ActivityType foodType = new ActivityType(user, "Food", "🍽️");
+            foodType.setOrderNum(startingOrder + 1);
+            defaultActivityTypes.add(foodType);
+            
+            ActivityType activeType = new ActivityType(user, "Active", "🏃");
+            activeType.setOrderNum(startingOrder + 2);
+            defaultActivityTypes.add(activeType);
+            
+            ActivityType studyType = new ActivityType(user, "Study", "✏️");
+            studyType.setOrderNum(startingOrder + 3);
+            defaultActivityTypes.add(studyType);
+            
+            // Save all activity types in a single transaction
+            repository.saveAll(defaultActivityTypes);
+            
+            logger.info("Successfully initialized " + defaultActivityTypes.size() + " default activity types for user: " + user.getUsername());
+            
+        } catch (Exception e) {
+            logger.error("Failed to initialize default activity types for user " + user.getUsername() + ": " + e.getMessage());
+            throw e;
+        }
     }
 
     @Override

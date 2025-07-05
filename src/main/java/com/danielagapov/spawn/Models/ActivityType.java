@@ -14,6 +14,9 @@ import java.util.UUID;
 
 @NoArgsConstructor
 @Entity
+@Table(uniqueConstraints = {
+    @UniqueConstraint(name = "UK_activity_type_creator_order", columnNames = {"creator_id", "order_num"})
+})
 @Getter
 @Setter
 public class ActivityType {
