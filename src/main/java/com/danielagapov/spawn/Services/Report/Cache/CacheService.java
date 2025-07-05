@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Services.Report.Cache;
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
@@ -12,6 +13,7 @@ import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.Activity.IActivityService;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
@@ -46,6 +48,7 @@ public class CacheService implements ICacheService {
     // Define cache categories
     private static final String FRIENDS_CACHE = "friends";
     private static final String EVENTS_CACHE = "events";
+    private static final String ACTIVITY_TYPES_CACHE = "activityTypes";
     private static final String PROFILE_PICTURE_CACHE = "profilePicture";
     private static final String OTHER_PROFILES_CACHE = "otherProfiles";
     private static final String RECOMMENDED_FRIENDS_CACHE = "recommendedFriends";
@@ -58,6 +61,7 @@ public class CacheService implements ICacheService {
     private final IUserRepository userRepository;
     private final IUserService userService;
     private final IActivityService ActivityService;
+    private final IActivityTypeService activityTypeService;
     private final IFriendRequestService friendRequestService;
     private final ObjectMapper objectMapper;
     private final IUserStatsService userStatsService;
@@ -69,6 +73,7 @@ public class CacheService implements ICacheService {
             IUserRepository userRepository,
             IUserService userService,
             IActivityService ActivityService,
+            IActivityTypeService activityTypeService,
             IFriendRequestService friendRequestService,
             ObjectMapper objectMapper,
             IUserStatsService userStatsService,
@@ -77,6 +82,7 @@ public class CacheService implements ICacheService {
         this.userRepository = userRepository;
         this.userService = userService;
         this.ActivityService = ActivityService;
+        this.activityTypeService = activityTypeService;
         this.friendRequestService = friendRequestService;
         this.objectMapper = objectMapper;
         this.userStatsService = userStatsService;
@@ -116,6 +122,7 @@ public class CacheService implements ICacheService {
             // Return response with all caches marked as needing refresh
             response.put(FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(EVENTS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(ACTIVITY_TYPES_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(PROFILE_PICTURE_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(OTHER_PROFILES_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(RECOMMENDED_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
@@ -136,6 +143,11 @@ public class CacheService implements ICacheService {
         // Validate events cache
         if (clientCacheTimestamps.containsKey(EVENTS_CACHE)) {
             response.put(EVENTS_CACHE, validateEventsCache(user, clientCacheTimestamps.get(EVENTS_CACHE)));
+        }
+
+        // Validate activity types cache
+        if (clientCacheTimestamps.containsKey(ACTIVITY_TYPES_CACHE)) {
+            response.put(ACTIVITY_TYPES_CACHE, validateActivityTypesCache(user, clientCacheTimestamps.get(ACTIVITY_TYPES_CACHE)));
         }
 
         // Validate profile picture cache
@@ -270,6 +282,49 @@ public class CacheService implements ICacheService {
 
         } catch (Exception e) {
             logger.error("Error validating activities cache for user {}: {}", user.getId(), e.getMessage());
+            // On error, tell client to refresh to be safe
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+
+    /**
+     * Validates the user's activity types cache by checking if any activity types have been
+     * created, updated, or deleted since the client's last cache timestamp.
+     */
+    private CacheValidationResponseDTO validateActivityTypesCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+
+            // Get the latest activity type update timestamp for this user
+            Instant latestActivityTypeUpdate = getLatestActivityTypeUpdate(user.getId());
+
+            // If client cache is older than the latest activity type update, invalidate
+            boolean needsUpdate = latestActivityTypeUpdate.isAfter(clientTime.toInstant());
+
+            if (needsUpdate) {
+                try {
+                    // Get current activity types for the user
+                    List<ActivityTypeDTO> activityTypes = activityTypeService.getActivityTypesByUserId(user.getId());
+                    byte[] activityTypesData = objectMapper.writeValueAsBytes(activityTypes);
+
+                    // Only include the data if it's not too large (limit to ~100KB)
+                    if (activityTypesData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, activityTypesData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize activity types data", e);
+                }
+
+                // If we couldn't include the data, just tell the client to refresh
+                return new CacheValidationResponseDTO(true, null);
+            }
+
+            // Client cache is still valid
+            return new CacheValidationResponseDTO(false, null);
+
+        } catch (Exception e) {
+            logger.error("Error validating activity types cache for user {}: {}", user.getId(), e.getMessage());
             // On error, tell client to refresh to be safe
             return new CacheValidationResponseDTO(true, null);
         }
@@ -690,6 +745,35 @@ public class CacheService implements ICacheService {
             return userRepository.findLatestFriendProfileUpdate(userId);
         } catch (Exception e) {
             logger.error("Error fetching latest friend profile update for user {}: {}", userId, e.getMessage(), e);
+            return Instant.now();
+        }
+    }
+
+    /**
+     * Gets the latest activity type update timestamp for a user.
+     * This checks when any activity type was last created, updated, or deleted.
+     */
+    private Instant getLatestActivityTypeUpdate(UUID userId) {
+        try {
+            // Get all activity types for the user
+            List<ActivityTypeDTO> activityTypes = activityTypeService.getActivityTypesByUserId(userId);
+            
+            if (activityTypes == null || activityTypes.isEmpty()) {
+                // If no activity types, return epoch so cache is always valid
+                return Instant.EPOCH;
+            }
+
+            // For now, we'll assume any activity type operation requires a refresh
+            // In a more sophisticated implementation, you might track lastModified timestamps
+            // on ActivityType entities and check those here
+            
+            // As a simple implementation, we'll return the current time minus 1 hour
+            // This means activity types cache will be refreshed at most once per hour
+            return Instant.now().minusSeconds(3600);
+            
+        } catch (Exception e) {
+            logger.error("Error getting latest activity type update for user {}: {}", userId, e.getMessage());
+            // On error, return current time to force refresh
             return Instant.now();
         }
     }
