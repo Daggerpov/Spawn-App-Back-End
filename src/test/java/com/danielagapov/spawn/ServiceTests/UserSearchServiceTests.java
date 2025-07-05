@@ -160,7 +160,8 @@ class UserSearchServiceTests {
 
         // Use spy to isolate the test from internal implementations
         UserSearchService spyUserSearchService = spy(userSearchService);
-        doReturn(List.of(friend1, friend2)).when(spyUserSearchService).getLimitedRecommendedFriendsForUserId(userId);
+        // Mock the UserService method instead of the local method
+        when(userService.getLimitedRecommendedFriendsForUserId(userId)).thenReturn(List.of(friend1, friend2));
         doReturn(List.of()).when(userService).getFullFriendUsersByUserId(userId);
 
         // Act
@@ -309,7 +310,8 @@ class UserSearchServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
 
         UserSearchService spyUserSearchService = spy(userSearchService);
-        doReturn(List.of(friend)).when(spyUserSearchService).getLimitedRecommendedFriendsForUserId(userId);
+        // Mock the UserService method instead of the local method
+        when(userService.getLimitedRecommendedFriendsForUserId(userId)).thenReturn(List.of(friend));
         doReturn(List.of()).when(userService).getFullFriendUsersByUserId(userId);
 
         // Act

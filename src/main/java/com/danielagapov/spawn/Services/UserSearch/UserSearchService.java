@@ -7,10 +7,13 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
+import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
@@ -27,11 +30,25 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Service
 public class UserSearchService implements IUserSearchService {
-    private static final long recommendedFriendLimit = 3L;
+    /*
+     * RECOMMENDED FRIENDS ALGORITHM CONFIGURATION
+     * 
+     * This limit controls how many recommended friends we return in total.
+     * The algorithm ensures that the top 3 are always the most recommended 
+     * (based on composite scoring) so that the FriendsTabView can show the 
+     * most relevant suggestions before the user clicks "show all".
+     * 
+     * Value breakdown:
+     * - 15 total recommendations provides a good balance between variety and performance
+     * - Top 3 are guaranteed to be the highest scored for immediate display
+     * - Remaining 12 provide additional options when user requests to see all
+     */
+    private static final long recommendedFriendLimit = 15L;
     private final IFriendRequestService friendRequestService;
     private final IUserService userService;
     private final IUserRepository userRepository;
     private final IBlockedUserService blockedUserService;
+    private final IActivityUserRepository activityUserRepository;
     private final ILogger logger;
 
 
@@ -48,7 +65,7 @@ public class UserSearchService implements IUserSearchService {
 
             // If searchQuery is empty, return all recommended friends
             if (searchQuery.isEmpty()) {
-                recommendedFriends = getLimitedRecommendedFriendsForUserId(requestingUserId);
+                recommendedFriends = userService.getLimitedRecommendedFriendsForUserId(requestingUserId);
                 friends = userService.getFullFriendUsersByUserId(requestingUserId);
             } else {
                 // First search with query
@@ -94,6 +111,8 @@ public class UserSearchService implements IUserSearchService {
     @Override
     public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
         try {
+            // This method is cached at the UserService level via @Cacheable("recommendedFriends")
+            // Cache is automatically invalidated when friend relationships change
             // First get mutuals-based recommendations
             List<RecommendedFriendUserDTO> recommendedFriends = getRecommendedMutuals(userId);
 
@@ -132,6 +151,43 @@ public class UserSearchService implements IUserSearchService {
         }
     }
 
+    /*
+     * ENHANCED RECOMMENDATION ALGORITHM
+     * 
+     * This method implements a sophisticated friend recommendation system that considers 
+     * multiple factors to provide the most relevant suggestions. The algorithm combines
+     * mutual friends analysis with shared activity participation to create a comprehensive
+     * recommendation score.
+     * 
+     * SCORING METHODOLOGY:
+     * 
+     * 1. MUTUAL FRIENDS FACTOR (Weight: 3x)
+     *    - Calculates how many friends the requesting user shares with potential recommendations
+     *    - Higher mutual friend count indicates existing social connections
+     *    - Weighted more heavily as it's a strong indicator of social compatibility
+     * 
+     * 2. SHARED ACTIVITIES FACTOR (Weight: 2x)
+     *    - Calculates how many activities the requesting user has participated in with potential friends
+     *    - Users who have "spawned" together in activities likely share interests and compatibility
+     *    - Weighted significantly as it represents actual interaction history
+     * 
+     * 3. COMPOSITE SCORE FORMULA:
+     *    Final Score = (mutualFriends * 3) + (sharedActivities * 2)
+     * 
+     * RATIONALE FOR WEIGHTS:
+     * - Mutual friends (3x): Strong social proof, indicates existing network connections
+     * - Shared activities (2x): Demonstrates actual interaction and shared interests
+     * - This weighting ensures that social connections are prioritized while still valuing
+     *   direct interaction history
+     * 
+     * SORTING BEHAVIOR:
+     * - Results are sorted by composite score in descending order
+     * - This ensures the first 3 results are always the most recommended
+     * - Supports the FriendsTabView requirement to show top recommendations before "show all"
+     * 
+     * @param userId The ID of the user requesting friend recommendations
+     * @return List of recommended friends sorted by composite score (highest first)
+     */
     public List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId) {
         // Fetch the requesting user's friends
         List<UUID> requestingUserFriendIds = userService.getFriendUserIdsByUserId(userId);
@@ -141,15 +197,27 @@ public class UserSearchService implements IUserSearchService {
         // Collect friends of friends (excluding already existing friends, sent/received requests, and self)
         Map<UUID, Integer> mutualFriendCounts = getMutualFriendCounts(requestingUserFriendIds, excludedUserIds);
 
-        // Map mutual friends to RecommendedFriendUserDTO
+        // Map mutual friends to RecommendedFriendUserDTO with enhanced scoring
         return mutualFriendCounts.entrySet().stream()
                 .map(entry -> {
-                    UUID mutualFriendId = entry.getKey();
+                    UUID potentialFriendId = entry.getKey();
                     int mutualFriendCount = entry.getValue();
-                    User user = userService.getUserEntityById(mutualFriendId);
-                    return FriendUserMapper.toDTO(user, mutualFriendCount);
+                    
+                    // Calculate shared activities count for this potential friend
+                    int sharedActivitiesCount = getSharedActivitiesCount(userId, potentialFriendId);
+                    
+                    User user = userService.getUserEntityById(potentialFriendId);
+                    return FriendUserMapper.toDTO(user, mutualFriendCount, sharedActivitiesCount);
                 })
-                .sorted(Comparator.comparingInt(RecommendedFriendUserDTO::getMutualFriendCount).reversed())
+                .sorted((friend1, friend2) -> {
+                    // Calculate composite scores for sorting
+                    // Formula: (mutualFriends * 3) + (sharedActivities * 2)
+                    int score1 = (friend1.getMutualFriendCount() * 3) + (friend1.getSharedActivitiesCount() * 2);
+                    int score2 = (friend2.getMutualFriendCount() * 3) + (friend2.getSharedActivitiesCount() * 2);
+                    
+                    // Sort in descending order (highest scores first)
+                    return Integer.compare(score2, score1);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -184,6 +252,60 @@ public class UserSearchService implements IUserSearchService {
             }
         }
         return mutualFriendCounts;
+    }
+
+    /*
+     * SHARED ACTIVITIES CALCULATION METHOD
+     * 
+     * This method calculates how many activities two users have participated in together.
+     * It's used as a key metric in the recommendation algorithm because users who have
+     * "spawned" (participated in activities) together are likely to be good friend recommendations.
+     * 
+     * Algorithm:
+     * 1. Get all activities where the requesting user has participated (status = PARTICIPATING)
+     * 2. For each activity, check if the potential friend also participated
+     * 3. Count the number of shared activities
+     * 
+     * Why this matters:
+     * - Users who frequently attend activities together likely have shared interests
+     * - Past participation indicates compatibility and mutual enjoyment
+     * - This metric complements mutual friends to provide more accurate recommendations
+     * 
+     * @param requestingUserId The ID of the user requesting recommendations
+     * @param potentialFriendId The ID of the potential friend to check shared activities with
+     * @return The number of activities both users have participated in together
+     */
+    private int getSharedActivitiesCount(UUID requestingUserId, UUID potentialFriendId) {
+        try {
+            // Get all activities where the requesting user has participated
+            List<ActivityUser> requestingUserActivities = activityUserRepository
+                    .findByUser_IdAndStatus(requestingUserId, ParticipationStatus.participating);
+            
+            // If the requesting user hasn't participated in any activities, return 0
+            if (requestingUserActivities.isEmpty()) {
+                return 0;
+            }
+            
+            // Extract activity IDs from the requesting user's participated activities
+            Set<UUID> requestingUserActivityIds = requestingUserActivities.stream()
+                    .map(au -> au.getActivity().getId())
+                    .collect(Collectors.toSet());
+            
+            // Get all activities where the potential friend has participated
+            List<ActivityUser> potentialFriendActivities = activityUserRepository
+                    .findByUser_IdAndStatus(potentialFriendId, ParticipationStatus.participating);
+            
+            // Count how many activities overlap between the two users
+            long sharedActivitiesCount = potentialFriendActivities.stream()
+                    .map(au -> au.getActivity().getId())
+                    .filter(requestingUserActivityIds::contains)
+                    .count();
+            
+            return (int) sharedActivitiesCount;
+        } catch (Exception e) {
+            logger.error("Error calculating shared activities between users " + requestingUserId + " and " + potentialFriendId + ": " + e.getMessage());
+            return 0;
+        }
     }
 
     private boolean isQueryMatch(AbstractUserDTO recommendedFriend, String searchQuery) {
