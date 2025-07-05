@@ -98,26 +98,15 @@ public class ActivityTypeService implements IActivityTypeService {
             
             // Create each activity type with unique order numbers
             for (int i = 0; i < defaultTypes.length; i++) {
-                try {
-                    ActivityType activityType = new ActivityType(user, defaultTypes[i][0], defaultTypes[i][1]);
-                    activityType.setOrderNum(startingOrder + i);
-                    
-                    // Save individually to handle potential constraint violations
-                    ActivityType savedType = repository.save(activityType);
-                    defaultActivityTypes.add(savedType);
-                    
-                } catch (Exception e) {
-                    logger.warn("Failed to create activity type '" + defaultTypes[i][0] + "' for user " + user.getUsername() + 
-                        ": " + e.getMessage() + ". Continuing with next type.");
-                }
+                ActivityType activityType = new ActivityType(user, defaultTypes[i][0], defaultTypes[i][1]);
+                activityType.setOrderNum(startingOrder + i);
+                defaultActivityTypes.add(activityType);
             }
             
-            if (defaultActivityTypes.isEmpty()) {
-                logger.error("Failed to initialize any default activity types for user: " + user.getUsername());
-                throw new RuntimeException("No activity types were successfully created");
-            }
+            // Save all activity types at once for better performance
+            List<ActivityType> savedTypes = repository.saveAll(defaultActivityTypes);
             
-            logger.info("Successfully initialized " + defaultActivityTypes.size() + " default activity types for user: " + user.getUsername());
+            logger.info("Successfully initialized " + savedTypes.size() + " default activity types for user: " + user.getUsername());
             
         } catch (Exception e) {
             logger.error("Failed to initialize default activity types for user " + user.getUsername() + ": " + e.getMessage());
