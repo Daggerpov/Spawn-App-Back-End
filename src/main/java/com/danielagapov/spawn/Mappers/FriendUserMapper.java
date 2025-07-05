@@ -16,4 +16,17 @@ public class FriendUserMapper {
                 mutualCount
         );
     }
+
+    public static RecommendedFriendUserDTO toDTO(User user, int mutualCount, int sharedActivitiesCount) {
+        return new RecommendedFriendUserDTO(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getBio(),
+                user.getProfilePictureUrlString(),
+                mutualCount,
+                sharedActivitiesCount
+        );
+    }
 }
