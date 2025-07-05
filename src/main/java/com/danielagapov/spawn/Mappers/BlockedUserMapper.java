@@ -22,6 +22,8 @@ public class BlockedUserMapper {
                 entity.getBlocked().getId(),
                 entity.getBlocker().getUsername(),
                 entity.getBlocked().getUsername(),
+                entity.getBlocked().getName(),
+                entity.getBlocked().getProfilePictureUrlString(),
                 entity.getReason()
         );
     }

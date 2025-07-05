@@ -1,5 +1,7 @@
 package com.danielagapov.spawn.Services.Report;
 
+import com.danielagapov.spawn.DTOs.CreateReportedContentDTO;
+import com.danielagapov.spawn.DTOs.FetchReportedContentDTO;
 import com.danielagapov.spawn.DTOs.ReportedContentDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ReportType;
@@ -60,17 +62,46 @@ public class ReportContentService implements IReportContentService {
     }
 
     @Override
+    public ReportedContentDTO fileReport(CreateReportedContentDTO createReportDTO) {
+        ReportedContent report = new ReportedContent();
+        
+        report.setContentId(createReportDTO.getContentId());
+        report.setContentType(createReportDTO.getContentType());
+        report.setReportType(createReportDTO.getReportType());
+        report.setDescription(createReportDTO.getDescription());
+        report.setTimeReported(OffsetDateTime.now());
+        report.setResolution(PENDING);
+
+        // Set the reporter User entity
+        User reporter = userService.getUserEntityById(createReportDTO.getReporterUserId());
+        report.setReporter(reporter);
+
+        // Set the content owner
+        User contentOwner = findContentOwnerByContentId(createReportDTO.getContentId(), createReportDTO.getContentType());
+        report.setContentOwner(contentOwner);
+
+        ReportedContent savedReport = repository.save(report);
+        return ReportedContentDTO.fromEntity(savedReport);
+    }
+
+    @Override
     public ReportedContentDTO fileReport(ReportedContentDTO reportDTO) {
         ReportedContent report = reportDTO.toEntity();
 
         report.setTimeReported(OffsetDateTime.now());
         report.setResolution(PENDING);
 
+        // Set the reporter User entity if not already set but we have a reporter
+        if (report.getReporter() == null && reportDTO.getReporter() != null && reportDTO.getReporter().getId() != null) {
+            User reporter = userService.getUserEntityById(reportDTO.getReporter().getId());
+            report.setReporter(reporter);
+        }
+
         User contentOwner = findContentOwnerByContentId(reportDTO.getContentId(), reportDTO.getContentType());
         report.setContentOwner(contentOwner);
 
-        report = repository.save(report);
-        return ReportedContentDTO.fromEntity(report);
+        ReportedContent savedReport = repository.save(report);
+        return ReportedContentDTO.fromEntity(savedReport);
     }
 
     @Override
@@ -117,6 +148,65 @@ public class ReportContentService implements IReportContentService {
             throw new BasesNotFoundException(EntityType.ReportedContent);
         } catch (Exception e) {
             logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<FetchReportedContentDTO> getFetchReportsByReporterId(UUID reporterId) {
+        try {
+            return repository.getAllByReporterId(reporterId)
+                    .stream()
+                    .map(FetchReportedContentDTO::fromEntity)
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ReportedContent);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<FetchReportedContentDTO> getFetchReportsByContentOwnerId(UUID contentOwnerId) {
+        try {
+            return repository.getAllByContentOwnerId(contentOwnerId)
+                    .stream()
+                    .map(FetchReportedContentDTO::fromEntity)
+                    .toList();
+        } catch (DataAccessException e) {
+            logger.error(e.getMessage());
+            throw new BasesNotFoundException(EntityType.ReportedContent);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<FetchReportedContentDTO> getFetchReportsByFilters(ReportType reportType, EntityType contentType) {
+        List<ReportedContent> reports;
+        try {
+            if (reportType != null && contentType != null) {
+                // both filters
+                logger.info("Getting reports by report type and content type");
+                reports = repository.getAllByContentTypeAndReportType(contentType, reportType);
+            } else if (reportType != null) {
+                // only report type filter
+                logger.info("Getting reports by report type");
+                reports = repository.getAllByReportType(reportType);
+            } else if (contentType != null) {
+                // only content type filter
+                logger.info("Getting reports by content type");
+                reports = repository.getAllByContentType(contentType);
+            } else {
+                // no filter
+                reports = repository.findAll();
+            }
+            return FetchReportedContentDTO.fromEntityList(reports);
+        } catch (Exception e) {
+            logger.error("Unexpected error while getting reports: " + e.getMessage());
             throw e;
         }
     }
