@@ -63,6 +63,29 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Creating friend request from sender: " + LoggingUtils.formatUserInfo(sender) +
                     " to receiver: " + LoggingUtils.formatUserInfo(receiver));
 
+            // Check if a friend request already exists between these users
+            List<FriendRequest> existingRequests = repository.findBySenderIdAndReceiverId(senderId, receiverId);
+            if (!existingRequests.isEmpty()) {
+                FriendRequest existingRequest = existingRequests.get(0);
+                logger.info("Friend request already exists between sender: " + LoggingUtils.formatUserInfo(sender) +
+                        " and receiver: " + LoggingUtils.formatUserInfo(receiver) + ". Returning existing request.");
+                return FriendRequestMapper.toDTO(existingRequest);
+            }
+
+            // Check if a friend request already exists in the reverse direction (receiver -> sender)
+            List<FriendRequest> reverseRequests = repository.findBySenderIdAndReceiverId(receiverId, senderId);
+            if (!reverseRequests.isEmpty()) {
+                FriendRequest reverseRequest = reverseRequests.get(0);
+                logger.info("Friend request already exists in reverse direction from receiver: " + LoggingUtils.formatUserInfo(receiver) +
+                        " to sender: " + LoggingUtils.formatUserInfo(sender) + ". Auto-accepting the existing request.");
+                
+                // Auto-accept the existing friend request
+                acceptFriendRequest(reverseRequest.getId());
+                
+                // Return the DTO for the reverse request that was accepted
+                return FriendRequestMapper.toDTO(reverseRequest);
+            }
+
             // Map the DTO to entity
             FriendRequest friendRequest = FriendRequestMapper.toEntity(friendRequestDTO, sender, receiver);
 
