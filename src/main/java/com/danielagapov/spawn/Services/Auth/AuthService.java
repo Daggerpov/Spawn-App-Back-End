@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.Auth;
 
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Exceptions.EmailAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -23,7 +22,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -37,11 +35,11 @@ public class AuthService implements IAuthService {
     private final ILogger logger;
 
     @Override
-    public UserDTO registerUser(AuthUserDTO authUserDTO) throws FieldAlreadyExistsException {
+    public BaseUserDTO registerUser(AuthUserDTO authUserDTO) throws FieldAlreadyExistsException {
         logger.info("Attempting to register new user with username: " + authUserDTO.getUsername());
         checkIfUniqueCredentials(authUserDTO);
         try {
-            UserDTO userDTO = createAndSaveUser(authUserDTO);
+            BaseUserDTO userDTO = createAndSaveUser(authUserDTO);
             User user = UserMapper.toEntity(userDTO);
             logger.info("User registered successfully: " + LoggingUtils.formatUserInfo(user));
             createEmailTokenAndSendEmail(authUserDTO);
@@ -141,7 +139,7 @@ public class AuthService implements IAuthService {
         }
     }
 
-    private UserDTO createAndSaveUser(AuthUserDTO authUserDTO) {
+    private BaseUserDTO createAndSaveUser(AuthUserDTO authUserDTO) {
         User user = new User();
 
         user.setId(UUID.randomUUID()); // can't be null
@@ -152,7 +150,7 @@ public class AuthService implements IAuthService {
         user.setDateCreated(new Date());
 
         user = userService.createAndSaveUser(user);
-        return UserMapper.toDTO(user, List.of(), List.of());
+        return UserMapper.toDTO(user);
     }
 
     private void createEmailTokenAndSendEmail(AuthUserDTO authUserDTO) {
