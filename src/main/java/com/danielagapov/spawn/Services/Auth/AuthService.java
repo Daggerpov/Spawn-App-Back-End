@@ -3,16 +3,16 @@ package com.danielagapov.spawn.Services.Auth;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.Exceptions.EmailAlreadyExistsException;
-import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
+import com.danielagapov.spawn.Exceptions.*;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Exceptions.UsernameAlreadyExistsException;
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
+import com.danielagapov.spawn.Services.SMS.ISMSVerificationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
+import com.danielagapov.spawn.Util.PhoneNumberValidator;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -35,6 +35,8 @@ public class AuthService implements IAuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final ILogger logger;
+    private final ISMSVerificationService verificationService;
+
 
     @Override
     public UserDTO registerUser(AuthUserDTO authUserDTO) throws FieldAlreadyExistsException {
@@ -126,6 +128,34 @@ public class AuthService implements IAuthService {
     public BaseUserDTO getUserByToken(String token) {
         final String username = jwtService.extractUsername(token);
         return userService.getBaseUserByUsername(username);
+    }
+
+    @Override
+    public void sendVerificationCode(String phoneNumber) {
+        phoneNumber = PhoneNumberValidator.cleanPhoneNumber(phoneNumber);
+        if (!PhoneNumberValidator.isValidPhoneNumber(phoneNumber)) {
+            throw new IllegalArgumentException("Bad phone number");
+        }
+        if (userService.existsByPhoneNumber(phoneNumber)) {
+            throw new PhoneNumberAlreadyExistsException("Phone number already exists");
+        }
+        verificationService.sendSMSVerification(phoneNumber);
+    }
+
+    @Override
+    public BaseUserDTO checkVerificationCode(String phoneNumber, String code) {
+        logger.info("Checking verification code for phone number");
+        if (verificationService.checkSMSVerification(phoneNumber, code)) {
+
+            User user = new User();
+            user.setUsername(phoneNumber); // Temporary unique username until we later get the user's username
+            user.setPhoneNumber(phoneNumber);
+            user.setVerified(true);
+            user.setDateCreated(new Date());
+            return UserMapper.toDTO(userService.saveEntity(user));
+        } else {
+            throw new SMSVerificationException("Incorrect verification code");
+        }
     }
 
     /* ------------------------------ HELPERS ------------------------------ */

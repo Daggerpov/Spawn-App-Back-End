@@ -93,6 +93,8 @@ public interface IUserService {
 
     boolean existsByUsername(String username);
 
+    boolean existsByPhoneNumber(String phoneNumber);
+
     void verifyUserByUsername(String username);
 
     int getMutualFriendCount(UUID receiverId, UUID id);

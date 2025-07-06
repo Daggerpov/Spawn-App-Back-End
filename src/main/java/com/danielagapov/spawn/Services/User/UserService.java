@@ -428,6 +428,11 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public boolean existsByPhoneNumber(String phoneNumber) {
+        return repository.existsByPhoneNumber(phoneNumber);
+    }
+
+    @Override
     public void verifyUserByUsername(String username) {
         try {
             logger.info("Marking user as verified " + username);

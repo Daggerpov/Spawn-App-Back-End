@@ -32,6 +32,8 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByPhoneNumber(String phoneNumber);
+
     // Delete
 
     /**

@@ -37,6 +37,9 @@ public class User implements Serializable {
     private String username;
     private String profilePictureUrlString;
 
+    @Column(unique = true, nullable = false)
+    private String phoneNumber;
+
     @Column(nullable = false)
     private String name;
     private String bio;
@@ -57,6 +60,9 @@ public class User implements Serializable {
     public void prePersist() {
         if (this.lastUpdated == null) {
             this.lastUpdated = Instant.now();
+        }
+        if (this.dateCreated == null) {
+            this.dateCreated = new Date();
         }
     }
 

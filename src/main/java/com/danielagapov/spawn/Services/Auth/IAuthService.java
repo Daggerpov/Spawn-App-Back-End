@@ -24,4 +24,8 @@ public interface IAuthService {
     boolean changePassword(String username, String currentPassword, String newPassword);
 
     BaseUserDTO getUserByToken(String token);
+
+    void sendVerificationCode(String phoneNumber);
+
+    BaseUserDTO checkVerificationCode(String phoneNumber, String code);
 }

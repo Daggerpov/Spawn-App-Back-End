@@ -1,11 +1,15 @@
 package com.danielagapov.spawn.Controllers.User;
 
+import com.danielagapov.spawn.DTOs.CheckVerificationRequestDTO;
+import com.danielagapov.spawn.DTOs.SendVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.PhoneNumberAlreadyExistsException;
+import com.danielagapov.spawn.Exceptions.SMSVerificationException;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
@@ -190,6 +194,35 @@ public class AuthController {
             modelAndView.addObject("status", "error");
             modelAndView.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             return modelAndView;
+        }
+    }
+
+    @PostMapping("verification")
+    public ResponseEntity<?> sendVerificationCode(@RequestBody SendVerificationRequestDTO sendVerificationRequest) {
+        try {
+            authService.sendVerificationCode(sendVerificationRequest.getPhoneNumber());
+            return ResponseEntity.ok().build();
+        } catch (PhoneNumberAlreadyExistsException e) {
+            logger.warn("Phone number already exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
+        }
+        catch (Exception e) {
+            logger.error("Error sending verification code: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to send verification code"));
+        }
+    }
+
+    @PostMapping("verification-check")
+    public ResponseEntity<?> checkVerificationCode(@RequestBody CheckVerificationRequestDTO checkVerificationRequest) {
+        try {
+            BaseUserDTO user = authService.checkVerificationCode(checkVerificationRequest.getPhoneNumber(), checkVerificationRequest.getVerificationCode());
+            return ResponseEntity.ok().body(user);
+        } catch (SMSVerificationException e) {
+            logger.warn("Bad SMS verification code: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error sending verification code: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to send verification code"));
         }
     }
 
