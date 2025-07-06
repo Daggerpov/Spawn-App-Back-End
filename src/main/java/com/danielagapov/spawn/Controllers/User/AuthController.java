@@ -1,6 +1,9 @@
 package com.danielagapov.spawn.Controllers.User;
 
-import com.danielagapov.spawn.DTOs.User.*;
+import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.PasswordChangeDTO;
+import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
@@ -132,9 +135,9 @@ public class AuthController {
 
     // full path: /api/v1/auth/register
     @PostMapping("register")
-    public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
+    public ResponseEntity<BaseUserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
         try {
-            UserDTO newUserDTO = authService.registerUser(authUserDTO);
+            BaseUserDTO newUserDTO = authService.registerUser(authUserDTO);
             HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
