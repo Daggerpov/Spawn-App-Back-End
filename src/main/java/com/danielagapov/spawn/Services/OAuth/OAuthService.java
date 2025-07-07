@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -155,6 +156,78 @@ public class OAuthService implements IOAuthService {
             throw e;
         } catch (Exception e) {
             logger.error("Unexpected error during OAuth user creation: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Verifies the OAuth registration details provided by checking the ID token
+     * and determining if the user already exists in the system or is eligible for registration.
+     *
+     * @param email the email address provided by the user attempting to register
+     * @param idToken the ID token obtained through the OAuth provider for authentication
+     * @param provider the OAuthProvider used for the authentication (e.g., GOOGLE, FACEBOOK)
+     * @return externalUserId if the user can be registered
+     * @throws AccountAlreadyExistsException if the external user ID already exists in the system
+     * @throws IncorrectProviderException if the email is already associated with a different provider
+     * @throws IllegalArgumentException if required authentication parameters are missing
+     * @throws SecurityException if there is a security-related issue during OAuth verification
+     */
+    @Override
+    public String checkOAuthRegistration(String email, String idToken, OAuthProvider provider) {
+        try {
+            // Get the appropriate OAuth strategy
+            OAuthStrategy oauthStrategy = oauthProviders.get(provider);
+            if (idToken != null) {
+                // Verify the token and extract the user ID
+                String externalUserId = oauthStrategy.verifyIdToken(idToken);
+                logger.info("Successfully verified " + provider + " ID token and extracted user ID: " + externalUserId);
+
+                // Check if this external user already exists
+                boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
+
+                // Check if a user exists with this email
+                boolean existsByEmail = userService.existsByEmail(email);
+
+                // Case 1: There's already a mapping for this externalId
+                if (existsByExternalId) {
+                    logger.info("Existing user detected in makeUser, mapping already exists");
+                    throw new AccountAlreadyExistsException("External ID already exists");
+                }
+
+                // Case 2: There's already a Spawn user with this email address, but no mapping with this external id
+                // In this case, the user signed in with a different provider initially, so we should not allow creation
+                // with this provider
+                if (existsByEmail) {
+                    logger.info("Existing user detected in makeUser, email already exists");
+                    throw new IncorrectProviderException("Email already exists for a " + provider + " account. Please login through " + provider + " instead");
+                }
+
+                // Case 3: This is a new user, neither the externalId nor the email exists in our database
+                return externalUserId;
+
+            } else {
+                logger.error("Missing required authentication parameters");
+                throw new IllegalArgumentException("Either a valid ID token or external user ID with provider must be provided");
+            }
+        } catch (SecurityException e) {
+            logger.error("Security error during OAuth authentication: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error during OAuth user creation: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public void createAndSaveMapping(User user, String externalUserId, OAuthProvider provider) {
+        try {
+            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
+            logger.info(String.format("Saving mapping: {mapping: %s}", mapping));
+            externalIdMapRepository.save(mapping);
+            logger.info("Mapping saved");
+        } catch (Exception e) {
+            logger.error(e.getMessage());
             throw e;
         }
     }

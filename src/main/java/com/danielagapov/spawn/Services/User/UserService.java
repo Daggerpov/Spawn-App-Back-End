@@ -27,7 +27,6 @@ import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
@@ -71,7 +70,7 @@ public class UserService implements IUserService {
                        IS3Service s3Service, ILogger logger,
                        IUserSearchService userSearchService,
                        CacheManager cacheManager,
-                       IFriendRequestService friendRequestService, IActivityTypeService activityTypeService) {
+                       IActivityTypeService activityTypeService) {
         this.repository = repository;
         this.activityUserRepository = activityUserRepository;
         this.uftRepository = uftRepository;
@@ -430,6 +429,11 @@ public class UserService implements IUserService {
     @Override
     public boolean existsByPhoneNumber(String phoneNumber) {
         return repository.existsByPhoneNumber(phoneNumber);
+    }
+
+    @Override
+    public boolean existsByUserId(UUID userId) {
+        return repository.existsById(userId);
     }
 
     @Override

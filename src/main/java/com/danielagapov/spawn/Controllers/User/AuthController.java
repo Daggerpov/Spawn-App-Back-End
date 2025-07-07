@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Controllers.User;
 
 import com.danielagapov.spawn.DTOs.CheckVerificationRequestDTO;
+import com.danielagapov.spawn.DTOs.RegistrationDTO;
 import com.danielagapov.spawn.DTOs.SendVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
@@ -200,7 +201,7 @@ public class AuthController {
     @PostMapping("verification")
     public ResponseEntity<?> sendVerificationCode(@RequestBody SendVerificationRequestDTO sendVerificationRequest) {
         try {
-            authService.sendVerificationCode(sendVerificationRequest.getPhoneNumber());
+            authService.sendVerificationCode(sendVerificationRequest.getPhoneNumber(), sendVerificationRequest.getUserId());
             return ResponseEntity.ok().build();
         } catch (PhoneNumberAlreadyExistsException e) {
             logger.warn("Phone number already exists");
@@ -215,7 +216,7 @@ public class AuthController {
     @PostMapping("verification-check")
     public ResponseEntity<?> checkVerificationCode(@RequestBody CheckVerificationRequestDTO checkVerificationRequest) {
         try {
-            BaseUserDTO user = authService.checkVerificationCode(checkVerificationRequest.getPhoneNumber(), checkVerificationRequest.getVerificationCode());
+            BaseUserDTO user = authService.checkVerificationCode(checkVerificationRequest.getPhoneNumber(), checkVerificationRequest.getVerificationCode(), checkVerificationRequest.getUserId());
             return ResponseEntity.ok().body(user);
         } catch (SMSVerificationException e) {
             logger.warn("Bad SMS verification code: " + e.getMessage());
@@ -262,6 +263,18 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Error retrieving user: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Error while performing quick sign-in"));
+        }
+    }
+
+    // full path: /api/v1/auth/registration
+    @PostMapping("registration")
+    public ResponseEntity<?> createAccount(RegistrationDTO registration) {
+        try {
+            BaseUserDTO user = authService.registration(registration.getEmail(), registration.getExternalIdToken(), registration.getProvider());
+            return new ResponseEntity<>(user, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error creating account: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Error while creating account"));
         }
     }
 

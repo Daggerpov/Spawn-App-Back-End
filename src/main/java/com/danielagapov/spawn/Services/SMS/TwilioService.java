@@ -42,7 +42,7 @@ public class TwilioService implements ISMSVerificationService {
                 .setTo(phoneNumber)
                 .setCode(verificationCode)
                 .create();
-
+        // TODO: block users for too many attempts
         return verificationCheck.getStatus().equals("approved");
     }
 

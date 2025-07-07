@@ -95,6 +95,8 @@ public interface IUserService {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
+    boolean existsByUserId(UUID userId);
+
     void verifyUserByUsername(String username);
 
     int getMutualFriendCount(UUID receiverId, UUID id);
