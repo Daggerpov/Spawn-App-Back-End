@@ -46,8 +46,9 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             String activityFriendTagColorHexCodeForRequestingUser,
                             ParticipationStatus participationStatus, 
                             boolean isSelfOwned,
-                            Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, category, createdAt);
+                            Instant createdAt,
+                            Boolean isIndefinite) {
+        super(id, title, startTime, endTime, note, icon, category, createdAt, isIndefinite);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;

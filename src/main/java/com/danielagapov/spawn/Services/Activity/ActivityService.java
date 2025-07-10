@@ -82,7 +82,7 @@ public class ActivityService implements IActivityService {
         for (ActivityDTO e : getAllActivities()) {
             fullActivities.add(getFullActivityByActivity(e, null, new HashSet<>()));
         }
-        return fullActivities;
+        return removeExpiredActivities(fullActivities);
     }
 
     @Override
@@ -154,7 +154,8 @@ public class ActivityService implements IActivityService {
                 creatorName,
                 creatorUsername,
                 attendees,
-                totalAttendees
+                totalAttendees,
+                activity.getIsIndefinite()
         );
     }
 
@@ -217,6 +218,11 @@ public class ActivityService implements IActivityService {
                 throw new IllegalArgumentException("Unsupported Activity type");
             }
 
+            // Set isIndefinite based on whether endTime is null
+            if (ActivityEntity.getIsIndefinite() == null) {
+                ActivityEntity.setIsIndefinite(ActivityEntity.getEndTime() == null);
+            }
+
             // Save the Activity entity
             ActivityEntity = repository.save(ActivityEntity);
 
@@ -259,6 +265,11 @@ public class ActivityService implements IActivityService {
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, ActivityCreationDTO.getCreatorUserId()));
 
             Activity Activity = ActivityMapper.fromCreationDTO(ActivityCreationDTO, location, creator);
+            
+            // Set isIndefinite based on whether endTime is null
+            if (Activity.getIsIndefinite() == null) {
+                Activity.setIsIndefinite(Activity.getEndTime() == null);
+            }
 
             Activity = repository.save(Activity);
 
@@ -320,6 +331,7 @@ public class ActivityService implements IActivityService {
             Activity.setNote(newActivity.getNote());
             Activity.setEndTime(newActivity.getEndTime());
             Activity.setStartTime(newActivity.getStartTime());
+            Activity.setIsIndefinite(newActivity.getIsIndefinite());
 
             // Fetch the location entity by locationId from DTO
             Activity.setLocation(locationService.getLocationEntityById(newActivity.getLocationId()));
@@ -523,11 +535,12 @@ public class ActivityService implements IActivityService {
     @Cacheable(value = "fullActivitiesInvitedTo", key = "#id")
     public List<FullFeedActivityDTO> getFullActivitiesInvitedTo(UUID id) {
         List<ActivityUser> ActivityUsers = activityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
-        return convertActivitiesToFullFeedActivities(
+        List<FullFeedActivityDTO> fullActivities = convertActivitiesToFullFeedActivities(
                 getActivityDTOs(ActivityUsers.stream()
                         .map(ActivityUser::getActivity)
                         .toList()),
                 id);
+        return removeExpiredActivities(fullActivities);
     }
 
     /**
@@ -575,7 +588,9 @@ public class ActivityService implements IActivityService {
 
     /**
      * Removes expired Activities from the provided list, and returns it modified.
-     * An Activity is considered expired if its end time is set and is before the current time.
+     * An Activity is considered expired if:
+     * - Its end time is set and is before the current time, OR
+     * - It is indefinite (isIndefinite=true) and was created before midnight of the day it was created
      *
      * @param Activities the list of Activities to filter
      * @return the modified list
@@ -589,7 +604,25 @@ public class ActivityService implements IActivityService {
 
         return Activities.stream()
                 .filter(Objects::nonNull)
-                .filter(Activity -> Activity.getEndTime() == null || !Activity.getEndTime().isBefore(now))
+                .filter(Activity -> {
+                    // Check if activity has an end time and it's in the future
+                    if (Activity.getEndTime() != null) {
+                        return !Activity.getEndTime().isBefore(now);
+                    }
+                    
+                    // For indefinite activities (no end time), check if it's past midnight of creation day
+                    if (Activity.getIsIndefinite() != null && Activity.getIsIndefinite()) {
+                        if (Activity.getCreatedAt() != null) {
+                            // Convert creation instant to local date and get midnight of next day
+                            OffsetDateTime creationDateTime = Activity.getCreatedAt().atOffset(now.getOffset());
+                            OffsetDateTime midnightAfterCreation = creationDateTime.toLocalDate().plusDays(1).atStartOfDay().atOffset(now.getOffset());
+                            return now.isBefore(midnightAfterCreation);
+                        }
+                    }
+                    
+                    // Default: keep the activity if we can't determine expiry
+                    return true;
+                })
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -649,7 +682,8 @@ public class ActivityService implements IActivityService {
                     requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(Activity, requestingUserId) : null,
                     requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
                     Activity.getCreatorUserId().equals(requestingUserId),
-                    Activity.getCreatedAt()
+                    Activity.getCreatedAt(),
+                    Activity.getIsIndefinite()
             );
         } catch (BaseNotFoundException e) {
             return null;
@@ -676,7 +710,7 @@ public class ActivityService implements IActivityService {
             fullActivities.add(getFullActivityByActivity(ActivityDTO, requestingUserId, new HashSet<>()));
         }
 
-        return fullActivities;
+        return removeExpiredActivities(fullActivities);
     }
 
     @Override
@@ -696,7 +730,7 @@ public class ActivityService implements IActivityService {
             fullActivities.add(fullFeedActivity);
         }
 
-        return fullActivities;
+        return removeExpiredActivities(fullActivities);
     }
 
     @Override

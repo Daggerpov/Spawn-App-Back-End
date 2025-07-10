@@ -2,10 +2,13 @@ package com.danielagapov.spawn.Repositories;
 
 import com.danielagapov.spawn.Models.Activity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -46,4 +49,14 @@ public interface IActivityRepository extends JpaRepository<Activity, UUID> {
         @Param("now") OffsetDateTime now);
 
     Optional<Activity> findTopByCreatorIdOrderByLastUpdatedDesc(UUID creatorId);
+    
+    /**
+     * Deletes expired indefinite activities created before the cutoff time
+     * @param cutoffTime Activities created before this time will be deleted
+     * @return Number of activities deleted
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Activity a WHERE a.isIndefinite = true AND a.createdAt < :cutoffTime")
+    int deleteExpiredIndefiniteActivities(@Param("cutoffTime") Instant cutoffTime);
 }

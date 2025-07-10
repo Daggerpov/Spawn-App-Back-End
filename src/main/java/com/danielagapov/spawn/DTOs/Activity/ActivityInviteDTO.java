@@ -36,8 +36,9 @@ public class ActivityInviteDTO extends AbstractActivityDTO {
                            String creatorName,
                            String creatorUsername,
                            List<BaseUserDTO> attendees,
-                           int totalAttendees) {
-        super(id, title, startDateTime, endTime, note, icon, category, createdAt);
+                           int totalAttendees,
+                           Boolean isIndefinite) {
+        super(id, title, startDateTime, endTime, note, icon, category, createdAt, isIndefinite);
         this.location = location;
         this.creatorName = creatorName;
         this.creatorUsername = creatorUsername;
