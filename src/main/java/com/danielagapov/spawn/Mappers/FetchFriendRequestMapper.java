@@ -9,4 +9,9 @@ public class FetchFriendRequestMapper {
         User sender = friendRequest.getSender();
         return new FetchFriendRequestDTO(friendRequest.getId(), UserMapper.toDTO(sender), mutualFriendCount);
     }
+    
+    public static FetchFriendRequestDTO toDTOForSentRequest(FriendRequest friendRequest, int mutualFriendCount) {
+        User receiver = friendRequest.getReceiver();
+        return new FetchFriendRequestDTO(friendRequest.getId(), UserMapper.toDTO(receiver), mutualFriendCount);
+    }
 }

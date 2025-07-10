@@ -156,10 +156,27 @@ class FriendRequestServiceTests {
     @Test
     void deleteFriendRequest_ShouldDeleteRequest_WhenValidId() {
         UUID friendRequestId = friendRequest.getId();
+        // Mock findById to return the friend request, so deleteById will be called
+        when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
 
         friendRequestService.deleteFriendRequest(friendRequestId);
 
+        verify(repository, times(1)).findById(friendRequestId);
         verify(repository, times(1)).deleteById(friendRequestId);
+    }
+
+    @Test
+    void deleteFriendRequest_ShouldNotThrowException_WhenFriendRequestNotFound() {
+        UUID friendRequestId = UUID.randomUUID();
+        // Mock findById to return empty, simulating friend request not found
+        when(repository.findById(friendRequestId)).thenReturn(Optional.empty());
+
+        // This should not throw an exception
+        assertDoesNotThrow(() -> friendRequestService.deleteFriendRequest(friendRequestId));
+        
+        verify(repository, times(1)).findById(friendRequestId);
+        // deleteById should not be called since friend request doesn't exist
+        verify(repository, never()).deleteById(friendRequestId);
     }
 
     @Test
@@ -177,6 +194,8 @@ class FriendRequestServiceTests {
     @Test
     void deleteFriendRequest_ShouldThrowException_WhenDataAccessExceptionOccurs() {
         UUID friendRequestId = friendRequest.getId();
+        // Mock findById to return the friend request, so deleteById will be called
+        when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
         doThrow(new DataAccessException("DB delete error") {
         }).when(repository).deleteById(friendRequestId);
 

@@ -219,13 +219,16 @@ public class FriendRequestService implements IFriendRequestService {
                     cacheManager.getCache("recommendedFriends").evict(sender.getId());
                     cacheManager.getCache("recommendedFriends").evict(receiver.getId());
                 }
+                
+                repository.deleteById(id);
+                logger.info("Friend request deleted successfully");
             } else {
-                logger.info("Deleting friend request with ID: " + id + " (request details not available)");
+                logger.info("Friend request with ID: " + id + " was already deleted or does not exist");
             }
-
-            repository.deleteById(id);
-            logger.info("Friend request deleted successfully");
         } catch (DataAccessException e) {
+            logger.error("Error deleting friend request with ID: " + id + ": " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
             logger.error("Error deleting friend request with ID: " + id + ": " + e.getMessage());
             throw e;
         }
@@ -297,6 +300,29 @@ public class FriendRequestService implements IFriendRequestService {
             return dtos;
         } catch (Exception e) {
             logger.error("Error retrieving sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<FetchFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
+        try {
+            User user = userService.getUserEntityById(userId);
+            logger.info("Getting sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
+
+            List<FriendRequest> friendRequests = repository.findBySenderId(userId);
+            List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(userId);
+
+            List<FetchFriendRequestDTO> result = friendRequests.stream()
+                    .filter(fr -> !blockedUserIds.contains(fr.getReceiver().getId())) // Hide if receiver is blocked
+                    .map(fr -> FetchFriendRequestMapper.toDTOForSentRequest(fr,
+                            userService.getMutualFriendCount(userId, fr.getReceiver().getId())))
+                    .toList();
+
+            logger.info("Found " + result.size() + " sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            return result;
+        } catch (Exception e) {
+            logger.error("Error retrieving sent fetch friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }
