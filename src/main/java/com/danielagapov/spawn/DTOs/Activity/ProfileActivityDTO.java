@@ -38,11 +38,10 @@ public class ProfileActivityDTO extends FullFeedActivityDTO {
                           ParticipationStatus participationStatus,
                           boolean isSelfOwned,
                           boolean isPastActivity,
-                          Instant createdAt,
-                          Boolean isIndefinite) {
+                          Instant createdAt) {
         super(id, title, startTime, endTime, location, note, icon, category, creatorUser, 
              participantUsers, invitedUsers, chatMessages, activityFriendTagColorHexCodeForRequestingUser, 
-             participationStatus, isSelfOwned, createdAt, isIndefinite);
+             participationStatus, isSelfOwned, createdAt);
         this.isPastActivity = isPastActivity;
     }
     
@@ -71,8 +70,7 @@ public class ProfileActivityDTO extends FullFeedActivityDTO {
             fullFeedActivityDTO.getParticipationStatus(),
             fullFeedActivityDTO.isSelfOwned(),
             isPastActivity,
-            fullFeedActivityDTO.getCreatedAt(),
-            fullFeedActivityDTO.getIsIndefinite()
+            fullFeedActivityDTO.getCreatedAt()
         );
     }
 } 

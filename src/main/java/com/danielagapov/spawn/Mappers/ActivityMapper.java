@@ -30,8 +30,7 @@ public class ActivityMapper {
                 participantUserIds,
                 invitedUserIds,
                 chatMessageIds,
-                entity.getCreatedAt(),
-                entity.getIsIndefinite()
+                entity.getCreatedAt()
         );
     }
 
@@ -46,8 +45,7 @@ public class ActivityMapper {
                 dto.getNote(),
                 creator,
                 dto.getIcon(),
-                dto.getCategory(),
-                dto.getIsIndefinite()
+                dto.getCategory()
         );
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
@@ -102,7 +100,6 @@ public class ActivityMapper {
         activity.setEndTime(dto.getEndTime()); // Set the end time
         activity.setIcon(dto.getIcon()); // Set the icon
         activity.setCategory(dto.getCategory()); // Set the category
-        activity.setIsIndefinite(dto.getIsIndefinite()); // Set the isIndefinite flag
 
         // Convert LocationDTO to Location entity (assuming a similar method exists)
         Location location = LocationMapper.toEntity(dto.getLocation());
@@ -132,7 +129,6 @@ public class ActivityMapper {
         activity.setCreator(creator);
         activity.setIcon(dto.getIcon());
         activity.setCategory(dto.getCategory());
-        activity.setIsIndefinite(dto.getIsIndefinite());
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
             activity.setCreatedAt(dto.getCreatedAt());
