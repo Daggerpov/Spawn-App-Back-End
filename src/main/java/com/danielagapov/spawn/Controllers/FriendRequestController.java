@@ -77,21 +77,27 @@ public class FriendRequestController {
             logger.error("Invalid parameter: friendRequestId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+        
+        logger.info("Processing friend request action: " + friendRequestAction + " for request ID: " + friendRequestId);
+        
         try {
             if (friendRequestAction == FriendRequestAction.accept) {
                 friendRequestService.acceptFriendRequest(friendRequestId);
+                logger.info("Successfully accepted friend request: " + friendRequestId);
             } else if (friendRequestAction == FriendRequestAction.reject) {
                 friendRequestService.deleteFriendRequest(friendRequestId);
+                logger.info("Successfully rejected friend request: " + friendRequestId);
             } else {
                 // deal with null/invalid argument for `friendRequestAction`
-                logger.error("Invalid friend request action: " + friendRequestAction);
+                logger.error("Invalid friend request action: " + friendRequestAction + " for request: " + friendRequestId);
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
 
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (BaseNotFoundException e) {
-            logger.error("Friend request not found: " + friendRequestId + ": " + e.getMessage());
-            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            logger.warn("Friend request not found (may have been already processed): " + friendRequestId + ": " + e.getMessage());
+            // Return success instead of 404 to avoid client-side errors when friend request was already processed
+            return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error processing friend request action: " + friendRequestAction + " for request: " + friendRequestId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

@@ -219,13 +219,16 @@ public class FriendRequestService implements IFriendRequestService {
                     cacheManager.getCache("recommendedFriends").evict(sender.getId());
                     cacheManager.getCache("recommendedFriends").evict(receiver.getId());
                 }
+                
+                repository.deleteById(id);
+                logger.info("Friend request deleted successfully");
             } else {
-                logger.info("Deleting friend request with ID: " + id + " (request details not available)");
+                logger.info("Friend request with ID: " + id + " was already deleted or does not exist");
             }
-
-            repository.deleteById(id);
-            logger.info("Friend request deleted successfully");
         } catch (DataAccessException e) {
+            logger.error("Error deleting friend request with ID: " + id + ": " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
             logger.error("Error deleting friend request with ID: " + id + ": " + e.getMessage());
             throw e;
         }
