@@ -56,6 +56,33 @@ public class FriendRequestController {
         }
     }
 
+    // returns ResponseEntity with list of FetchFriendRequestDTO (can be empty)
+    //  or not found entity type (user)
+    // full path: /api/v1/friend-requests/sent/{userId}
+    @GetMapping("sent/{userId}")
+    public ResponseEntity<?> getSentFriendRequestsByUserId(@PathVariable UUID userId) {
+        if (userId == null) {
+            logger.error("Invalid parameter: userId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            return new ResponseEntity<>(friendRequestService.getSentFetchFriendRequestsByUserId(userId), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for sent friend requests: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.FriendRequest) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                logger.error("Bad request for sent friend requests: " + e.getMessage());
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            logger.error("Error getting sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // full path: /api/v1/friend-requests
     @PostMapping
     public ResponseEntity<CreateFriendRequestDTO> createFriendRequest(@RequestBody CreateFriendRequestDTO friendRequest) {

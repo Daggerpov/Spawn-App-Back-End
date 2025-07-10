@@ -305,6 +305,29 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
+    public List<FetchFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
+        try {
+            User user = userService.getUserEntityById(userId);
+            logger.info("Getting sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
+
+            List<FriendRequest> friendRequests = repository.findBySenderId(userId);
+            List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(userId);
+
+            List<FetchFriendRequestDTO> result = friendRequests.stream()
+                    .filter(fr -> !blockedUserIds.contains(fr.getReceiver().getId())) // Hide if receiver is blocked
+                    .map(fr -> FetchFriendRequestMapper.toDTOForSentRequest(fr,
+                            userService.getMutualFriendCount(userId, fr.getReceiver().getId())))
+                    .toList();
+
+            logger.info("Found " + result.size() + " sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
+            return result;
+        } catch (Exception e) {
+            logger.error("Error retrieving sent fetch friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public Instant getLatestFriendRequestTimestamp(UUID userId) {
         try {
             logger.info("Getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId));
