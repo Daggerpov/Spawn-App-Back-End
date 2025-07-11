@@ -301,16 +301,28 @@ public class CalendarService implements ICalendarService {
      */
     private CalendarActivityDTO createCalendarActivityFromActivity(Activity Activity, UUID userId, String role) {
         try {
+            // Add null safety checks
+            if (Activity == null) {
+                throw new IllegalArgumentException("Activity cannot be null");
+            }
+            if (Activity.getId() == null) {
+                throw new IllegalArgumentException("Activity ID cannot be null");
+            }
+            if (Activity.getStartTime() == null) {
+                throw new IllegalArgumentException("Activity start time cannot be null for Activity ID: " + Activity.getId());
+            }
+            
             return CalendarActivityDTO.builder()
                     .id(Activity.getId())
                     .date(Activity.getStartTime().toLocalDate().format(DATE_FORMATTER))
-                    .title(Activity.getTitle())
-                    .icon(Activity.getIcon())
-                    .colorHexCode(Activity.getColorHexCode())
+                    .title(Activity.getTitle() != null ? Activity.getTitle() : "Untitled Activity")
+                    .icon(Activity.getIcon() != null ? Activity.getIcon() : "⭐")
+                    .colorHexCode(Activity.getColorHexCode() != null ? Activity.getColorHexCode() : "#6B73FF")
                     .activityId(Activity.getId())
                     .build();
         } catch (Exception e) {
-            logger.error("Error creating calendar activity from Activity: " + Activity.getId() + 
+            logger.error("Error creating calendar activity from Activity: " + 
+                        (Activity != null ? Activity.getId() : "null Activity") + 
                         " for user: " + userId + ", role: " + role + 
                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
             throw e;
