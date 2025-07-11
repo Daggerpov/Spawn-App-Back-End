@@ -36,7 +36,6 @@ public class Activity implements Serializable {
     private OffsetDateTime endTime;
     private String icon;
     private String colorHexCode;
-    private Boolean isIndefinite;
     
     @Enumerated(EnumType.STRING)
     private ActivityCategory category; // TODO: remove
@@ -77,7 +76,7 @@ public class Activity implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, ActivityCategory category, Boolean isIndefinite) {
+    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, ActivityCategory category) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -89,6 +88,5 @@ public class Activity implements Serializable {
         this.lastUpdated = Instant.now();
         this.icon = icon;
         this.category = category;
-        this.isIndefinite = isIndefinite;
     }
 }

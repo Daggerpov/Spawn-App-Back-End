@@ -58,6 +58,9 @@ public class User implements Serializable {
         if (this.lastUpdated == null) {
             this.lastUpdated = Instant.now();
         }
+        if (this.dateCreated == null) {
+            this.dateCreated = new Date();
+        }
     }
 
     @PreUpdate

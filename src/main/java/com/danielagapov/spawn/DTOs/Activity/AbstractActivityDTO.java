@@ -29,5 +29,4 @@ public abstract class AbstractActivityDTO implements Serializable {
     String icon;
     ActivityCategory category;
     Instant createdAt;
-    Boolean isIndefinite;
 }

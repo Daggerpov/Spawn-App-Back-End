@@ -97,7 +97,7 @@ public class FriendRequestController {
 
     // returns ResponseEntity with void
     //  or not found entity type (friendRequestId)
-    // full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
+    // full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject/cancel}
     @PutMapping("{friendRequestId}")
     public ResponseEntity<?> friendRequestAction(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
         if (friendRequestId == null) {
@@ -114,6 +114,9 @@ public class FriendRequestController {
             } else if (friendRequestAction == FriendRequestAction.reject) {
                 friendRequestService.deleteFriendRequest(friendRequestId);
                 logger.info("Successfully rejected friend request: " + friendRequestId);
+            } else if (friendRequestAction == FriendRequestAction.cancel) {
+                friendRequestService.deleteFriendRequest(friendRequestId);
+                logger.info("Successfully canceled friend request: " + friendRequestId);
             } else {
                 // deal with null/invalid argument for `friendRequestAction`
                 logger.error("Invalid friend request action: " + friendRequestAction + " for request: " + friendRequestId);
