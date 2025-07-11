@@ -235,6 +235,38 @@ public class CalendarService implements ICalendarService {
     }
     
     /**
+     * Clear all calendar caches for all users
+     * This should be called after schema changes or major updates to ensure fresh data
+     */
+    public void clearAllCalendarCaches() {
+        try {
+            logger.info("Clearing ALL calendar caches for all users");
+            
+            // Clear all calendar activity caches
+            if (cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE) != null) {
+                cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE).clear();
+                logger.info("Cleared ALL_CALENDAR_ACTIVITIES_CACHE for all users");
+            }
+            
+            if (cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE) != null) {
+                cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE).clear();
+                logger.info("Cleared FILTERED_CALENDAR_ACTIVITIES_CACHE for all users");
+            }
+            
+            if (cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE) != null) {
+                cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE).clear();
+                logger.info("Cleared CALENDAR_ACTIVITIES_CACHE for all users");
+            }
+            
+            logger.info("Successfully cleared all calendar caches");
+        } catch (Exception e) {
+            logger.error("Error clearing all calendar caches: " + e.getMessage() + 
+                         ", Stack trace: " + Arrays.toString(e.getStackTrace()));
+            throw e;
+        }
+    }
+    
+    /**
      * Check if a date falls within the specified range
      * 
      * @param date The date to check

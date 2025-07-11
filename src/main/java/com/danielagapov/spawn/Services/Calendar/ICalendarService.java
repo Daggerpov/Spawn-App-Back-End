@@ -46,4 +46,10 @@ public interface ICalendarService {
      * @param userId User ID whose cache should be cleared
      */
     void clearCalendarCache(UUID userId);
+    
+    /**
+     * Clear all calendar caches for all users
+     * This should be called after schema changes or major updates to ensure fresh data
+     */
+    void clearAllCalendarCaches();
 } 
