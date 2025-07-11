@@ -210,8 +210,14 @@ public class ActivityTypeService implements IActivityTypeService {
             );
         }
         
-        // Validate orderNum range for all updated activity types
-        for (ActivityTypeDTO dto : batchDTO.getUpdatedActivityTypes()) {
+        // Separate existing activity types from new ones for validation
+        List<ActivityTypeDTO> existingActivityTypesToUpdate = batchDTO.getUpdatedActivityTypes().stream()
+                .filter(dto -> existingIds.contains(dto.getId()))
+                .toList();
+        
+        // Validate orderNum range ONLY for existing activity types being updated
+        // New activity types will get auto-assigned order numbers, so skip validation for them
+        for (ActivityTypeDTO dto : existingActivityTypesToUpdate) {
             if (dto.getOrderNum() < 0 || dto.getOrderNum() >= finalTotalCount) {
                 throw new ActivityTypeValidationException(
                     String.format("Invalid orderNum %d for activity type '%s'. Must be in range [0, %d]", 
@@ -220,18 +226,18 @@ public class ActivityTypeService implements IActivityTypeService {
             }
         }
         
-        // Validate orderNum uniqueness within the updated activity types
-        Set<Integer> orderNums = batchDTO.getUpdatedActivityTypes().stream()
+        // Validate orderNum uniqueness within the existing activity types being updated
+        Set<Integer> existingUpdateOrderNums = existingActivityTypesToUpdate.stream()
                 .map(ActivityTypeDTO::getOrderNum)
                 .collect(Collectors.toSet());
         
-        if (orderNums.size() != batchDTO.getUpdatedActivityTypes().size()) {
+        if (existingUpdateOrderNums.size() != existingActivityTypesToUpdate.size()) {
             throw new ActivityTypeValidationException(
                 "Duplicate orderNum values detected in update. Each activity type must have a unique orderNum."
             );
         }
         
-        // Validate orderNum uniqueness against existing activity types
+        // Validate orderNum uniqueness against existing activity types that will remain
         // Get existing activity types that will remain after deletions/updates
         Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
                 .map(ActivityTypeDTO::getId)
@@ -245,8 +251,9 @@ public class ActivityTypeService implements IActivityTypeService {
                 .map(ActivityType::getOrderNum)
                 .collect(Collectors.toSet());
         
-        // Check for conflicts between new/updated orderNums and existing ones
-        for (Integer orderNum : orderNums) {
+        // Check for conflicts between updated orderNums and existing ones
+        // Only validate existing activity types being updated, not new ones
+        for (Integer orderNum : existingUpdateOrderNums) {
             if (existingOrderNums.contains(orderNum)) {
                 throw new ActivityTypeValidationException(
                     String.format("OrderNum %d conflicts with existing activity type. Each activity type must have a unique orderNum.", orderNum)
