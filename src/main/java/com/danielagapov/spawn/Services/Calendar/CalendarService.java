@@ -272,9 +272,10 @@ public class CalendarService implements ICalendarService {
             return CalendarActivityDTO.builder()
                     .id(Activity.getId())
                     .date(Activity.getStartTime().toLocalDate().format(DATE_FORMATTER))
+                    .title(Activity.getTitle())
                     .icon(Activity.getIcon())
                     .colorHexCode(Activity.getColorHexCode())
-                    .ActivityId(Activity.getId())
+                    .activityId(Activity.getId())
                     .build();
         } catch (Exception e) {
             logger.error("Error creating calendar activity from Activity: " + Activity.getId() + 
