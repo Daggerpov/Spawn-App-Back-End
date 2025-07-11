@@ -18,11 +18,13 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ActivityMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Activity;
+import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.CompositeKeys.ActivityUsersId;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityRepository;
+import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -48,6 +50,7 @@ import java.util.stream.Collectors;
 @Service
 public class ActivityService implements IActivityService {
     private final IActivityRepository repository;
+    private final IActivityTypeRepository activityTypeRepository;
     private final ILocationRepository locationRepository;
     private final IActivityUserRepository activityUserRepository;
     private final IUserRepository userRepository;
@@ -60,11 +63,13 @@ public class ActivityService implements IActivityService {
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
-    public ActivityService(IActivityRepository repository, ILocationRepository locationRepository,
-                        IActivityUserRepository activityUserRepository, IUserRepository userRepository,
-                        IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher) {
+    public ActivityService(IActivityRepository repository, IActivityTypeRepository activityTypeRepository,
+                        ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
+                        IUserRepository userRepository, IFriendTagService friendTagService, IUserService userService, 
+                        IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, 
+                        ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
+        this.activityTypeRepository = activityTypeRepository;
         this.locationRepository = locationRepository;
         this.activityUserRepository = activityUserRepository;
         this.userRepository = userRepository;

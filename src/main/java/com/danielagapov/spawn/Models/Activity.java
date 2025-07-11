@@ -37,6 +37,7 @@ public class Activity implements Serializable {
     private String colorHexCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_type_id", referencedColumnName = "id", nullable = true)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private ActivityType activityType;
 
