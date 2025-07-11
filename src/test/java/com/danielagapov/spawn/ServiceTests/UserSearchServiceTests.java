@@ -9,9 +9,12 @@ import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.Enums.UserRelationshipType;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.Analytics.SearchAnalyticsService;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
+import com.danielagapov.spawn.Services.FuzzySearch.FuzzySearchService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
@@ -38,6 +41,9 @@ class UserSearchServiceTests {
     private IUserRepository userRepository; // Mock repository
 
     @Mock
+    private IActivityUserRepository activityUserRepository;
+
+    @Mock
     private IFriendRequestService friendRequestService;
 
     @Mock
@@ -48,6 +54,12 @@ class UserSearchServiceTests {
 
     @Mock
     private IBlockedUserService blockedUserService;
+
+    @Mock
+    private FuzzySearchService<User> fuzzySearchService;
+
+    @Mock
+    private SearchAnalyticsService searchAnalyticsService;
 
     @InjectMocks
     private UserSearchService userSearchService; // Injected service to test
@@ -87,6 +99,11 @@ class UserSearchServiceTests {
         when(userRepository.findUsersWithPrefix(eq("a"), any()))
                 .thenReturn(Arrays.asList(user1, user2, user3, user4, user5));
 
+        // Mock fuzzy search to return user1 (Alice Johnson) as the best match
+        FuzzySearchService.SearchResult<User> result1 = new FuzzySearchService.SearchResult<>(user1, 0.95, "name", false);
+        when(fuzzySearchService.search(eq("Alice"), any(), any(), any()))
+                .thenReturn(List.of(result1));
+
         List<BaseUserDTO> result = userSearchService.searchByQuery("Alice", null);
 
         // Assert that results are not empty
@@ -105,6 +122,11 @@ class UserSearchServiceTests {
         when(userRepository.findUsersWithPrefix(eq("b"), any()))
                 .thenReturn(List.of(user3));
 
+        // Mock fuzzy search to return user3 (Bob Smith)
+        FuzzySearchService.SearchResult<User> result3 = new FuzzySearchService.SearchResult<>(user3, 0.7, "name", false);
+        when(fuzzySearchService.search(eq("Bobby"), any(), any(), any()))
+                .thenReturn(List.of(result3));
+
         List<BaseUserDTO> result = userSearchService.searchByQuery("Bobby", null);
         assertEquals(1, result.size(), "Expected Bob to be included even if filtering removes too many users.");
     }
@@ -114,6 +136,12 @@ class UserSearchServiceTests {
         // Simulate database returning users with names starting with "a"
         when(userRepository.findUsersWithPrefix(eq("a"), any()))
                 .thenReturn(Arrays.asList(user5, user4, user2, user1));
+
+        // Mock fuzzy search to return user2 (Alicia Jameson) as the best match
+        FuzzySearchService.SearchResult<User> result2 = new FuzzySearchService.SearchResult<>(user2, 0.99, "name", false);
+        FuzzySearchService.SearchResult<User> result1 = new FuzzySearchService.SearchResult<>(user1, 0.8, "name", false);
+        when(fuzzySearchService.search(eq("Alicia"), any(), any(), any()))
+                .thenReturn(List.of(result2, result1));
 
         List<BaseUserDTO> result = userSearchService.searchByQuery("Alicia", null);
 

@@ -20,6 +20,8 @@ import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Services.Analytics.SearchAnalyticsService;
+import com.danielagapov.spawn.Services.FuzzySearch.FuzzySearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import lombok.AllArgsConstructor;
 import org.apache.commons.text.similarity.JaroWinklerDistance;
@@ -51,6 +53,8 @@ public class UserSearchService implements IUserSearchService {
     private final IUserRepository userRepository;
     private final IBlockedUserService blockedUserService;
     private final IActivityUserRepository activityUserRepository;
+    private final FuzzySearchService<User> fuzzySearchService;
+    private final SearchAnalyticsService searchAnalyticsService;
     private final ILogger logger;
 
 
@@ -443,38 +447,45 @@ public class UserSearchService implements IUserSearchService {
     }
 
     private List<User> searchUsersByQuery(String searchQuery) {
-        final int searchLimit = 100; // Max number of results returned by database query
-        final int resultLimit = 10; // Max number of results to return
         // If query is empty do nothing
         if (searchQuery.isBlank()) return Collections.emptyList();
 
-        // First get users that start with the same prefix as query
+        long startTime = System.currentTimeMillis();
+
+        // First get users that start with the same prefix as query (database optimization)
         String prefix = searchQuery.toLowerCase().substring(0, 1);
-        List<User> users = userRepository.findUsersWithPrefix(prefix, Limit.of(searchLimit));
+        List<User> users = userRepository.findUsersWithPrefix(prefix, Limit.of(100));
 
         // If no results were returned, then return early with empty list
         if (users.isEmpty()) return Collections.emptyList();
 
-        Map<User, Double> userDistances = computeJaroWinklerDistances(searchQuery.toLowerCase(), users);
-        // Filter users that are not similar to query
-        List<User> filteredUsers = filterNonSimilarUsers(users, userDistances);
-        if (filteredUsers.isEmpty()) {
-            filteredUsers = users;
-        }
-        // Rank users by their similarity to query and collect top `resultLimit` results
-        users = rankUsers(filteredUsers, userDistances).stream().limit(resultLimit).toList();
-        return users;
+        // Use the enhanced fuzzy search service
+        List<FuzzySearchService.SearchResult<User>> searchResults = fuzzySearchService.search(
+                searchQuery,
+                users,
+                User::getName,        // Name extractor
+                User::getUsername     // Username extractor
+        );
+
+        // Record analytics data
+        long processingTime = System.currentTimeMillis() - startTime;
+        searchAnalyticsService.recordSearchResults(searchQuery, processingTime, users.size(), searchResults);
+
+        // Extract just the User objects from the search results
+        return searchResults.stream()
+                .map(FuzzySearchService.SearchResult::getItem)
+                .collect(Collectors.toList());
     }
 
 
     /**
-     * Computes the distances of each user (name or username) to the query
-     *
-     * @param query the search query to compare names against
-     * @param users list of database results
-     * @return map of users => jaro-winkler distance
+     * Legacy method for backward compatibility - now uses enhanced FuzzySearchService
+     * @deprecated Use FuzzySearchService directly for better performance and configurability
      */
+    @Deprecated
     private Map<User, Double> computeJaroWinklerDistances(String query, List<User> users) {
+        // This method is kept for backward compatibility but is no longer used
+        // All fuzzy search functionality has been moved to FuzzySearchService
         JaroWinklerDistance jaroWinklerDistance = new JaroWinklerDistance();
         return users.stream().collect(Collectors.toMap(user -> user, user ->
                 Math.max(
@@ -482,32 +493,5 @@ public class UserSearchService implements IUserSearchService {
                         jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
                 )
         ));
-    }
-
-    /**
-     * Filter for users that are "similar" to the query, where "similar" is defined as having a
-     * Jaro-Winkler distance score greater than or equal to `threshold`
-     *
-     * @param users list of database results
-     * @return filtered list of users with Jaro-Winkler distance score >= `tolerance`
-     */
-    private List<User> filterNonSimilarUsers(List<User> users, Map<User, Double> userDistMap) {
-        final double threshold = 0.6;
-        return users.stream()
-                .filter(user -> userDistMap.get(user) >= threshold)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Sorts users by their Jaro-Winkler distance in ascending order.
-     * Ascending order means the returned list will have the most similar results first, the least similar results last
-     *
-     * @param users list of database results
-     * @return sorted list of users by Jaro-Winkler distance
-     */
-    private List<User> rankUsers(List<User> users, Map<User, Double> userDistMap) {
-        return users.stream()
-                .sorted(Comparator.comparingDouble(userDistMap::get).reversed())
-                .collect(Collectors.toList());
     }
 }
