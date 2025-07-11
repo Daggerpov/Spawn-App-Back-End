@@ -223,5 +223,37 @@
       "Mock object configurations that reference changed interfaces"
     ],
     "critical_note": "Failure to update tests is considered incomplete work. All compilation errors in test files must be resolved as part of the original change."
+  },
+  "automated_testing": {
+    "description": "MANDATORY: Always run tests after code changes and fix any errors",
+    "workflow": {
+      "after_code_changes": [
+        "Run './mvnw test' to execute all tests",
+        "If tests fail, analyze the error messages carefully",
+        "Fix any compilation errors in test files first",
+        "Fix any failing test logic by updating test data or assertions",
+        "Re-run tests until all pass (206 tests should pass with 0 failures, 0 errors)",
+        "Only consider the task complete when all tests pass"
+      ],
+      "test_commands": [
+        "./mvnw test - Run all tests",
+        "./mvnw test -Dtest=ClassName#methodName - Run specific test",
+        "./mvnw test -Dtest=ClassName - Run all tests in a class"
+      ]
+    },
+    "mandatory_rules": [
+      "NEVER skip running tests after making code changes",
+      "ALWAYS fix test failures before considering work complete",
+      "Pay special attention to validation logic and constructor signature changes",
+      "Update test data (orderNum, enum values, etc.) to match business logic changes",
+      "If orderNum conflicts occur, ensure test values don't conflict with existing data"
+    ],
+    "common_test_issues": [
+      "OrderNum conflicts - Ensure test orderNum values don't conflict with existing activity types",
+      "Constructor signature changes - Update all test instantiations to match new parameters",
+      "Enum value changes - Remove references to deleted enum values from tests",
+      "DTO field changes - Update test constructors and assertions to match new structure"
+    ],
+    "success_criteria": "All tests must pass with output showing 'Tests run: 206, Failures: 0, Errors: 0, Skipped: 0'"
   }
 } 
