@@ -77,16 +77,16 @@ public class CacheController {
      * 
      * @return A response indicating success or failure
      */
-    @PostMapping("/calendar/clear-all")
-    public ResponseEntity<String> clearAllCalendarCaches() {
-        logger.info("Request to clear all calendar caches received");
+    @PostMapping("/clear-calendar-caches")
+    public ResponseEntity<String> clearCalendarCaches() {
+        logger.info("Clearing all calendar caches");
         try {
             calendarService.clearAllCalendarCaches();
             logger.info("Successfully cleared all calendar caches");
             return ResponseEntity.ok("All calendar caches cleared successfully");
         } catch (Exception e) {
-            logger.error("Error clearing all calendar caches: " + e.getMessage());
-            return ResponseEntity.internalServerError().body("Failed to clear calendar caches: " + e.getMessage());
+            logger.error("Error clearing calendar caches: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error clearing calendar caches: " + e.getMessage());
         }
     }
 } 

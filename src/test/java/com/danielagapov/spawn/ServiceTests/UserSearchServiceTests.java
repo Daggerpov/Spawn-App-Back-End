@@ -164,6 +164,14 @@ class UserSearchServiceTests {
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
 
+        // Mock fuzzy search service to return Alice Smith as a match for "Alice"
+        User userObject = new User();
+        userObject.setId(friend1.getId());
+        userObject.setName(friend1.getName());
+        userObject.setUsername(friend1.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult = new FuzzySearchService.SearchResult<>(userObject, 0.95, "name", false);
+        when(fuzzySearchService.search(eq("Alice"), any(), any(), any())).thenReturn(List.of(searchResult));
+
         // Use spy to isolate the test from internal implementations
         UserSearchService spyUserSearchService = spy(userSearchService);
         when(spyUserSearchService.getRecommendedMutuals(userId)).thenReturn(List.of(friend1, friend2, friend3));
@@ -260,6 +268,21 @@ class UserSearchServiceTests {
         FriendTagDTO ft = new FriendTagDTO(ftId, "Everyone", "#ffffff", user1Id, List.of(), true);
         FullFriendUserDTO user5Full = new FullFriendUserDTO(user5Id, "thatPerson", "profile.jpg", "That Person", "A bio", "thatPerson@email.com", List.of(ft));
 
+        // Mock fuzzy search service to return both user3Full and user5Full as matches for "person"
+        User userObject3 = new User();
+        userObject3.setId(user3Full.getId());
+        userObject3.setName(user3Full.getName());
+        userObject3.setUsername(user3Full.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult3 = new FuzzySearchService.SearchResult<>(userObject3, 0.95, "username", false);
+        
+        User userObject5 = new User();
+        userObject5.setId(user5Full.getId());
+        userObject5.setName(user5Full.getName());
+        userObject5.setUsername(user5Full.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult5 = new FuzzySearchService.SearchResult<>(userObject5, 0.85, "name", false);
+        
+        when(fuzzySearchService.search(eq("person"), any(), any(), any())).thenReturn(List.of(searchResult3, searchResult5));
+
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
@@ -293,6 +316,14 @@ class UserSearchServiceTests {
         RecommendedFriendUserDTO user2Full = new RecommendedFriendUserDTO(user2Id, "jane_doe", "profile.jpg", "Jane Doe", "A bio", "jane.doe@example.com", 1);
         RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "person", "profile.jpg", "Lorem Ipsum", "A bio", "email@e.com", 1);
         RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "LaurenIbson", "profile.jpg", "Lauren Ibson", "A bio", "lauren_ibson@e.ca", 1);
+
+        // Mock fuzzy search service to return user3Full as a match for "person"
+        User userObject = new User();
+        userObject.setId(user3Full.getId());
+        userObject.setName(user3Full.getName());
+        userObject.setUsername(user3Full.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult = new FuzzySearchService.SearchResult<>(userObject, 0.95, "username", false);
+        when(fuzzySearchService.search(eq("person"), any(), any(), any())).thenReturn(List.of(searchResult));
 
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
@@ -422,6 +453,14 @@ class UserSearchServiceTests {
         UUID friendRequestId = UUID.randomUUID();
         when(friendRequest.getSenderUser()).thenReturn(requesterInfo);
         when(friendRequest.getId()).thenReturn(friendRequestId);
+
+        // Mock fuzzy search service to return requesterInfo as a match for "search"
+        User userObject = new User();
+        userObject.setId(requesterInfo.getId());
+        userObject.setName(requesterInfo.getName());
+        userObject.setUsername(requesterInfo.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult = new FuzzySearchService.SearchResult<>(userObject, 0.95, "name", false);
+        when(fuzzySearchService.search(eq("search"), any(), any(), any())).thenReturn(List.of(searchResult));
 
         // Mock services
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of(friendRequest));
