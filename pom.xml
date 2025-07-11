@@ -121,6 +121,12 @@
             <artifactId>firebase-admin</artifactId>
             <version>9.4.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>10.9.1</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- Flyway for database migrations - DISABLED -->
         <!-- Using Hibernate DDL auto-update instead of Flyway migrations -->
         <!--

@@ -3,6 +3,9 @@ package com.danielagapov.spawn.Services.Auth;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Enums.OAuthProvider;
+
+import java.util.UUID;
 
 public interface IAuthService {
     /**
@@ -24,4 +27,10 @@ public interface IAuthService {
     boolean changePassword(String username, String currentPassword, String newPassword);
 
     BaseUserDTO getUserByToken(String token);
+
+    void sendVerificationCode(String phoneNumber, UUID userId);
+
+    BaseUserDTO checkVerificationCode(String phoneNumber, String code, UUID userId);
+
+    BaseUserDTO registration(String email, String externalId, OAuthProvider provider);
 }
