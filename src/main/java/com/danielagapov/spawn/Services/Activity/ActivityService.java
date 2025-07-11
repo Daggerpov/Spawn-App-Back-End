@@ -133,28 +133,22 @@ public class ActivityService implements IActivityService {
         // Get location name
         String locationName = activity.getLocation() != null ? activity.getLocation().getName() : null;
         
-        // Get all attendees (both participating and invited users)
-        List<ActivityUser> allActivityUsers = activityUserRepository.findByActivity_Id(id);
-        List<BaseUserDTO> attendees = allActivityUsers.stream()
-                .map(activityUser -> userService.getBaseUserById(activityUser.getUser().getId()))
-                .collect(Collectors.toList());
-        
-        int totalAttendees = attendees.size() + 1; // +1 for the creator
+        // Get participating and invited user IDs
+        List<UUID> participatingUserIds = userService.getParticipantUserIdsByActivityId(id);
+        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
         
         return new ActivityInviteDTO(
                 activity.getId(),
                 activity.getTitle(),
                 activity.getStartTime(),
                 activity.getEndTime(),
+                activity.getLocation() != null ? activity.getLocation().getId() : null,
                 activity.getNote(),
                 activity.getIcon(),
-                activity.getCategory(),
-                activity.getCreatedAt(),
-                locationName,
-                creatorName,
-                creatorUsername,
-                attendees,
-                totalAttendees
+                activity.getCreator().getId(),
+                participatingUserIds,
+                invitedUserIds,
+                activity.getCreatedAt()
         );
     }
 
@@ -641,7 +635,6 @@ public class ActivityService implements IActivityService {
                     location,
                     Activity.getNote(),
                     Activity.getIcon(),
-                    Activity.getCategory(),
                     creator,
                     userService.getParticipantsByActivityId(Activity.getId()),
                     userService.getInvitedByActivityId(Activity.getId()),
@@ -758,9 +751,9 @@ public class ActivityService implements IActivityService {
             List<FullFeedActivityDTO> fullFeedActivities = convertActivitiesToFullFeedActivities(pastActivityDTOs, requestingUserId);
             List<ProfileActivityDTO> result = new ArrayList<>();
             
-            // Convert each FullFeedActivityDTO to ProfileActivityDTO with isPastActivity set to true
+            // Convert each FullFeedActivityDTO to ProfileActivityDTO
             for (FullFeedActivityDTO fullFeedActivity : fullFeedActivities) {
-                result.add(ProfileActivityDTO.fromFullFeedActivityDTO(fullFeedActivity, true));
+                result.add(ProfileActivityDTO.fromFullFeedActivityDTO(fullFeedActivity));
             }
             
             return result;
@@ -791,11 +784,11 @@ public class ActivityService implements IActivityService {
             // Convert to ProfileActivityDTO
             List<ProfileActivityDTO> result = new ArrayList<>();
             
-            // If there are upcoming Activities, return them as ProfileActivityDTOs with isPastActivity = false
+            // If there are upcoming Activities, return them as ProfileActivityDTOs
             if (!nonExpiredActivities.isEmpty()) {
                 sortActivitiesByStartTime(nonExpiredActivities);
                 for (FullFeedActivityDTO Activity : nonExpiredActivities) {
-                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity, false));
+                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity));
                 }
                 return result;
             }
