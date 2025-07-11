@@ -62,7 +62,11 @@ public class ActivityTypeService implements IActivityTypeService {
                 User creator = userService.getUserEntityById(userId);
                 
                 logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
-                List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(activityTypeDTOs.getUpdatedActivityTypes(), creator);
+                
+                // Auto-assign order numbers for new activity types
+                List<ActivityTypeDTO> processedDTOs = assignOrderNumbersForNewActivityTypes(userId, activityTypeDTOs.getUpdatedActivityTypes());
+                
+                List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(processedDTOs, creator);
                 repository.saveAll(activityTypes);
             }
             
@@ -122,6 +126,44 @@ public class ActivityTypeService implements IActivityTypeService {
     public void setOrderNumber(ActivityType activityType) {
         Integer maxOrder = repository.findMaxOrderNumberByCreatorId(activityType.getCreator().getId());
         activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 0);
+    }
+
+    /**
+     * Assigns order numbers to new activity types to avoid conflicts
+     */
+    private List<ActivityTypeDTO> assignOrderNumbersForNewActivityTypes(UUID userId, List<ActivityTypeDTO> activityTypeDTOs) {
+        List<ActivityType> existingTypes = repository.findActivityTypesByCreatorId(userId);
+        Set<UUID> existingIds = existingTypes.stream()
+                .map(ActivityType::getId)
+                .collect(Collectors.toSet());
+        
+        // Get the current max order number
+        Integer maxOrder = repository.findMaxOrderNumberByCreatorId(userId);
+        int nextOrderNum = maxOrder != null ? maxOrder + 1 : 0;
+        
+        List<ActivityTypeDTO> processedDTOs = new ArrayList<>();
+        
+        for (ActivityTypeDTO dto : activityTypeDTOs) {
+            if (!existingIds.contains(dto.getId())) {
+                // This is a new activity type - assign the next available order number
+                ActivityTypeDTO newDTO = new ActivityTypeDTO(
+                    dto.getId(),
+                    dto.getTitle(),
+                    dto.getAssociatedFriends(),
+                    dto.getIcon(),
+                    nextOrderNum++,  // Auto-assign and increment
+                    dto.getOwnerUserId(),
+                    dto.getIsPinned()
+                );
+                processedDTOs.add(newDTO);
+                logger.info("Assigned orderNum " + (nextOrderNum - 1) + " to new activity type: " + dto.getTitle());
+            } else {
+                // This is an existing activity type - keep the original order number
+                processedDTOs.add(dto);
+            }
+        }
+        
+        return processedDTOs;
     }
 
     /**
@@ -187,6 +229,29 @@ public class ActivityTypeService implements IActivityTypeService {
             throw new ActivityTypeValidationException(
                 "Duplicate orderNum values detected in update. Each activity type must have a unique orderNum."
             );
+        }
+        
+        // Validate orderNum uniqueness against existing activity types
+        // Get existing activity types that will remain after deletions/updates
+        Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
+                .map(ActivityTypeDTO::getId)
+                .collect(Collectors.toSet());
+        
+        List<ActivityType> remainingExistingTypes = existingActivityTypes.stream()
+                .filter(at -> !deletedIds.contains(at.getId()) && !updatedIds.contains(at.getId()))
+                .toList();
+        
+        Set<Integer> existingOrderNums = remainingExistingTypes.stream()
+                .map(ActivityType::getOrderNum)
+                .collect(Collectors.toSet());
+        
+        // Check for conflicts between new/updated orderNums and existing ones
+        for (Integer orderNum : orderNums) {
+            if (existingOrderNums.contains(orderNum)) {
+                throw new ActivityTypeValidationException(
+                    String.format("OrderNum %d conflicts with existing activity type. Each activity type must have a unique orderNum.", orderNum)
+                );
+            }
         }
         
         logger.info(String.format("✅ Activity type validation passed: %d pinned (max %d), orderNum range [0, %d], unique orderNums", 

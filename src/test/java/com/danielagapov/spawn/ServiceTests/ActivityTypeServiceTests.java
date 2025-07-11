@@ -615,13 +615,14 @@ class ActivityTypeServiceTests {
     @Test
     void batchUpdate_ShouldHandleComplexValidation_WhenDeletingAndCreating() {
         // Arrange - User deletes 1 pinned item and creates 2 new pinned items (net +1, should be valid)
-        // Starting state: 1 pinned out of 3 total
-        // After update: delete 1 (including 1 pinned), add 2 new pinned = 2 pinned total (valid)
+        // Starting state: 1 pinned out of 3 total (orderNum 0, 1, 2)
+        // After update: delete 1 (orderNum 1), add 2 new = 2 pinned total (valid)
+        // Final orderNum should be: 0, 1, 2, 3 (where 1 and 3 are the new ones)
         
         UUID newId1 = UUID.randomUUID();
         UUID newId2 = UUID.randomUUID();
         
-        ActivityTypeDTO newPinned1 = new ActivityTypeDTO(newId1, "Study", List.of(), "✏️", 2, userId, true);
+        ActivityTypeDTO newPinned1 = new ActivityTypeDTO(newId1, "Study", List.of(), "✏️", 1, userId, true);
         ActivityTypeDTO newPinned2 = new ActivityTypeDTO(newId2, "Sports", List.of(), "⚽", 3, userId, true);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
