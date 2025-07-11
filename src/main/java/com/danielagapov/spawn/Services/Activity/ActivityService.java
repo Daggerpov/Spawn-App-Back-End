@@ -148,6 +148,7 @@ public class ActivityService implements IActivityService {
                 activity.getStartTime(),
                 activity.getEndTime(),
                 activity.getLocation() != null ? activity.getLocation().getId() : null,
+                activity.getActivityType() != null ? activity.getActivityType().getId() : null,
                 activity.getNote(),
                 activity.getIcon(),
                 activity.getCreator().getId(),
@@ -208,10 +209,13 @@ public class ActivityService implements IActivityService {
                 ActivityEntity = ActivityMapper.convertFullFeedActivityDTOToActivityEntity(fullFeedActivityDTO);
             } else if (Activity instanceof ActivityDTO ActivityDTO) {
                 Location location = locationRepository.findById(ActivityDTO.getLocationId()).orElse(null);
+                ActivityType activityType = ActivityDTO.getActivityTypeId() != null 
+                    ? activityTypeRepository.findById(ActivityDTO.getActivityTypeId()).orElse(null) 
+                    : null;
 
-                // Map ActivityDTO to Activity entity with the resolved Location
+                // Map ActivityDTO to Activity entity with the resolved Location and ActivityType
                 ActivityEntity = ActivityMapper.toEntity(ActivityDTO, location,
-                        userService.getUserEntityById(ActivityDTO.getCreatorUserId()));
+                        userService.getUserEntityById(ActivityDTO.getCreatorUserId()), activityType);
             } else {
                 throw new IllegalArgumentException("Unsupported Activity type");
             }
@@ -257,7 +261,11 @@ public class ActivityService implements IActivityService {
             User creator = userRepository.findById(ActivityCreationDTO.getCreatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, ActivityCreationDTO.getCreatorUserId()));
 
-            Activity Activity = ActivityMapper.fromCreationDTO(ActivityCreationDTO, location, creator);
+            ActivityType activityType = ActivityCreationDTO.getActivityTypeId() != null
+                    ? activityTypeRepository.findById(ActivityCreationDTO.getActivityTypeId()).orElse(null)
+                    : null;
+
+            Activity Activity = ActivityMapper.fromCreationDTO(ActivityCreationDTO, location, creator, activityType);
 
             Activity = repository.save(Activity);
 
@@ -334,9 +342,12 @@ public class ActivityService implements IActivityService {
             // Map and save new Activity, fetch location and creator
             Location location = locationService.getLocationEntityById(newActivity.getLocationId());
             User creator = userService.getUserEntityById(newActivity.getCreatorUserId());
+            ActivityType activityType = newActivity.getActivityTypeId() != null
+                    ? activityTypeRepository.findById(newActivity.getActivityTypeId()).orElse(null)
+                    : null;
 
             // Convert DTO to entity
-            Activity ActivityEntity = ActivityMapper.toEntity(newActivity, location, creator);
+            Activity ActivityEntity = ActivityMapper.toEntity(newActivity, location, creator, activityType);
             ActivityEntity = repository.save(ActivityEntity);
             
             eventPublisher.publishEvent(
@@ -638,6 +649,7 @@ public class ActivityService implements IActivityService {
                     Activity.getStartTime(),
                     Activity.getEndTime(),
                     location,
+                    Activity.getActivityTypeId(),
                     Activity.getNote(),
                     Activity.getIcon(),
                     creator,

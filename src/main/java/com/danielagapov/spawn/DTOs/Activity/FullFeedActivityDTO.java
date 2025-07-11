@@ -18,6 +18,7 @@ import java.util.UUID;
 @Setter
 public class FullFeedActivityDTO extends AbstractActivityDTO {
     private LocationDTO location;
+    private UUID activityTypeId;
     private BaseUserDTO creatorUser;
     private List<BaseUserDTO> participantUsers;
     private List<BaseUserDTO> invitedUsers;
@@ -35,6 +36,7 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             OffsetDateTime startTime,
                             OffsetDateTime endTime,
                             LocationDTO location,
+                            UUID activityTypeId,
                             String note,
                             String icon,
                             BaseUserDTO creatorUser,
@@ -47,6 +49,7 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             Instant createdAt) {
         super(id, title, startTime, endTime, note, icon, createdAt);
         this.location = location;
+        this.activityTypeId = activityTypeId;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
         this.invitedUsers = invitedUsers;

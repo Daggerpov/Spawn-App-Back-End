@@ -17,6 +17,7 @@ import java.util.UUID;
 @Setter
 public class ActivityInviteDTO extends AbstractActivityDTO {
     UUID locationId;
+    UUID activityTypeId;
     UUID creatorUserId;
     List<UUID> participantUserIds;
     List<UUID> invitedUserIds;
@@ -26,6 +27,7 @@ public class ActivityInviteDTO extends AbstractActivityDTO {
     OffsetDateTime startTime,
     OffsetDateTime endTime,
     UUID locationId,
+    UUID activityTypeId,
     String note,
     String icon,
     UUID creatorUserId,
@@ -34,6 +36,7 @@ public class ActivityInviteDTO extends AbstractActivityDTO {
     Instant createdAt) {
         super(id, title, startTime, endTime, note, icon, createdAt);
         this.locationId = locationId;
+        this.activityTypeId = activityTypeId;
         this.creatorUserId = creatorUserId;
         this.participantUserIds = participantUserIds;
         this.invitedUserIds = invitedUserIds;
