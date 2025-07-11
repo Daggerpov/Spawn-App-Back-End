@@ -31,6 +31,11 @@ public class CalendarController {
             @PathVariable UUID userId,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
+        
+        logger.info("Calendar API called for user: " + userId + 
+                   (month != null ? ", month: " + month : "") + 
+                   (year != null ? ", year: " + year : ""));
+        
         if (userId == null) {
             logger.error("Invalid parameter: userId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -38,12 +43,30 @@ public class CalendarController {
 
         try {
             List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesWithFilters(userId, month, year);
+            
+            logger.info("Successfully retrieved " + activities.size() + " calendar activities for user: " + userId);
+            
+            // Log sample activities for debugging
+            if (!activities.isEmpty()) {
+                logger.info("Sample calendar activities:");
+                for (int i = 0; i < Math.min(activities.size(), 3); i++) {
+                    CalendarActivityDTO activity = activities.get(i);
+                    logger.info("  " + (i + 1) + ". " + activity.getTitle() + " on " + activity.getDate() + 
+                               " (ID: " + activity.getId() + ")");
+                }
+            } else {
+                logger.warn("No calendar activities found for user: " + userId + 
+                           (month != null ? ", month: " + month : "") + 
+                           (year != null ? ", year: " + year : ""));
+            }
+            
             return ResponseEntity.ok(activities);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for calendar activities: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            logger.error("Error getting calendar activities for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            logger.error("Error getting calendar activities for user: " + LoggingUtils.formatUserIdInfo(userId) + 
+                        ": " + e.getMessage() + ", Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

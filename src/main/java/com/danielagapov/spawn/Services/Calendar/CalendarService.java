@@ -155,13 +155,23 @@ public class CalendarService implements ICalendarService {
             for (Activity Activity : createdActivities) {
                 try {
                     logger.info("Processing created Activity ID: " + Activity.getId() + " for user: " + userId);
-                    LocalDate ActivityDate = Activity.getStartTime().toLocalDate();
+                    
+                    // Add null safety check for startTime
+                    if (Activity.getStartTime() == null) {
+                        logger.warn("Skipping Activity " + Activity.getId() + " - null startTime");
+                        continue;
+                    }
+                    
+                    // Convert to UTC-based LocalDate for consistent date filtering
+                    LocalDate ActivityDate = Activity.getStartTime().atZoneSameInstant(java.time.ZoneId.of("UTC")).toLocalDate();
                     
                     // Apply date filtering if specified
                     if (isDateInRange(ActivityDate, startDate, endDate)) {
                         logger.info("Activity " + Activity.getId() + " is in date range, creating CalendarActivityDTO");
                         activities.add(createCalendarActivityFromActivity(Activity, userId, "creator"));
                         logger.info("Successfully created CalendarActivityDTO for Activity: " + Activity.getId());
+                    } else {
+                        logger.info("Activity " + Activity.getId() + " is outside date range, skipping");
                     }
                 } catch (Exception e) {
                     logger.error("Error processing created Activity: " + 
@@ -178,8 +188,21 @@ public class CalendarService implements ICalendarService {
                 try {
                     logger.info("Processing participating ActivityUser for user: " + userId);
                     Activity Activity = ActivityUser.getActivity();
+                    
+                    // Add null safety checks
+                    if (Activity == null) {
+                        logger.warn("Skipping ActivityUser - null Activity");
+                        continue;
+                    }
+                    if (Activity.getStartTime() == null) {
+                        logger.warn("Skipping Activity " + Activity.getId() + " - null startTime");
+                        continue;
+                    }
+                    
                     logger.info("Got Activity " + Activity.getId() + " from ActivityUser for user: " + userId);
-                    LocalDate ActivityDate = Activity.getStartTime().toLocalDate();
+                    
+                    // Convert to UTC-based LocalDate for consistent date filtering
+                    LocalDate ActivityDate = Activity.getStartTime().atZoneSameInstant(java.time.ZoneId.of("UTC")).toLocalDate();
                     
                     // Apply date filtering if specified
                     if (isDateInRange(ActivityDate, startDate, endDate)) {
@@ -191,6 +214,8 @@ public class CalendarService implements ICalendarService {
                         } else {
                             logger.info("Activity " + Activity.getId() + " was created by user, skipping to avoid duplicate");
                         }
+                    } else {
+                        logger.info("Activity " + Activity.getId() + " is outside date range, skipping");
                     }
                 } catch (Exception e) {
                     logger.error("Error processing participating Activity: " + 
@@ -292,8 +317,15 @@ public class CalendarService implements ICalendarService {
      */
     private boolean isDateInRange(LocalDate date, LocalDate startDate, LocalDate endDate) {
         try {
+            // Add null safety for date parameter
+            if (date == null) {
+                logger.warn("isDateInRange called with null date parameter");
+                return false;
+            }
+            
             // If no date range is specified, include all dates
             if (startDate == null && endDate == null) {
+                logger.info("No date range specified, including date: " + date);
                 return true;
             }
             
@@ -303,7 +335,14 @@ public class CalendarService implements ICalendarService {
             // Check upper bound if specified
             boolean beforeEnd = (endDate == null || !date.isAfter(endDate));
             
-            return afterStart && beforeEnd;
+            boolean inRange = afterStart && beforeEnd;
+            
+            logger.info("Date range check for " + date + 
+                        " (start: " + startDate + ", end: " + endDate + "): " + 
+                        (inRange ? "INCLUDED" : "EXCLUDED") + 
+                        " (afterStart: " + afterStart + ", beforeEnd: " + beforeEnd + ")");
+            
+            return inRange;
         } catch (Exception e) {
             logger.error("Error checking if date is in range. Date: " + date + 
                         ", startDate: " + startDate + ", endDate: " + endDate + 
@@ -328,14 +367,29 @@ public class CalendarService implements ICalendarService {
                 throw new IllegalArgumentException("Activity start time cannot be null for Activity ID: " + Activity.getId());
             }
             
-            return CalendarActivityDTO.builder()
+            // Use UTC timezone for consistent date formatting across different server timezones
+            LocalDate activityDate = Activity.getStartTime().atZoneSameInstant(java.time.ZoneId.of("UTC")).toLocalDate();
+            String formattedDate = activityDate.format(DATE_FORMATTER);
+            
+            logger.info("Creating CalendarActivityDTO for Activity: " + Activity.getId() + 
+                       ", StartTime: " + Activity.getStartTime() + 
+                       ", Formatted Date: " + formattedDate + 
+                       ", Role: " + role);
+            
+            CalendarActivityDTO calendarActivityDTO = CalendarActivityDTO.builder()
                     .id(Activity.getId())
-                    .date(Activity.getStartTime().toLocalDate().format(DATE_FORMATTER))
+                    .date(formattedDate)
                     .title(Activity.getTitle() != null ? Activity.getTitle() : "Untitled Activity")
                     .icon(Activity.getIcon() != null ? Activity.getIcon() : "⭐")
                     .colorHexCode(Activity.getColorHexCode() != null ? Activity.getColorHexCode() : "#6B73FF")
                     .activityId(Activity.getId())
                     .build();
+            
+            logger.info("Successfully created CalendarActivityDTO: " + calendarActivityDTO.getId() + 
+                       ", Date: " + calendarActivityDTO.getDate() + 
+                       ", Title: " + calendarActivityDTO.getTitle());
+            
+            return calendarActivityDTO;
         } catch (Exception e) {
             logger.error("Error creating calendar activity from Activity: " + 
                         (Activity != null ? Activity.getId() : "null Activity") + 
