@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.DTOs;
 
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import lombok.*;
 
 import java.io.Serializable;
@@ -15,7 +14,6 @@ import java.util.UUID;
 public class CalendarActivityDTO implements Serializable {
     private UUID id;
     private String date; // ISO format: YYYY-MM-DD
-    private ActivityCategory ActivityCategory;
     private String icon; // Icon for the calendar Activity (emoji)
     private String colorHexCode; // Color for the calendar Activity
     private UUID ActivityId; // Optional, if the activity is linked to a spawn Activity

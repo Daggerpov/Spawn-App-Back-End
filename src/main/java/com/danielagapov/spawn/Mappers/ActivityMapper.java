@@ -3,8 +3,8 @@ package com.danielagapov.spawn.Mappers;
 import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Models.Activity;
+import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
 
@@ -23,9 +23,9 @@ public class ActivityMapper {
                 entity.getStartTime(),
                 entity.getEndTime(),
                 entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).getId() : null, // Map Location to LocationDTO
+                entity.getActivityType() != null ? entity.getActivityType().getId() : null, // Map ActivityType to ActivityTypeDTO
                 entity.getNote(),
                 entity.getIcon(),
-                entity.getCategory(),
                 creatorUserId,
                 participantUserIds,
                 invitedUserIds,
@@ -35,7 +35,7 @@ public class ActivityMapper {
     }
 
     // Convert DTO to entity
-    public static Activity toEntity(ActivityDTO dto, Location location, User creator) {
+    public static Activity toEntity(ActivityDTO dto, Location location, User creator, ActivityType activityType) {
         Activity activity = new Activity(
                 dto.getId(),
                 dto.getTitle(),
@@ -44,9 +44,9 @@ public class ActivityMapper {
                 location, // Assign the full Location entity
                 dto.getNote(),
                 creator,
-                dto.getIcon(),
-                dto.getCategory()
+                dto.getIcon()
         );
+        activity.setActivityType(activityType); // Set the ActivityType entity
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
             activity.setCreatedAt(dto.getCreatedAt());
@@ -72,7 +72,7 @@ public class ActivityMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<Activity> toEntityList(List<ActivityDTO> activityDTOS, List<Location> locations, List<User> creators) {
+    public static List<Activity> toEntityList(List<ActivityDTO> activityDTOS, List<Location> locations, List<User> creators, List<ActivityType> activityTypes) {
         return activityDTOS.stream()
                 .map(dto -> {
                     // Find the Location entity based on the locationId from DTO
@@ -87,7 +87,15 @@ public class ActivityMapper {
                             .findFirst()
                             .orElse(null);
 
-                    return toEntity(dto, location, creator); // Convert DTO to entity
+                    // Find the ActivityType entity based on the activityTypeId from DTO
+                    ActivityType activityType = dto.getActivityTypeId() != null 
+                            ? activityTypes.stream()
+                                    .filter(type -> type.getId().equals(dto.getActivityTypeId()))
+                                    .findFirst()
+                                    .orElse(null)
+                            : null;
+
+                    return toEntity(dto, location, creator, activityType); // Convert DTO to entity
                 })
                 .collect(Collectors.toList());
     }
@@ -99,7 +107,6 @@ public class ActivityMapper {
         activity.setStartTime(dto.getStartTime()); // Set the start time
         activity.setEndTime(dto.getEndTime()); // Set the end time
         activity.setIcon(dto.getIcon()); // Set the icon
-        activity.setCategory(dto.getCategory()); // Set the category
 
         // Convert LocationDTO to Location entity (assuming a similar method exists)
         Location location = LocationMapper.toEntity(dto.getLocation());
@@ -119,16 +126,16 @@ public class ActivityMapper {
         return activity;
     }
 
-    public static Activity fromCreationDTO(ActivityCreationDTO dto, Location location, User creator) {
+    public static Activity fromCreationDTO(ActivityCreationDTO dto, Location location, User creator, ActivityType activityType) {
         Activity activity = new Activity();
         activity.setTitle(dto.getTitle());
         activity.setStartTime(dto.getStartTime());
         activity.setEndTime(dto.getEndTime());
         activity.setLocation(location); // Use the saved/persisted location.
+        activity.setActivityType(activityType); // Set the ActivityType entity
         activity.setNote(dto.getNote());
         activity.setCreator(creator);
         activity.setIcon(dto.getIcon());
-        activity.setCategory(dto.getCategory());
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
             activity.setCreatedAt(dto.getCreatedAt());

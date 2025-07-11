@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.DTOs.Activity;
 
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +12,7 @@ import java.util.UUID;
 @Setter
 public class ActivityCreationDTO extends AbstractActivityDTO {
     LocationDTO location;
+    UUID activityTypeId;
     UUID creatorUserId;
     List<UUID> invitedFriendUserIds;
     
@@ -21,14 +21,15 @@ public class ActivityCreationDTO extends AbstractActivityDTO {
     OffsetDateTime startTime,
     OffsetDateTime endTime,
     LocationDTO location,
+    UUID activityTypeId,
     String note,
     String icon,
-    ActivityCategory category,
     UUID creatorUserId,
     List<UUID> invitedFriendUserIds,
     Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, category, createdAt);
+        super(id, title, startTime, endTime, note, icon, createdAt);
         this.location = location;
+        this.activityTypeId = activityTypeId;
         this.creatorUserId = creatorUserId;
         this.invitedFriendUserIds = invitedFriendUserIds;
     }

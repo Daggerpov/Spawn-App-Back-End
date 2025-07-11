@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.DTOs.Activity;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,32 +16,29 @@ import java.util.UUID;
 @Getter
 @Setter
 public class ActivityInviteDTO extends AbstractActivityDTO {
-    private String location; // Just the location name, not full LocationDTO
-    private String creatorName;
-    private String creatorUsername;
-    private String description; // Maps to 'note' field in the database
-    private List<BaseUserDTO> attendees; // Participating and invited users combined
-    private int totalAttendees; // Total count of attendees
+    UUID locationId;
+    UUID activityTypeId;
+    UUID creatorUserId;
+    List<UUID> participantUserIds;
+    List<UUID> invitedUserIds;
     
     public ActivityInviteDTO(UUID id,
-                           String title,
-                           OffsetDateTime startDateTime,
-                           OffsetDateTime endTime,
-                           String note,
-                           String icon,
-                           ActivityCategory category,
-                           Instant createdAt,
-                           String location,
-                           String creatorName,
-                           String creatorUsername,
-                           List<BaseUserDTO> attendees,
-                           int totalAttendees) {
-        super(id, title, startDateTime, endTime, note, icon, category, createdAt);
-        this.location = location;
-        this.creatorName = creatorName;
-        this.creatorUsername = creatorUsername;
-        this.description = note; // Map note to description for clarity
-        this.attendees = attendees;
-        this.totalAttendees = totalAttendees;
+    String title,
+    OffsetDateTime startTime,
+    OffsetDateTime endTime,
+    UUID locationId,
+    UUID activityTypeId,
+    String note,
+    String icon,
+    UUID creatorUserId,
+    List<UUID> participantUserIds,
+    List<UUID> invitedUserIds,
+    Instant createdAt) {
+        super(id, title, startTime, endTime, note, icon, createdAt);
+        this.locationId = locationId;
+        this.activityTypeId = activityTypeId;
+        this.creatorUserId = creatorUserId;
+        this.participantUserIds = participantUserIds;
+        this.invitedUserIds = invitedUserIds;
     }
 } 

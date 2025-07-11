@@ -272,7 +272,6 @@ public class CalendarService implements ICalendarService {
             return CalendarActivityDTO.builder()
                     .id(Activity.getId())
                     .date(Activity.getStartTime().toLocalDate().format(DATE_FORMATTER))
-                    .ActivityCategory(Activity.getCategory())
                     .icon(Activity.getIcon())
                     .colorHexCode(Activity.getColorHexCode())
                     .ActivityId(Activity.getId())

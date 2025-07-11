@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Models.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -36,11 +35,9 @@ public class Activity implements Serializable {
     private OffsetDateTime endTime;
     private String icon;
     private String colorHexCode;
-    
-    @Enumerated(EnumType.STRING)
-    private ActivityCategory category; // TODO: remove
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_type_id", referencedColumnName = "id", nullable = true)
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private ActivityType activityType;
 
@@ -76,7 +73,7 @@ public class Activity implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, ActivityCategory category) {
+    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -87,6 +84,5 @@ public class Activity implements Serializable {
         this.createdAt = Instant.now();
         this.lastUpdated = Instant.now();
         this.icon = icon;
-        this.category = category;
     }
 }

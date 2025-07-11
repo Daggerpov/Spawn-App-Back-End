@@ -8,7 +8,7 @@ import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.Enums.ActivityCategory;
+
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -22,6 +22,7 @@ import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityRepository;
+import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -51,6 +52,9 @@ public class ActivityServiceTests {
 
     @Mock
     private IActivityRepository ActivityRepository;
+
+    @Mock
+    private IActivityTypeRepository activityTypeRepository;
 
     @Mock
     private ILogger logger;
@@ -92,7 +96,7 @@ public class ActivityServiceTests {
         Location loc = new Location(UUID.randomUUID(), "Dummy Location", 0.0, 0.0);
         User creator = new User();
         creator.setId(UUID.randomUUID());
-        return new Activity(ActivityId, title, start, end, loc, "Note", creator, "icon", ActivityCategory.ACTIVE);
+        return new Activity(ActivityId, title, start, end, loc, "Note", creator, "icon");
     }
 
     private ActivityDTO dummyActivityDTO(UUID ActivityId, String title) {
@@ -102,9 +106,9 @@ public class ActivityServiceTests {
                 OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(1),
                 UUID.randomUUID(),
+                null, // activityTypeId
                 "Note",
                 "icon",
-                ActivityCategory.ACTIVE,
                 UUID.randomUUID(),
                 List.of(),
                 List.of(),
@@ -122,7 +126,7 @@ public class ActivityServiceTests {
         dummyCreator.setId(UUID.randomUUID());
         Activity Activity = new Activity(UUID.randomUUID(), "Test Activity",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", ActivityCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon");
 
         when(ActivityRepository.findAll()).thenReturn(List.of(Activity));
         when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
@@ -145,7 +149,7 @@ public class ActivityServiceTests {
         dummyCreator.setId(UUID.randomUUID());
         Activity Activity = new Activity(ActivityId, "Test Activity",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", ActivityCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon");
 
         when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
         when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
@@ -175,7 +179,7 @@ public class ActivityServiceTests {
         UUID locationId = UUID.randomUUID();
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", ActivityCategory.ACTIVE, UUID.randomUUID(),
+                OffsetDateTime.now().plusHours(2), location.getId(), null, "Bring your own snacks!", "icon", UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
         User creator = new User(
                 UUID.randomUUID(),
@@ -187,7 +191,7 @@ public class ActivityServiceTests {
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
         when(userService.getUserEntityById(ActivityDTO.getCreatorUserId())).thenReturn(creator);
-        when(ActivityRepository.save(any(Activity.class))).thenReturn(ActivityMapper.toEntity(ActivityDTO, location, creator));
+        when(ActivityRepository.save(any(Activity.class))).thenReturn(ActivityMapper.toEntity(ActivityDTO, location, creator, null));
 
         assertDoesNotThrow(() -> ActivityService.saveActivity(ActivityDTO));
 
@@ -199,7 +203,7 @@ public class ActivityServiceTests {
         UUID locationId = UUID.randomUUID();
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(2), location.getId(), "Bring your own snacks!", "icon", ActivityCategory.ACTIVE, UUID.randomUUID(),
+                OffsetDateTime.now().plusHours(2), location.getId(), null, "Bring your own snacks!", "icon", UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
@@ -250,9 +254,9 @@ public class ActivityServiceTests {
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
                 locationDTO,
+                null, // activityTypeId
                 "Test note",
                 "icon",
-                ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(explicitInviteId),
                 null
@@ -315,9 +319,9 @@ public class ActivityServiceTests {
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
                 new LocationDTO(null, "Test Location", 0.0, 0.0),
+                null, // activityTypeId
                 "Test note",
                 "icon",
-                ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(),
                 null
@@ -343,9 +347,9 @@ public class ActivityServiceTests {
                 OffsetDateTime.now().plusDays(1),
                 OffsetDateTime.now().plusDays(1).plusHours(2),
                 new LocationDTO(null, "Test Location", 0.0, 0.0),
+                null, // activityTypeId
                 "Merged invites test",
                 "icon",
-                ActivityCategory.ACTIVE,
                 creatorId,
                 List.of(commonUserId),
                 null
@@ -756,9 +760,9 @@ public class ActivityServiceTests {
                 OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(1),
                 UUID.randomUUID(),
+                null, // activityTypeId
                 "Note",
                 "icon",
-                ActivityCategory.ACTIVE,
                 UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
         when(locationService.getLocationById(ActivityDTO.getLocationId()))
@@ -784,7 +788,7 @@ public class ActivityServiceTests {
         UUID creatorId = UUID.randomUUID();
         ActivityDTO ActivityDTO = new ActivityDTO(
                 UUID.randomUUID(), "Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                UUID.randomUUID(), "Note", "icon", ActivityCategory.ACTIVE, creatorId, List.of(), List.of(), List.of(), Instant.now());
+                UUID.randomUUID(), null, "Note", "icon", creatorId, List.of(), List.of(), List.of(), Instant.now());
         UUID requestingUserId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");
@@ -935,8 +939,7 @@ public class ActivityServiceTests {
                 location,
                 "Come celebrate with us!",
                 creator,
-                "🎉",
-                ActivityCategory.ACTIVE
+                "🎉"
         );
         
         // Create attendees
@@ -957,9 +960,8 @@ public class ActivityServiceTests {
         
         // Set up mocks
         when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(activity));
-        when(activityUserRepository.findByActivity_Id(activityId)).thenReturn(attendees);
-        when(userService.getBaseUserById(attendeeId1)).thenReturn(baseUser1);
-        when(userService.getBaseUserById(attendeeId2)).thenReturn(baseUser2);
+        when(userService.getParticipantUserIdsByActivityId(activityId)).thenReturn(List.of(attendeeId1));
+        when(userService.getInvitedUserIdsByActivityId(activityId)).thenReturn(List.of(attendeeId2));
         
         // Execute
         ActivityInviteDTO result = ActivityService.getActivityInviteById(activityId);
@@ -968,16 +970,16 @@ public class ActivityServiceTests {
         assertNotNull(result);
         assertEquals(activityId, result.getId());
         assertEquals("Birthday Party", result.getTitle());
-        assertEquals("Test Location", result.getLocation());
-        assertEquals("John Doe", result.getCreatorName());
-        assertEquals("@johndoe", result.getCreatorUsername());
-        assertEquals("Come celebrate with us!", result.getDescription());
-        assertEquals(2, result.getAttendees().size());
-        assertEquals(3, result.getTotalAttendees()); // 2 attendees + 1 creator
+        assertEquals(locationId, result.getLocationId());
+        assertEquals(creatorId, result.getCreatorUserId());
+        assertEquals("Come celebrate with us!", result.getNote());
+        assertEquals(1, result.getParticipantUserIds().size());
+        assertEquals(1, result.getInvitedUserIds().size());
+        assertEquals("🎉", result.getIcon());
         
         verify(ActivityRepository, times(1)).findById(activityId);
-        verify(activityUserRepository, times(1)).findByActivity_Id(activityId);
-        verify(userService, times(2)).getBaseUserById(any(UUID.class));
+        verify(userService, times(1)).getParticipantUserIdsByActivityId(activityId);
+        verify(userService, times(1)).getInvitedUserIdsByActivityId(activityId);
     }
     
     @Test
@@ -1012,20 +1014,21 @@ public class ActivityServiceTests {
                 null, // null location
                 "Virtual meeting",
                 creator,
-                "💻",
-                ActivityCategory.ACTIVE
+                "💻"
         );
         
         when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(activity));
-        when(activityUserRepository.findByActivity_Id(activityId)).thenReturn(List.of());
+        when(userService.getParticipantUserIdsByActivityId(activityId)).thenReturn(List.of());
+        when(userService.getInvitedUserIdsByActivityId(activityId)).thenReturn(List.of());
         
         ActivityInviteDTO result = ActivityService.getActivityInviteById(activityId);
         
         assertNotNull(result);
-        assertNull(result.getLocation());
-        assertEquals("Jane Doe", result.getCreatorName());
-        assertEquals("@janedoe", result.getCreatorUsername());
-        assertEquals(0, result.getAttendees().size());
-        assertEquals(1, result.getTotalAttendees()); // Just the creator
+        assertNull(result.getLocationId()); // null location means null locationId
+        assertEquals(creatorId, result.getCreatorUserId());
+        assertEquals("Virtual meeting", result.getNote());
+        assertEquals(0, result.getParticipantUserIds().size());
+        assertEquals(0, result.getInvitedUserIds().size());
+        assertEquals("💻", result.getIcon());
     }
 }

@@ -200,5 +200,28 @@
     "security": "Ensure proper authorization checks in controllers",
     "exception_handling": "Use @ExceptionHandler or @ControllerAdvice for centralized exception handling",
     "spring_data_queries": "Prefer native Spring Data JPA method names (e.g., countByField, findByFieldAndOtherField) over custom @Query JPQL when possible - they are cleaner, more maintainable, and provide automatic validation"
+  },
+  "test_maintenance": {
+    "description": "CRITICAL: Always update test files when making model/DTO changes",
+    "rules": [
+      "Immediately identify affected test files - Search for all test files that reference the changed components",
+      "Update test constructors - Remove/add parameters to match new constructor signatures",
+      "Update test assertions - Modify test assertions to match new method signatures and available properties",
+      "Remove deprecated references - Delete all references to removed fields, methods, or enum values",
+      "Verify compilation - Ensure all test files compile without errors before considering the task complete"
+    ],
+    "examples": [
+      "When removing enum values: Remove all EnumName.VALUE references from test constructors and assertions",
+      "When removing DTO fields: Update test constructors to remove the parameter and update assertions to not access the removed getter",
+      "When changing constructor signatures: Update all test instantiations to match new parameter order/count",
+      "When removing methods: Remove all test calls to the deleted methods"
+    ],
+    "test_file_patterns": [
+      "*Tests.java",
+      "*Test.java",
+      "src/test/**",
+      "Mock object configurations that reference changed interfaces"
+    ],
+    "critical_note": "Failure to update tests is considered incomplete work. All compilation errors in test files must be resolved as part of the original change."
   }
 } 
