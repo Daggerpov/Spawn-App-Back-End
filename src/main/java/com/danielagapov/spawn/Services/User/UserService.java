@@ -358,8 +358,8 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<BaseUserDTO> searchByQuery(String searchQuery) {
-        return userSearchService.searchByQuery(searchQuery);
+    public List<BaseUserDTO> searchByQuery(String searchQuery, UUID requestingUserId) {
+        return userSearchService.searchByQuery(searchQuery, requestingUserId);
     }
 
     @Override

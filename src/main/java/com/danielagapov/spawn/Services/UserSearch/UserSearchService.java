@@ -6,8 +6,10 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.SearchResultUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Enums.UserRelationshipType;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -55,15 +57,52 @@ public class UserSearchService implements IUserSearchService {
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
         try {
+            List<SearchResultUserDTO> allUsers = new ArrayList<>();
+
+            // Get incoming friend requests
             List<FetchFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(requestingUserId)
                     .stream()
                     .filter(fr -> isQueryMatch(fr.getSenderUser(), searchQuery))
                     .toList();
+            
+            for (FetchFriendRequestDTO request : incomingFriendRequests) {
+                allUsers.add(new SearchResultUserDTO(
+                    request.getSenderUser(),
+                    UserRelationshipType.INCOMING_FRIEND_REQUEST,
+                    null,
+                    request.getId()
+                ));
+            }
+
+            // Get outgoing friend requests
+            List<CreateFriendRequestDTO> outgoingFriendRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+            
+            for (CreateFriendRequestDTO request : outgoingFriendRequests) {
+                User receiverUser = userService.getUserEntityById(request.getReceiverUserId());
+                BaseUserDTO receiverUserDTO = new BaseUserDTO(
+                    receiverUser.getId(),
+                    receiverUser.getName(),
+                    receiverUser.getEmail(),
+                    receiverUser.getUsername(),
+                    receiverUser.getBio(),
+                    receiverUser.getProfilePictureUrlString()
+                );
+                
+                // Only add if it matches the search query
+                if (isQueryMatch(receiverUserDTO, searchQuery)) {
+                    allUsers.add(new SearchResultUserDTO(
+                        receiverUserDTO,
+                        UserRelationshipType.OUTGOING_FRIEND_REQUEST,
+                        null,
+                        request.getId()
+                    ));
+                }
+            }
 
             List<RecommendedFriendUserDTO> recommendedFriends;
             List<FullFriendUserDTO> friends;
 
-            // If searchQuery is empty, return all recommended friends
+            // If searchQuery is empty, return all recommended friends and friends
             if (searchQuery.isEmpty()) {
                 recommendedFriends = userService.getLimitedRecommendedFriendsForUserId(requestingUserId);
                 friends = userService.getFullFriendUsersByUserId(requestingUserId);
@@ -101,7 +140,43 @@ public class UserSearchService implements IUserSearchService {
                         .collect(Collectors.toList());
             }
 
-            return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
+            // Add recommended friends to the unified list
+            for (RecommendedFriendUserDTO recommended : recommendedFriends) {
+                BaseUserDTO baseUser = new BaseUserDTO(
+                    recommended.getId(),
+                    recommended.getName(),
+                    recommended.getEmail(),
+                    recommended.getUsername(),
+                    recommended.getBio(),
+                    recommended.getProfilePicture()
+                );
+                allUsers.add(new SearchResultUserDTO(
+                    baseUser,
+                    UserRelationshipType.RECOMMENDED_FRIEND,
+                    recommended.getMutualFriendCount(),
+                    null
+                ));
+            }
+
+            // Add friends to the unified list
+            for (FullFriendUserDTO friend : friends) {
+                BaseUserDTO baseUser = new BaseUserDTO(
+                    friend.getId(),
+                    friend.getName(),
+                    friend.getEmail(),
+                    friend.getUsername(),
+                    friend.getBio(),
+                    friend.getProfilePicture()
+                );
+                allUsers.add(new SearchResultUserDTO(
+                    baseUser,
+                    UserRelationshipType.FRIEND,
+                    null,
+                    null
+                ));
+            }
+
+            return new SearchedUserResult(allUsers);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -352,8 +427,17 @@ public class UserSearchService implements IUserSearchService {
     }
 
     @Override
-    public List<BaseUserDTO> searchByQuery(String searchQuery) {
+    public List<BaseUserDTO> searchByQuery(String searchQuery, UUID requestingUserId) {
         List<User> users = searchUsersByQuery(searchQuery);
+        
+        // Filter out the requesting user and other excluded users if requestingUserId is provided
+        if (requestingUserId != null) {
+            Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
+            users = users.stream()
+                    .filter(user -> !excludedUserIds.contains(user.getId()))
+                    .collect(Collectors.toList());
+        }
+        
         // Return BaseUserDTOs
         return UserMapper.toDTOList(users);
     }

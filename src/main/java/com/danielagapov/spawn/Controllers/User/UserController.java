@@ -185,9 +185,10 @@ public class UserController {
     // full path: /api/v1/users/search
     @GetMapping("search")
     public ResponseEntity<List<BaseUserDTO>> searchForUsers(
-            @RequestParam(required = false, defaultValue = "") String searchQuery) {
+            @RequestParam(required = false, defaultValue = "") String searchQuery,
+            @RequestParam(required = false) UUID requestingUserId) {
         try {
-            return new ResponseEntity<>(userService.searchByQuery(searchQuery), HttpStatus.OK);
+            return new ResponseEntity<>(userService.searchByQuery(searchQuery, requestingUserId), HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error searching for users with query: " + searchQuery + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
