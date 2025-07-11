@@ -3,7 +3,6 @@ package com.danielagapov.spawn.Mappers;
 import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
@@ -25,7 +24,6 @@ public class ActivityMapper {
                 entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).getId() : null, // Map Location to LocationDTO
                 entity.getNote(),
                 entity.getIcon(),
-                entity.getCategory(),
                 creatorUserId,
                 participantUserIds,
                 invitedUserIds,
@@ -44,8 +42,7 @@ public class ActivityMapper {
                 location, // Assign the full Location entity
                 dto.getNote(),
                 creator,
-                dto.getIcon(),
-                dto.getCategory()
+                dto.getIcon()
         );
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
@@ -99,7 +96,6 @@ public class ActivityMapper {
         activity.setStartTime(dto.getStartTime()); // Set the start time
         activity.setEndTime(dto.getEndTime()); // Set the end time
         activity.setIcon(dto.getIcon()); // Set the icon
-        activity.setCategory(dto.getCategory()); // Set the category
 
         // Convert LocationDTO to Location entity (assuming a similar method exists)
         Location location = LocationMapper.toEntity(dto.getLocation());
@@ -128,7 +124,6 @@ public class ActivityMapper {
         activity.setNote(dto.getNote());
         activity.setCreator(creator);
         activity.setIcon(dto.getIcon());
-        activity.setCategory(dto.getCategory());
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
             activity.setCreatedAt(dto.getCreatedAt());

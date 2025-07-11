@@ -1,8 +1,6 @@
 package com.danielagapov.spawn.DTOs.Activity;
 
-import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -18,58 +16,57 @@ import java.util.UUID;
  */
 @Getter
 @Setter
-public class ProfileActivityDTO extends FullFeedActivityDTO {
-    @JsonProperty("isPastActivity")
-    private boolean isPastActivity;
-
+public class ProfileActivityDTO extends AbstractActivityDTO {
+    private UUID locationId;
+    private BaseUserDTO creatorUser;
+    private List<BaseUserDTO> participantUsers;
+    private List<BaseUserDTO> invitedUsers;
+    private List<UUID> chatMessageIds;
+    
     public ProfileActivityDTO(UUID id,
-                          String title,
-                          OffsetDateTime startTime,
-                          OffsetDateTime endTime,
-                          LocationDTO location,
-                          String note,
-                          String icon,
-                          ActivityCategory category,
-                          BaseUserDTO creatorUser,
-                          List<BaseUserDTO> participantUsers,
-                          List<BaseUserDTO> invitedUsers,
-                          List<FullActivityChatMessageDTO> chatMessages,
-                          String activityFriendTagColorHexCodeForRequestingUser,
-                          ParticipationStatus participationStatus,
-                          boolean isSelfOwned,
-                          boolean isPastActivity,
-                          Instant createdAt) {
-        super(id, title, startTime, endTime, location, note, icon, category, creatorUser, 
-             participantUsers, invitedUsers, chatMessages, activityFriendTagColorHexCodeForRequestingUser, 
-             participationStatus, isSelfOwned, createdAt);
-        this.isPastActivity = isPastActivity;
+    String title,
+    OffsetDateTime startTime,
+    OffsetDateTime endTime,
+    UUID locationId,
+    String note,
+    String icon,
+    BaseUserDTO creatorUser,
+    List<BaseUserDTO> participantUsers,
+    List<BaseUserDTO> invitedUsers,
+    List<UUID> chatMessageIds,
+    Instant createdAt) {
+        super(id, title, startTime, endTime, note, icon, createdAt);
+        this.locationId = locationId;
+        this.creatorUser = creatorUser;
+        this.participantUsers = participantUsers;
+        this.invitedUsers = invitedUsers;
+        this.chatMessageIds = chatMessageIds;
     }
     
     /**
      * Creates a ProfileActivityDTO from a FullFeedActivityDTO
      * 
      * @param fullFeedActivityDTO The FullFeedActivityDTO to convert
-     * @param isPastActivity Whether this activity is a past activity
      * @return A new ProfileActivityDTO
      */
-    public static ProfileActivityDTO fromFullFeedActivityDTO(FullFeedActivityDTO fullFeedActivityDTO, boolean isPastActivity) {
+    public static ProfileActivityDTO fromFullFeedActivityDTO(FullFeedActivityDTO fullFeedActivityDTO) {
+        // Convert chat messages to their IDs
+        List<UUID> chatMessageIds = fullFeedActivityDTO.getChatMessages() != null ? 
+            fullFeedActivityDTO.getChatMessages().stream().map(msg -> msg.getId()).collect(java.util.stream.Collectors.toList()) : 
+            null;
+            
         return new ProfileActivityDTO(
             fullFeedActivityDTO.getId(),
             fullFeedActivityDTO.getTitle(),
             fullFeedActivityDTO.getStartTime(),
             fullFeedActivityDTO.getEndTime(),
-            fullFeedActivityDTO.getLocation(),
+            fullFeedActivityDTO.getLocation().getId(),
             fullFeedActivityDTO.getNote(),
             fullFeedActivityDTO.getIcon(),
-            fullFeedActivityDTO.getCategory(),
             fullFeedActivityDTO.getCreatorUser(),
             fullFeedActivityDTO.getParticipantUsers(),
             fullFeedActivityDTO.getInvitedUsers(),
-            fullFeedActivityDTO.getChatMessages(),
-            fullFeedActivityDTO.getActivityFriendTagColorHexCodeForRequestingUser(),
-            fullFeedActivityDTO.getParticipationStatus(),
-            fullFeedActivityDTO.isSelfOwned(),
-            isPastActivity,
+            chatMessageIds,
             fullFeedActivityDTO.getCreatedAt()
         );
     }

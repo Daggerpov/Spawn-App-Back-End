@@ -8,7 +8,7 @@ import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.Enums.ActivityCategory;
+
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
@@ -92,7 +92,7 @@ public class ActivityServiceTests {
         Location loc = new Location(UUID.randomUUID(), "Dummy Location", 0.0, 0.0);
         User creator = new User();
         creator.setId(UUID.randomUUID());
-        return new Activity(ActivityId, title, start, end, loc, "Note", creator, "icon", ActivityCategory.ACTIVE);
+        return new Activity(ActivityId, title, start, end, loc, "Note", creator, "icon");
     }
 
     private ActivityDTO dummyActivityDTO(UUID ActivityId, String title) {
@@ -104,7 +104,6 @@ public class ActivityServiceTests {
                 UUID.randomUUID(),
                 "Note",
                 "icon",
-                ActivityCategory.ACTIVE,
                 UUID.randomUUID(),
                 List.of(),
                 List.of(),
@@ -122,7 +121,7 @@ public class ActivityServiceTests {
         dummyCreator.setId(UUID.randomUUID());
         Activity Activity = new Activity(UUID.randomUUID(), "Test Activity",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", ActivityCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon");
 
         when(ActivityRepository.findAll()).thenReturn(List.of(Activity));
         when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
@@ -145,7 +144,7 @@ public class ActivityServiceTests {
         dummyCreator.setId(UUID.randomUUID());
         Activity Activity = new Activity(ActivityId, "Test Activity",
                 OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                location, "Test note", dummyCreator, "icon", ActivityCategory.ACTIVE);
+                location, "Test note", dummyCreator, "icon");
 
         when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
         when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());

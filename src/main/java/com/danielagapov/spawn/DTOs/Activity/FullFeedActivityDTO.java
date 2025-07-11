@@ -3,7 +3,6 @@ package com.danielagapov.spawn.DTOs.Activity;
 
 import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -38,7 +37,6 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             LocationDTO location,
                             String note,
                             String icon,
-                            ActivityCategory category,
                             BaseUserDTO creatorUser,
                             List<BaseUserDTO> participantUsers,
                             List<BaseUserDTO> invitedUsers,
@@ -47,7 +45,7 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             ParticipationStatus participationStatus, 
                             boolean isSelfOwned,
                             Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, category, createdAt);
+        super(id, title, startTime, endTime, note, icon, createdAt);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
