@@ -173,26 +173,34 @@ public class CalendarService implements ICalendarService {
             logger.info("Finished processing created Activities. Current activities list size: " + activities.size());
             
             // Process Activities the user is participating in
+            logger.info("Starting to process " + participatingActivities.size() + " participating Activities for user: " + userId);
             for (ActivityUser ActivityUser : participatingActivities) {
                 try {
+                    logger.info("Processing participating ActivityUser for user: " + userId);
                     Activity Activity = ActivityUser.getActivity();
+                    logger.info("Got Activity " + Activity.getId() + " from ActivityUser for user: " + userId);
                     LocalDate ActivityDate = Activity.getStartTime().toLocalDate();
                     
                     // Apply date filtering if specified
                     if (isDateInRange(ActivityDate, startDate, endDate)) {
                         // Avoid adding duplicate entries for Activities the user both created and is participating in
                         if (!Activity.getCreator().getId().equals(userId)) {
+                            logger.info("Activity " + Activity.getId() + " is not created by user, adding as participant");
                             activities.add(createCalendarActivityFromActivity(Activity, userId, "participant"));
+                            logger.info("Successfully created CalendarActivityDTO for participating Activity: " + Activity.getId());
+                        } else {
+                            logger.info("Activity " + Activity.getId() + " was created by user, skipping to avoid duplicate");
                         }
                     }
                 } catch (Exception e) {
                     logger.error("Error processing participating Activity: " + 
-                                (ActivityUser.getActivity() != null ? ActivityUser.getActivity().getId() : "null") + 
+                                (ActivityUser != null && ActivityUser.getActivity() != null ? ActivityUser.getActivity().getId() : "null") + 
                                 " for user: " + userId + ". Error: " + e.getMessage() + 
                                 ", Stack trace: " + Arrays.toString(e.getStackTrace()));
                     // Continue processing other Activities
                 }
             }
+            logger.info("Finished processing participating Activities. Final activities list size: " + activities.size());
             
             return activities;
             
