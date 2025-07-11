@@ -141,28 +141,36 @@ public class CalendarService implements ICalendarService {
                        (endDate != null ? ", endDate: " + endDate : ""));
             
             // 1. Get Activities the user created
+            logger.info("About to query Activities created by user: " + userId);
             List<Activity> createdActivities = ActivityRepository.findByCreatorId(userId);
             logger.info("Found " + createdActivities.size() + " Activities created by user: " + userId);
             
             // 2. Get Activities the user is participating in
+            logger.info("About to query Activities user is participating in for userId: " + userId);
             List<ActivityUser> participatingActivities = activityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
             logger.info("Found " + participatingActivities.size() + " Activities user is participating in, userId: " + userId);
             
             // Process Activities created by the user
+            logger.info("Starting to process " + createdActivities.size() + " created Activities for user: " + userId);
             for (Activity Activity : createdActivities) {
                 try {
+                    logger.info("Processing created Activity ID: " + Activity.getId() + " for user: " + userId);
                     LocalDate ActivityDate = Activity.getStartTime().toLocalDate();
                     
                     // Apply date filtering if specified
                     if (isDateInRange(ActivityDate, startDate, endDate)) {
+                        logger.info("Activity " + Activity.getId() + " is in date range, creating CalendarActivityDTO");
                         activities.add(createCalendarActivityFromActivity(Activity, userId, "creator"));
+                        logger.info("Successfully created CalendarActivityDTO for Activity: " + Activity.getId());
                     }
                 } catch (Exception e) {
-                    logger.error("Error processing created Activity: " + Activity.getId() + " for user: " + userId + 
+                    logger.error("Error processing created Activity: " + 
+                                (Activity != null ? Activity.getId() : "null Activity") + " for user: " + userId + 
                                 ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
                     // Continue processing other Activities
                 }
             }
+            logger.info("Finished processing created Activities. Current activities list size: " + activities.size());
             
             // Process Activities the user is participating in
             for (ActivityUser ActivityUser : participatingActivities) {
