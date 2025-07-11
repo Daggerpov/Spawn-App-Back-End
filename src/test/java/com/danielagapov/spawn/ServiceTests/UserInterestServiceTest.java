@@ -124,6 +124,8 @@ public class UserInterestServiceTest {
     void removeUserInterest_ShouldReturnTrue_WhenInterestExists() {
         // Arrange
         String encodedInterest = "hiking";
+        when(userInterestRepository.findByUserId(testUserId))
+            .thenReturn(Arrays.asList(testUserInterest));
         when(userInterestRepository.findByUserIdAndInterest(testUserId, "hiking"))
             .thenReturn(Optional.of(testUserInterest));
 
@@ -132,6 +134,7 @@ public class UserInterestServiceTest {
 
         // Assert
         assertTrue(result);
+        verify(userInterestRepository).findByUserId(testUserId);
         verify(userInterestRepository).findByUserIdAndInterest(testUserId, "hiking");
         verify(userInterestRepository).delete(testUserInterest);
         verify(logger).info(contains("Attempting to remove interest"));
@@ -142,6 +145,8 @@ public class UserInterestServiceTest {
     void removeUserInterest_ShouldReturnFalse_WhenInterestNotFound() {
         // Arrange
         String encodedInterest = "nonexistent";
+        when(userInterestRepository.findByUserId(testUserId))
+            .thenReturn(Arrays.asList(testUserInterest));
         when(userInterestRepository.findByUserIdAndInterest(testUserId, "nonexistent"))
             .thenReturn(Optional.empty());
 
@@ -150,6 +155,7 @@ public class UserInterestServiceTest {
 
         // Assert
         assertFalse(result);
+        verify(userInterestRepository).findByUserId(testUserId);
         verify(userInterestRepository).findByUserIdAndInterest(testUserId, "nonexistent");
         verify(userInterestRepository, never()).delete(any(UserInterest.class));
         verify(logger).info(contains("Attempting to remove interest"));
@@ -163,6 +169,8 @@ public class UserInterestServiceTest {
         String decodedInterest = "rock climbing";
         
         UserInterest spaceInterest = new UserInterest(testUser, decodedInterest);
+        when(userInterestRepository.findByUserId(testUserId))
+            .thenReturn(Arrays.asList(spaceInterest));
         when(userInterestRepository.findByUserIdAndInterest(testUserId, decodedInterest))
             .thenReturn(Optional.of(spaceInterest));
 
@@ -171,9 +179,10 @@ public class UserInterestServiceTest {
 
         // Assert
         assertTrue(result);
+        verify(userInterestRepository).findByUserId(testUserId);
         verify(userInterestRepository).findByUserIdAndInterest(testUserId, decodedInterest);
         verify(userInterestRepository).delete(spaceInterest);
-        verify(logger, times(2)).info(contains("rock climbing")); // Called twice: attempting + successfully
+        verify(logger, times(3)).info(contains("rock climbing")); // Called three times: attempting + debug listing + successfully
     }
 
     @Test
@@ -183,6 +192,8 @@ public class UserInterestServiceTest {
         String decodedInterest = "café culture";
         
         UserInterest specialInterest = new UserInterest(testUser, decodedInterest);
+        when(userInterestRepository.findByUserId(testUserId))
+            .thenReturn(Arrays.asList(specialInterest));
         when(userInterestRepository.findByUserIdAndInterest(testUserId, decodedInterest))
             .thenReturn(Optional.of(specialInterest));
 
@@ -191,9 +202,10 @@ public class UserInterestServiceTest {
 
         // Assert
         assertTrue(result);
+        verify(userInterestRepository).findByUserId(testUserId);
         verify(userInterestRepository).findByUserIdAndInterest(testUserId, decodedInterest);
         verify(userInterestRepository).delete(specialInterest);
-        verify(logger, times(2)).info(contains("café culture")); // Called twice: attempting + successfully
+        verify(logger, times(3)).info(contains("café culture")); // Called three times: attempting + debug listing + successfully
     }
 
     @Test

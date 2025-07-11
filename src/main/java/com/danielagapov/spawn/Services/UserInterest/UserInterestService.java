@@ -55,7 +55,14 @@ public class UserInterestService implements IUserInterestService {
             // URL decode the interest name to handle spaces and special characters
             String decodedInterest = URLDecoder.decode(encodedInterestName, StandardCharsets.UTF_8);
             
-            logger.info("Attempting to remove interest '" + decodedInterest + "' for user: " + LoggingUtils.formatUserIdInfo(userId));
+            logger.info("Attempting to remove interest '" + decodedInterest + "' (encoded: '" + encodedInterestName + "') for user: " + LoggingUtils.formatUserIdInfo(userId));
+            
+            // Debug: Log all existing interests for this user
+            List<UserInterest> allUserInterests = userInterestRepository.findByUserId(userId);
+            logger.info("User " + LoggingUtils.formatUserIdInfo(userId) + " currently has " + allUserInterests.size() + " interests:");
+            for (UserInterest existingInterest : allUserInterests) {
+                logger.info("  - '" + existingInterest.getInterest() + "' (length: " + existingInterest.getInterest().length() + ")");
+            }
             
             Optional<UserInterest> userInterestOpt = userInterestRepository.findByUserIdAndInterest(userId, decodedInterest);
             
@@ -65,6 +72,16 @@ public class UserInterestService implements IUserInterestService {
                 return true;
             } else {
                 logger.warn("Interest '" + decodedInterest + "' not found for user: " + LoggingUtils.formatUserIdInfo(userId));
+                logger.warn("Exact search failed. Trying case-insensitive search...");
+                
+                // Try case-insensitive search for debugging
+                for (UserInterest existingInterest : allUserInterests) {
+                    if (existingInterest.getInterest().equalsIgnoreCase(decodedInterest)) {
+                        logger.warn("Found case-insensitive match: '" + existingInterest.getInterest() + "' vs '" + decodedInterest + "'");
+                        break;
+                    }
+                }
+                
                 return false;
             }
         } catch (Exception e) {
