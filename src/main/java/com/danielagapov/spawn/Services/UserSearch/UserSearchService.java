@@ -539,7 +539,7 @@ public class UserSearchService implements IUserSearchService {
         excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
         excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
         excludedUserIds.add(userId); // Exclude self
-        excludedUserIds.addAll(blockedUserService.getBlockedUserIds(userId));
+        // Note: Blocked user filtering is now handled at the controller level
 
         return excludedUserIds;
     }

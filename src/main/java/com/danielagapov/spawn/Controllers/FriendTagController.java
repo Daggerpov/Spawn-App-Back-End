@@ -8,6 +8,7 @@ import com.danielagapov.spawn.Enums.FriendTagAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
@@ -25,11 +26,13 @@ public class FriendTagController {
 
     private final IFriendTagService friendTagService;
     private final IUserService userService;
+    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
 
-    public FriendTagController(IFriendTagService friendTagService, IUserService userService, ILogger logger) {
+    public FriendTagController(IFriendTagService friendTagService, IUserService userService, IBlockedUserService blockedUserService, ILogger logger) {
         this.friendTagService = friendTagService;
         this.userService = userService;
+        this.blockedUserService = blockedUserService;
         this.logger = logger;
     }
 
@@ -199,7 +202,11 @@ public class FriendTagController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(friendTagService.getFriendsNotAddedToTag(friendTagId), HttpStatus.OK);
+            List<BaseUserDTO> friends = friendTagService.getFriendsNotAddedToTag(friendTagId);
+            // Get the owner of the friend tag to use as the requesting user for filtering
+            FriendTagDTO friendTag = friendTagService.getFriendTagById(friendTagId);
+            List<BaseUserDTO> filteredFriends = blockedUserService.filterOutBlockedUsers(friends, friendTag.getOwnerUserId());
+            return new ResponseEntity<>(filteredFriends, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Friend tag not found: " + friendTagId + ": " + e.getMessage());
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -280,7 +287,11 @@ public class FriendTagController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(userService.getFriendsByFriendTagId(id), HttpStatus.OK);
+            List<BaseUserDTO> friends = userService.getFriendsByFriendTagId(id);
+            // Get the owner of the friend tag to use as the requesting user for filtering
+            FriendTagDTO friendTag = friendTagService.getFriendTagById(id);
+            List<BaseUserDTO> filteredFriends = blockedUserService.filterOutBlockedUsers(friends, friendTag.getOwnerUserId());
+            return new ResponseEntity<>(filteredFriends, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("Friend tag not found: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
