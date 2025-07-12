@@ -51,4 +51,22 @@ public class UserInterestController {
             throw e;
         }
     }
+
+    @DeleteMapping("/{interest}")
+    public ResponseEntity<Void> removeUserInterest(
+            @PathVariable UUID userId,
+            @PathVariable String interest) {
+        try {
+            boolean removed = userInterestService.removeUserInterest(userId, interest);
+            
+            if (removed) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            logger.error("Error removing user interest for user: " + LoggingUtils.formatUserIdInfo(userId) + " - interest: " + interest + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 } 

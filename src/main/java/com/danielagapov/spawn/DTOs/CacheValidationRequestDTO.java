@@ -15,7 +15,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class CacheValidationRequestDTO {
     /**
-     * Map of cache category names (e.g., "friends", "Activities") to their 
+     * Map of cache category names (e.g., "friends", "events") to their 
      * last update timestamps in ISO-8601 format (e.g., "2023-04-01T10:15:30Z")
      */
     private Map<String, String> timestamps;

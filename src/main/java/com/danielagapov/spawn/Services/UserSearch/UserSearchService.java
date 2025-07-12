@@ -6,8 +6,10 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.SearchResultUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Enums.UserRelationshipType;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -18,6 +20,8 @@ import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Services.Analytics.SearchAnalyticsService;
+import com.danielagapov.spawn.Services.FuzzySearch.FuzzySearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import lombok.AllArgsConstructor;
 import org.apache.commons.text.similarity.JaroWinklerDistance;
@@ -49,59 +53,135 @@ public class UserSearchService implements IUserSearchService {
     private final IUserRepository userRepository;
     private final IBlockedUserService blockedUserService;
     private final IActivityUserRepository activityUserRepository;
+    private final FuzzySearchService<User> fuzzySearchService;
+    private final SearchAnalyticsService searchAnalyticsService;
     private final ILogger logger;
 
 
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
         try {
-            List<FetchFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(requestingUserId)
-                    .stream()
-                    .filter(fr -> isQueryMatch(fr.getSenderUser(), searchQuery))
-                    .toList();
+            List<SearchResultUserDTO> allUsers = new ArrayList<>();
+
+            // Get incoming friend requests
+            List<FetchFriendRequestDTO> incomingFriendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(requestingUserId);
+            
+            // Filter using fuzzy search if query is provided
+            if (!searchQuery.isEmpty()) {
+                incomingFriendRequests = fuzzyFilterFriendRequests(incomingFriendRequests, searchQuery, true);
+            }
+            
+            for (FetchFriendRequestDTO request : incomingFriendRequests) {
+                allUsers.add(new SearchResultUserDTO(
+                    request.getSenderUser(),
+                    UserRelationshipType.INCOMING_FRIEND_REQUEST,
+                    null,
+                    request.getId()
+                ));
+            }
+
+            // Get outgoing friend requests
+            List<CreateFriendRequestDTO> outgoingFriendRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+            
+            for (CreateFriendRequestDTO request : outgoingFriendRequests) {
+                User receiverUser = userService.getUserEntityById(request.getReceiverUserId());
+                BaseUserDTO receiverUserDTO = new BaseUserDTO(
+                    receiverUser.getId(),
+                    receiverUser.getName(),
+                    receiverUser.getEmail(),
+                    receiverUser.getUsername(),
+                    receiverUser.getBio(),
+                    receiverUser.getProfilePictureUrlString()
+                );
+                
+                // Use fuzzy search for filtering if query is provided
+                if (searchQuery.isEmpty() || fuzzyMatchUser(receiverUserDTO, searchQuery)) {
+                    allUsers.add(new SearchResultUserDTO(
+                        receiverUserDTO,
+                        UserRelationshipType.OUTGOING_FRIEND_REQUEST,
+                        null,
+                        request.getId()
+                    ));
+                }
+            }
 
             List<RecommendedFriendUserDTO> recommendedFriends;
             List<FullFriendUserDTO> friends;
 
-            // If searchQuery is empty, return all recommended friends
+            // If searchQuery is empty, return all recommended friends and friends
             if (searchQuery.isEmpty()) {
                 recommendedFriends = userService.getLimitedRecommendedFriendsForUserId(requestingUserId);
                 friends = userService.getFullFriendUsersByUserId(requestingUserId);
             } else {
-                // First search with query
+                // First search with fuzzy search query
                 List<User> users = searchUsersByQuery(searchQuery);
                 Set<UUID> seen = users.stream().map(User::getId).collect(Collectors.toSet());
                 recommendedFriends = users.stream().map(user -> FriendUserMapper.toDTO(user, 0)).collect(Collectors.toList());
 
                 if (recommendedFriends.size() < recommendedFriendLimit) {
-                    // Get recommended mutual friends
-                    recommendedFriends.addAll(
-                            getRecommendedMutuals(requestingUserId)
-                                    .stream()
-                                    .filter(entry -> isQueryMatch(entry, searchQuery) && !seen.contains(entry.getId()))
-                                    .toList()
-                    );
-                }
-
-                // If not enough mutual friends, supplement with random recommendations
-                if (recommendedFriends.size() < recommendedFriendLimit) {
-                    List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(requestingUserId)
+                    // Get recommended mutual friends and filter with fuzzy search
+                    List<RecommendedFriendUserDTO> mutualFriends = getRecommendedMutuals(requestingUserId);
+                    List<RecommendedFriendUserDTO> filteredMutuals = fuzzyFilterRecommendedFriends(mutualFriends, searchQuery)
                             .stream()
-                            .filter(entry -> isQueryMatch(entry, searchQuery))
-                            .limit(recommendedFriendLimit - recommendedFriends.size())
-                            .toList();
-
-                    recommendedFriends.addAll(randomRecommendations);
+                            .filter(entry -> !seen.contains(entry.getId()))
+                            .collect(Collectors.toList());
+                    
+                    recommendedFriends.addAll(filteredMutuals);
                 }
 
-                // Get friends who match the search query
-                friends = userService.getFullFriendUsersByUserId(requestingUserId)
-                        .stream()
-                        .filter(user -> isQueryMatch(user, searchQuery))
-                        .collect(Collectors.toList());
+                // If not enough mutual friends, supplement with random recommendations using fuzzy search
+                if (recommendedFriends.size() < recommendedFriendLimit) {
+                    List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(requestingUserId);
+                    List<RecommendedFriendUserDTO> filteredRandom = fuzzyFilterRecommendedFriends(randomRecommendations, searchQuery)
+                            .stream()
+                            .limit(recommendedFriendLimit - recommendedFriends.size())
+                            .collect(Collectors.toList());
+
+                    recommendedFriends.addAll(filteredRandom);
+                }
+
+                // Get friends who match the search query using fuzzy search
+                List<FullFriendUserDTO> allFriends = userService.getFullFriendUsersByUserId(requestingUserId);
+                friends = fuzzyFilterFriends(allFriends, searchQuery);
             }
 
-            return new SearchedUserResult(incomingFriendRequests, recommendedFriends, friends);
+            // Add recommended friends to the unified list
+            for (RecommendedFriendUserDTO recommended : recommendedFriends) {
+                BaseUserDTO baseUser = new BaseUserDTO(
+                    recommended.getId(),
+                    recommended.getName(),
+                    recommended.getEmail(),
+                    recommended.getUsername(),
+                    recommended.getBio(),
+                    recommended.getProfilePicture()
+                );
+                allUsers.add(new SearchResultUserDTO(
+                    baseUser,
+                    UserRelationshipType.RECOMMENDED_FRIEND,
+                    recommended.getMutualFriendCount(),
+                    null
+                ));
+            }
+
+            // Add friends to the unified list
+            for (FullFriendUserDTO friend : friends) {
+                BaseUserDTO baseUser = new BaseUserDTO(
+                    friend.getId(),
+                    friend.getName(),
+                    friend.getEmail(),
+                    friend.getUsername(),
+                    friend.getBio(),
+                    friend.getProfilePicture()
+                );
+                allUsers.add(new SearchResultUserDTO(
+                    baseUser,
+                    UserRelationshipType.FRIEND,
+                    null,
+                    null
+                ));
+            }
+
+            return new SearchedUserResult(allUsers);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -308,7 +388,138 @@ public class UserSearchService implements IUserSearchService {
         }
     }
 
+    /**
+     * Helper method to filter a list of FullFriendUserDTO objects using fuzzy search
+     */
+    private List<FullFriendUserDTO> fuzzyFilterFriends(List<FullFriendUserDTO> friends, String searchQuery) {
+        if (searchQuery.isEmpty()) return friends;
+        
+        // Convert to User objects for fuzzy search
+        List<User> userObjects = friends.stream()
+                .map(friend -> {
+                    User user = new User();
+                    user.setId(friend.getId());
+                    user.setName(friend.getName());
+                    user.setUsername(friend.getUsername());
+                    return user;
+                })
+                .collect(Collectors.toList());
+        
+        // Use fuzzy search service
+        List<FuzzySearchService.SearchResult<User>> searchResults = fuzzySearchService.search(
+                searchQuery,
+                userObjects,
+                User::getName,
+                User::getUsername
+        );
+        
+        // Convert back to FullFriendUserDTO, maintaining the original objects
+        Set<UUID> matchedUserIds = searchResults.stream()
+                .map(result -> result.getItem().getId())
+                .collect(Collectors.toSet());
+        
+        return friends.stream()
+                .filter(friend -> matchedUserIds.contains(friend.getId()))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Helper method to filter a list of RecommendedFriendUserDTO objects using fuzzy search
+     */
+    private List<RecommendedFriendUserDTO> fuzzyFilterRecommendedFriends(List<RecommendedFriendUserDTO> recommendedFriends, String searchQuery) {
+        if (searchQuery.isEmpty()) return recommendedFriends;
+        
+        // Convert to User objects for fuzzy search
+        List<User> userObjects = recommendedFriends.stream()
+                .map(recommended -> {
+                    User user = new User();
+                    user.setId(recommended.getId());
+                    user.setName(recommended.getName());
+                    user.setUsername(recommended.getUsername());
+                    return user;
+                })
+                .collect(Collectors.toList());
+        
+        // Use fuzzy search service
+        List<FuzzySearchService.SearchResult<User>> searchResults = fuzzySearchService.search(
+                searchQuery,
+                userObjects,
+                User::getName,
+                User::getUsername
+        );
+        
+        // Convert back to RecommendedFriendUserDTO, maintaining the original objects
+        Set<UUID> matchedUserIds = searchResults.stream()
+                .map(result -> result.getItem().getId())
+                .collect(Collectors.toSet());
+        
+        return recommendedFriends.stream()
+                .filter(recommended -> matchedUserIds.contains(recommended.getId()))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Helper method to filter a list of FetchFriendRequestDTO objects using fuzzy search
+     */
+    private List<FetchFriendRequestDTO> fuzzyFilterFriendRequests(List<FetchFriendRequestDTO> friendRequests, String searchQuery, boolean isSenderUser) {
+        if (searchQuery.isEmpty()) return friendRequests;
+        
+        // Convert to User objects for fuzzy search
+        List<User> userObjects = friendRequests.stream()
+                .map(request -> {
+                    BaseUserDTO userDTO = request.getSenderUser();
+                    User user = new User();
+                    user.setId(userDTO.getId());
+                    user.setName(userDTO.getName());
+                    user.setUsername(userDTO.getUsername());
+                    return user;
+                })
+                .collect(Collectors.toList());
+        
+        // Use fuzzy search service
+        List<FuzzySearchService.SearchResult<User>> searchResults = fuzzySearchService.search(
+                searchQuery,
+                userObjects,
+                User::getName,
+                User::getUsername
+        );
+        
+        // Convert back to FetchFriendRequestDTO, maintaining the original objects
+        Set<UUID> matchedUserIds = searchResults.stream()
+                .map(result -> result.getItem().getId())
+                .collect(Collectors.toSet());
+        
+        return friendRequests.stream()
+                .filter(request -> matchedUserIds.contains(request.getSenderUser().getId()))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Helper method to check if a single user matches the search query using fuzzy search
+     */
+    private boolean fuzzyMatchUser(BaseUserDTO user, String searchQuery) {
+        if (searchQuery.isEmpty()) return true;
+        
+        // Convert to User object for fuzzy search
+        User userObject = new User();
+        userObject.setId(user.getId());
+        userObject.setName(user.getName());
+        userObject.setUsername(user.getUsername());
+        
+        // Use fuzzy search service
+        List<FuzzySearchService.SearchResult<User>> searchResults = fuzzySearchService.search(
+                searchQuery,
+                List.of(userObject),
+                User::getName,
+                User::getUsername
+        );
+        
+        return !searchResults.isEmpty();
+    }
+
     private boolean isQueryMatch(AbstractUserDTO recommendedFriend, String searchQuery) {
+        // This method is now deprecated in favor of fuzzy search
+        // Keeping it for backward compatibility, but it should not be used for new implementations
         final String lowercaseQuery = searchQuery.toLowerCase();
         boolean nameMatch = false;
         if (recommendedFriend.getName() != null) {
@@ -352,45 +563,61 @@ public class UserSearchService implements IUserSearchService {
     }
 
     @Override
-    public List<BaseUserDTO> searchByQuery(String searchQuery) {
+    public List<BaseUserDTO> searchByQuery(String searchQuery, UUID requestingUserId) {
         List<User> users = searchUsersByQuery(searchQuery);
+        
+        // Filter out the requesting user and other excluded users if requestingUserId is provided
+        if (requestingUserId != null) {
+            Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
+            users = users.stream()
+                    .filter(user -> !excludedUserIds.contains(user.getId()))
+                    .collect(Collectors.toList());
+        }
+        
         // Return BaseUserDTOs
         return UserMapper.toDTOList(users);
     }
 
     private List<User> searchUsersByQuery(String searchQuery) {
-        final int searchLimit = 100; // Max number of results returned by database query
-        final int resultLimit = 10; // Max number of results to return
         // If query is empty do nothing
         if (searchQuery.isBlank()) return Collections.emptyList();
 
-        // First get users that start with the same prefix as query
+        long startTime = System.currentTimeMillis();
+
+        // First get users that start with the same prefix as query (database optimization)
         String prefix = searchQuery.toLowerCase().substring(0, 1);
-        List<User> users = userRepository.findUsersWithPrefix(prefix, Limit.of(searchLimit));
+        List<User> users = userRepository.findUsersWithPrefix(prefix, Limit.of(100));
 
         // If no results were returned, then return early with empty list
         if (users.isEmpty()) return Collections.emptyList();
 
-        Map<User, Double> userDistances = computeJaroWinklerDistances(searchQuery.toLowerCase(), users);
-        // Filter users that are not similar to query
-        List<User> filteredUsers = filterNonSimilarUsers(users, userDistances);
-        if (filteredUsers.isEmpty()) {
-            filteredUsers = users;
-        }
-        // Rank users by their similarity to query and collect top `resultLimit` results
-        users = rankUsers(filteredUsers, userDistances).stream().limit(resultLimit).toList();
-        return users;
+        // Use the enhanced fuzzy search service
+        List<FuzzySearchService.SearchResult<User>> searchResults = fuzzySearchService.search(
+                searchQuery,
+                users,
+                User::getName,        // Name extractor
+                User::getUsername     // Username extractor
+        );
+
+        // Record analytics data
+        long processingTime = System.currentTimeMillis() - startTime;
+        searchAnalyticsService.recordSearchResults(searchQuery, processingTime, users.size(), searchResults);
+
+        // Extract just the User objects from the search results
+        return searchResults.stream()
+                .map(FuzzySearchService.SearchResult::getItem)
+                .collect(Collectors.toList());
     }
 
 
     /**
-     * Computes the distances of each user (name or username) to the query
-     *
-     * @param query the search query to compare names against
-     * @param users list of database results
-     * @return map of users => jaro-winkler distance
+     * Legacy method for backward compatibility - now uses enhanced FuzzySearchService
+     * @deprecated Use FuzzySearchService directly for better performance and configurability
      */
+    @Deprecated
     private Map<User, Double> computeJaroWinklerDistances(String query, List<User> users) {
+        // This method is kept for backward compatibility but is no longer used
+        // All fuzzy search functionality has been moved to FuzzySearchService
         JaroWinklerDistance jaroWinklerDistance = new JaroWinklerDistance();
         return users.stream().collect(Collectors.toMap(user -> user, user ->
                 Math.max(
@@ -398,32 +625,5 @@ public class UserSearchService implements IUserSearchService {
                         jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
                 )
         ));
-    }
-
-    /**
-     * Filter for users that are "similar" to the query, where "similar" is defined as having a
-     * Jaro-Winkler distance score greater than or equal to `threshold`
-     *
-     * @param users list of database results
-     * @return filtered list of users with Jaro-Winkler distance score >= `tolerance`
-     */
-    private List<User> filterNonSimilarUsers(List<User> users, Map<User, Double> userDistMap) {
-        final double threshold = 0.6;
-        return users.stream()
-                .filter(user -> userDistMap.get(user) >= threshold)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Sorts users by their Jaro-Winkler distance in ascending order.
-     * Ascending order means the returned list will have the most similar results first, the least similar results last
-     *
-     * @param users list of database results
-     * @return sorted list of users by Jaro-Winkler distance
-     */
-    private List<User> rankUsers(List<User> users, Map<User, Double> userDistMap) {
-        return users.stream()
-                .sorted(Comparator.comparingDouble(userDistMap::get).reversed())
-                .collect(Collectors.toList());
     }
 }

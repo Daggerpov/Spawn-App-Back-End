@@ -6,11 +6,15 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.Enums.UserRelationshipType;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.Analytics.SearchAnalyticsService;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
+import com.danielagapov.spawn.Services.FuzzySearch.FuzzySearchService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserSearch.UserSearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
@@ -37,6 +41,9 @@ class UserSearchServiceTests {
     private IUserRepository userRepository; // Mock repository
 
     @Mock
+    private IActivityUserRepository activityUserRepository;
+
+    @Mock
     private IFriendRequestService friendRequestService;
 
     @Mock
@@ -47,6 +54,12 @@ class UserSearchServiceTests {
 
     @Mock
     private IBlockedUserService blockedUserService;
+
+    @Mock
+    private FuzzySearchService<User> fuzzySearchService;
+
+    @Mock
+    private SearchAnalyticsService searchAnalyticsService;
 
     @InjectMocks
     private UserSearchService userSearchService; // Injected service to test
@@ -66,7 +79,7 @@ class UserSearchServiceTests {
 
     @Test
     void testSearchByQuery_ReturnsEmptyList_WhenQueryIsBlank() {
-        List<BaseUserDTO> result = userSearchService.searchByQuery("");
+        List<BaseUserDTO> result = userSearchService.searchByQuery("", null);
         assertTrue(result.isEmpty(), "Expected an empty list for a blank query.");
     }
 
@@ -76,7 +89,7 @@ class UserSearchServiceTests {
         when(userRepository.findUsersWithPrefix(anyString(), any()))
                 .thenReturn(Collections.emptyList());
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Xyz");
+        List<BaseUserDTO> result = userSearchService.searchByQuery("Xyz", null);
         assertTrue(result.isEmpty(), "Expected an empty list when no users match the prefix.");
     }
 
@@ -86,7 +99,12 @@ class UserSearchServiceTests {
         when(userRepository.findUsersWithPrefix(eq("a"), any()))
                 .thenReturn(Arrays.asList(user1, user2, user3, user4, user5));
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Alice");
+        // Mock fuzzy search to return user1 (Alice Johnson) as the best match
+        FuzzySearchService.SearchResult<User> result1 = new FuzzySearchService.SearchResult<>(user1, 0.95, "name", false);
+        when(fuzzySearchService.search(eq("Alice"), any(), any(), any()))
+                .thenReturn(List.of(result1));
+
+        List<BaseUserDTO> result = userSearchService.searchByQuery("Alice", null);
 
         // Assert that results are not empty
         assertFalse(result.isEmpty(), "Expected non-empty results.");
@@ -104,7 +122,12 @@ class UserSearchServiceTests {
         when(userRepository.findUsersWithPrefix(eq("b"), any()))
                 .thenReturn(List.of(user3));
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Bobby");
+        // Mock fuzzy search to return user3 (Bob Smith)
+        FuzzySearchService.SearchResult<User> result3 = new FuzzySearchService.SearchResult<>(user3, 0.7, "name", false);
+        when(fuzzySearchService.search(eq("Bobby"), any(), any(), any()))
+                .thenReturn(List.of(result3));
+
+        List<BaseUserDTO> result = userSearchService.searchByQuery("Bobby", null);
         assertEquals(1, result.size(), "Expected Bob to be included even if filtering removes too many users.");
     }
 
@@ -114,7 +137,13 @@ class UserSearchServiceTests {
         when(userRepository.findUsersWithPrefix(eq("a"), any()))
                 .thenReturn(Arrays.asList(user5, user4, user2, user1));
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Alicia");
+        // Mock fuzzy search to return user2 (Alicia Jameson) as the best match
+        FuzzySearchService.SearchResult<User> result2 = new FuzzySearchService.SearchResult<>(user2, 0.99, "name", false);
+        FuzzySearchService.SearchResult<User> result1 = new FuzzySearchService.SearchResult<>(user1, 0.8, "name", false);
+        when(fuzzySearchService.search(eq("Alicia"), any(), any(), any()))
+                .thenReturn(List.of(result2, result1));
+
+        List<BaseUserDTO> result = userSearchService.searchByQuery("Alicia", null);
 
         // Expect that the user with the closest match ("Alicia") appears first.
         // Adjust assertions based on how your ranking works. For this test, we assume user2 ("Alicia") is best.
@@ -135,6 +164,14 @@ class UserSearchServiceTests {
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
 
+        // Mock fuzzy search service to return Alice Smith as a match for "Alice"
+        User userObject = new User();
+        userObject.setId(friend1.getId());
+        userObject.setName(friend1.getName());
+        userObject.setUsername(friend1.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult = new FuzzySearchService.SearchResult<>(userObject, 0.95, "name", false);
+        when(fuzzySearchService.search(eq("Alice"), any(), any(), any())).thenReturn(List.of(searchResult));
+
         // Use spy to isolate the test from internal implementations
         UserSearchService spyUserSearchService = spy(userSearchService);
         when(spyUserSearchService.getRecommendedMutuals(userId)).thenReturn(List.of(friend1, friend2, friend3));
@@ -144,8 +181,14 @@ class UserSearchServiceTests {
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "Alice");
 
         // Assert
-        assertEquals(1, result.getSecond().size()); // Only Alice should be returned
-        assertEquals(friend1, result.getSecond().get(0));
+        assertEquals(1, result.getUsers().size()); // Only Alice should be returned
+        
+        // Verify the user details and relationship type
+        var searchResultUser = result.getUsers().get(0);
+        assertEquals(friend1.getId(), searchResultUser.getUser().getId());
+        assertEquals(friend1.getName(), searchResultUser.getUser().getName());
+        assertEquals(UserRelationshipType.RECOMMENDED_FRIEND, searchResultUser.getRelationshipType());
+        assertEquals(friend1.getMutualFriendCount(), searchResultUser.getMutualFriendCount());
     }
 
     @Test
@@ -168,9 +211,20 @@ class UserSearchServiceTests {
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "");
 
         // Assert
-        assertEquals(2, result.getSecond().size()); // Both friends should be returned
-        assertTrue(result.getSecond().contains(friend1));
-        assertTrue(result.getSecond().contains(friend2));
+        assertEquals(2, result.getUsers().size()); // Both friends should be returned
+        
+        // Verify both users are present with correct relationship type
+        var recommendedFriends = result.getUsers().stream()
+                .filter(u -> u.getRelationshipType() == UserRelationshipType.RECOMMENDED_FRIEND)
+                .toList();
+        assertEquals(2, recommendedFriends.size());
+        
+        // Check that both friend IDs are present
+        var userIds = recommendedFriends.stream()
+                .map(u -> u.getUser().getId())
+                .toList();
+        assertTrue(userIds.contains(friend1.getId()));
+        assertTrue(userIds.contains(friend2.getId()));
     }
 
     @Test
@@ -194,7 +248,7 @@ class UserSearchServiceTests {
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "Charlie");
 
         // Assert
-        assertEquals(0, result.getSecond().size()); // No recommendations should match
+        assertEquals(0, result.getUsers().size()); // No recommendations should match
     }
 
     @Test
@@ -214,6 +268,21 @@ class UserSearchServiceTests {
         FriendTagDTO ft = new FriendTagDTO(ftId, "Everyone", "#ffffff", user1Id, List.of(), true);
         FullFriendUserDTO user5Full = new FullFriendUserDTO(user5Id, "thatPerson", "profile.jpg", "That Person", "A bio", "thatPerson@email.com", List.of(ft));
 
+        // Mock fuzzy search service to return both user3Full and user5Full as matches for "person"
+        User userObject3 = new User();
+        userObject3.setId(user3Full.getId());
+        userObject3.setName(user3Full.getName());
+        userObject3.setUsername(user3Full.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult3 = new FuzzySearchService.SearchResult<>(userObject3, 0.95, "username", false);
+        
+        User userObject5 = new User();
+        userObject5.setId(user5Full.getId());
+        userObject5.setName(user5Full.getName());
+        userObject5.setUsername(user5Full.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult5 = new FuzzySearchService.SearchResult<>(userObject5, 0.85, "name", false);
+        
+        when(fuzzySearchService.search(eq("person"), any(), any(), any())).thenReturn(List.of(searchResult3, searchResult5));
+
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
@@ -221,8 +290,20 @@ class UserSearchServiceTests {
         when(userService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of(user5Full));
 
         SearchedUserResult res = spyUserSearchService.getRecommendedFriendsBySearch(user1Id, "person");
-        SearchedUserResult expected = new SearchedUserResult(List.of(), List.of(user3Full), List.of(user5Full));
-        assertEquals(expected, res);
+        
+        // Verify that we get the expected users in the results
+        assertEquals(2, res.getUsers().size());
+        
+        // Find the recommended friend and the actual friend in the results
+        boolean foundRecommendedFriend = res.getUsers().stream()
+                .anyMatch(u -> u.getUser().getId().equals(user3Full.getId()) && 
+                              u.getRelationshipType() == UserRelationshipType.RECOMMENDED_FRIEND);
+        boolean foundFriend = res.getUsers().stream()
+                .anyMatch(u -> u.getUser().getId().equals(user5Full.getId()) && 
+                              u.getRelationshipType() == UserRelationshipType.FRIEND);
+        
+        assertTrue(foundRecommendedFriend, "Should contain the recommended friend");
+        assertTrue(foundFriend, "Should contain the actual friend");
     }
 
     @Test
@@ -236,6 +317,14 @@ class UserSearchServiceTests {
         RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "person", "profile.jpg", "Lorem Ipsum", "A bio", "email@e.com", 1);
         RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "LaurenIbson", "profile.jpg", "Lauren Ibson", "A bio", "lauren_ibson@e.ca", 1);
 
+        // Mock fuzzy search service to return user3Full as a match for "person"
+        User userObject = new User();
+        userObject.setId(user3Full.getId());
+        userObject.setName(user3Full.getName());
+        userObject.setUsername(user3Full.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult = new FuzzySearchService.SearchResult<>(userObject, 0.95, "username", false);
+        when(fuzzySearchService.search(eq("person"), any(), any(), any())).thenReturn(List.of(searchResult));
+
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
@@ -243,7 +332,16 @@ class UserSearchServiceTests {
         when(userService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
 
         SearchedUserResult res = spyUserSearchService.getRecommendedFriendsBySearch(user1Id, "person");
-        assertEquals(new SearchedUserResult(List.of(), List.of(user3Full), List.of()), res);
+        
+        // Verify that we get the expected user in the results
+        assertEquals(1, res.getUsers().size());
+        
+        // Find the recommended friend in the results
+        boolean foundRecommendedFriend = res.getUsers().stream()
+                .anyMatch(u -> u.getUser().getId().equals(user3Full.getId()) && 
+                              u.getRelationshipType() == UserRelationshipType.RECOMMENDED_FRIEND);
+        
+        assertTrue(foundRecommendedFriend, "Should contain the recommended friend");
     }
 
     @Test
@@ -318,8 +416,13 @@ class UserSearchServiceTests {
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "");
 
         // Assert
-        assertEquals(1, result.getSecond().size());
-        assertEquals(friend, result.getSecond().get(0));
+        assertEquals(1, result.getUsers().size());
+        
+        // Verify the user details and relationship type
+        var searchResultUser = result.getUsers().get(0);
+        assertEquals(friend.getId(), searchResultUser.getUser().getId());
+        assertEquals(friend.getName(), searchResultUser.getUser().getName());
+        assertEquals(UserRelationshipType.RECOMMENDED_FRIEND, searchResultUser.getRelationshipType());
     }
 
     @Test
@@ -347,7 +450,17 @@ class UserSearchServiceTests {
 
         BaseUserDTO requesterInfo = new BaseUserDTO(requesterId, "David Search", "dsearch@example.com", "davidsearch", "Bio", "profile.jpg");
         FetchFriendRequestDTO friendRequest = mock(FetchFriendRequestDTO.class);
+        UUID friendRequestId = UUID.randomUUID();
         when(friendRequest.getSenderUser()).thenReturn(requesterInfo);
+        when(friendRequest.getId()).thenReturn(friendRequestId);
+
+        // Mock fuzzy search service to return requesterInfo as a match for "search"
+        User userObject = new User();
+        userObject.setId(requesterInfo.getId());
+        userObject.setName(requesterInfo.getName());
+        userObject.setUsername(requesterInfo.getUsername());
+        FuzzySearchService.SearchResult<User> searchResult = new FuzzySearchService.SearchResult<>(userObject, 0.95, "name", false);
+        when(fuzzySearchService.search(eq("search"), any(), any(), any())).thenReturn(List.of(searchResult));
 
         // Mock services
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of(friendRequest));
@@ -362,8 +475,13 @@ class UserSearchServiceTests {
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "search");
 
         // Assert
-        assertEquals(1, result.getFirst().size());
-        assertEquals(friendRequest, result.getFirst().get(0));
+        assertEquals(1, result.getUsers().size());
+        
+        // Verify the friend request is in the results with correct relationship type
+        var searchResultUser = result.getUsers().get(0);
+        assertEquals(requesterInfo.getId(), searchResultUser.getUser().getId());
+        assertEquals(UserRelationshipType.INCOMING_FRIEND_REQUEST, searchResultUser.getRelationshipType());
+        assertEquals(friendRequestId, searchResultUser.getFriendRequestId());
     }
 }
 

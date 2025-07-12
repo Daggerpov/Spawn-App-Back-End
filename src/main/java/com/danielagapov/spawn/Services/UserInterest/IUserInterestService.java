@@ -17,4 +17,12 @@ public interface IUserInterestService {
      * @return The created user interest string
      */
     String addUserInterest(UUID userId, String interestName);
+
+    /**
+     * Remove an interest for a user
+     * @param userId The ID of the user
+     * @param encodedInterestName The URL-encoded name of the interest to remove
+     * @return true if the interest was successfully removed, false if not found
+     */
+    boolean removeUserInterest(UUID userId, String encodedInterestName);
 } 

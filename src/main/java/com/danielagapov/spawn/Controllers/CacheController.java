@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.CacheValidationRequestDTO;
 import com.danielagapov.spawn.DTOs.CacheValidationResponseDTO;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Report.Cache.ICacheService;
+import com.danielagapov.spawn.Services.Calendar.ICalendarService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,13 @@ import java.util.UUID;
 public class CacheController {
 
     private final ICacheService cacheService;
+    private final ICalendarService calendarService;
     private final ILogger logger;
 
     @Autowired
-    public CacheController(ICacheService cacheService, ILogger logger) {
+    public CacheController(ICacheService cacheService, ICalendarService calendarService, ILogger logger) {
         this.cacheService = cacheService;
+        this.calendarService = calendarService;
         this.logger = logger;
     }
 
@@ -65,6 +68,25 @@ public class CacheController {
         } catch (Exception e) {
             logger.error("Error validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
+        }
+    }
+    
+    /**
+     * Clears all calendar caches for all users.
+     * This endpoint should be called after schema changes to ensure fresh data.
+     * 
+     * @return A response indicating success or failure
+     */
+    @PostMapping("/clear-calendar-caches")
+    public ResponseEntity<String> clearCalendarCaches() {
+        logger.info("Clearing all calendar caches");
+        try {
+            calendarService.clearAllCalendarCaches();
+            logger.info("Successfully cleared all calendar caches");
+            return ResponseEntity.ok("All calendar caches cleared successfully");
+        } catch (Exception e) {
+            logger.error("Error clearing calendar caches: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error clearing calendar caches: " + e.getMessage());
         }
     }
 } 
