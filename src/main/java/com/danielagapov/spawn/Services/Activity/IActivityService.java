@@ -114,4 +114,14 @@ public interface IActivityService {
     Instant getLatestUpdatedActivityTimestamp(UUID userId);
 
     List<FullActivityChatMessageDTO> getChatMessagesByActivityId(UUID activityId);
+    
+    /**
+     * Auto-joins a user to an activity when they access it via a deep link.
+     * If the user is not already invited or participating, they will be invited and automatically set to participating.
+     * 
+     * @param activityId The ID of the activity to auto-join
+     * @param userId The ID of the user to auto-join to the activity
+     * @return FullFeedActivityDTO with the updated activity information
+     */
+    FullFeedActivityDTO autoJoinUserToActivity(UUID activityId, UUID userId);
 }
