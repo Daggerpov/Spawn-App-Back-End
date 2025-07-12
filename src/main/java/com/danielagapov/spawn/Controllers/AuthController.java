@@ -1,7 +1,8 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.CheckEmailVerificationRequestDTO;
-import com.danielagapov.spawn.DTOs.RegistrationDTO;
+import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
+import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
 import com.danielagapov.spawn.DTOs.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
@@ -201,9 +202,9 @@ public class AuthController {
 
     // full path: /api/v1/auth/register/oauth
     @PostMapping("register/oauth")
-    public ResponseEntity<?> registerViaOAuth(@RequestBody RegistrationDTO registration) {
+    public ResponseEntity<?> registerViaOAuth(@RequestBody OAuthRegistrationDTO registration) {
         try {
-            BaseUserDTO user = authService.registerUserViaOAuth(registration.getEmail(), registration.getExternalIdToken(), registration.getProvider());
+            BaseUserDTO user = authService.registerUserViaOAuth(registration);
             HttpHeaders headers = authService.makeHeadersForTokens(user.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (FieldAlreadyExistsException e) {
@@ -215,12 +216,12 @@ public class AuthController {
         }
     }
 
-    // full path: /api/v1/auth/register/send-verification
+    // full path: /api/v1/auth/register/send
     @PostMapping("register/verification/send")
     public ResponseEntity<?> sendEmailVerificationForRegistration(@RequestBody SendEmailVerificationRequestDTO request) {
         try {
-            authService.sendEmailVerificationCodeForRegistration(request.getEmail());
-            return ResponseEntity.ok().build();
+            EmailVerificationResponseDTO response = authService.sendEmailVerificationCodeForRegistration(request.getEmail());
+            return ResponseEntity.ok().body(response);
         } catch (FieldAlreadyExistsException e) {
             logger.warn("Email already exists during registration: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
@@ -230,7 +231,7 @@ public class AuthController {
         }
     }
 
-    // full path: /api/v1/auth/register/verification-check
+    // full path: /api/v1/auth/register/verification/check
     @PostMapping("register/verification/check")
     public ResponseEntity<?> verifyEmailAndCreateUser(@RequestBody CheckEmailVerificationRequestDTO request) {
         try {
@@ -288,15 +289,21 @@ public class AuthController {
         }
     }
 
-    // full path: /api/v1/auth/registration
-    @PostMapping("registration")
-    public ResponseEntity<?> createAccount(RegistrationDTO registration) {
+    // full path: /api/v1/auth/user/details
+    @PostMapping("user/details")
+    public ResponseEntity<?> updateUserDetails(@RequestBody UpdateUserDetailsDTO dto) {
         try {
-            BaseUserDTO user = authService.registerUserViaOAuth(registration.getEmail(), registration.getExternalIdToken(), registration.getProvider());
-            return new ResponseEntity<>(user, HttpStatus.OK);
+            BaseUserDTO updatedUser = authService.updateUserDetails(dto);
+            return ResponseEntity.ok(updatedUser);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for update: " + dto.getId() + ", entity type: " + e.entityType);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
+        } catch (FieldAlreadyExistsException e) {
+            logger.warn("Username already exists: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
-            logger.error("Error creating account: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Error while creating account"));
+            logger.error("Error updating user details: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to update user details"));
         }
     }
 
