@@ -1,16 +1,15 @@
-package com.danielagapov.spawn.Controllers.User;
+package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.CheckVerificationRequestDTO;
+import com.danielagapov.spawn.DTOs.CheckEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.RegistrationDTO;
-import com.danielagapov.spawn.DTOs.SendVerificationRequestDTO;
+import com.danielagapov.spawn.DTOs.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.EmailVerificationException;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Exceptions.PhoneNumberAlreadyExistsException;
-import com.danielagapov.spawn.Exceptions.SMSVerificationException;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
@@ -60,7 +59,7 @@ public class AuthController {
             
             if (optionalDTO.isPresent()) {
                 BaseUserDTO baseUserDTO = optionalDTO.get();
-                HttpHeaders headers = makeHeadersForTokens(baseUserDTO.getUsername());
+                HttpHeaders headers = authService.makeHeadersForTokens(baseUserDTO.getUsername());
                 return ResponseEntity.ok().headers(headers).body(baseUserDTO);
             }
             return ResponseEntity.ok().body(null);
@@ -98,7 +97,7 @@ public class AuthController {
             @RequestParam(value = "provider") OAuthProvider provider) {
         try {
             BaseUserDTO user = oauthService.createUserFromOAuth(userCreationDTO, idToken, provider);
-            HttpHeaders headers = makeHeadersForTokens(userCreationDTO.getUsername());
+            HttpHeaders headers = authService.makeHeadersForTokens(userCreationDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (IllegalArgumentException e) {
             logger.warn("Bad request during user creation: " + e.getMessage());
@@ -140,7 +139,7 @@ public class AuthController {
     public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
         try {
             UserDTO newUserDTO = authService.registerUser(authUserDTO);
-            HttpHeaders headers = makeHeadersForTokens(newUserDTO.getUsername());
+            HttpHeaders headers = authService.makeHeadersForTokens(newUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(newUserDTO);
         } catch (FieldAlreadyExistsException fae) {
             logger.warn("Registration failed - field already exists: " + fae.getMessage());
@@ -159,7 +158,7 @@ public class AuthController {
     public ResponseEntity<BaseUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
         try {
             BaseUserDTO existingUserDTO = authService.loginUser(authUserDTO);
-            HttpHeaders headers = makeHeadersForTokens(existingUserDTO.getUsername());
+            HttpHeaders headers = authService.makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
             logger.warn("Login failed - bad credentials for user: " + authUserDTO.getUsername());
@@ -198,32 +197,55 @@ public class AuthController {
         }
     }
 
-    @PostMapping("verification")
-    public ResponseEntity<?> sendVerificationCode(@RequestBody SendVerificationRequestDTO sendVerificationRequest) {
+    // New registration flow endpoints
+
+    // full path: /api/v1/auth/register/oauth
+    @PostMapping("register/oauth")
+    public ResponseEntity<?> registerViaOAuth(@RequestBody RegistrationDTO registration) {
         try {
-            authService.sendVerificationCode(sendVerificationRequest.getPhoneNumber(), sendVerificationRequest.getUserId());
-            return ResponseEntity.ok().build();
-        } catch (PhoneNumberAlreadyExistsException e) {
-            logger.warn("Phone number already exists");
+            BaseUserDTO user = authService.registerUserViaOAuth(registration.getEmail(), registration.getExternalIdToken(), registration.getProvider());
+            HttpHeaders headers = authService.makeHeadersForTokens(user.getUsername());
+            return ResponseEntity.ok().headers(headers).body(user);
+        } catch (FieldAlreadyExistsException e) {
+            logger.warn("OAuth registration failed - field already exists: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error during OAuth registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to register user via OAuth"));
         }
-        catch (Exception e) {
-            logger.error("Error sending verification code: " + e.getMessage());
+    }
+
+    // full path: /api/v1/auth/register/send-verification
+    @PostMapping("register/verification/send")
+    public ResponseEntity<?> sendEmailVerificationForRegistration(@RequestBody SendEmailVerificationRequestDTO request) {
+        try {
+            authService.sendEmailVerificationCodeForRegistration(request.getEmail());
+            return ResponseEntity.ok().build();
+        } catch (FieldAlreadyExistsException e) {
+            logger.warn("Email already exists during registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error sending email verification for registration: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to send verification code"));
         }
     }
 
-    @PostMapping("verification-check")
-    public ResponseEntity<?> checkVerificationCode(@RequestBody CheckVerificationRequestDTO checkVerificationRequest) {
+    // full path: /api/v1/auth/register/verification-check
+    @PostMapping("register/verification/check")
+    public ResponseEntity<?> verifyEmailAndCreateUser(@RequestBody CheckEmailVerificationRequestDTO request) {
         try {
-            BaseUserDTO user = authService.checkVerificationCode(checkVerificationRequest.getPhoneNumber(), checkVerificationRequest.getVerificationCode(), checkVerificationRequest.getUserId());
-            return ResponseEntity.ok().body(user);
-        } catch (SMSVerificationException e) {
-            logger.warn("Bad SMS verification code: " + e.getMessage());
+            BaseUserDTO user = authService.checkEmailVerificationCode(request.getEmail(), request.getVerificationCode());
+            HttpHeaders headers = authService.makeHeadersForTokens(user.getUsername());
+            return ResponseEntity.ok().headers(headers).body(user);
+        } catch (EmailVerificationException e) {
+            logger.warn("Email verification failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
+        } catch (FieldAlreadyExistsException e) {
+            logger.warn("User creation failed - field already exists: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
-            logger.error("Error sending verification code: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to send verification code"));
+            logger.error("Error verifying email and creating user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to verify email and create user"));
         }
     }
 
@@ -270,7 +292,7 @@ public class AuthController {
     @PostMapping("registration")
     public ResponseEntity<?> createAccount(RegistrationDTO registration) {
         try {
-            BaseUserDTO user = authService.registration(registration.getEmail(), registration.getExternalIdToken(), registration.getProvider());
+            BaseUserDTO user = authService.registerUserViaOAuth(registration.getEmail(), registration.getExternalIdToken(), registration.getProvider());
             return new ResponseEntity<>(user, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error creating account: " + e.getMessage());
@@ -293,16 +315,5 @@ public class AuthController {
             logger.error(e.getMessage());
             return ResponseEntity.internalServerError().body("Internal Server Error: " + e.getMessage());
         }
-    }
-
-    /**
-     * Helper method to call access/refresh token-generating methods and place them in the appropriate
-     * HTTP headers
-     */
-    private HttpHeaders makeHeadersForTokens(String username) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + jwtService.generateAccessToken(username));
-        headers.set("X-Refresh-Token", jwtService.generateRefreshToken(username));
-        return headers;
     }
 }

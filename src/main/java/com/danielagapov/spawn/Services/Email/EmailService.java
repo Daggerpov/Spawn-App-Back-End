@@ -59,12 +59,30 @@ public class EmailService implements IEmailService {
         sendEmail(to, subject, content);
     }
 
+    @Override
+    public void sendVerificationCodeEmail(String to, String verificationCode, String expiryTime) throws MessagingException {
+        logger.info("Sending verification code email to " + to);
+        final String content = buildVerificationCodeEmailBody(verificationCode, expiryTime);
+        final String subject = "Your Verification Code";
+        sendEmail(to, subject, content);
+    }
+
     /**
      * Gets the "verify email" template and inserts the link
      */
     private String buildVerifyEmailBody(String link) {
         String verifyEmailBody = EmailTemplates.getVerifyEmailBody();
         return verifyEmailBody.replace("[VERIFICATION_LINK]", link);
+    }
+
+    /**
+     * Gets the "verification code" template and inserts the code and expiry time
+     */
+    private String buildVerificationCodeEmailBody(String verificationCode, String expiryTime) {
+        String verificationCodeBody = EmailTemplates.getEmailVerificationCodeBody();
+        return verificationCodeBody
+                .replace("[VERIFICATION_CODE]", verificationCode)
+                .replace("[EXPIRY_TIME]", expiryTime);
     }
 
 }

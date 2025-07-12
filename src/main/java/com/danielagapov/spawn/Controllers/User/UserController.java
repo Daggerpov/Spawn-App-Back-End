@@ -5,11 +5,13 @@ import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +25,14 @@ public class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
     private final ILogger logger;
+    private final IAuthService authService;
 
     @Autowired
-    public UserController(IUserService userService, IS3Service s3Service, ILogger logger) {
+    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService) {
         this.userService = userService;
         this.s3Service = s3Service;
         this.logger = logger;
+        this.authService = authService;
     }
 
     // full path: /api/v1/users/friends/{id}
@@ -156,6 +160,10 @@ public class UserController {
                     id,
                     updateDTO
             );
+            if (updateDTO.getUsername() != null) {
+                HttpHeaders headers = authService.makeHeadersForTokens(updatedUser.getUsername());
+                return ResponseEntity.ok().headers(headers).body(updatedUser);
+            }
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for update: " + LoggingUtils.formatUserIdInfo(id) + ", entity type: " + e.entityType);

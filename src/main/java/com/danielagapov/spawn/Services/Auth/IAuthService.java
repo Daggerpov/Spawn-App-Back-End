@@ -4,8 +4,7 @@ import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
-
-import java.util.UUID;
+import org.springframework.http.HttpHeaders;
 
 public interface IAuthService {
     /**
@@ -28,9 +27,32 @@ public interface IAuthService {
 
     BaseUserDTO getUserByToken(String token);
 
-    void sendVerificationCode(String phoneNumber, UUID userId);
+    /**
+     * Sends an email verification code to the specified email address for new user registration
+     * @param email the email address to send the verification code to
+     */
+    void sendEmailVerificationCodeForRegistration(String email);
 
-    BaseUserDTO checkVerificationCode(String phoneNumber, String code, UUID userId);
+    /**
+     * Checks the email verification code and creates a new user upon successful verification
+     * @param email the email address that received the verification code
+     * @param code the verification code to check
+     * @return the created user DTO if verification is successful
+     */
+    BaseUserDTO checkEmailVerificationCode(String email, String code);
 
-    BaseUserDTO registration(String email, String externalId, OAuthProvider provider);
+    /**
+     * Registers a new user via OAuth (Google or Apple)
+     * @param email the user's email
+     * @param externalIdToken the OAuth token
+     * @param provider the OAuth provider
+     * @return the created user DTO
+     */
+    BaseUserDTO registerUserViaOAuth(String email, String externalIdToken, OAuthProvider provider);
+
+    /**
+     * Helper method to call access/refresh token-generating methods and place them in the appropriate
+     * HTTP headers
+     */
+    HttpHeaders makeHeadersForTokens(String username);
 }
