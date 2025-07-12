@@ -85,7 +85,7 @@ class UserSearchServiceTests {
     }
 
     @Test
-    void testSearchByQuery_ReturnsEmptyList_WhenNoUsersMatchPrefix() {
+    void testSearchByQuery_ReturnsEmptyList_WhenNoUsersMatchQuery() {
         // Arrange
         String searchQuery = "nonexistent";
         when(userRepository.findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class))).thenReturn(List.of());
@@ -443,6 +443,62 @@ class UserSearchServiceTests {
         assertEquals(requesterInfo.getId(), searchResultUser.getUser().getId());
         assertEquals(UserRelationshipType.INCOMING_FRIEND_REQUEST, searchResultUser.getRelationshipType());
         assertEquals(friendRequestId, searchResultUser.getFriendRequestId());
+    }
+
+    @Test
+    void testSearchByQuery_PartialMatchFunctionality() {
+        // Arrange
+        String searchQuery = "ali";
+        List<User> mockUsers = List.of(user1, user2); // user1="Alice Johnson", user2="Alicia Jameson"
+        when(userRepository.findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class))).thenReturn(mockUsers);
+
+        // Mock fuzzy search to return both users as matching results
+        when(fuzzySearchService.search(eq(searchQuery), eq(mockUsers), any(), any()))
+                .thenReturn(List.of(
+                        new FuzzySearchService.SearchResult<>(user1, 0.85, "name", false),
+                        new FuzzySearchService.SearchResult<>(user2, 0.90, "name", false)
+                ));
+
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(u -> u.getName().equals("Alice Johnson")));
+        assertTrue(result.stream().anyMatch(u -> u.getName().equals("Alicia Jameson")));
+        
+        // Verify that the partial match query was called with the correct parameters
+        verify(userRepository).findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class));
+    }
+
+    @Test
+    void testSearchByQuery_HandlesEmptyQuery() {
+        // Arrange
+        String searchQuery = "";
+
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
+        assertTrue(result.isEmpty());
+        
+        // Verify that the repository was not called for empty query
+        verify(userRepository, never()).findUsersWithPartialMatch(any(), any());
+    }
+
+    @Test
+    void testSearchByQuery_HandlesBlanksAndWhitespace() {
+        // Arrange
+        String searchQuery = "   ";
+
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
+        assertTrue(result.isEmpty());
+        
+        // Verify that the repository was not called for blank query
+        verify(userRepository, never()).findUsersWithPartialMatch(any(), any());
     }
 }
 

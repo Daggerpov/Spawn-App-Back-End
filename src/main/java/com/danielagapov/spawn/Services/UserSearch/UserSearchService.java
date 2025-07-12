@@ -591,21 +591,4 @@ public class UserSearchService implements IUserSearchService {
                 .collect(Collectors.toList());
     }
 
-
-    /**
-     * Legacy method for backward compatibility - now uses enhanced FuzzySearchService
-     * @deprecated Use FuzzySearchService directly for better performance and configurability
-     */
-    @Deprecated
-    private Map<User, Double> computeJaroWinklerDistances(String query, List<User> users) {
-        // This method is kept for backward compatibility but is no longer used
-        // All fuzzy search functionality has been moved to FuzzySearchService
-        JaroWinklerDistance jaroWinklerDistance = new JaroWinklerDistance();
-        return users.stream().collect(Collectors.toMap(user -> user, user ->
-                Math.max(
-                        jaroWinklerDistance.apply(query, user.getName().toLowerCase()),
-                        jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
-                )
-        ));
-    }
 }
