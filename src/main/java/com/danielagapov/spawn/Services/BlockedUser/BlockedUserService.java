@@ -315,7 +315,25 @@ public class BlockedUserService implements IBlockedUserService {
      */
     private <T> UUID getUserId(T user) throws Exception {
         try {
-            // Try getId() method first
+            // Special handling for FetchFriendRequestDTO - try getSenderUser() first
+            if (user.getClass().getSimpleName().equals("FetchFriendRequestDTO")) {
+                try {
+                    java.lang.reflect.Method getSenderUserMethod = user.getClass().getMethod("getSenderUser");
+                    Object senderUserObj = getSenderUserMethod.invoke(user);
+                    if (senderUserObj != null) {
+                        // Try to get ID from the sender user object
+                        java.lang.reflect.Method getIdMethod = senderUserObj.getClass().getMethod("getId");
+                        Object result = getIdMethod.invoke(senderUserObj);
+                        if (result instanceof UUID) {
+                            return (UUID) result;
+                        }
+                    }
+                } catch (Exception e) {
+                    // If getSenderUser() fails, fall through to other methods
+                }
+            }
+            
+            // Try getId() method first (for most DTOs)
             java.lang.reflect.Method getIdMethod = user.getClass().getMethod("getId");
             Object result = getIdMethod.invoke(user);
             if (result instanceof UUID) {
@@ -343,7 +361,7 @@ public class BlockedUserService implements IBlockedUserService {
                         }
                     }
                 } catch (Exception e3) {
-                    // Try getSenderUser() method for FetchFriendRequestDTO
+                    // Try getSenderUser() method for FetchFriendRequestDTO (fallback)
                     try {
                         java.lang.reflect.Method getSenderUserMethod = user.getClass().getMethod("getSenderUser");
                         Object senderUserObj = getSenderUserMethod.invoke(user);
