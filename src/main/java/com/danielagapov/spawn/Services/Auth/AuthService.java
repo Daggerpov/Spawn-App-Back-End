@@ -315,7 +315,7 @@ public class AuthService implements IAuthService {
     @Override
     public BaseUserDTO checkEmailVerificationCode(String email, String code) {
         logger.info("Verifying email and creating user for: " + email);
-        
+
         if (email == null || code == null) {
             throw new IllegalArgumentException("Email and code cannot be null");
         }
