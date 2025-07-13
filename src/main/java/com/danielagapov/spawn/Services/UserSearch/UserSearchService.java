@@ -25,13 +25,13 @@ import com.danielagapov.spawn.Services.FuzzySearch.FuzzySearchService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import lombok.AllArgsConstructor;
 import org.apache.commons.text.similarity.JaroWinklerDistance;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
 @Service
 public class UserSearchService implements IUserSearchService {
     /*
@@ -48,6 +48,7 @@ public class UserSearchService implements IUserSearchService {
      * - Remaining 12 provide additional options when user requests to see all
      */
     private static final long recommendedFriendLimit = 15L;
+
     private final IFriendRequestService friendRequestService;
     private final IUserService userService;
     private final IUserRepository userRepository;
@@ -56,6 +57,27 @@ public class UserSearchService implements IUserSearchService {
     private final FuzzySearchService<User> fuzzySearchService;
     private final SearchAnalyticsService searchAnalyticsService;
     private final ILogger logger;
+
+    @Value("${ADMIN_USERNAME:admin}")
+    private String adminUsername;
+
+    public UserSearchService(IFriendRequestService friendRequestService,
+                           IUserService userService,
+                           IUserRepository userRepository,
+                           IBlockedUserService blockedUserService,
+                           IActivityUserRepository activityUserRepository,
+                           FuzzySearchService<User> fuzzySearchService,
+                           SearchAnalyticsService searchAnalyticsService,
+                           ILogger logger) {
+        this.friendRequestService = friendRequestService;
+        this.userService = userService;
+        this.userRepository = userRepository;
+        this.blockedUserService = blockedUserService;
+        this.activityUserRepository = activityUserRepository;
+        this.fuzzySearchService = fuzzySearchService;
+        this.searchAnalyticsService = searchAnalyticsService;
+        this.logger = logger;
+    }
 
 
     @Override
@@ -539,6 +561,17 @@ public class UserSearchService implements IUserSearchService {
         excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
         excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
         excludedUserIds.add(userId); // Exclude self
+        
+        // Exclude admin user from being shown to front-end users
+        try {
+            Optional<User> adminUser = userRepository.findByUsername(adminUsername);
+            if (adminUser.isPresent()) {
+                excludedUserIds.add(adminUser.get().getId());
+            }
+        } catch (Exception e) {
+            logger.warn("Could not find admin user to exclude: " + e.getMessage());
+        }
+        
         // Note: Blocked user filtering is now handled at the controller level
 
         return excludedUserIds;
