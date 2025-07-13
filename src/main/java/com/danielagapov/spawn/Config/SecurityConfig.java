@@ -36,7 +36,7 @@ public class SecurityConfig {
     private final JWTFilterConfig jwtFilterConfig;
     private final String[] whitelistedUrls = new String[] {
             "/api/v1/auth/refresh-token",
-            "/api/v1/auth/register/send-verification",
+            "/api/v1/auth/register/verification/send",
             "/api/v1/auth/register/oauth",
             "/api/v1/auth/register/verification/check"
     };

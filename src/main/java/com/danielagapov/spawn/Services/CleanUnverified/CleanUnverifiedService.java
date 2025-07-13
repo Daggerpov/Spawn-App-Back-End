@@ -4,7 +4,6 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,7 +25,6 @@ public class CleanUnverifiedService {
      * their account was created.
      * If a user is both unverified AND their account was created more than RATE ms ago, they will be deleted
      */
-    @Scheduled(fixedRate = RATE)
     public void cleanUnverifiedExpiredUsers() {
         logger.info("Cleaning unverified, expired users");
         try {
