@@ -208,7 +208,7 @@ public class AuthService implements IAuthService {
         String idToken = registrationDTO.getIdToken();  // Changed from getExternalIdToken to getIdToken
         OAuthProvider provider = registrationDTO.getProvider();
         
-        if (email == null || idToken == null) {
+        if (email == null && idToken == null) {
             throw new IllegalArgumentException("Email and idToken cannot be null for OAuth registration");
         }
         
