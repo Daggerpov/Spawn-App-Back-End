@@ -184,6 +184,7 @@ public class AuthService implements IAuthService {
                 throw new FieldAlreadyExistsException("Username already exists", UserField.USERNAME);
             }
             user.setUsername(dto.getUsername());
+            user.setName(dto.getUsername());
         }
         // Update phone number
         if (!userService.existsByPhoneNumber(dto.getPhoneNumber())) {
@@ -355,6 +356,7 @@ public class AuthService implements IAuthService {
         newUser.setId(UUID.randomUUID());
         newUser.setEmail(email);
         newUser.setUsername(email);
+        newUser.setName(email);
         newUser.setPhoneNumber(email);
         newUser.setStatus(UserStatus.EMAIL_VERIFIED);
         newUser = userService.saveEntity(newUser);
