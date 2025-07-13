@@ -9,6 +9,7 @@ import com.danielagapov.spawn.Repositories.IActivityRepository;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -34,6 +35,7 @@ public class UserStatsService implements IUserStatsService {
     }
 
     @Override
+    @Cacheable(value = "userStatsById", key = "#userId")
     public UserStatsDTO getUserStats(UUID userId) {
         if (!userRepository.existsById(userId)) {
             throw new BaseNotFoundException(EntityType.User, userId);

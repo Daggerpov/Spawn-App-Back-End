@@ -7,6 +7,8 @@ import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Repositories.User.Profile.UserInterestRepository;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.net.URLDecoder;
@@ -31,6 +33,7 @@ public class UserInterestService implements IUserInterestService {
     }
 
     @Override
+    @Cacheable(value = "userInterests", key = "#userId")
     public List<String> getUserInterests(UUID userId) {
         List<UserInterest> interests = userInterestRepository.findByUserId(userId);
         return interests.stream()
@@ -39,6 +42,7 @@ public class UserInterestService implements IUserInterestService {
     }
 
     @Override
+    @CacheEvict(value = "userInterests", key = "#userId")
     public String addUserInterest(UUID userId, String interestName) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -50,6 +54,7 @@ public class UserInterestService implements IUserInterestService {
     }
 
     @Override
+    @CacheEvict(value = "userInterests", key = "#userId")
     public boolean removeUserInterest(UUID userId, String encodedInterestName) {
         try {
             // URL decode the interest name to handle spaces and special characters

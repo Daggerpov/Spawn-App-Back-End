@@ -10,6 +10,7 @@ import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ public class LocationService implements ILocationService {
     }
 
     @Override
+    @Cacheable(value = "locations")
     public List<LocationDTO> getAllLocations() {
         try {
             return LocationMapper.toDTOList(repository.findAll());
@@ -41,6 +43,7 @@ public class LocationService implements ILocationService {
     }
 
     @Override
+    @Cacheable(value = "locationById", key = "#id")
     public LocationDTO getLocationById(UUID id) {
         return LocationMapper.toDTO(repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.Location, id)));
     }
