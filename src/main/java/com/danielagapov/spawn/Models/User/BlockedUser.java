@@ -2,6 +2,8 @@
 
     import jakarta.persistence.*;
     import lombok.*;
+    import org.hibernate.annotations.OnDelete;
+    import org.hibernate.annotations.OnDeleteAction;
 
     import java.util.UUID;
 
@@ -25,10 +27,12 @@
 
         @ManyToOne(optional = false)
         @JoinColumn(name = "blocker_id", nullable = false)
+        @OnDelete(action = OnDeleteAction.CASCADE)
         private User blocker;
 
         @ManyToOne(optional = false)
         @JoinColumn(name = "blocked_id", nullable = false)
+        @OnDelete(action = OnDeleteAction.CASCADE)
         private User blocked;
 
         //optional reason for blocking
