@@ -34,6 +34,6 @@ public interface IActivityUserRepository extends JpaRepository<ActivityUser, Act
 
     Optional<ActivityUser> findByActivity_IdAndUser_Id(UUID activityId, UUID userId);
 
-    @Query("SELECT au FROM ActivityUser au JOIN au.activity a WHERE au.user.id = :userId AND au.status = :status ORDER BY a.lastUpdated DESC")
+    @Query("SELECT au FROM ActivityUser au JOIN au.activity a WHERE au.user.id = :userId AND au.status = :status ORDER BY a.lastUpdated DESC LIMIT 1")
     Optional<ActivityUser> findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(@Param("userId") UUID userId, @Param("status") ParticipationStatus status);
 }

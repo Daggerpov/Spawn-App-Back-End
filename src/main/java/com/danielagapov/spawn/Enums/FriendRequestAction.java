@@ -1,5 +1,5 @@
 package com.danielagapov.spawn.Enums;
 
 public enum FriendRequestAction {
-    accept, reject
+    accept, reject, cancel
 }

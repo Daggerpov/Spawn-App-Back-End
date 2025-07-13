@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.DTOs.Activity;
 
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+@NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
@@ -27,6 +28,5 @@ public abstract class AbstractActivityDTO implements Serializable {
      * Java String supports full UTF-8 emoji characters.
      */
     String icon;
-    ActivityCategory category;
     Instant createdAt;
 }

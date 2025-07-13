@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.Models;
 
-import com.danielagapov.spawn.Enums.ActivityCategory;
 import com.danielagapov.spawn.Models.User.User;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,6 +27,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Activity implements Serializable {
     private @Id
     @GeneratedValue UUID id;
@@ -36,16 +37,16 @@ public class Activity implements Serializable {
     private OffsetDateTime endTime;
     private String icon;
     private String colorHexCode;
-    
-    @Enumerated(EnumType.STRING)
-    private ActivityCategory category; // TODO: remove
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_type_id", referencedColumnName = "id", nullable = true)
     @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ActivityType activityType;
 
     @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "location_id", referencedColumnName = "id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Location location;
 
     private String note;
@@ -53,6 +54,7 @@ public class Activity implements Serializable {
     @ManyToOne
     @JoinColumn(name = "creator_id", referencedColumnName = "id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User creator;
     
     @Column(name = "created_at")
@@ -76,7 +78,7 @@ public class Activity implements Serializable {
         this.lastUpdated = Instant.now();
     }
     
-    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, ActivityCategory category) {
+    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -87,6 +89,5 @@ public class Activity implements Serializable {
         this.createdAt = Instant.now();
         this.lastUpdated = Instant.now();
         this.icon = icon;
-        this.category = category;
     }
 }

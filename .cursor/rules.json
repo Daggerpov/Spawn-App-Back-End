@@ -27,11 +27,63 @@
         "auto_import": true
       }
     },
+    "architecture": {
+      "description": "CRITICAL: Maintain proper separation of concerns between layers",
+      "service_controller_separation": {
+        "controllers": {
+          "responsibilities": [
+            "Handle HTTP-specific concerns (status codes, headers, etc.)",
+            "Validate request parameters and path variables",
+            "Convert exceptions to appropriate HTTP responses",
+            "Call service methods and return ResponseEntity objects"
+          ],
+          "forbidden_logic": [
+            "Business logic processing",
+            "Data manipulation or transformation (beyond basic request/response mapping)",
+            "URL decoding or encoding (should be in service layer)",
+            "Complex validation rules (delegate to service or validation layer)",
+            "Direct database operations",
+            "Complex logging beyond basic error logging"
+          ],
+          "pattern": "Keep controllers thin - they should primarily orchestrate calls to service methods"
+        },
+        "services": {
+          "responsibilities": [
+            "Implement all business logic",
+            "Handle data validation and transformation",
+            "Manage transactions",
+            "Coordinate between multiple repositories",
+            "Handle URL encoding/decoding for business operations",
+            "Implement detailed logging for business operations",
+            "Convert between DTOs and entities"
+          ],
+          "mandatory_practices": [
+            "All business logic must reside in service methods",
+            "Services should handle input validation and sanitization",
+            "Services should provide detailed logging for business operations",
+            "Services should throw meaningful business exceptions"
+          ]
+        },
+        "examples": {
+          "good_controller": "@DeleteMapping(\"/{id}\") public ResponseEntity<Void> delete(@PathVariable UUID id) { boolean success = service.deleteById(id); return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build(); }",
+          "bad_controller": "Controller should not contain URL decoding, complex logging, or business validation logic",
+          "good_service": "Service method handles URL decoding, business validation, detailed logging, and data persistence",
+          "bad_service": "Service should not handle HTTP status codes or ResponseEntity creation"
+        }
+      }
+    },
     "controllers": {
       "apply_to": [
         "**/Controllers/**/*.java"
       ],
       "tags": ["api", "controller"],
+      "mandatory_rules": [
+        "NEVER put business logic in controllers - delegate to services",
+        "Keep controllers focused on HTTP concerns only",
+        "Validate path parameters but delegate complex validation to services",
+        "Convert service responses to appropriate HTTP status codes",
+        "Catch and convert service exceptions to HTTP responses"
+      ],
       "snippets": {
         "rest_controller": {
           "prefix": "restcontroller",
@@ -69,6 +121,22 @@
             "}"
           ],
           "description": "Create a POST endpoint"
+        },
+        "delete_mapping": {
+          "prefix": "deletemapping",
+          "body": [
+            "@DeleteMapping(\"/{${1:id}}\")",
+            "public ResponseEntity<Void> ${2:methodName}(@PathVariable ${3:UUID} ${1:id}) {",
+            "    try {",
+            "        boolean success = ${4:service}.${5:deleteMethod}(${1:id});",
+            "        return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();",
+            "    } catch (Exception e) {",
+            "        logger.error(\"Error ${6:deleting resource}: \" + ${1:id} + \": \" + e.getMessage());",
+            "        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();",
+            "    }",
+            "}"
+          ],
+          "description": "Create a DELETE endpoint following best practices"
         }
       }
     },
@@ -77,6 +145,13 @@
         "**/Services/**/*.java"
       ],
       "tags": ["service", "business-logic"],
+      "mandatory_rules": [
+        "ALL business logic must be implemented in service methods",
+        "Services must handle input validation and sanitization",
+        "Services must provide detailed logging for business operations",
+        "Services must handle data encoding/decoding (e.g., URL encoding)",
+        "Services should throw meaningful business exceptions, not HTTP exceptions"
+      ],
       "snippets": {
         "service_class": {
           "prefix": "service",
@@ -86,6 +161,9 @@
             "    ",
             "    @Autowired",
             "    private ${2:Repository} ${3:repository};",
+            "    ",
+            "    @Autowired",
+            "    private ILogger logger;",
             "    ",
             "    $0",
             "}"
@@ -199,6 +277,108 @@
     "controller_api": "Consider using @Valid for request validation",
     "security": "Ensure proper authorization checks in controllers",
     "exception_handling": "Use @ExceptionHandler or @ControllerAdvice for centralized exception handling",
-    "spring_data_queries": "Prefer native Spring Data JPA method names (e.g., countByField, findByFieldAndOtherField) over custom @Query JPQL when possible - they are cleaner, more maintainable, and provide automatic validation"
+    "spring_data_queries": "Prefer native Spring Data JPA method names (e.g., countByField, findByFieldAndOtherField) over custom @Query JPQL when possible - they are cleaner, more maintainable, and provide automatic validation",
+    "service_layer": "All business logic, data transformation, and URL encoding/decoding should be handled in service methods, not controllers"
+  },
+  "mandatory_unit_testing": {
+    "description": "CRITICAL: Unit tests must be created for all new endpoints and service methods",
+    "when_to_create_tests": [
+      "When creating new REST endpoints (controllers)",
+      "When adding new service methods",
+      "When modifying existing business logic",
+      "When adding new repository query methods"
+    ],
+    "test_requirements": {
+      "controller_tests": [
+        "Test successful request/response scenarios",
+        "Test error handling and appropriate HTTP status codes",
+        "Test input validation",
+        "Mock service dependencies",
+        "Verify proper service method calls"
+      ],
+      "service_tests": [
+        "Test business logic with various input scenarios",
+        "Test edge cases and error conditions",
+        "Test data validation and transformation",
+        "Mock repository dependencies",
+        "Verify proper exception handling"
+      ],
+      "repository_tests": [
+        "Test custom query methods",
+        "Test data integrity constraints",
+        "Use @DataJpaTest for focused testing"
+      ]
+    },
+    "test_patterns": {
+      "controller_test_template": "Use @WebMvcTest and MockMvc for controller testing",
+      "service_test_template": "Use @ExtendWith(MockitoExtension.class) and @Mock for service testing",
+      "repository_test_template": "Use @DataJpaTest for repository testing"
+    },
+    "mandatory_workflow": [
+      "1. Create the production code (controller/service/repository)",
+      "2. IMMEDIATELY create corresponding unit tests",
+      "3. Run tests to ensure they pass",
+      "4. Only consider the feature complete when tests are written and passing"
+    ],
+    "test_file_naming": {
+      "controller_tests": "ControllerNameTest.java (e.g., UserInterestControllerTest.java)",
+      "service_tests": "ServiceNameTest.java (e.g., UserInterestServiceTest.java)",
+      "repository_tests": "RepositoryNameTest.java (e.g., UserInterestRepositoryTest.java)"
+    }
+  },
+  "test_maintenance": {
+    "description": "CRITICAL: Always update test files when making model/DTO changes",
+    "rules": [
+      "Immediately identify affected test files - Search for all test files that reference the changed components",
+      "Update test constructors - Remove/add parameters to match new constructor signatures",
+      "Update test assertions - Modify test assertions to match new method signatures and available properties",
+      "Remove deprecated references - Delete all references to removed fields, methods, or enum values",
+      "Verify compilation - Ensure all test files compile without errors before considering the task complete"
+    ],
+    "examples": [
+      "When removing enum values: Remove all EnumName.VALUE references from test constructors and assertions",
+      "When removing DTO fields: Update test constructors to remove the parameter and update assertions to not access the removed getter",
+      "When changing constructor signatures: Update all test instantiations to match new parameter order/count",
+      "When removing methods: Remove all test calls to the deleted methods"
+    ],
+    "test_file_patterns": [
+      "*Tests.java",
+      "*Test.java",
+      "src/test/**",
+      "Mock object configurations that reference changed interfaces"
+    ],
+    "critical_note": "Failure to update tests is considered incomplete work. All compilation errors in test files must be resolved as part of the original change."
+  },
+  "automated_testing": {
+    "description": "MANDATORY: Always run tests after code changes and fix any errors",
+    "workflow": {
+      "after_code_changes": [
+        "Run './mvnw test' to execute all tests",
+        "If tests fail, analyze the error messages carefully",
+        "Fix any compilation errors in test files first",
+        "Fix any failing test logic by updating test data or assertions",
+        "Re-run tests until all pass (206 tests should pass with 0 failures, 0 errors)",
+        "Only consider the task complete when all tests pass"
+      ],
+      "test_commands": [
+        "./mvnw test - Run all tests",
+        "./mvnw test -Dtest=ClassName#methodName - Run specific test",
+        "./mvnw test -Dtest=ClassName - Run all tests in a class"
+      ]
+    },
+    "mandatory_rules": [
+      "NEVER skip running tests after making code changes",
+      "ALWAYS fix test failures before considering work complete",
+      "Pay special attention to validation logic and constructor signature changes",
+      "Update test data (orderNum, enum values, etc.) to match business logic changes",
+      "If orderNum conflicts occur, ensure test values don't conflict with existing data"
+    ],
+    "common_test_issues": [
+      "OrderNum conflicts - Ensure test orderNum values don't conflict with existing activity types",
+      "Constructor signature changes - Update all test instantiations to match new parameters",
+      "Enum value changes - Remove references to deleted enum values from tests",
+      "DTO field changes - Update test constructors and assertions to match new structure"
+    ],
+    "success_criteria": "All tests must pass with output showing 'Tests run: 206, Failures: 0, Errors: 0, Skipped: 0'"
   }
 } 

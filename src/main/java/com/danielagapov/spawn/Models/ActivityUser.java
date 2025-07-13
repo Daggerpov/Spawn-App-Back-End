@@ -3,6 +3,7 @@ package com.danielagapov.spawn.Models;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Models.CompositeKeys.ActivityUsersId;
 import com.danielagapov.spawn.Models.User.User;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,6 +27,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Getter
 @Setter
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ActivityUser implements Serializable {
     @EmbeddedId
     private ActivityUsersId id;
@@ -34,12 +36,14 @@ public class ActivityUser implements Serializable {
     @MapsId("activityId")
     @JoinColumn(name = "activity_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Activity activity;
 
     @ManyToOne
     @MapsId("userId")
     @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     @Enumerated(EnumType.STRING)

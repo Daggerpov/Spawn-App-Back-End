@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Models.User;
 
 import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Models.NotificationPreferences;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,6 +24,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Getter
 @Setter
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Table(
         name = "`user`",
         indexes = {
@@ -55,6 +57,7 @@ public class User implements Serializable {
     private Instant lastUpdated;
     
     @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private NotificationPreferences notificationPreferences;
 
     @Column(nullable = false)

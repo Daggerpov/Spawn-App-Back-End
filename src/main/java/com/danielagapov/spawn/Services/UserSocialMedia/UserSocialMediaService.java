@@ -27,8 +27,14 @@ public class UserSocialMediaService implements IUserSocialMediaService {
 
     @Override
     public UserSocialMediaDTO getUserSocialMedia(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        
         UserSocialMedia socialMedia = userSocialMediaRepository.findByUserId(userId)
-                .orElse(new UserSocialMedia());
+                .orElseGet(() -> {
+                    UserSocialMedia newSocialMedia = new UserSocialMedia(user);
+                    return userSocialMediaRepository.save(newSocialMedia);
+                });
         
         return convertToDTO(socialMedia);
     }

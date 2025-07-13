@@ -24,6 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.core.serializer.support.SerializationFailedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -67,6 +69,7 @@ public class CacheService implements ICacheService {
     private final IUserStatsService userStatsService;
     private final IUserInterestService userInterestService;
     private final IUserSocialMediaService userSocialMediaService;
+    private final CacheManager cacheManager;
 
     @Autowired
     public CacheService(
@@ -78,7 +81,8 @@ public class CacheService implements ICacheService {
             ObjectMapper objectMapper,
             IUserStatsService userStatsService,
             IUserInterestService userInterestService,
-            IUserSocialMediaService userSocialMediaService) {
+            IUserSocialMediaService userSocialMediaService,
+            CacheManager cacheManager) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.ActivityService = ActivityService;
@@ -88,6 +92,7 @@ public class CacheService implements ICacheService {
         this.userStatsService = userStatsService;
         this.userInterestService = userInterestService;
         this.userSocialMediaService = userSocialMediaService;
+        this.cacheManager = cacheManager;
     }
 
     /**
@@ -730,10 +735,54 @@ public class CacheService implements ICacheService {
             // If no activity is found, return the current time to force a refresh
             logger.debug("No activity activity found for user {}, using current time", userId);
             return Instant.now();
+        } catch (SerializationFailedException e) {
+            logger.error("Serialization error getting latest activity activity for user {}: {}. Clearing related caches.", userId, e.getMessage());
+            clearActivityRelatedCaches(userId);
+            // Return current time to force a refresh after cache clearing
+            return Instant.now();
         } catch (Exception e) {
             logger.error("Error getting latest activity activity for user {}: {}", userId, e.getMessage(), e);
             // In case of an error, return current time to force a refresh
             return Instant.now();
+        }
+    }
+
+    /**
+     * Clears activity-related caches for a specific user when serialization issues occur.
+     */
+    private void clearActivityRelatedCaches(UUID userId) {
+        try {
+            logger.info("Clearing activity-related caches for user: {}", userId);
+            
+            // Clear activity caches
+            if (cacheManager.getCache("feedActivities") != null) {
+                cacheManager.getCache("feedActivities").evict(userId);
+            }
+            
+            if (cacheManager.getCache("fullActivityById") != null) {
+                cacheManager.getCache("fullActivityById").clear(); // Clear all entries as keys contain user IDs
+            }
+            
+            if (cacheManager.getCache("ActivitiesByOwnerId") != null) {
+                cacheManager.getCache("ActivitiesByOwnerId").evict(userId);
+            }
+            
+            if (cacheManager.getCache("filteredFeedActivities") != null) {
+                cacheManager.getCache("filteredFeedActivities").clear(); // Clear all entries as keys are complex
+            }
+            
+            if (cacheManager.getCache("ActivitiesInvitedTo") != null) {
+                cacheManager.getCache("ActivitiesInvitedTo").evict(userId);
+            }
+            
+            if (cacheManager.getCache("fullActivitiesInvitedTo") != null) {
+                cacheManager.getCache("fullActivitiesInvitedTo").evict(userId);
+            }
+            
+            logger.info("Successfully cleared activity-related caches for user: {}", userId);
+        } catch (Exception e) {
+            logger.error("Error clearing activity-related caches for user {}: {}", userId, e.getMessage());
+            // Don't throw here - this is a best-effort operation
         }
     }
 

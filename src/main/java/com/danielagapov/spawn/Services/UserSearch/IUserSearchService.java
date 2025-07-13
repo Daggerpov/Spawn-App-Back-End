@@ -13,7 +13,7 @@ public interface IUserSearchService {
 
     List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId);
 
-    List<BaseUserDTO> searchByQuery(String searchQuery);
+    List<BaseUserDTO> searchByQuery(String searchQuery, UUID requestingUserId);
 
     Set<UUID> getExcludedUserIds(UUID userId);
 }

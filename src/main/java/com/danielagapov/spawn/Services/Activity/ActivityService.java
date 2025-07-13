@@ -18,11 +18,13 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ActivityMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
 import com.danielagapov.spawn.Models.Activity;
+import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.CompositeKeys.ActivityUsersId;
 import com.danielagapov.spawn.Models.Location;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityRepository;
+import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -48,6 +50,7 @@ import java.util.stream.Collectors;
 @Service
 public class ActivityService implements IActivityService {
     private final IActivityRepository repository;
+    private final IActivityTypeRepository activityTypeRepository;
     private final ILocationRepository locationRepository;
     private final IActivityUserRepository activityUserRepository;
     private final IUserRepository userRepository;
@@ -60,11 +63,13 @@ public class ActivityService implements IActivityService {
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
-    public ActivityService(IActivityRepository repository, ILocationRepository locationRepository,
-                        IActivityUserRepository activityUserRepository, IUserRepository userRepository,
-                        IFriendTagService friendTagService, IUserService userService, IChatMessageService chatMessageService,
-                        ILogger logger, ILocationService locationService, ApplicationEventPublisher eventPublisher) {
+    public ActivityService(IActivityRepository repository, IActivityTypeRepository activityTypeRepository,
+                        ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
+                        IUserRepository userRepository, IFriendTagService friendTagService, IUserService userService, 
+                        IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, 
+                        ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
+        this.activityTypeRepository = activityTypeRepository;
         this.locationRepository = locationRepository;
         this.activityUserRepository = activityUserRepository;
         this.userRepository = userRepository;
@@ -133,28 +138,23 @@ public class ActivityService implements IActivityService {
         // Get location name
         String locationName = activity.getLocation() != null ? activity.getLocation().getName() : null;
         
-        // Get all attendees (both participating and invited users)
-        List<ActivityUser> allActivityUsers = activityUserRepository.findByActivity_Id(id);
-        List<BaseUserDTO> attendees = allActivityUsers.stream()
-                .map(activityUser -> userService.getBaseUserById(activityUser.getUser().getId()))
-                .collect(Collectors.toList());
-        
-        int totalAttendees = attendees.size() + 1; // +1 for the creator
+        // Get participating and invited user IDs
+        List<UUID> participatingUserIds = userService.getParticipantUserIdsByActivityId(id);
+        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
         
         return new ActivityInviteDTO(
                 activity.getId(),
                 activity.getTitle(),
                 activity.getStartTime(),
                 activity.getEndTime(),
+                activity.getLocation() != null ? activity.getLocation().getId() : null,
+                activity.getActivityType() != null ? activity.getActivityType().getId() : null,
                 activity.getNote(),
                 activity.getIcon(),
-                activity.getCategory(),
-                activity.getCreatedAt(),
-                locationName,
-                creatorName,
-                creatorUsername,
-                attendees,
-                totalAttendees
+                activity.getCreator().getId(),
+                participatingUserIds,
+                invitedUserIds,
+                activity.getCreatedAt()
         );
     }
 
@@ -209,10 +209,13 @@ public class ActivityService implements IActivityService {
                 ActivityEntity = ActivityMapper.convertFullFeedActivityDTOToActivityEntity(fullFeedActivityDTO);
             } else if (Activity instanceof ActivityDTO ActivityDTO) {
                 Location location = locationRepository.findById(ActivityDTO.getLocationId()).orElse(null);
+                ActivityType activityType = ActivityDTO.getActivityTypeId() != null 
+                    ? activityTypeRepository.findById(ActivityDTO.getActivityTypeId()).orElse(null) 
+                    : null;
 
-                // Map ActivityDTO to Activity entity with the resolved Location
+                // Map ActivityDTO to Activity entity with the resolved Location and ActivityType
                 ActivityEntity = ActivityMapper.toEntity(ActivityDTO, location,
-                        userService.getUserEntityById(ActivityDTO.getCreatorUserId()));
+                        userService.getUserEntityById(ActivityDTO.getCreatorUserId()), activityType);
             } else {
                 throw new IllegalArgumentException("Unsupported Activity type");
             }
@@ -258,7 +261,11 @@ public class ActivityService implements IActivityService {
             User creator = userRepository.findById(ActivityCreationDTO.getCreatorUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, ActivityCreationDTO.getCreatorUserId()));
 
-            Activity Activity = ActivityMapper.fromCreationDTO(ActivityCreationDTO, location, creator);
+            ActivityType activityType = ActivityCreationDTO.getActivityTypeId() != null
+                    ? activityTypeRepository.findById(ActivityCreationDTO.getActivityTypeId()).orElse(null)
+                    : null;
+
+            Activity Activity = ActivityMapper.fromCreationDTO(ActivityCreationDTO, location, creator, activityType);
 
             Activity = repository.save(Activity);
 
@@ -335,9 +342,12 @@ public class ActivityService implements IActivityService {
             // Map and save new Activity, fetch location and creator
             Location location = locationService.getLocationEntityById(newActivity.getLocationId());
             User creator = userService.getUserEntityById(newActivity.getCreatorUserId());
+            ActivityType activityType = newActivity.getActivityTypeId() != null
+                    ? activityTypeRepository.findById(newActivity.getActivityTypeId()).orElse(null)
+                    : null;
 
             // Convert DTO to entity
-            Activity ActivityEntity = ActivityMapper.toEntity(newActivity, location, creator);
+            Activity ActivityEntity = ActivityMapper.toEntity(newActivity, location, creator, activityType);
             ActivityEntity = repository.save(ActivityEntity);
             
             eventPublisher.publishEvent(
@@ -639,9 +649,9 @@ public class ActivityService implements IActivityService {
                     Activity.getStartTime(),
                     Activity.getEndTime(),
                     location,
+                    Activity.getActivityTypeId(),
                     Activity.getNote(),
                     Activity.getIcon(),
-                    Activity.getCategory(),
                     creator,
                     userService.getParticipantsByActivityId(Activity.getId()),
                     userService.getInvitedByActivityId(Activity.getId()),
@@ -758,9 +768,9 @@ public class ActivityService implements IActivityService {
             List<FullFeedActivityDTO> fullFeedActivities = convertActivitiesToFullFeedActivities(pastActivityDTOs, requestingUserId);
             List<ProfileActivityDTO> result = new ArrayList<>();
             
-            // Convert each FullFeedActivityDTO to ProfileActivityDTO with isPastActivity set to true
+            // Convert each FullFeedActivityDTO to ProfileActivityDTO
             for (FullFeedActivityDTO fullFeedActivity : fullFeedActivities) {
-                result.add(ProfileActivityDTO.fromFullFeedActivityDTO(fullFeedActivity, true));
+                result.add(ProfileActivityDTO.fromFullFeedActivityDTO(fullFeedActivity));
             }
             
             return result;
@@ -791,11 +801,11 @@ public class ActivityService implements IActivityService {
             // Convert to ProfileActivityDTO
             List<ProfileActivityDTO> result = new ArrayList<>();
             
-            // If there are upcoming Activities, return them as ProfileActivityDTOs with isPastActivity = false
+            // If there are upcoming Activities, return them as ProfileActivityDTOs
             if (!nonExpiredActivities.isEmpty()) {
                 sortActivitiesByStartTime(nonExpiredActivities);
                 for (FullFeedActivityDTO Activity : nonExpiredActivities) {
-                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity, false));
+                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity));
                 }
                 return result;
             }
