@@ -1,19 +1,31 @@
 package com.danielagapov.spawn.Services.Auth;
 
+import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
+import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.Exceptions.EmailAlreadyExistsException;
-import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
+import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Enums.UserField;
+import com.danielagapov.spawn.Enums.UserStatus;
+import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.Exceptions.*;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Exceptions.UsernameAlreadyExistsException;
 import com.danielagapov.spawn.Mappers.UserMapper;
+import com.danielagapov.spawn.Models.EmailVerification;
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Repositories.IEmailVerificationRepository;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
+import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import com.danielagapov.spawn.Services.S3.S3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
+import com.danielagapov.spawn.Util.VerificationCodeGenerator;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +34,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +49,9 @@ public class AuthService implements IAuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final ILogger logger;
+    private final IOAuthService oauthService;
+    private final IEmailVerificationRepository emailVerificationRepository;
+
 
     @Override
     public UserDTO registerUser(AuthUserDTO authUserDTO) throws FieldAlreadyExistsException {
@@ -53,22 +70,40 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public BaseUserDTO loginUser(AuthUserDTO authUserDTO) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        authUserDTO.getUsername(),
-                        authUserDTO.getPassword()
-                )
-        );
-        if (authentication.isAuthenticated()) {
-            String username = ((UserDetails) authentication.getPrincipal()).getUsername();
+    public BaseUserDTO loginUser(String usernameOrEmail, String password) {
+        String username;
+        final String errorMsg = "Incorrect username, email, or password";
 
-            User user = userService.getUserEntityByUsername(username);
-            return UserMapper.toDTO(user);
-        } else {
-            logger.warn("Failed authentication attempt for username: " + authUserDTO.getUsername());
-            throw new BadCredentialsException("Invalid username or password");
+        if (usernameOrEmail == null || usernameOrEmail.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Username, email, and password must be provided");
         }
+
+        User user = null;
+        if (usernameOrEmail.contains("@")) { // This is an email
+            user = userService.getUserByEmail(usernameOrEmail);
+            if (user == null) {
+                throw new BadCredentialsException(errorMsg);
+            }
+
+            username = user.getUsername();
+        } else { // This is a username
+            username = usernameOrEmail;
+        }
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        if (authentication.isAuthenticated()) {
+            String authenticatedUsername = ((UserDetails) authentication.getPrincipal()).getUsername();
+
+            if (user == null) {
+                user = userService.getUserEntityByUsername(authenticatedUsername);
+            }
+
+            return UserMapper.toDTO(user);
+        }
+        throw new BadCredentialsException(errorMsg);
     }
 
     @Override
@@ -126,6 +161,255 @@ public class AuthService implements IAuthService {
     public BaseUserDTO getUserByToken(String token) {
         final String username = jwtService.extractUsername(token);
         return userService.getBaseUserByUsername(username);
+    }
+
+    @Override
+    public BaseUserDTO updateUserDetails(UpdateUserDetailsDTO dto) {
+        if (dto.getId() == null || dto.getUsername() == null || dto.getPhoneNumber() == null) {
+            throw new IllegalArgumentException("User ID, username, and phone number cannot be null");
+        }
+
+        User user = userService.getUserEntityById(dto.getId());
+        if (user == null) {
+            throw new BaseNotFoundException(EntityType.User);
+        }
+
+        if (user.getStatus() != UserStatus.EMAIL_VERIFIED) {
+            throw new RuntimeException("Cannot update user details before email is verified");
+        }
+
+        // Check for username uniqueness if changed
+        if (!dto.getUsername().equals(user.getUsername())) {
+            if (userService.existsByUsername(dto.getUsername())) {
+                throw new FieldAlreadyExistsException("Username already exists", UserField.USERNAME);
+            }
+            user.setUsername(dto.getUsername());
+        }
+        // Update phone number
+        if (!userService.existsByPhoneNumber(dto.getPhoneNumber())) {
+            user.setPhoneNumber(dto.getPhoneNumber());
+        } else {
+            throw new PhoneNumberAlreadyExistsException("Phone number already exists");
+        }
+        // Update password if provided
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty() && user.getPassword() == null) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+        user.setStatus(UserStatus.USERNAME_AND_PHONE_NUMBER);
+        userService.saveEntity(user);
+        return UserMapper.toDTO(user);
+    }
+
+
+    @Override
+    public BaseUserDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO) {
+        String email = registrationDTO.getEmail();
+        String externalIdToken = registrationDTO.getExternalIdToken();
+        OAuthProvider provider = registrationDTO.getProvider();
+        
+        if (email == null || externalIdToken == null) {
+            throw new IllegalArgumentException("Email and externalIdToken cannot be null for OAuth registration");
+        }
+        
+        // Check if user already exists
+        if (userService.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException("Email already exists");
+        }
+        
+        // Verify OAuth token and get external ID
+        String externalId = oauthService.checkOAuthRegistration(email, externalIdToken, provider);
+        
+        // Create verified user immediately for OAuth
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setUsername(externalId);
+        newUser.setPhoneNumber(externalId);
+        newUser.setStatus(UserStatus.EMAIL_VERIFIED); // OAuth users are automatically verified
+        newUser.setDateCreated(new Date());
+
+        String profilePictureUrl = registrationDTO.getProfilePictureUrl();
+        newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
+
+        String name = registrationDTO.getName();
+        if (name != null) {
+            newUser.setName(name);
+        }
+        newUser = userService.saveEntity(newUser);
+        
+        // Create OAuth mapping
+        oauthService.createAndSaveMapping(newUser, externalId, provider);
+        
+        logger.info("OAuth user registered successfully: " + LoggingUtils.formatUserInfo(newUser));
+        return UserMapper.toDTO(newUser);
+    }
+
+    @Override
+    public HttpHeaders makeHeadersForTokens(String username) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + jwtService.generateAccessToken(username));
+        headers.set("X-Refresh-Token", jwtService.generateRefreshToken(username));
+        return headers;
+    }
+
+    @Override
+    public EmailVerificationResponseDTO sendEmailVerificationCodeForRegistration(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        
+        // Check if user already exists
+        if (userService.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException("Email already exists");
+        }
+        
+        EmailVerification verification;
+        long secondsUntilNextAttempt;
+        
+        // Check for existing verification record for this email
+        if (emailVerificationRepository.existsByEmail(email)) {
+            verification = emailVerificationRepository.findByEmail(email);
+            
+            // Check if we need to wait before sending another code
+            if (verification.getNextSendAttemptAt().isAfter(Instant.now())) {
+                long secondsToWait = Duration.between(Instant.now(), verification.getNextSendAttemptAt()).getSeconds();
+                return new EmailVerificationResponseDTO(secondsToWait, "Please wait before requesting another verification code");
+            }
+            
+            // Update attempt count and calculate next timeout
+            verification.setSendAttempts(verification.getSendAttempts() + 1);
+            secondsUntilNextAttempt = getSendVerificationTimeout(verification.getSendAttempts());
+            verification.setNextSendAttemptAt(Instant.now().plusSeconds(secondsUntilNextAttempt));
+        } else {
+            // Create new verification record for registration
+            verification = new EmailVerification();
+            verification.setEmail(email);
+            verification.setSendAttempts(1);
+            secondsUntilNextAttempt = getSendVerificationTimeout(verification.getSendAttempts());
+            verification.setNextSendAttemptAt(Instant.now().plusSeconds(secondsUntilNextAttempt));
+        }
+
+        // Generate verification code and send email
+        String verificationCode = VerificationCodeGenerator.generateVerificationCode();
+        while (emailVerificationRepository.existsByVerificationCode(passwordEncoder.encode(verificationCode))) {
+            verificationCode = VerificationCodeGenerator.generateVerificationCode();
+        }
+
+        Instant codeExpiresAt = Instant.now().plusSeconds(600); // 10-minute expiry
+
+        verification.setVerificationCode(passwordEncoder.encode(verificationCode));
+        verification.setCodeExpiresAt(codeExpiresAt);
+
+        try {
+            String expiryTime = codeExpiresAt.toString();
+            emailService.sendVerificationCodeEmail(email, verificationCode, expiryTime);
+            logger.info("Email verification code sent for registration to: " + email);
+            emailVerificationRepository.save(verification);
+            
+            return new EmailVerificationResponseDTO(secondsUntilNextAttempt, "Verification code sent successfully");
+        } catch (Exception e) {
+            logger.error("Failed to send email verification code for registration to: " + email + ": " + e.getMessage());
+            throw new RuntimeException("Failed to send verification code", e);
+        }
+    }
+
+    @Override
+    public BaseUserDTO checkEmailVerificationCode(String email, String code) {
+        logger.info("Verifying email and creating user for: " + email);
+        
+        if (email == null || code == null) {
+            throw new IllegalArgumentException("Email and code cannot be null");
+        }
+        
+        // Check if user already exists
+        if (userService.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException("Email already exists");
+        }
+
+        if (!emailVerificationRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("No verification record found for this email");
+        }
+        
+        // Find verification record
+        EmailVerification verification = emailVerificationRepository.findByEmail(email);
+        
+        if (verification.getNextCheckAttemptAt() != null && verification.getNextCheckAttemptAt().isAfter(Instant.now())) {
+            throw new TooManyAttemptsException("Wait before checking another email verification code: " + verification.getNextCheckAttemptAt().toString());
+        }
+        
+        // Check if code has expired
+        if (verification.getCodeExpiresAt().isBefore(Instant.now())) {
+            throw new EmailVerificationException("Verification code has expired");
+        }
+        
+        // Check if code matches
+        if (!passwordEncoder.matches(code, verification.getVerificationCode())) {
+            verification.setCheckAttempts(verification.getCheckAttempts() + 1);
+            long secondsToWait = getCheckVerificationTimeout(verification.getCheckAttempts());
+            verification.setNextCheckAttemptAt(Instant.now().plusSeconds(secondsToWait));
+            emailVerificationRepository.save(verification);
+            throw new EmailVerificationException("Incorrect verification code");
+        }
+        
+        // Code is valid, create the user
+        User newUser = new User();
+        newUser.setId(UUID.randomUUID());
+        newUser.setEmail(email);
+        newUser.setUsername(email);
+        newUser.setPhoneNumber(email);
+        newUser.setStatus(UserStatus.EMAIL_VERIFIED);
+        newUser = userService.saveEntity(newUser);
+        
+        // Clean up verification record
+        emailVerificationRepository.delete(verification);
+        
+        logger.info("User created successfully after email verification: " + LoggingUtils.formatUserInfo(newUser));
+        return UserMapper.toDTO(newUser);
+    }
+
+    @Override
+    public BaseUserDTO acceptTermsOfService(UUID userId) {
+        try {
+            logger.info("Accepting Terms of Service for user: " + LoggingUtils.formatUserIdInfo(userId));
+
+            User user = userService.getUserEntityById(userId);
+            user.setStatus(UserStatus.ACTIVE);
+            user = userService.saveEntity(user);
+
+            logger.info("Successfully updated user status to ACTIVE: " + LoggingUtils.formatUserInfo(user));
+            return UserMapper.toDTO(user);
+        } catch (Exception e) {
+            logger.error("Error accepting Terms of Service for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+
+    private long getSendVerificationTimeout(int numAttempts) {
+        long secondsToWait;
+        if (numAttempts <= 5) {
+            secondsToWait = 30;
+        } else if (numAttempts <= 10) {
+            secondsToWait = 120;
+        } else if (numAttempts <= 15) {
+            secondsToWait = 600;
+        } else {
+            secondsToWait = 3600 * 2;
+        }
+        return secondsToWait;
+    }
+
+    private long getCheckVerificationTimeout(int numAttempts) {
+        long secondsToWait;
+        if (numAttempts <= 5) {
+            secondsToWait = 0;
+        } else if (numAttempts <= 7) {
+            secondsToWait = 30;
+        } else if (numAttempts < 10) {
+            secondsToWait = 120;
+        } else {
+            secondsToWait = 3600 * 2; // 2 hours
+        }
+        return secondsToWait;
     }
 
     /* ------------------------------ HELPERS ------------------------------ */

@@ -1,13 +1,10 @@
 package com.danielagapov.spawn.Services.User;
 
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
-import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.DTOs.UserIdActivityTimeDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
@@ -27,7 +24,6 @@ import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
@@ -71,7 +67,7 @@ public class UserService implements IUserService {
                        IS3Service s3Service, ILogger logger,
                        IUserSearchService userSearchService,
                        CacheManager cacheManager,
-                       IFriendRequestService friendRequestService, IActivityTypeService activityTypeService) {
+                       IActivityTypeService activityTypeService) {
         this.repository = repository;
         this.activityUserRepository = activityUserRepository;
         this.uftRepository = uftRepository;
@@ -428,6 +424,16 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public boolean existsByPhoneNumber(String phoneNumber) {
+        return repository.existsByPhoneNumber(phoneNumber);
+    }
+
+    @Override
+    public boolean existsByUserId(UUID userId) {
+        return repository.existsById(userId);
+    }
+
+    @Override
     public void verifyUserByUsername(String username) {
         try {
             logger.info("Marking user as verified " + username);
@@ -700,19 +706,36 @@ public class UserService implements IUserService {
     @Override
     public UserProfileInfoDTO getUserProfileInfo(UUID userId) {
         try {
-            User user = repository.findById(userId)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-
+            User user = getUserEntityById(userId);
             return new UserProfileInfoDTO(
-                    user.getId(),
-                    user.getName(),
-                    user.getUsername(),
-                    user.getBio(),
-                    user.getProfilePictureUrlString(),
-                    user.getDateCreated()
+                user.getId(),
+                user.getName(),
+                user.getUsername(),
+                user.getBio(),
+                user.getProfilePictureUrlString(),
+                user.getDateCreated()
             );
         } catch (Exception e) {
-            logger.error("Error getting user profile info for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            logger.error("Error getting user profile info: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public BaseUserDTO setOptionalDetails(UUID userId, OptionalDetailsDTO optionalDetailsDTO) {
+        try {
+            User user = getUserEntityById(userId);
+
+            if (optionalDetailsDTO.getName() != null) {
+                user.setName(optionalDetailsDTO.getName());
+            }
+            if (optionalDetailsDTO.getProfilePictureData() != null) {
+                user.setProfilePictureUrlString(s3Service.updateProfilePictureWithUserId(optionalDetailsDTO.getProfilePictureData(), user.getId()));
+            }
+            user = repository.save(user);
+            return UserMapper.toDTO(user);
+        } catch (Exception e) {
+            logger.error("Error getting user profile info: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }

@@ -1,12 +1,9 @@
 package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
-import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Util.SearchedUserResult;
@@ -21,10 +18,10 @@ import java.util.UUID;
  * Provides CRUD operations, friend management, profile handling, and search functionality.
  */
 public interface IUserService {
-    
+
     /**
      * Retrieves all users from the database.
-     * 
+     *
      * @return List of UserDTO objects representing all users
      * @throws com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException if database access fails
      */
@@ -32,7 +29,7 @@ public interface IUserService {
 
     /**
      * Retrieves a specific user by their unique identifier.
-     * 
+     *
      * @param id the unique identifier of the user
      * @return UserDTO object representing the requested user
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user with given ID is not found
@@ -41,7 +38,7 @@ public interface IUserService {
 
     /**
      * Retrieves a user entity by their unique identifier.
-     * 
+     *
      * @param id the unique identifier of the user
      * @return User entity object
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user with given ID is not found
@@ -50,7 +47,7 @@ public interface IUserService {
 
     /**
      * Saves a user to the database.
-     * 
+     *
      * @param user the UserDTO to save
      * @return the saved UserDTO
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if saving fails
@@ -59,7 +56,7 @@ public interface IUserService {
 
     /**
      * Deletes a user by their unique identifier.
-     * 
+     *
      * @param id the unique identifier of the user to delete
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user with given ID is not found
      */
@@ -67,7 +64,7 @@ public interface IUserService {
 
     /**
      * Saves a user entity to the database.
-     * 
+     *
      * @param user the User entity to save
      * @return the saved User entity
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if saving fails
@@ -76,7 +73,7 @@ public interface IUserService {
 
     /**
      * Saves a user with a profile picture to the database and S3.
-     * 
+     *
      * @param user the UserDTO to save
      * @param profilePicture byte array representation of the profile picture
      * @return the saved UserDTO with profile picture URL
@@ -86,7 +83,7 @@ public interface IUserService {
 
     /**
      * Converts a User entity to a UserDTO with populated friend and tag information.
-     * 
+     *
      * @param user the User entity to convert
      * @return UserDTO with populated friend and tag information
      */
@@ -94,7 +91,7 @@ public interface IUserService {
 
     /**
      * Creates and saves a new user entity to the database.
-     * 
+     *
      * @param user the User entity to create and save
      * @return the created User entity
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if saving fails
@@ -103,7 +100,7 @@ public interface IUserService {
 
     /**
      * Creates and saves a new user with a profile picture.
-     * 
+     *
      * @param user the UserDTO to create and save
      * @param profilePicture byte array representation of the profile picture
      * @return the created UserDTO with profile picture URL
@@ -113,7 +110,7 @@ public interface IUserService {
 
     /**
      * Retrieves the user IDs of all friends of a specific user.
-     * 
+     *
      * @param id the unique identifier of the user
      * @return List of UUID objects representing friend user IDs
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -122,7 +119,7 @@ public interface IUserService {
 
     /**
      * Retrieves all friends of a user as FullFriendUserDTO objects with complete information.
-     * 
+     *
      * @param requestingUserId the unique identifier of the user requesting their friends
      * @return List of FullFriendUserDTO objects representing the user's friends
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -131,7 +128,7 @@ public interface IUserService {
 
     /**
      * Retrieves all friends of a user as User entities.
-     * 
+     *
      * @param requestingUserId the unique identifier of the user requesting their friends
      * @return List of User entities representing the user's friends
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -150,7 +147,7 @@ public interface IUserService {
     /**
      * Retrieves a map of FriendTag entities to their owner user IDs.
      * Used for efficient batch operations.
-     * 
+     *
      * @return Map with FriendTag as key and owner UUID as value
      */
     Map<FriendTag, UUID> getOwnerUserIdsMap();
@@ -158,14 +155,14 @@ public interface IUserService {
     /**
      * Retrieves a map of FriendTag entities to their associated friend user IDs.
      * Used for efficient batch operations.
-     * 
+     *
      * @return Map with FriendTag as key and List of friend UUIDs as value
      */
     Map<FriendTag, List<UUID>> getFriendUserIdsMap();
 
     /**
      * Retrieves all friends associated with a specific friend tag.
-     * 
+     *
      * @param friendTagId the unique identifier of the friend tag
      * @return List of BaseUserDTO objects representing friends in the tag
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
@@ -174,7 +171,7 @@ public interface IUserService {
 
     /**
      * Retrieves the user IDs of all friends associated with a specific friend tag.
-     * 
+     *
      * @param friendTagId the unique identifier of the friend tag
      * @return List of UUID objects representing friend user IDs in the tag
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
@@ -183,7 +180,7 @@ public interface IUserService {
 
     /**
      * Saves a bidirectional friendship between two users.
-     * 
+     *
      * @param userId the unique identifier of the first user
      * @param friendId the unique identifier of the second user
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if either user doesn't exist
@@ -193,7 +190,7 @@ public interface IUserService {
 
     /**
      * Retrieves a limited number of recommended friends for a user.
-     * 
+     *
      * @param userId the unique identifier of the user requesting recommendations
      * @return List of RecommendedFriendUserDTO objects representing recommended friends
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -210,7 +207,7 @@ public interface IUserService {
 
     /**
      * Retrieves all users participating in a specific activity.
-     * 
+     *
      * @param activityId the unique identifier of the activity
      * @return List of BaseUserDTO objects representing participants
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
@@ -219,7 +216,7 @@ public interface IUserService {
 
     /**
      * Retrieves all users invited to a specific activity.
-     * 
+     *
      * @param activityId the unique identifier of the activity
      * @return List of BaseUserDTO objects representing invited users
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
@@ -228,7 +225,7 @@ public interface IUserService {
 
     /**
      * Retrieves the user IDs of all participants in a specific activity.
-     * 
+     *
      * @param activityId the unique identifier of the activity
      * @return List of UUID objects representing participant user IDs
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
@@ -237,7 +234,7 @@ public interface IUserService {
 
     /**
      * Retrieves the user IDs of all users invited to a specific activity.
-     * 
+     *
      * @param activityId the unique identifier of the activity
      * @return List of UUID objects representing invited user IDs
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
@@ -246,7 +243,7 @@ public interface IUserService {
 
     /**
      * Checks if a user exists with the given email address.
-     * 
+     *
      * @param email the email address to check
      * @return true if a user exists with the given email, false otherwise
      */
@@ -254,15 +251,19 @@ public interface IUserService {
 
     /**
      * Checks if a user exists with the given username.
-     * 
+     *
      * @param username the username to check
      * @return true if a user exists with the given username, false otherwise
      */
     boolean existsByUsername(String username);
 
+    boolean existsByPhoneNumber(String phoneNumber);
+
+    boolean existsByUserId(UUID userId);
+
     /**
      * Verifies a user account by username.
-     * 
+     *
      * @param username the username of the user to verify
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
      */
@@ -270,7 +271,7 @@ public interface IUserService {
 
     /**
      * Calculates the number of mutual friends between two users.
-     * 
+     *
      * @param receiverId the unique identifier of the first user
      * @param id the unique identifier of the second user
      * @return the number of mutual friends between the users
@@ -279,7 +280,7 @@ public interface IUserService {
 
     /**
      * Retrieves a user as a BaseUserDTO by their unique identifier.
-     * 
+     *
      * @param id the unique identifier of the user
      * @return BaseUserDTO object representing the user
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -288,7 +289,7 @@ public interface IUserService {
 
     /**
      * Updates a user's information with the provided update data.
-     * 
+     *
      * @param id the unique identifier of the user to update
      * @param updateUserDTO the DTO containing updated user information
      * @return updated BaseUserDTO object
@@ -299,7 +300,7 @@ public interface IUserService {
 
     /**
      * Searches for recommended friends based on a search query.
-     * 
+     *
      * @param requestingUserId the unique identifier of the user performing the search
      * @param searchQuery the search query string
      * @return SearchedUserResult containing search results and metadata
@@ -309,7 +310,7 @@ public interface IUserService {
 
     /**
      * Get the User entity by username
-     * 
+     *
      * @param username the username to search for
      * @return User entity object
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -318,7 +319,7 @@ public interface IUserService {
 
     /**
      * Searches for users by a query string for a requesting user.
-     * 
+     *
      * @param searchQuery the search query string
      * @param requestingUserId the unique identifier of the user performing the search
      * @return List of BaseUserDTO objects matching the search query
@@ -328,7 +329,7 @@ public interface IUserService {
 
     /**
      * Get the User entity by email
-     * 
+     *
      * @param email the email address to search for
      * @return User entity object
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -337,7 +338,7 @@ public interface IUserService {
 
     /**
      * Retrieves users who have recently spawned (created activities) that the requesting user was invited to.
-     * 
+     *
      * @param requestingUserId the unique identifier of the user making the request
      * @return List of RecentlySpawnedUserDTO objects representing recently active users
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if requesting user doesn't exist
@@ -346,7 +347,7 @@ public interface IUserService {
 
     /**
      * Retrieves a user as a BaseUserDTO by their username.
-     * 
+     *
      * @param username the username to search for
      * @return BaseUserDTO object representing the user
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
@@ -355,10 +356,12 @@ public interface IUserService {
 
     /**
      * Get user profile information
-     * 
+     *
      * @param userId the unique identifier of the user
      * @return UserProfileInfoDTO containing user profile information
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
      */
     UserProfileInfoDTO getUserProfileInfo(UUID userId);
+
+    BaseUserDTO setOptionalDetails(UUID userId, OptionalDetailsDTO optionalDetailsDTO);
 }

@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Models.User;
 
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Models.NotificationPreferences;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
@@ -39,6 +40,9 @@ public class User implements Serializable {
     private String username;
     private String profilePictureUrlString;
 
+    @Column(unique = true, nullable = false)
+    private String phoneNumber;
+
     @Column(nullable = false)
     private String name;
     private String bio;
@@ -55,6 +59,9 @@ public class User implements Serializable {
     @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private NotificationPreferences notificationPreferences;
+
+    @Column(nullable = false)
+    private UserStatus status;
 
     @PrePersist
     public void prePersist() {

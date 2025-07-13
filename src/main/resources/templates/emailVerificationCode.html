@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Verification Code</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8693FF;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .verification-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #8693FF;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            letter-spacing: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .footer {
+            font-size: 14px;
+            color: #777777;
+            margin-top: 30px;
+        }
+
+        .expiry-note {
+            font-size: 12px;
+            color: #999999;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header {
+                font-size: 20px;
+            }
+
+            .message {
+                font-size: 14px;
+            }
+
+            .verification-code {
+                font-size: 24px;
+                padding: 15px;
+                letter-spacing: 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">Your Verification Code</div>
+    <div class="message">
+        Please use the verification code below to complete your account verification. This code will expire in 10 minutes.
+    </div>
+    <div class="verification-code">[VERIFICATION_CODE]</div>
+    <div class="footer">
+        If you did not request this verification code, you can safely ignore this email.
+    </div>
+    <div class="expiry-note">
+        This code expires at [EXPIRY_TIME]
+    </div>
+</div>
+</body>
+</html> 

@@ -12,12 +12,20 @@ import java.io.InputStream;
  */
 public class EmailTemplates {
     private static String VERIFY_EMAIL_BODY = null;
+    private static String EMAIL_VERIFICATION_CODE_BODY = null;
 
     public static String getVerifyEmailBody() {
         if (VERIFY_EMAIL_BODY == null) {
             VERIFY_EMAIL_BODY = readHTMLFile("src/main/resources/templates/verifyEmailBody.html");
         }
         return VERIFY_EMAIL_BODY;
+    }
+
+    public static String getEmailVerificationCodeBody() {
+        if (EMAIL_VERIFICATION_CODE_BODY == null) {
+            EMAIL_VERIFICATION_CODE_BODY = readHTMLFile("src/main/resources/templates/emailVerificationCode.html");
+        }
+        return EMAIL_VERIFICATION_CODE_BODY;
     }
 
     private static String readHTMLFile(String fileName) {

@@ -74,4 +74,6 @@ public interface IS3Service {
      * @throws RuntimeException if S3 operation fails
      */
     void deleteObjectByURL(String urlString);
+
+    String updateProfilePictureWithUserId(byte[] file, UUID userId);
 }

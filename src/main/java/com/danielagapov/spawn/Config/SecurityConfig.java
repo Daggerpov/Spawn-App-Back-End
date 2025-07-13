@@ -35,11 +35,10 @@ public class SecurityConfig {
     private final UserInfoService userInfoService;
     private final JWTFilterConfig jwtFilterConfig;
     private final String[] whitelistedUrls = new String[] {
-            "/api/v1/auth/login",
-            "/api/v1/auth/sign-in",
-            "/api/v1/auth/register",
             "/api/v1/auth/refresh-token",
-            "/api/v1/auth/make-user",
+            "/api/v1/auth/register/verification/send",
+            "/api/v1/auth/register/oauth",
+            "/api/v1/auth/register/verification/check"
     };
 
     @Bean

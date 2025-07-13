@@ -73,5 +73,10 @@ public class TestConfig {
         public void deleteObjectByURL(String urlString) {
             // No-op for test
         }
+
+        @Override
+        public String updateProfilePictureWithUserId(byte[] file, UUID userId) {
+            return "";
+        }
     }
 } 

@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Models.User.User;
 
 import java.util.Optional;
 
@@ -60,4 +61,8 @@ public interface IOAuthService {
      * @throws SecurityException when token validation fails
      */
     BaseUserDTO createUserFromOAuth(UserCreationDTO userCreationDTO, String idToken, OAuthProvider provider);
+
+    String checkOAuthRegistration(String email, String idToken, OAuthProvider provider);
+
+    void createAndSaveMapping(User user, String externalId, OAuthProvider provider);
 }
