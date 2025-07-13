@@ -205,11 +205,11 @@ public class AuthService implements IAuthService {
     @Override
     public BaseUserDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO) {
         String email = registrationDTO.getEmail();
-        String externalIdToken = registrationDTO.getExternalIdToken();
+        String idToken = registrationDTO.getIdToken();  // Changed from getExternalIdToken to getIdToken
         OAuthProvider provider = registrationDTO.getProvider();
         
-        if (email == null || externalIdToken == null) {
-            throw new IllegalArgumentException("Email and externalIdToken cannot be null for OAuth registration");
+        if (email == null || idToken == null) {
+            throw new IllegalArgumentException("Email and idToken cannot be null for OAuth registration");
         }
         
         // Check if user already exists
@@ -218,7 +218,7 @@ public class AuthService implements IAuthService {
         }
         
         // Verify OAuth token and get external ID
-        String externalId = oauthService.checkOAuthRegistration(email, externalIdToken, provider);
+        String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
         
         // Create verified user immediately for OAuth
         User newUser = new User();

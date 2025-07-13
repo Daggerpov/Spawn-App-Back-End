@@ -199,7 +199,8 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedActivities", allEntries = true),
-            @CacheEvict(value = "filteredFeedActivities", allEntries = true)
+            @CacheEvict(value = "filteredFeedActivities", allEntries = true),
+            @CacheEvict(value = "userStatsById", key = "#result.creatorUserId")
     })
     public AbstractActivityDTO saveActivity(AbstractActivityDTO Activity) {
         try {
@@ -252,7 +253,8 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedActivities", allEntries = true),
-            @CacheEvict(value = "filteredFeedActivities", allEntries = true)
+            @CacheEvict(value = "filteredFeedActivities", allEntries = true),
+            @CacheEvict(value = "userStatsById", key = "#result.creatorUserId")
     })
     public AbstractActivityDTO createActivity(ActivityCreationDTO ActivityCreationDTO) {
         try {
@@ -476,7 +478,8 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
-            @CacheEvict(value = "filteredFeedActivities", key = "#userId")
+            @CacheEvict(value = "filteredFeedActivities", key = "#userId"),
+            @CacheEvict(value = "userStatsById", key = "#userId")
     })
     public FullFeedActivityDTO toggleParticipation(UUID ActivityId, UUID userId) {
         ActivityUser ActivityUser = activityUserRepository.findByActivity_IdAndUser_Id(ActivityId, userId).orElseThrow(() -> new BaseNotFoundException(EntityType.ActivityUser));
@@ -757,7 +760,8 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#activityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
-            @CacheEvict(value = "filteredFeedActivities", key = "#userId")
+            @CacheEvict(value = "filteredFeedActivities", key = "#userId"),
+            @CacheEvict(value = "userStatsById", key = "#userId")
     })
     public FullFeedActivityDTO autoJoinUserToActivity(UUID activityId, UUID userId) {
         try {

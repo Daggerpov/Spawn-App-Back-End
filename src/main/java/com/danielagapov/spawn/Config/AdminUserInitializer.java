@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Config;
 
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
@@ -25,6 +26,9 @@ public class AdminUserInitializer {
     @Value("${ADMIN_PASSWORD:spawn-admin-secure-password}")
     private String adminPassword;
 
+    @Value("${ADMIN_PHONE_NUMBER:+1234567890}")
+    private String adminPhoneNumber;
+
     @Bean
     public CommandLineRunner initializeAdminUser(
             IUserRepository userRepository,
@@ -43,6 +47,7 @@ public class AdminUserInitializer {
                     adminUser.setUsername(adminUsername);
                     adminUser.setName("Admin User");
                     adminUser.setEmail("admin@getspawn.com");
+                    adminUser.setPhoneNumber(adminPhoneNumber);
                     adminUser.setBio("Spawn Admin Account");
                     
                     // Encode the password from environment variable
@@ -51,6 +56,7 @@ public class AdminUserInitializer {
                     // Set as verified and created now
                     adminUser.setVerified(true);
                     adminUser.setDateCreated(new Date());
+                    adminUser.setStatus(UserStatus.ACTIVE);
                     
                     // Save to database
                     userRepository.save(adminUser);

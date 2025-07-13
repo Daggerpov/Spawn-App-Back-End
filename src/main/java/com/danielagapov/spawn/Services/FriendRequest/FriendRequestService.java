@@ -18,7 +18,9 @@ import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -51,6 +53,10 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "incomingFetchFriendRequests", key = "#friendRequestDTO.receiverUserId"),
+            @CacheEvict(value = "sentFetchFriendRequests", key = "#friendRequestDTO.senderUserId")
+    })
     public CreateFriendRequestDTO saveFriendRequest(CreateFriendRequestDTO friendRequestDTO) {
         try {
             // Extract sender and receiver IDs from the FriendRequestDTO
@@ -304,6 +310,7 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
     @Override
+    @Cacheable(value = "sentFetchFriendRequests", key = "#userId")
     public List<FetchFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
         try {
             User user = userService.getUserEntityById(userId);

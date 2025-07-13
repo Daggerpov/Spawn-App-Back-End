@@ -12,6 +12,8 @@ import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class ActivityTypeService implements IActivityTypeService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "activityTypesByUserId", key = "#userId")
     public List<ActivityTypeDTO> getActivityTypesByUserId(UUID userId) {
         // Returns activity types owned by this user
         return ActivityTypeMapper.toDTOList(repository.findActivityTypesByCreatorId(userId));
@@ -40,6 +43,7 @@ public class ActivityTypeService implements IActivityTypeService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "activityTypesByUserId", key = "#userId")
     public List<ActivityTypeDTO> updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
         try {
             if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {

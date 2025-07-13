@@ -7,6 +7,8 @@ import com.danielagapov.spawn.Models.User.Profile.UserSocialMedia;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Repositories.User.Profile.IUserSocialMediaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -26,6 +28,7 @@ public class UserSocialMediaService implements IUserSocialMediaService {
     }
 
     @Override
+    @Cacheable(value = "userSocialMediaByUserId", key = "#userId")
     public UserSocialMediaDTO getUserSocialMedia(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
@@ -40,6 +43,7 @@ public class UserSocialMediaService implements IUserSocialMediaService {
     }
 
     @Override
+    @CacheEvict(value = "userSocialMediaByUserId", key = "#userId")
     public UserSocialMediaDTO updateUserSocialMedia(UUID userId, UpdateUserSocialMediaDTO updateDTO) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
