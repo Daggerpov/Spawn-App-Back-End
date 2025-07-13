@@ -295,7 +295,8 @@ public class AuthController {
     public ResponseEntity<?> updateUserDetails(@RequestBody UpdateUserDetailsDTO dto) {
         try {
             BaseUserDTO updatedUser = authService.updateUserDetails(dto);
-            return ResponseEntity.ok(updatedUser);
+            HttpHeaders headers = authService.makeHeadersForTokens(updatedUser.getUsername());
+            return ResponseEntity.ok().headers(headers).body(updatedUser);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for update: " + dto.getId() + ", entity type: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
