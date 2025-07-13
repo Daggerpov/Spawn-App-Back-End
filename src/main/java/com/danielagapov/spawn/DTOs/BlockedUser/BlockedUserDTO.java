@@ -39,6 +39,14 @@ public class BlockedUserDTO {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         BlockedUserDTO that = (BlockedUserDTO) obj;
-        return blockerId.equals(that.blockerId) && blockedId.equals(that.blockedId);
+        return blockerId != null ? blockerId.equals(that.blockerId) : that.blockerId == null &&
+               blockedId != null ? blockedId.equals(that.blockedId) : that.blockedId == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = blockerId != null ? blockerId.hashCode() : 0;
+        result = 31 * result + (blockedId != null ? blockedId.hashCode() : 0);
+        return result;
     }
 }

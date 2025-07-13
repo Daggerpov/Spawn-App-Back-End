@@ -77,8 +77,13 @@ public class UserServiceTests {
     private UserService userService;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         MockitoAnnotations.openMocks(this); // Initialize mocks
+        
+        // Set the adminUsername field using reflection to avoid null pointer in tests
+        java.lang.reflect.Field adminUsernameField = UserService.class.getDeclaredField("adminUsername");
+        adminUsernameField.setAccessible(true);
+        adminUsernameField.set(userService, "admin");
     }
 
     @Test

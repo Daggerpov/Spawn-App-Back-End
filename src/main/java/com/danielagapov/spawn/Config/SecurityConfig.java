@@ -43,6 +43,11 @@ public class SecurityConfig {
             "/api/v1/auth/login"
     };
 
+    // Additional regex patterns for whitelisted URLs
+    private final String[] whitelistedUrlPatterns = new String[] {
+            "/api/v1/auth/accept-tos/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -70,12 +75,17 @@ public class SecurityConfig {
                 // Endpoints can be made unsecured by specifying it with requestMatchers() below and permitting
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(whitelistedUrls).permitAll()
-                        .requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/v1/activities/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\\?.*)?")).permitAll() // Allow GET requests to specific activity by UUID for external invites (with optional query parameters)
-                        .anyRequest()
-                        .authenticated() // Comment this out if wanting to unsecure endpoints for development purposes
-                )
+                .authorizeHttpRequests(authorize -> {
+                    authorize.requestMatchers(whitelistedUrls).permitAll();
+                    authorize.requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/v1/activities/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\\?.*)?")).permitAll(); // Allow GET requests to specific activity by UUID for external invites (with optional query parameters)
+                    
+                    // Add whitelisted URL patterns
+                    for (String pattern : whitelistedUrlPatterns) {
+                        authorize.requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.POST, pattern)).permitAll();
+                    }
+                    
+                    authorize.anyRequest().authenticated(); // Comment this out if wanting to unsecure endpoints for development purposes
+                })
                 // When authenticating a request fails, status code 401 (unauthorized) is returned
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))

@@ -52,11 +52,15 @@ public class UserSocialMediaService implements IUserSocialMediaService {
                 .orElse(new UserSocialMedia(user));
 
         if (updateDTO.getWhatsappNumber() != null) {
-            socialMedia.setWhatsappNumber(updateDTO.getWhatsappNumber());
+            // Set to null if empty or blank, otherwise set the value
+            String whatsappNumber = updateDTO.getWhatsappNumber().trim();
+            socialMedia.setWhatsappNumber(whatsappNumber.isEmpty() ? null : whatsappNumber);
         }
 
         if (updateDTO.getInstagramUsername() != null) {
-            socialMedia.setInstagramUsername(updateDTO.getInstagramUsername());
+            // Set to null if empty or blank, otherwise set the value
+            String instagramUsername = updateDTO.getInstagramUsername().trim();
+            socialMedia.setInstagramUsername(instagramUsername.isEmpty() ? null : instagramUsername);
         }
 
         socialMedia = userSocialMediaRepository.save(socialMedia);

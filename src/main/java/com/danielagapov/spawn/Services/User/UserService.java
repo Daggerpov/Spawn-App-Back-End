@@ -30,6 +30,7 @@ import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -57,6 +58,9 @@ public class UserService implements IUserService {
     private final CacheManager cacheManager;
     private final IActivityTypeService activityTypeService;
 
+    @Value("${ADMIN_USERNAME:admin}")
+    private String adminUsername;
+
     @Autowired
     @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
@@ -80,6 +84,40 @@ public class UserService implements IUserService {
         this.activityTypeService = activityTypeService;
     }
 
+    /**
+     * Helper method to check if a user is the admin user
+     */
+    private boolean isAdminUser(User user) {
+        return user != null && adminUsername.equals(user.getUsername());
+    }
+
+    /**
+     * Helper method to filter out admin users from a list of users
+     */
+    private <T> List<T> filterOutAdminUsers(List<T> users, java.util.function.Function<T, User> userExtractor) {
+        return users.stream()
+                .filter(item -> !isAdminUser(userExtractor.apply(item)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Helper method to filter out admin users from BaseUserDTO lists
+     */
+    private List<BaseUserDTO> filterOutAdminFromBaseUserDTOs(List<BaseUserDTO> users) {
+        return users.stream()
+                .filter(user -> !adminUsername.equals(user.getUsername()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Helper method to filter out admin users from FullFriendUserDTO lists
+     */
+    private List<FullFriendUserDTO> filterOutAdminFromFullFriendUserDTOs(List<FullFriendUserDTO> users) {
+        return users.stream()
+                .filter(user -> !adminUsername.equals(user.getUsername()))
+                .collect(Collectors.toList());
+    }
+
     @Override
     public List<UserDTO> getAllUsers() {
         try {
@@ -101,6 +139,10 @@ public class UserService implements IUserService {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
+            // Hide admin user from front-end
+            if (isAdminUser(user)) {
+                throw new BaseNotFoundException(EntityType.User, id);
+            }
 
             List<UUID> friendUserIds = getFriendUserIdsByUserId(id);
 
@@ -363,9 +405,12 @@ public class UserService implements IUserService {
         try {
             List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating);
 
-            return activityUsers.stream()
+            List<BaseUserDTO> participants = activityUsers.stream()
                     .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
                     .collect(Collectors.toList());
+            
+            // Filter out admin user from activity participants
+            return filterOutAdminFromBaseUserDTOs(participants);
         } catch (Exception e) {
             logger.error("Error retrieving participants for activityId " + activityId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving participants for activityId " + activityId, e);
@@ -377,9 +422,12 @@ public class UserService implements IUserService {
         try {
             List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.invited);
 
-            return activityUsers.stream()
+            List<BaseUserDTO> invitedUsers = activityUsers.stream()
                     .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
                     .collect(Collectors.toList());
+            
+            // Filter out admin user from activity invitees
+            return filterOutAdminFromBaseUserDTOs(invitedUsers);
         } catch (Exception e) {
             logger.error("Error retrieving invited users for activityId " + activityId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving invited users for activityId " + activityId, e);
@@ -514,7 +562,8 @@ public class UserService implements IUserService {
                 return getFallbackFriendsList(requestingUserId);
             }
 
-            return result;
+            // Filter out admin user from friends list
+            return filterOutAdminFromFullFriendUserDTOs(result);
         } catch (Exception e) {
             logger.error("Error retrieving full friend users: " + e.getMessage());
             throw e;
@@ -562,7 +611,7 @@ public class UserService implements IUserService {
                 result.add(dto);
             }
 
-            return result;
+            return filterOutAdminFromFullFriendUserDTOs(result);
         } catch (Exception e) {
             logger.error("Error in fallback friends list: " + e.getMessage());
             throw e;
@@ -602,6 +651,12 @@ public class UserService implements IUserService {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+            
+            // Hide admin user from front-end
+            if (isAdminUser(user)) {
+                throw new BaseNotFoundException(EntityType.User, id);
+            }
+            
             return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error(e.getMessage());
