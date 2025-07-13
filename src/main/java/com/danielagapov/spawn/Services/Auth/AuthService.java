@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.Auth;
 
 import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
 import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
+import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
@@ -203,7 +204,7 @@ public class AuthService implements IAuthService {
 
 
     @Override
-    public BaseUserDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO) {
+    public AuthResponseDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO) {
         String email = registrationDTO.getEmail();
         String idToken = registrationDTO.getIdToken();  // Changed from getExternalIdToken to getIdToken
         OAuthProvider provider = registrationDTO.getProvider();
@@ -220,7 +221,6 @@ public class AuthService implements IAuthService {
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setUsername(externalId);
-        newUser.setName(externalId);
         newUser.setPhoneNumber(externalId);
         newUser.setStatus(UserStatus.EMAIL_VERIFIED); // OAuth users are automatically verified
         newUser.setDateCreated(new Date());
@@ -231,6 +231,9 @@ public class AuthService implements IAuthService {
         String name = registrationDTO.getName();
         if (name != null) {
             newUser.setName(name);
+        } else {
+            // Use email prefix as default name if no name provided
+            newUser.setName(email.split("@")[0]);
         }
         newUser = userService.createAndSaveUser(newUser);
         
@@ -238,7 +241,7 @@ public class AuthService implements IAuthService {
         oauthService.createAndSaveMapping(newUser, externalId, provider);
         
         logger.info("OAuth user registered successfully: " + LoggingUtils.formatUserInfo(newUser));
-        return UserMapper.toDTO(newUser);
+        return UserMapper.toAuthResponseDTO(newUser);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
+import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
@@ -276,7 +277,7 @@ public class OAuthServiceTests {
         when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
 
         // Call the method to test
-        Optional<BaseUserDTO> result = spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
+        Optional<AuthResponseDTO> result = spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
 
         // Verify the result
         assertTrue(result.isPresent());

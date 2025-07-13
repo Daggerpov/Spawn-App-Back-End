@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.OAuth;
 
 
+import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -19,6 +20,8 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -118,7 +121,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public Optional<BaseUserDTO> signInUser(String idToken, String email, OAuthProvider provider) {
+    public Optional<AuthResponseDTO> signInUser(String idToken, String email, OAuthProvider provider) {
         logger.info("Checking if user signing in with " + provider + " exists by ID token and email: " + email);
         OAuthStrategy oauthStrategy = oauthProviders.get(provider);
 
@@ -132,38 +135,36 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
-    public Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
+    public Optional<AuthResponseDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
         logger.info("Checking if user exists by external ID: " + externalUserId + " and email: " + email);
         boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
         boolean existsByEmail = userService.existsByEmail(email);
         logger.info("User exists by externalId: " + existsByExternalId + ", exists by email: " + existsByEmail);
 
-        if (existsByExternalId) { // A Spawn account exists with this external id, check if it's fully active
+        if (existsByExternalId) { // A Spawn account exists with this external id
             logger.info("Found existing user by external ID: " + externalUserId);
             User user = getMapping(externalUserId).getUser();
             
-            // Only allow re-completion if user has a non-active status (null is treated as active for backward compatibility)
-            if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
-                logger.info("Found user by external ID but account is not active (status: " + user.getStatus() + "). Allowing re-completion of account creation.");
-                return Optional.empty();
-            } else {
-                BaseUserDTO userDTO = UserMapper.toDTO(user);
-                logger.info("Returning active user with ID: " + userDTO.getId() + " and username: " + userDTO.getUsername());
-                return Optional.of(userDTO);
-            }
+            // Return user regardless of status - client will handle appropriate onboarding
+            AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user);
+            logger.info("Returning user with ID: " + authResponseDTO.getId() + ", username: " + authResponseDTO.getUsername() + ", status: " + user.getStatus());
+            return Optional.of(authResponseDTO);
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id
             logger.info("Found existing user by email but not by external ID.");
             UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
             User user = externalIdMap.getUser();
             
-            // Only allow re-completion if user has a non-active status (null is treated as active for backward compatibility)
+            // For incomplete users, allow them to continue with any provider
             if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
-                logger.info("Found user by email but account is not active (status: " + user.getStatus() + "). Allowing re-completion of account creation.");
-                return Optional.empty();
+                logger.info("Found user by email but account is not active (status: " + user.getStatus() + "). Returning user for onboarding completion.");
+                AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user);
+                return Optional.of(authResponseDTO);
             } else {
-                String provider = String.valueOf(externalIdMap.getProvider()).equals("google") ? "Google" : "Apple";
-                logger.info("Expected provider for this email: " + provider);
-                throw new IncorrectProviderException("The email: " + email + " is already associated to a " + provider + " account. Please login through " + provider + " instead");
+                // For active users, enforce provider consistency
+                OAuthProvider existingProvider = externalIdMap.getProvider();
+                String providerName = existingProvider == OAuthProvider.google ? "Google" : "Apple";
+                logger.info("Expected provider for this email: " + providerName);
+                throw new IncorrectProviderException("The email: " + email + " is already associated to a " + providerName + " account. Please login through " + providerName + " instead");
             }
         } else { // No account exists for this external id or email
             logger.info("No existing user found for external ID: " + externalUserId + " or email: " + email);
@@ -215,6 +216,7 @@ public class OAuthService implements IOAuthService {
      * @throws SecurityException if there is a security-related issue during OAuth verification
      */
     @Override
+    @Transactional
     public String checkOAuthRegistration(String email, String idToken, OAuthProvider provider) {
         try {
             // Get the appropriate OAuth strategy
@@ -261,7 +263,9 @@ public class OAuthService implements IOAuthService {
                         userService.deleteUserById(existingUser.getId());
                         // The mapping will be cascade deleted with the user
                     } else {
-                        throw new IncorrectProviderException("Email already exists for a " + provider + " account. Please login through " + provider + " instead");
+                        OAuthProvider existingProvider = externalIdMap.getProvider();
+                        String providerName = existingProvider == OAuthProvider.google ? "Google" : "Apple";
+                        throw new IncorrectProviderException("Email already exists for a " + providerName + " account. Please login through " + providerName + " instead");
                     }
                 }
 
@@ -282,6 +286,7 @@ public class OAuthService implements IOAuthService {
     }
 
     @Override
+    @Transactional
     public void createAndSaveMapping(User user, String externalUserId, OAuthProvider provider) {
         try {
             UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
