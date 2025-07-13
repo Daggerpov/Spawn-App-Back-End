@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import com.danielagapov.spawn.Enums.UserStatus;
 
 public class OAuthServiceTests {
 
@@ -282,5 +283,213 @@ public class OAuthServiceTests {
         // Verify the result
         assertTrue(result.isPresent());
         verify(externalIdMapRepository).existsById("external_id_123");
+    }
+
+    @Test
+    public void testSignInUser_UserNotFound() {
+        // Create spy to mock token verification
+        OAuthService spyService = spy(oauthService);
+
+        // Mock successful token verification
+        doReturn("external_id_123").when(googleOAuthStrategy).verifyIdToken(anyString());
+
+        // Setup mock behavior for user lookup - user not found
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(false);
+
+        // Call the method to test
+        Optional<AuthResponseDTO> result = spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
+
+        // Verify the result
+        assertFalse(result.isPresent());
+        verify(externalIdMapRepository).existsById("external_id_123");
+    }
+
+    @Test
+    public void testSignInUser_ReturnsCorrectAuthResponseDTO() {
+        // Create spy to mock token verification
+        OAuthService spyService = spy(oauthService);
+
+        // Mock successful token verification
+        doReturn("external_id_123").when(googleOAuthStrategy).verifyIdToken(anyString());
+
+        // Setup mock behavior for user lookup
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setUsername("testuser");
+        user.setName("Test User");
+        user.setStatus(UserStatus.EMAIL_VERIFIED);
+
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
+
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
+        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
+
+        // Call the method to test
+        Optional<AuthResponseDTO> result = spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
+
+        // Verify the result
+        assertTrue(result.isPresent());
+        AuthResponseDTO authResponse = result.get();
+        assertEquals("test@example.com", authResponse.getEmail());
+        assertEquals("testuser", authResponse.getUsername());
+        assertEquals("Test User", authResponse.getName());
+        assertEquals(UserStatus.EMAIL_VERIFIED, authResponse.getStatus());
+    }
+
+    @Test
+    public void testGetUserIfExistsByExternalId_UserExists() {
+        // Setup mock behavior for user lookup
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setUsername("testuser");
+        user.setName("Test User");
+        user.setStatus(UserStatus.USERNAME_AND_PHONE_NUMBER);
+
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
+
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
+        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
+
+        // Call the method to test
+        Optional<AuthResponseDTO> result = oauthService.getUserIfExistsbyExternalId("external_id_123", "test@example.com");
+
+        // Verify the result
+        assertTrue(result.isPresent());
+        AuthResponseDTO authResponse = result.get();
+        assertEquals("test@example.com", authResponse.getEmail());
+        assertEquals("testuser", authResponse.getUsername());
+        assertEquals("Test User", authResponse.getName());
+        assertEquals(UserStatus.USERNAME_AND_PHONE_NUMBER, authResponse.getStatus());
+    }
+
+    @Test
+    public void testGetUserIfExistsByExternalId_UserNotFound() {
+        // Setup mock behavior for user lookup - user not found
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(false);
+
+        // Call the method to test
+        Optional<AuthResponseDTO> result = oauthService.getUserIfExistsbyExternalId("external_id_123", "test@example.com");
+
+        // Verify the result
+        assertFalse(result.isPresent());
+        verify(externalIdMapRepository).existsById("external_id_123");
+    }
+
+    @Test
+    public void testGetUserIfExistsByExternalId_ActiveUserStatus() {
+        // Setup mock behavior for user lookup
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setUsername("testuser");
+        user.setName("Test User");
+        user.setStatus(UserStatus.ACTIVE);
+
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
+
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
+        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
+
+        // Call the method to test
+        Optional<AuthResponseDTO> result = oauthService.getUserIfExistsbyExternalId("external_id_123", "test@example.com");
+
+        // Verify the result
+        assertTrue(result.isPresent());
+        AuthResponseDTO authResponse = result.get();
+        assertEquals(UserStatus.ACTIVE, authResponse.getStatus());
+    }
+
+    @Test
+    public void testGetUserIfExistsByExternalId_EmailRegisteredStatus() {
+        // Setup mock behavior for user lookup
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setUsername("tempuser");
+        user.setName("Temp User");
+        user.setStatus(UserStatus.EMAIL_REGISTERED);
+
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
+
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
+        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
+
+        // Call the method to test
+        Optional<AuthResponseDTO> result = oauthService.getUserIfExistsbyExternalId("external_id_123", "test@example.com");
+
+        // Verify the result
+        assertTrue(result.isPresent());
+        AuthResponseDTO authResponse = result.get();
+        assertEquals(UserStatus.EMAIL_REGISTERED, authResponse.getStatus());
+    }
+
+    @Test
+    public void testSignInUser_Apple_ReturnsAuthResponseDTO() {
+        // Create spy to mock token verification
+        OAuthService spyService = spy(oauthService);
+
+        // Mock successful token verification
+        doReturn("external_id_123").when(appleOAuthStrategy).verifyIdToken(anyString());
+
+        // Setup mock behavior for user lookup
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setUsername("testuser");
+        user.setName("Test User");
+        user.setStatus(UserStatus.ACTIVE);
+
+        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.apple);
+
+        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
+        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
+
+        // Call the method to test
+        Optional<AuthResponseDTO> result = spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.apple);
+
+        // Verify the result
+        assertTrue(result.isPresent());
+        AuthResponseDTO authResponse = result.get();
+        assertEquals("test@example.com", authResponse.getEmail());
+        assertEquals("testuser", authResponse.getUsername());
+        assertEquals("Test User", authResponse.getName());
+        assertEquals(UserStatus.ACTIVE, authResponse.getStatus());
+    }
+
+    @Test
+    public void testSignInUser_TokenVerificationFails() {
+        // Create spy to mock token verification
+        OAuthService spyService = spy(oauthService);
+
+        // Mock token verification failure
+        doThrow(new SecurityException("Invalid token")).when(googleOAuthStrategy).verifyIdToken(anyString());
+
+        // Call the method to test and expect SecurityException
+        assertThrows(SecurityException.class, () -> {
+            spyService.signInUser("invalid_token", "test@example.com", OAuthProvider.google);
+        });
+    }
+
+    @Test
+    public void testSignInUser_ProviderMismatch() {
+        // Create spy to mock token verification
+        OAuthService spyService = spy(oauthService);
+
+        // Mock successful token verification - new external ID for Google
+        doReturn("google_external_id_123").when(googleOAuthStrategy).verifyIdToken(anyString());
+
+        // Setup mock behavior: user doesn't exist with Google external ID but exists with Apple
+        when(externalIdMapRepository.existsById("google_external_id_123")).thenReturn(false);
+        when(userService.existsByEmail("test@example.com")).thenReturn(true);
+
+        // Setup existing user with Apple provider and ACTIVE status
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setStatus(UserStatus.ACTIVE);
+
+        UserIdExternalIdMap appleMapping = new UserIdExternalIdMap("apple_external_id_456", user, OAuthProvider.apple);
+        when(externalIdMapRepository.findByUserEmail("test@example.com")).thenReturn(Optional.of(appleMapping));
+
+        // Call the method to test and expect IncorrectProviderException
+        assertThrows(Exception.class, () -> {
+            spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
+        });
     }
 }
