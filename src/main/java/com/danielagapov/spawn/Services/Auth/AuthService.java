@@ -435,6 +435,8 @@ public class AuthService implements IAuthService {
         user.setUsername(authUserDTO.getUsername());
         user.setEmail(authUserDTO.getEmail());
         user.setPassword(passwordEncoder.encode(authUserDTO.getPassword()));
+        user.setName(authUserDTO.getName()); // Set the name from AuthUserDTO
+        user.setPhoneNumber(authUserDTO.getUsername()); // Use username as phone number placeholder
         user.setVerified(false);
         user.setDateCreated(new Date());
 
