@@ -212,12 +212,8 @@ public class AuthService implements IAuthService {
             throw new IllegalArgumentException("Email and idToken cannot be null for OAuth registration");
         }
         
-        // Check if user already exists
-        if (userService.existsByEmail(email)) {
-            throw new EmailAlreadyExistsException("Email already exists");
-        }
-        
         // Verify OAuth token and get external ID
+        // Note: checkOAuthRegistration will handle incomplete users by deleting them
         String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
         
         // Create verified user immediately for OAuth
