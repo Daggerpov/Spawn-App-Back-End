@@ -1,22 +1,17 @@
 package com.danielagapov.spawn.DTOs;
 
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
-@AllArgsConstructor(onConstructor = @__(@JsonCreator))
+@AllArgsConstructor
+@NoArgsConstructor
 public class OAuthRegistrationDTO {
-    @JsonProperty("email")
-    private final String email;
-    @JsonProperty("externalIdToken")
-    private final String externalIdToken;
-    @JsonProperty("provider")
-    private final OAuthProvider provider;
-    @JsonProperty("name")
-    private final String name;
-    @JsonProperty("profilePictureUrl")
-    private final String profilePictureUrl;
+    private String email;
+    private String externalIdToken;
+    private OAuthProvider provider;
+    private String name;
+    private String profilePictureUrl;
 }
