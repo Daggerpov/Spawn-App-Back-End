@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
@@ -59,7 +60,17 @@ public class OAuthService implements IOAuthService {
             if (existsByExternalId) {
                 logger.info("Existing user detected in makeUser, mapping already exists");
                 User existingUser = getMapping(externalUserId).getUser();
-                return UserMapper.toDTO(existingUser);
+                
+                // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
+                if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
+                    logger.info("Found incomplete user account (status: " + existingUser.getStatus() + "). Allowing re-creation.");
+                    // Delete the incomplete user and their mapping to allow fresh creation
+                    userService.deleteUserById(existingUser.getId());
+                    // The mapping will be cascade deleted with the user
+                } else {
+                    logger.info("Returning existing active user");
+                    return UserMapper.toDTO(existingUser);
+                }
             }
             
             // Case 2: There's already a Spawn user with this email address, but no mapping with this external id
@@ -68,16 +79,31 @@ public class OAuthService implements IOAuthService {
             if (existsByEmail) {
                 logger.info("Existing user detected in makeUser, email already exists");
                 UserIdExternalIdMap externalIdMap = getMappingByUserEmail(user.getEmail());
-                return UserMapper.toDTO(externalIdMap.getUser());
+                User existingUser = externalIdMap.getUser();
+                
+                // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
+                if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
+                    logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-creation.");
+                    // Delete the incomplete user and their mapping to allow fresh creation
+                    userService.deleteUserById(existingUser.getId());
+                    // The mapping will be cascade deleted with the user
+                } else {
+                    logger.info("Returning existing active user with different provider");
+                    return UserMapper.toDTO(existingUser);
+                }
             }
             
             // Case 3: This is a new user, neither the externalId nor the email exists in our database
+            // OR we deleted an incomplete user above
             // Save the user with profile picture
             UserDTO userDTO = userService.createAndSaveUserWithProfilePicture(user, profilePicture);
             
+            // Get the User entity to create the mapping
+            User userEntity = userService.getUserEntityById(userDTO.getId());
+            
             // Save the mapping for the new user to the external id
             logger.info(String.format("External user detected, saving mapping: {externalUserId: %s, userDTO: %s}", externalUserId, userDTO));
-            createAndSaveMapping(externalUserId, userDTO, provider);
+            createAndSaveMapping(userEntity, externalUserId, provider);
 
             BaseUserDTO baseUserDTO = UserMapper.toBaseDTO(userDTO);
             logger.info(String.format("Returning BaseUserDTO of newly made user: {baseUserDTO: %s}", baseUserDTO));
@@ -112,18 +138,33 @@ public class OAuthService implements IOAuthService {
         boolean existsByEmail = userService.existsByEmail(email);
         logger.info("User exists by externalId: " + existsByExternalId + ", exists by email: " + existsByEmail);
 
-        if (existsByExternalId) { // A Spawn account exists with this external id, return the associated `BaseUserDTO`
+        if (existsByExternalId) { // A Spawn account exists with this external id, check if it's fully active
             logger.info("Found existing user by external ID: " + externalUserId);
             User user = getMapping(externalUserId).getUser();
-            BaseUserDTO userDTO = UserMapper.toDTO(user);
-            logger.info("Returning user with ID: " + userDTO.getId() + " and username: " + userDTO.getUsername());
-            return Optional.of(userDTO);
-        } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id which indicates a sign-in with incorrect provider
-            logger.info("Found existing user by email but not by external ID. This indicates an incorrect provider login attempt.");
+            
+            // Only allow re-completion if user has a non-active status (null is treated as active for backward compatibility)
+            if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
+                logger.info("Found user by external ID but account is not active (status: " + user.getStatus() + "). Allowing re-completion of account creation.");
+                return Optional.empty();
+            } else {
+                BaseUserDTO userDTO = UserMapper.toDTO(user);
+                logger.info("Returning active user with ID: " + userDTO.getId() + " and username: " + userDTO.getUsername());
+                return Optional.of(userDTO);
+            }
+        } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id
+            logger.info("Found existing user by email but not by external ID.");
             UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
-            String provider = String.valueOf(externalIdMap.getProvider()).equals("google") ? "Google" : "Apple";
-            logger.info("Expected provider for this email: " + provider);
-            throw new IncorrectProviderException("The email: " + email + " is already associated to a " + provider + " account. Please login through " + provider + " instead");
+            User user = externalIdMap.getUser();
+            
+            // Only allow re-completion if user has a non-active status (null is treated as active for backward compatibility)
+            if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
+                logger.info("Found user by email but account is not active (status: " + user.getStatus() + "). Allowing re-completion of account creation.");
+                return Optional.empty();
+            } else {
+                String provider = String.valueOf(externalIdMap.getProvider()).equals("google") ? "Google" : "Apple";
+                logger.info("Expected provider for this email: " + provider);
+                throw new IncorrectProviderException("The email: " + email + " is already associated to a " + provider + " account. Please login through " + provider + " instead");
+            }
         } else { // No account exists for this external id or email
             logger.info("No existing user found for external ID: " + externalUserId + " or email: " + email);
             return Optional.empty();
@@ -191,16 +232,37 @@ public class OAuthService implements IOAuthService {
 
                 // Case 1: There's already a mapping for this externalId
                 if (existsByExternalId) {
-                    logger.info("Existing user detected in makeUser, mapping already exists");
-                    throw new AccountAlreadyExistsException("External ID already exists");
+                    logger.info("Existing user detected in checkOAuthRegistration, mapping already exists");
+                    User existingUser = getMapping(externalUserId).getUser();
+                    
+                    // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
+                    if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
+                        logger.info("Found incomplete user account (status: " + existingUser.getStatus() + "). Allowing re-registration.");
+                        // Delete the incomplete user and their mapping to allow fresh registration
+                        userService.deleteUserById(existingUser.getId());
+                        // The mapping will be cascade deleted with the user
+                    } else {
+                        throw new AccountAlreadyExistsException("External ID already exists");
+                    }
                 }
 
                 // Case 2: There's already a Spawn user with this email address, but no mapping with this external id
                 // In this case, the user signed in with a different provider initially, so we should not allow creation
                 // with this provider
                 if (existsByEmail) {
-                    logger.info("Existing user detected in makeUser, email already exists");
-                    throw new IncorrectProviderException("Email already exists for a " + provider + " account. Please login through " + provider + " instead");
+                    logger.info("Existing user detected in checkOAuthRegistration, email already exists");
+                    UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
+                    User existingUser = externalIdMap.getUser();
+                    
+                    // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
+                    if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
+                        logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-registration.");
+                        // Delete the incomplete user and their mapping to allow fresh registration
+                        userService.deleteUserById(existingUser.getId());
+                        // The mapping will be cascade deleted with the user
+                    } else {
+                        throw new IncorrectProviderException("Email already exists for a " + provider + " account. Please login through " + provider + " instead");
+                    }
                 }
 
                 // Case 3: This is a new user, neither the externalId nor the email exists in our database
@@ -260,18 +322,7 @@ public class OAuthService implements IOAuthService {
         }
     }
 
-    private void createAndSaveMapping(String externalUserId, UserDTO userDTO, OAuthProvider provider) {
-        try {
-            User user = UserMapper.toEntity(userDTO);
-            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
-            logger.info(String.format("Saving mapping: {mapping: %s}", mapping));
-            externalIdMapRepository.save(mapping);
-            logger.info("Mapping saved");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
+
 
     private UserIdExternalIdMap getMappingByUserEmail(String email) {
         logger.info("Searching for user mapping by email: " + email);
