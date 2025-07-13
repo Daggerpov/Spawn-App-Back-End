@@ -18,4 +18,16 @@ public interface IBlockedUserService {
     List<UUID> getBlockedUserIds(UUID blockerId);
 
     void removeFriendshipBetweenUsers(UUID userAId, UUID userBId);
+    
+    /**
+     * Filter out blocked users from a list of user objects.
+     * This method filters out users that are blocked by the requesting user,
+     * as well as users who have blocked the requesting user.
+     * 
+     * @param users The list of user objects to filter (must have getId() method)
+     * @param requestingUserId The ID of the user making the request
+     * @param <T> The type of user object (must have getId() method)
+     * @return A filtered list with blocked users removed
+     */
+    <T> List<T> filterOutBlockedUsers(List<T> users, UUID requestingUserId);
 }

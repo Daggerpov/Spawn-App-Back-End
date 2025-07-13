@@ -212,7 +212,8 @@ public class ActivityController {
     @GetMapping("{id}")
     public ResponseEntity<?> getFullActivityById(@PathVariable UUID id, 
                                                 @RequestParam(required = false) UUID requestingUserId,
-                                                @RequestParam(required = false, defaultValue = "false") boolean isActivityExternalInvite) {
+                                                @RequestParam(required = false, defaultValue = "false") boolean isActivityExternalInvite,
+                                                @RequestParam(required = false, defaultValue = "false") boolean autoJoin) {
         if (id == null) {
             logger.error("Invalid parameter: activity ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -244,7 +245,13 @@ public class ActivityController {
         }
 
         try {
-            return new ResponseEntity<>(activityService.getFullActivityById(id, requestingUserId), HttpStatus.OK);
+            // If autoJoin is true, automatically join the user to the activity
+            if (autoJoin) {
+                logger.info("Auto-joining user " + LoggingUtils.formatUserIdInfo(requestingUserId) + " to activity " + id);
+                return new ResponseEntity<>(activityService.autoJoinUserToActivity(id, requestingUserId), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(activityService.getFullActivityById(id, requestingUserId), HttpStatus.OK);
+            }
         } catch (BaseNotFoundException e) {
             // Activity or User not found - only return 404 if it's the user that's not found
             if (e.entityType == EntityType.User) {

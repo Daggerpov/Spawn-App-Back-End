@@ -517,24 +517,6 @@ public class UserSearchService implements IUserSearchService {
         return !searchResults.isEmpty();
     }
 
-    private boolean isQueryMatch(AbstractUserDTO recommendedFriend, String searchQuery) {
-        // This method is now deprecated in favor of fuzzy search
-        // Keeping it for backward compatibility, but it should not be used for new implementations
-        final String lowercaseQuery = searchQuery.toLowerCase();
-        boolean nameMatch = false;
-        if (recommendedFriend.getName() != null) {
-            String[] nameParts = recommendedFriend.getName().toLowerCase().split(" ");
-            for (String part : nameParts) {
-                if (part.contains(lowercaseQuery)) {
-                    nameMatch = true;
-                    break;
-                }
-            }
-        }
-        boolean usernameMatch = recommendedFriend.getUsername() != null && recommendedFriend.getUsername().toLowerCase().contains(lowercaseQuery);
-        return nameMatch || usernameMatch;
-    }
-
     // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
     public Set<UUID> getExcludedUserIds(UUID userId) {
         // Fetch the requesting user's friends
@@ -557,7 +539,7 @@ public class UserSearchService implements IUserSearchService {
         excludedUserIds.addAll(sentFriendRequestReceiverUserIds);
         excludedUserIds.addAll(receivedFriendRequestSenderUserIds);
         excludedUserIds.add(userId); // Exclude self
-        excludedUserIds.addAll(blockedUserService.getBlockedUserIds(userId));
+        // Note: Blocked user filtering is now handled at the controller level
 
         return excludedUserIds;
     }
@@ -584,9 +566,9 @@ public class UserSearchService implements IUserSearchService {
 
         long startTime = System.currentTimeMillis();
 
-        // First get users that start with the same prefix as query (database optimization)
-        String prefix = searchQuery.toLowerCase().substring(0, 1);
-        List<User> users = userRepository.findUsersWithPrefix(prefix, Limit.of(100));
+        // First get users that contain the search query anywhere in their name or username
+        // This is more flexible than just using the first character
+        List<User> users = userRepository.findUsersWithPartialMatch(searchQuery.toLowerCase(), Limit.of(100));
 
         // If no results were returned, then return early with empty list
         if (users.isEmpty()) return Collections.emptyList();
@@ -609,21 +591,4 @@ public class UserSearchService implements IUserSearchService {
                 .collect(Collectors.toList());
     }
 
-
-    /**
-     * Legacy method for backward compatibility - now uses enhanced FuzzySearchService
-     * @deprecated Use FuzzySearchService directly for better performance and configurability
-     */
-    @Deprecated
-    private Map<User, Double> computeJaroWinklerDistances(String query, List<User> users) {
-        // This method is kept for backward compatibility but is no longer used
-        // All fuzzy search functionality has been moved to FuzzySearchService
-        JaroWinklerDistance jaroWinklerDistance = new JaroWinklerDistance();
-        return users.stream().collect(Collectors.toMap(user -> user, user ->
-                Math.max(
-                        jaroWinklerDistance.apply(query, user.getName().toLowerCase()),
-                        jaroWinklerDistance.apply(query, user.getUsername().toLowerCase())
-                )
-        ));
-    }
 }

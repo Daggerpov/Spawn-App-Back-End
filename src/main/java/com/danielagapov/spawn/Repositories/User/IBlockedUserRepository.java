@@ -18,4 +18,7 @@ public interface IBlockedUserRepository extends JpaRepository<BlockedUser, UUID>
     
     @Query("SELECT b FROM BlockedUser b JOIN FETCH b.blocker JOIN FETCH b.blocked WHERE b.blocker.id = :blockerId")
     List<BlockedUser> findAllByBlocker_Id(@Param("blockerId") UUID blockerId);
+    
+    @Query("SELECT b FROM BlockedUser b JOIN FETCH b.blocker JOIN FETCH b.blocked WHERE b.blocked.id = :blockedId")
+    List<BlockedUser> findAllByBlocked_Id(@Param("blockedId") UUID blockedId);
 }

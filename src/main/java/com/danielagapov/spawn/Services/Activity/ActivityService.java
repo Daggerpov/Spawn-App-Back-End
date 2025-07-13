@@ -749,6 +749,74 @@ public class ActivityService implements IActivityService {
     public List<FullActivityChatMessageDTO> getChatMessagesByActivityId(UUID activityId) {
         return chatMessageService.getFullChatMessagesByActivityId(activityId);
     }
+    
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = "ActivityInviteById", key = "#activityId"),
+            @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivityById", key = "#activityId.toString() + ':' + #userId.toString()"),
+            @CacheEvict(value = "feedActivities", key = "#userId"),
+            @CacheEvict(value = "filteredFeedActivities", key = "#userId")
+    })
+    public FullFeedActivityDTO autoJoinUserToActivity(UUID activityId, UUID userId) {
+        try {
+            // Check if user is already participating or invited
+            ActivityUsersId compositeId = new ActivityUsersId(activityId, userId);
+            Optional<ActivityUser> existingActivityUser = activityUserRepository.findById(compositeId);
+            
+            if (existingActivityUser.isPresent()) {
+                // User is already invited or participating
+                ActivityUser activityUser = existingActivityUser.get();
+                
+                // If they're just invited, automatically set them to participating
+                if (activityUser.getStatus() == ParticipationStatus.invited) {
+                    activityUser.setStatus(ParticipationStatus.participating);
+                    
+                    // Publish participation event
+                    final Activity activity = activityUser.getActivity();
+                    final User user = activityUser.getUser();
+                    eventPublisher.publishEvent(
+                        ActivityParticipationNotificationEvent.forJoining(user, activity)
+                    );
+                    
+                    activityUserRepository.save(activityUser);
+                    logger.info("User " + userId + " auto-joined activity " + activityId + " (was previously invited)");
+                }
+                // If they're already participating, do nothing
+            } else {
+                // User is not invited, so invite them and set them to participating
+                User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+                Activity activity = repository.findById(activityId)
+                        .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, activityId));
+
+                ActivityUser newActivityUser = new ActivityUser();
+                newActivityUser.setId(compositeId);
+                newActivityUser.setActivity(activity);
+                newActivityUser.setUser(user);
+                newActivityUser.setStatus(ParticipationStatus.participating); // Direct to participating
+
+                // Publish participation event
+                eventPublisher.publishEvent(
+                    ActivityParticipationNotificationEvent.forJoining(user, activity)
+                );
+
+                activityUserRepository.save(newActivityUser);
+                logger.info("User " + userId + " auto-joined activity " + activityId + " (was not previously invited)");
+            }
+            
+            // Return the updated activity
+            return getFullActivityById(activityId, userId);
+            
+        } catch (BaseNotFoundException e) {
+            logger.error("Error auto-joining user to activity: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error auto-joining user " + userId + " to activity " + activityId + ": " + e.getMessage());
+            throw e;
+        }
+    }
 
     /**
      * Gets past Activities where the specified user invited the requesting user

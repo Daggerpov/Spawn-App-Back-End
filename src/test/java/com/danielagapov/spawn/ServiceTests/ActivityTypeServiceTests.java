@@ -10,6 +10,7 @@ import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
 import com.danielagapov.spawn.Services.ActivityType.ActivityTypeService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.*;
  * 3. Only when user exits page, all changes are sent in one batch update to backend
  */
 @ExtendWith(MockitoExtension.class)
+@Order(4)
 class ActivityTypeServiceTests {
 
     @Mock

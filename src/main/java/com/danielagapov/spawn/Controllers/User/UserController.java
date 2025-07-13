@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
@@ -24,13 +25,15 @@ import java.util.UUID;
 public class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
+    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final IAuthService authService;
 
     @Autowired
-    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService) {
+    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService, IBlockedUserService blockedUserService) {
         this.userService = userService;
         this.s3Service = s3Service;
+        this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.authService = authService;
     }
@@ -43,7 +46,9 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(userService.getFullFriendUsersByUserId(id), HttpStatus.OK);
+            List<? extends AbstractUserDTO> friends = userService.getFullFriendUsersByUserId(id);
+            List<? extends AbstractUserDTO> filteredFriends = blockedUserService.filterOutBlockedUsers(friends, id);
+            return new ResponseEntity<>(filteredFriends, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for friends retrieval: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -98,7 +103,9 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(userService.getLimitedRecommendedFriendsForUserId(id), HttpStatus.OK);
+            List<RecommendedFriendUserDTO> recommendations = userService.getLimitedRecommendedFriendsForUserId(id);
+            List<RecommendedFriendUserDTO> filteredRecommendations = blockedUserService.filterOutBlockedUsers(recommendations, id);
+            return new ResponseEntity<>(filteredRecommendations, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for recommended friends: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             return new ResponseEntity<List<RecommendedFriendUserDTO>>(HttpStatus.NOT_FOUND);
@@ -196,7 +203,11 @@ public class UserController {
             @PathVariable UUID requestingUserId, 
             @RequestParam(required = false, defaultValue = "") String searchQuery) {
         try {
-            return new ResponseEntity<>(userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery), HttpStatus.OK);
+            SearchedUserResult result = userService.getRecommendedFriendsBySearch(requestingUserId, searchQuery);
+            // Apply blocked user filtering to the users in the result
+            List<SearchResultUserDTO> filteredUsers = blockedUserService.filterOutBlockedUsers(result.getUsers(), requestingUserId);
+            SearchedUserResult filteredResult = new SearchedUserResult(filteredUsers);
+            return new ResponseEntity<>(filteredResult, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for recommended friends search: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -212,7 +223,12 @@ public class UserController {
             @RequestParam(required = false, defaultValue = "") String searchQuery,
             @RequestParam(required = false) UUID requestingUserId) {
         try {
-            return new ResponseEntity<>(userService.searchByQuery(searchQuery, requestingUserId), HttpStatus.OK);
+            List<BaseUserDTO> users = userService.searchByQuery(searchQuery, requestingUserId);
+            // Apply blocked user filtering if requestingUserId is provided
+            if (requestingUserId != null) {
+                users = blockedUserService.filterOutBlockedUsers(users, requestingUserId);
+            }
+            return new ResponseEntity<>(users, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error searching for users with query: " + searchQuery + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -223,7 +239,9 @@ public class UserController {
     @GetMapping("{userId}/recent-users")
     public ResponseEntity<List<RecentlySpawnedUserDTO>> getRecentlySpawnedWithUsers(@PathVariable UUID userId) {
         try {
-            return new ResponseEntity<>(userService.getRecentlySpawnedWithUsers(userId), HttpStatus.OK);
+            List<RecentlySpawnedUserDTO> recentUsers = userService.getRecentlySpawnedWithUsers(userId);
+            List<RecentlySpawnedUserDTO> filteredRecentUsers = blockedUserService.filterOutBlockedUsers(recentUsers, userId);
+            return new ResponseEntity<>(filteredRecentUsers, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error getting recently spawned with users for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
