@@ -118,7 +118,7 @@ public class ChatMessageService implements IChatMessageService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "ActivityById", key = "#newChatMessageDTO.ActivityId"),
+            @CacheEvict(value = "ActivityById", key = "#newChatMessageDTO.activityId"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "feedActivities", allEntries = true),
             @CacheEvict(value = "filteredFeedActivities", allEntries = true)
@@ -187,10 +187,10 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public List<UUID> getChatMessageIdsByActivityId(UUID ActivityId) {
+    public List<UUID> getChatMessageIdsByActivityId(UUID activityId) {
         try {
             // Retrieve all chat messages for the specified Activity
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(ActivityId);
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(activityId);
 
             // Extract the IDs of the chat messages and return them as a list
             return chatMessages.stream()
@@ -198,7 +198,7 @@ public class ChatMessageService implements IChatMessageService {
                     .collect(Collectors.toList());
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
-            throw new BaseNotFoundException(EntityType.ChatMessage, ActivityId);
+            throw new BaseNotFoundException(EntityType.ChatMessage, activityId);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
@@ -280,9 +280,9 @@ public class ChatMessageService implements IChatMessageService {
     }
 
     @Override
-    public List<ChatMessageDTO> getChatMessagesByActivityId(UUID ActivityId) {
+    public List<ChatMessageDTO> getChatMessagesByActivityId(UUID activityId) {
         try {
-            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(ActivityId);
+            List<ChatMessage> chatMessages = chatMessageRepository.getChatMessagesByActivityIdOrderByTimestampDesc(activityId);
 
             return chatMessages.stream()
                     .map(chatMessage -> {
