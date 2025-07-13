@@ -55,6 +55,14 @@ public interface IAuthService {
     AuthResponseDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO);
 
     /**
+     * Handles OAuth registration gracefully by converting exceptions to appropriate user states
+     * @param registrationDTO the OAuth registration data
+     * @param exception the exception that occurred during registration
+     * @return a graceful AuthResponseDTO that guides the user to the appropriate next step
+     */
+    AuthResponseDTO handleOAuthRegistrationGracefully(OAuthRegistrationDTO registrationDTO, Exception exception);
+
+    /**
      * Helper method to call access/refresh token-generating methods and place them in the appropriate
      * HTTP headers
      */

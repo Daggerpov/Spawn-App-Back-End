@@ -256,6 +256,63 @@ public class AuthService implements IAuthService {
     }
 
     @Override
+    public AuthResponseDTO handleOAuthRegistrationGracefully(OAuthRegistrationDTO registrationDTO, Exception exception) {
+        String email = registrationDTO.getEmail();
+        String idToken = registrationDTO.getIdToken();
+        OAuthProvider provider = registrationDTO.getProvider();
+        
+        logger.info("Handling OAuth registration gracefully for exception: " + exception.getClass().getSimpleName() + " - " + exception.getMessage());
+        
+        try {
+            // First, try to verify the token and get the external ID
+            String externalId = null;
+            try {
+                externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
+            } catch (Exception e) {
+                logger.warn("Could not verify OAuth token in graceful handler: " + e.getMessage());
+                // If we can't verify the token, we can't proceed with any user creation
+                return null;
+            }
+            
+            // Check if an existing user can be found and returned
+            Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
+            if (existingUser.isPresent()) {
+                logger.info("Found existing user in graceful handler, returning user data");
+                return existingUser.get();
+            }
+            
+            // If no existing user found, create a new user at EMAIL_VERIFIED status
+            // This ensures the user goes through the proper onboarding flow
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setUsername(externalId); // Temporary username that will be changed
+            newUser.setPhoneNumber(externalId); // Temporary phone that will be changed
+            newUser.setStatus(UserStatus.EMAIL_VERIFIED); // Start at EMAIL_VERIFIED for OAuth users
+            newUser.setDateCreated(new Date());
+            
+            String profilePictureUrl = registrationDTO.getProfilePictureUrl();
+            newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
+            
+            String name = registrationDTO.getName();
+            if (name != null) {
+                newUser.setName(name);
+            } else {
+                newUser.setName(email.split("@")[0]);
+            }
+            
+            newUser = userService.createAndSaveUser(newUser);
+            oauthService.createAndSaveMapping(newUser, externalId, provider);
+            
+            logger.info("OAuth user created gracefully with EMAIL_VERIFIED status: " + LoggingUtils.formatUserInfo(newUser));
+            return UserMapper.toAuthResponseDTO(newUser);
+            
+        } catch (Exception e) {
+            logger.error("Failed to handle OAuth registration gracefully: " + e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
     public HttpHeaders makeHeadersForTokens(String username) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + jwtService.generateAccessToken(username));
