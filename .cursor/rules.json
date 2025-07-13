@@ -207,7 +207,7 @@
             "public class ${2:${TM_FILENAME_BASE}} {",
             "    ",
             "    @Id",
-            "    @GeneratedValue(strategy = GenerationType.IDENTITY)",
+            "@GeneratedValue(strategy = GenerationType.IDENTITY)",
             "    private Long id;",
             "    ",
             "    $0",
@@ -380,5 +380,48 @@
       "DTO field changes - Update test constructors and assertions to match new structure"
     ],
     "success_criteria": "All tests must pass with output showing 'Tests run: 206, Failures: 0, Errors: 0, Skipped: 0'"
+  },
+  "mandatory_test_execution_after_unit_test_changes": {
+    "description": "CRITICAL: Always run tests after adding, modifying, or adjusting unit tests and fix all failures",
+    "trigger_conditions": [
+      "When creating new *Test.java or *Tests.java files",
+      "When modifying existing test files in src/test/**",
+      "When adding new test methods",
+      "When changing test mocking or assertions",
+      "When updating test data or setup methods"
+    ],
+    "mandatory_workflow": [
+      "1. IMMEDIATELY after saving any test file changes, run './mvnw test'",
+      "2. Analyze ALL test failures and compilation errors",
+      "3. Fix issues systematically:",
+      "   - Fix compilation errors first (imports, syntax, missing dependencies)",
+      "   - Fix mocking issues (stubbing mismatches, argument matchers)",
+      "   - Fix assertion failures (expected vs actual values)",
+      "   - Fix test data setup issues",
+      "4. Re-run './mvnw test' after each fix",
+      "5. Continue until ALL tests pass (0 failures, 0 errors)",
+      "6. ONLY consider the work complete when all tests pass"
+    ],
+    "debugging_strategy": [
+      "Read error messages carefully - they often indicate the exact issue",
+      "For stubbing mismatches: Use lenient() or fix argument matchers",
+      "For NPE errors: Ensure all required mocks are properly set up",
+      "For assertion failures: Verify expected vs actual values match business logic",
+      "For compilation errors: Check imports and method signatures"
+    ],
+    "forbidden_actions": [
+      "NEVER ignore test failures",
+      "NEVER commit code with failing tests",
+      "NEVER skip running tests after test modifications",
+      "NEVER remove tests to make the build pass (fix them instead)",
+      "NEVER disable or comment out failing tests without fixing them"
+    ],
+    "success_criteria": [
+      "All tests must pass: Tests run: X, Failures: 0, Errors: 0, Skipped: 0",
+      "No compilation errors in any test files",
+      "No warning about unnecessary stubbing (unless using lenient mode intentionally)",
+      "Test execution completes without hanging or timing out"
+    ],
+    "automation_principle": "This process must be automatic and non-negotiable. Test failures are blockers that must be resolved before any other work continues."
   }
 } 
