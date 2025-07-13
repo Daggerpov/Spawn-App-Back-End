@@ -40,6 +40,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -216,6 +217,16 @@ public class AuthService implements IAuthService {
         // Verify OAuth token and get external ID
         // Note: checkOAuthRegistration will handle incomplete users by deleting them
         String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
+        
+        // Check if user already exists and is ACTIVE - if so, redirect to sign-in behavior
+        Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
+        if (existingUser.isPresent()) {
+            AuthResponseDTO authResponse = existingUser.get();
+            if (authResponse.getStatus() == null || authResponse.getStatus() == UserStatus.ACTIVE) {
+                logger.info("ACTIVE user attempting to register - redirecting to sign-in flow: " + authResponse.getEmail());
+                return authResponse;
+            }
+        }
         
         // Create verified user immediately for OAuth
         User newUser = new User();

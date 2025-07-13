@@ -96,7 +96,15 @@ public class OAuthService implements IOAuthService {
                         return UserMapper.toDTO(existingUser);
                     }
                 } catch (BaseNotFoundException e) {
-                    logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Allowing new user creation.");
+                    logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Cleaning up orphaned user.");
+                    // Delete the orphaned user to allow new user creation
+                    try {
+                        User orphanedUser = userService.getUserByEmail(user.getEmail());
+                        userService.deleteUserById(orphanedUser.getId());
+                        logger.info("Orphaned user deleted: " + orphanedUser.getId() + " with email: " + orphanedUser.getEmail());
+                    } catch (Exception deleteException) {
+                        logger.error("Failed to delete orphaned user: " + deleteException.getMessage());
+                    }
                     // Continue to Case 3 - treat as new user
                 }
             }
@@ -255,7 +263,10 @@ public class OAuthService implements IOAuthService {
                         userService.deleteUserById(existingUser.getId());
                         // The mapping will be cascade deleted with the user
                     } else {
-                        throw new AccountAlreadyExistsException("External ID already exists");
+                        // For ACTIVE users, return the external ID so the registration flow can handle it
+                        // This allows the registerUserViaOAuth method to redirect to sign-in behavior
+                        logger.info("Found active user attempting to register (status: " + existingUser.getStatus() + "). Returning external ID for sign-in redirection.");
+                        return externalUserId;
                     }
                 }
 
@@ -280,7 +291,15 @@ public class OAuthService implements IOAuthService {
                             throw new IncorrectProviderException("Email already exists for a " + providerName + " account. Please login through " + providerName + " instead");
                         }
                     } catch (BaseNotFoundException e) {
-                        logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Allowing new registration.");
+                        logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Cleaning up orphaned user.");
+                        // Delete the orphaned user to allow new registration
+                        try {
+                            User orphanedUser = userService.getUserByEmail(email);
+                            userService.deleteUserById(orphanedUser.getId());
+                            logger.info("Orphaned user deleted: " + orphanedUser.getId() + " with email: " + orphanedUser.getEmail());
+                        } catch (Exception deleteException) {
+                            logger.error("Failed to delete orphaned user: " + deleteException.getMessage());
+                        }
                         // Continue to Case 3 - treat as new user
                     }
                 }
@@ -305,12 +324,26 @@ public class OAuthService implements IOAuthService {
     @Transactional
     public void createAndSaveMapping(User user, String externalUserId, OAuthProvider provider) {
         try {
-            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
-            logger.info(String.format("Saving mapping: {mapping: %s}", mapping));
-            externalIdMapRepository.save(mapping);
-            logger.info("Mapping saved");
+            // Check if a mapping already exists for this external ID
+            UserIdExternalIdMap existingMapping = externalIdMapRepository.findById(externalUserId).orElse(null);
+            
+            if (existingMapping != null) {
+                logger.info("Existing mapping found for external ID: " + externalUserId + ". Deleting and creating new mapping.");
+                // Delete the existing mapping and create a new one
+                externalIdMapRepository.delete(existingMapping);
+                logger.info("Existing mapping deleted");
+            }
+            
+            // Create new mapping (whether existing was deleted or not)
+            {
+                // Create new mapping
+                UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
+                logger.info(String.format("Saving new mapping: {mapping: %s}", mapping));
+                externalIdMapRepository.save(mapping);
+                logger.info("New mapping saved");
+            }
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error("Error creating/updating mapping: " + e.getMessage());
             throw e;
         }
     }
