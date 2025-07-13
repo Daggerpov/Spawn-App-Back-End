@@ -224,6 +224,7 @@ public class AuthService implements IAuthService {
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setUsername(externalId);
+        newUser.setName(externalId);
         newUser.setPhoneNumber(externalId);
         newUser.setStatus(UserStatus.EMAIL_VERIFIED); // OAuth users are automatically verified
         newUser.setDateCreated(new Date());
