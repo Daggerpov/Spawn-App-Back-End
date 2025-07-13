@@ -236,7 +236,7 @@ public class AuthService implements IAuthService {
         if (name != null) {
             newUser.setName(name);
         }
-        newUser = userService.saveEntity(newUser);
+        newUser = userService.createAndSaveUser(newUser);
         
         // Create OAuth mapping
         oauthService.createAndSaveMapping(newUser, externalId, provider);
@@ -360,7 +360,7 @@ public class AuthService implements IAuthService {
         newUser.setName(email);
         newUser.setPhoneNumber(email);
         newUser.setStatus(UserStatus.EMAIL_VERIFIED);
-        newUser = userService.saveEntity(newUser);
+        newUser = userService.createAndSaveUser(newUser);
         
         // Clean up verification record
         emailVerificationRepository.delete(verification);
