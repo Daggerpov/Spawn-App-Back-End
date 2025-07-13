@@ -330,9 +330,9 @@ public class OAuthServiceTests {
         // Verify the result
         assertTrue(result.isPresent());
         AuthResponseDTO authResponse = result.get();
-        assertEquals("test@example.com", authResponse.getEmail());
-        assertEquals("testuser", authResponse.getUsername());
-        assertEquals("Test User", authResponse.getName());
+        assertEquals("test@example.com", authResponse.getUser().getEmail());
+        assertEquals("testuser", authResponse.getUser().getUsername());
+        assertEquals("Test User", authResponse.getUser().getName());
         assertEquals(UserStatus.EMAIL_VERIFIED, authResponse.getStatus());
     }
 
@@ -356,9 +356,9 @@ public class OAuthServiceTests {
         // Verify the result
         assertTrue(result.isPresent());
         AuthResponseDTO authResponse = result.get();
-        assertEquals("test@example.com", authResponse.getEmail());
-        assertEquals("testuser", authResponse.getUsername());
-        assertEquals("Test User", authResponse.getName());
+        assertEquals("test@example.com", authResponse.getUser().getEmail());
+        assertEquals("testuser", authResponse.getUser().getUsername());
+        assertEquals("Test User", authResponse.getUser().getName());
         assertEquals(UserStatus.USERNAME_AND_PHONE_NUMBER, authResponse.getStatus());
     }
 
@@ -447,9 +447,9 @@ public class OAuthServiceTests {
         // Verify the result
         assertTrue(result.isPresent());
         AuthResponseDTO authResponse = result.get();
-        assertEquals("test@example.com", authResponse.getEmail());
-        assertEquals("testuser", authResponse.getUsername());
-        assertEquals("Test User", authResponse.getName());
+        assertEquals("test@example.com", authResponse.getUser().getEmail());
+        assertEquals("testuser", authResponse.getUser().getUsername());
+        assertEquals("Test User", authResponse.getUser().getName());
         assertEquals(UserStatus.ACTIVE, authResponse.getStatus());
     }
 
