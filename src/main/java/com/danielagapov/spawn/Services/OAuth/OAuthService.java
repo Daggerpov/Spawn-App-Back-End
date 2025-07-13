@@ -81,18 +81,23 @@ public class OAuthService implements IOAuthService {
             // with this provider
             if (existsByEmail) {
                 logger.info("Existing user detected in makeUser, email already exists");
-                UserIdExternalIdMap externalIdMap = getMappingByUserEmail(user.getEmail());
-                User existingUser = externalIdMap.getUser();
-                
-                // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
-                if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
-                    logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-creation.");
-                    // Delete the incomplete user and their mapping to allow fresh creation
-                    userService.deleteUserById(existingUser.getId());
-                    // The mapping will be cascade deleted with the user
-                } else {
-                    logger.info("Returning existing active user with different provider");
-                    return UserMapper.toDTO(existingUser);
+                try {
+                    UserIdExternalIdMap externalIdMap = getMappingByUserEmail(user.getEmail());
+                    User existingUser = externalIdMap.getUser();
+                    
+                    // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
+                    if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
+                        logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-creation.");
+                        // Delete the incomplete user and their mapping to allow fresh creation
+                        userService.deleteUserById(existingUser.getId());
+                        // The mapping will be cascade deleted with the user
+                    } else {
+                        logger.info("Returning existing active user with different provider");
+                        return UserMapper.toDTO(existingUser);
+                    }
+                } catch (BaseNotFoundException e) {
+                    logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Allowing new user creation.");
+                    // Continue to Case 3 - treat as new user
                 }
             }
             
@@ -151,20 +156,26 @@ public class OAuthService implements IOAuthService {
             return Optional.of(authResponseDTO);
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id
             logger.info("Found existing user by email but not by external ID.");
-            UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
-            User user = externalIdMap.getUser();
-            
-            // For incomplete users, allow them to continue with any provider
-            if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
-                logger.info("Found user by email but account is not active (status: " + user.getStatus() + "). Returning user for onboarding completion.");
-                AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user);
-                return Optional.of(authResponseDTO);
-            } else {
-                // For active users, enforce provider consistency
-                OAuthProvider existingProvider = externalIdMap.getProvider();
-                String providerName = existingProvider == OAuthProvider.google ? "Google" : "Apple";
-                logger.info("Expected provider for this email: " + providerName);
-                throw new IncorrectProviderException("The email: " + email + " is already associated to a " + providerName + " account. Please login through " + providerName + " instead");
+            try {
+                UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
+                User user = externalIdMap.getUser();
+                
+                // For incomplete users, allow them to continue with any provider
+                if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
+                    logger.info("Found user by email but account is not active (status: " + user.getStatus() + "). Returning user for onboarding completion.");
+                    AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user);
+                    return Optional.of(authResponseDTO);
+                } else {
+                    // For active users, enforce provider consistency
+                    OAuthProvider existingProvider = externalIdMap.getProvider();
+                    String providerName = existingProvider == OAuthProvider.google ? "Google" : "Apple";
+                    logger.info("Expected provider for this email: " + providerName);
+                    throw new IncorrectProviderException("The email: " + email + " is already associated to a " + providerName + " account. Please login through " + providerName + " instead");
+                }
+            } catch (BaseNotFoundException e) {
+                logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Treating as new user.");
+                // Return empty Optional to indicate no user found
+                return Optional.empty();
             }
         } else { // No account exists for this external id or email
             logger.info("No existing user found for external ID: " + externalUserId + " or email: " + email);
@@ -253,19 +264,24 @@ public class OAuthService implements IOAuthService {
                 // with this provider
                 if (existsByEmail) {
                     logger.info("Existing user detected in checkOAuthRegistration, email already exists");
-                    UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
-                    User existingUser = externalIdMap.getUser();
-                    
-                    // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
-                    if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
-                        logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-registration.");
-                        // Delete the incomplete user and their mapping to allow fresh registration
-                        userService.deleteUserById(existingUser.getId());
-                        // The mapping will be cascade deleted with the user
-                    } else {
-                        OAuthProvider existingProvider = externalIdMap.getProvider();
-                        String providerName = existingProvider == OAuthProvider.google ? "Google" : "Apple";
-                        throw new IncorrectProviderException("Email already exists for a " + providerName + " account. Please login through " + providerName + " instead");
+                    try {
+                        UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
+                        User existingUser = externalIdMap.getUser();
+                        
+                        // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
+                        if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
+                            logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-registration.");
+                            // Delete the incomplete user and their mapping to allow fresh registration
+                            userService.deleteUserById(existingUser.getId());
+                            // The mapping will be cascade deleted with the user
+                        } else {
+                            OAuthProvider existingProvider = externalIdMap.getProvider();
+                            String providerName = existingProvider == OAuthProvider.google ? "Google" : "Apple";
+                            throw new IncorrectProviderException("Email already exists for a " + providerName + " account. Please login through " + providerName + " instead");
+                        }
+                    } catch (BaseNotFoundException e) {
+                        logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Allowing new registration.");
+                        // Continue to Case 3 - treat as new user
                     }
                 }
 
