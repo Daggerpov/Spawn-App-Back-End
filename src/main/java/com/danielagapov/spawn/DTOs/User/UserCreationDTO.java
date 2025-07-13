@@ -1,10 +1,12 @@
 package com.danielagapov.spawn.DTOs.User;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.UUID;
 
+@NoArgsConstructor
 @Getter
 @Setter
 public class UserCreationDTO extends AbstractUserDTO {

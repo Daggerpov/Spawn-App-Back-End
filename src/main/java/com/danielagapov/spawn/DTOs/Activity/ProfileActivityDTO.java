@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
@@ -14,6 +15,7 @@ import java.util.UUID;
 /**
  * DTO specifically for profile view activities that includes whether the activity is past or upcoming
  */
+@NoArgsConstructor
 @Getter
 @Setter
 public class ProfileActivityDTO extends AbstractActivityDTO {

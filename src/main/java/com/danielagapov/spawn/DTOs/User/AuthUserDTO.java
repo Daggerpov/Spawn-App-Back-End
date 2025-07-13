@@ -1,12 +1,16 @@
 package com.danielagapov.spawn.DTOs.User;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.UUID;
 
+@NoArgsConstructor
 @Getter
+@Setter
 public class AuthUserDTO extends AbstractUserDTO {
-    private final String password;
+    private String password;
 
     public AuthUserDTO(UUID id, String name, String email, String username, String bio, String password) {
         super(id, name, email, username, bio);

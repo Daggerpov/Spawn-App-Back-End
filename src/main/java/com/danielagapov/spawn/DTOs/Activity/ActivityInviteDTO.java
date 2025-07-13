@@ -2,6 +2,7 @@ package com.danielagapov.spawn.DTOs.Activity;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
@@ -13,6 +14,7 @@ import java.util.UUID;
  * DTO for external activity invites - contains only essential information
  * needed for the activity invite page without requiring authentication
  */
+@NoArgsConstructor
 @Getter
 @Setter
 public class ActivityInviteDTO extends AbstractActivityDTO {
