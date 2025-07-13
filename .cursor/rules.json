@@ -238,6 +238,82 @@
       }
     }
   },
+  "redis_cache_serialization": {
+    "description": "CRITICAL: DTOs used with @Cacheable annotations must implement Serializable for Redis caching",
+    "apply_to": [
+      "**/DTOs/**/*.java",
+      "**/Services/**/*.java"
+    ],
+    "mandatory_rules": [
+      "All DTOs returned by @Cacheable methods MUST implement Serializable interface",
+      "All DTOs that contain other DTOs as fields must ensure nested DTOs are also Serializable", 
+      "Collection return types like List<String> are fine since String is Serializable",
+      "Primitive types (int, boolean, etc.) are inherently serializable",
+      "Any DTO that might be cached in the future should implement Serializable preemptively"
+    ],
+    "when_serializable_required": [
+      "DTO is returned by a method annotated with @Cacheable",
+      "DTO is a field in another DTO that is cached",
+      "DTO is used in any Redis caching context",
+      "DTO is stored in any distributed cache"
+    ],
+    "common_cached_dtos": [
+      "UserSocialMediaDTO - cached by UserSocialMediaService",
+      "UserStatsDTO - cached by UserStatsService", 
+      "ActivityTypeDTO - cached by ActivityTypeService",
+      "FetchFriendRequestDTO - cached by FriendRequestService",
+      "CalendarActivityDTO - cached by CalendarService",
+      "RecommendedFriendUserDTO - cached by UserService",
+      "FullFriendUserDTO - cached by various services"
+    ],
+    "error_indicators": [
+      "SerializationException: Cannot serialize",
+      "Error logs mentioning Redis serialization failures",
+      "NotSerializableException in server logs",
+      "Cache-related errors when accessing endpoints"
+    ],
+    "debugging_steps": [
+      "Check if DTO implements Serializable interface",
+      "Verify all nested DTOs and fields are also Serializable",
+      "Look for @Cacheable annotations on methods returning the DTO",
+      "Check Redis configuration and serialization settings"
+    ],
+    "serializable_dto_template": {
+      "prefix": "serializable-dto",
+      "body": [
+        "package ${1:package.name};",
+        "",
+        "import lombok.AllArgsConstructor;",
+        "import lombok.Data;",
+        "import lombok.NoArgsConstructor;",
+        "",
+        "import java.io.Serializable;",
+        "import java.util.UUID;",
+        "",
+        "@Data",
+        "@AllArgsConstructor", 
+        "@NoArgsConstructor",
+        "public class ${2:${TM_FILENAME_BASE}} implements Serializable {",
+        "    ${3:// Add your fields here}",
+        "    $0",
+        "}"
+      ],
+      "description": "Create a Serializable DTO for Redis caching"
+    },
+    "validation_checklist": [
+      "✓ DTO implements Serializable interface",
+      "✓ All nested DTOs implement Serializable",
+      "✓ Import java.io.Serializable is present",
+      "✓ No fields contain non-serializable objects",
+      "✓ Test Redis caching functionality after changes"
+    ],
+    "prevention_strategy": [
+      "Always implement Serializable when creating new DTOs",
+      "Use the serializable-dto template for consistency",
+      "Add unit tests that verify caching functionality",
+      "Review @Cacheable method return types during code reviews"
+    ]
+  },
   "ignore": [
     "**/target/**",
     "**/.mvn/**",

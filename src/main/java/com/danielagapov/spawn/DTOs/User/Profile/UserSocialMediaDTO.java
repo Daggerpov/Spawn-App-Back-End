@@ -4,12 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserSocialMediaDTO {
+public class UserSocialMediaDTO implements Serializable {
     private UUID id;
     private UUID userId;
     private String whatsappLink;
