@@ -1,6 +1,9 @@
 package com.danielagapov.spawn;
 
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -18,6 +21,8 @@ import org.springframework.test.context.TestPropertySource;
     "spring.jpa.properties.hibernate.format_sql=true",
     "spring.profiles.active=test"
 })
+@Order(Integer.MAX_VALUE)
+@Execution(ExecutionMode.SAME_THREAD)
 public class RepositoryValidationTest {
     
     @Test

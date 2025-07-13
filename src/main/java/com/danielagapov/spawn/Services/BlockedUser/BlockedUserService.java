@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class BlockedUserService implements IBlockedUserService {
@@ -263,5 +265,140 @@ public class BlockedUserService implements IBlockedUserService {
             logger.error("Error evicting caches for blocked user: " + e.getMessage());
             // Don't throw here - this is a best-effort operation
         }
+    }
+
+    @Override
+    public <T> List<T> filterOutBlockedUsers(List<T> users, UUID requestingUserId) {
+        try {
+            if (users == null || users.isEmpty() || requestingUserId == null) {
+                return users != null ? users : List.of();
+            }
+
+            // Get blocked user IDs for the requesting user (users they blocked)
+            List<UUID> blockedByRequestingUser = getBlockedUserIds(requestingUserId);
+
+            // Get users who blocked the requesting user
+            List<UUID> usersWhoBlockedRequestingUser = repository.findAllByBlocked_Id(requestingUserId).stream()
+                    .map(BlockedUser::getBlocker)
+                    .map(User::getId)
+                    .collect(Collectors.toList());
+
+            // Combine both lists for filtering
+            Set<UUID> usersToFilter = new HashSet<>(blockedByRequestingUser);
+            usersToFilter.addAll(usersWhoBlockedRequestingUser);
+
+            // Filter out blocked users using reflection to get the ID
+            return users.stream()
+                    .filter(user -> {
+                        try {
+                            // Use reflection to get the ID field/method
+                            UUID userId = getUserId(user);
+                            return userId != null && !usersToFilter.contains(userId);
+                        } catch (Exception e) {
+                            logger.warn("Could not extract user ID from object: " + user.getClass().getSimpleName() + 
+                                       ". Including in results. Error: " + e.getMessage());
+                            return true; // Include in results if we can't determine the ID
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            logger.error("Error filtering blocked users for requesting user " + 
+                        LoggingUtils.formatUserIdInfo(requestingUserId) + ": " + e.getMessage());
+            // Return original list if filtering fails
+            return users;
+        }
+    }
+
+    /**
+     * Helper method to extract user ID from various user DTO types using reflection
+     */
+    private <T> UUID getUserId(T user) throws Exception {
+        try {
+            // Special handling for FetchFriendRequestDTO - try getSenderUser() first
+            if (user.getClass().getSimpleName().equals("FetchFriendRequestDTO")) {
+                try {
+                    java.lang.reflect.Method getSenderUserMethod = user.getClass().getMethod("getSenderUser");
+                    Object senderUserObj = getSenderUserMethod.invoke(user);
+                    if (senderUserObj != null) {
+                        // Try to get ID from the sender user object
+                        java.lang.reflect.Method getIdMethod = senderUserObj.getClass().getMethod("getId");
+                        Object result = getIdMethod.invoke(senderUserObj);
+                        if (result instanceof UUID) {
+                            return (UUID) result;
+                        }
+                    }
+                } catch (Exception e) {
+                    // If getSenderUser() fails, fall through to other methods
+                }
+            }
+            
+            // Try getId() method first (for most DTOs)
+            java.lang.reflect.Method getIdMethod = user.getClass().getMethod("getId");
+            Object result = getIdMethod.invoke(user);
+            if (result instanceof UUID) {
+                return (UUID) result;
+            }
+        } catch (Exception e) {
+            // Try getUserId() method
+            try {
+                java.lang.reflect.Method getUserIdMethod = user.getClass().getMethod("getUserId");
+                Object result = getUserIdMethod.invoke(user);
+                if (result instanceof UUID) {
+                    return (UUID) result;
+                }
+            } catch (Exception e2) {
+                // Try getUser() method for nested user objects (e.g., SearchResultUserDTO)
+                try {
+                    java.lang.reflect.Method getUserMethod = user.getClass().getMethod("getUser");
+                    Object userObj = getUserMethod.invoke(user);
+                    if (userObj != null) {
+                        // Try to get ID from the nested user object
+                        java.lang.reflect.Method getIdMethod = userObj.getClass().getMethod("getId");
+                        Object result = getIdMethod.invoke(userObj);
+                        if (result instanceof UUID) {
+                            return (UUID) result;
+                        }
+                    }
+                } catch (Exception e3) {
+                    // Try getSenderUser() method for FetchFriendRequestDTO (fallback)
+                    try {
+                        java.lang.reflect.Method getSenderUserMethod = user.getClass().getMethod("getSenderUser");
+                        Object senderUserObj = getSenderUserMethod.invoke(user);
+                        if (senderUserObj != null) {
+                            // Try to get ID from the sender user object
+                            java.lang.reflect.Method getIdMethod = senderUserObj.getClass().getMethod("getId");
+                            Object result = getIdMethod.invoke(senderUserObj);
+                            if (result instanceof UUID) {
+                                return (UUID) result;
+                            }
+                        }
+                    } catch (Exception e4) {
+                        // Try direct field access
+                        try {
+                            java.lang.reflect.Field idField = user.getClass().getDeclaredField("id");
+                            idField.setAccessible(true);
+                            Object result = idField.get(user);
+                            if (result instanceof UUID) {
+                                return (UUID) result;
+                            }
+                        } catch (Exception e5) {
+                            // Try userId field
+                            try {
+                                java.lang.reflect.Field userIdField = user.getClass().getDeclaredField("userId");
+                                userIdField.setAccessible(true);
+                                Object result = userIdField.get(user);
+                                if (result instanceof UUID) {
+                                    return (UUID) result;
+                                }
+                            } catch (Exception e6) {
+                                throw new Exception("Could not extract user ID from object of type: " + user.getClass().getSimpleName());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

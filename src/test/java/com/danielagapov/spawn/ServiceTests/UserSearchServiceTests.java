@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.DTOs.User.SearchResultUserDTO;
 import com.danielagapov.spawn.Enums.UserRelationshipType;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
@@ -23,15 +24,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Limit;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -84,71 +85,86 @@ class UserSearchServiceTests {
     }
 
     @Test
-    void testSearchByQuery_ReturnsEmptyList_WhenNoUsersMatchPrefix() {
-        // Simulate no users found for given prefix
-        when(userRepository.findUsersWithPrefix(anyString(), any()))
-                .thenReturn(Collections.emptyList());
+    void testSearchByQuery_ReturnsEmptyList_WhenNoUsersMatchQuery() {
+        // Arrange
+        String searchQuery = "nonexistent";
+        when(userRepository.findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class))).thenReturn(List.of());
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Xyz", null);
-        assertTrue(result.isEmpty(), "Expected an empty list when no users match the prefix.");
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
+        assertTrue(result.isEmpty());
     }
 
     @Test
     void testSearchByQuery_FiltersAndRanksUsersCorrectly() {
-        // Simulate database returning 5 users when prefix is "a"
-        when(userRepository.findUsersWithPrefix(eq("a"), any()))
-                .thenReturn(Arrays.asList(user1, user2, user3, user4, user5));
+        // Arrange
+        String searchQuery = "alice";
+        List<User> mockUsers = List.of(user1, user2); // user1="Alice Johnson", user2="Alicia Jameson" 
+        when(userRepository.findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class))).thenReturn(mockUsers);
 
-        // Mock fuzzy search to return user1 (Alice Johnson) as the best match
-        FuzzySearchService.SearchResult<User> result1 = new FuzzySearchService.SearchResult<>(user1, 0.95, "name", false);
-        when(fuzzySearchService.search(eq("Alice"), any(), any(), any()))
-                .thenReturn(List.of(result1));
+        // Mock fuzzy search to return user1 and user2 as matching results
+        when(fuzzySearchService.search(eq(searchQuery), eq(mockUsers), any(), any()))
+                .thenReturn(List.of(
+                        new FuzzySearchService.SearchResult<>(user1, 0.9, "name", false),
+                        new FuzzySearchService.SearchResult<>(user2, 0.8, "name", false)
+                ));
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Alice", null);
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
 
-        // Assert that results are not empty
+        // Assert
         assertFalse(result.isEmpty(), "Expected non-empty results.");
-
-        // Check that at least one user is returned; adjust expected size if your filtering logic is known
-        // For example, if filtering is strict, you might expect 3 matches.
-        // Here we simply ensure the top result is the closest match.
-        BaseUserDTO topResult = result.get(0);
-        assertEquals("Alice Johnson", topResult.getName(), "The most similar user should be ranked first.");
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(u -> u.getName().equals("Alice Johnson")));
+        assertTrue(result.stream().anyMatch(u -> u.getName().equals("Alicia Jameson")));
     }
 
     @Test
     void testSearchByQuery_IncludesUsersIfFilteringRemovesTooManyResults() {
-        // Simulate only one user returned for prefix "b"
-        when(userRepository.findUsersWithPrefix(eq("b"), any()))
-                .thenReturn(List.of(user3));
+        // Arrange
+        String searchQuery = "bob";
+        List<User> mockUsers = List.of(user3); // user3 = "Bob Smith"
+        when(userRepository.findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class))).thenReturn(mockUsers);
 
-        // Mock fuzzy search to return user3 (Bob Smith)
-        FuzzySearchService.SearchResult<User> result3 = new FuzzySearchService.SearchResult<>(user3, 0.7, "name", false);
-        when(fuzzySearchService.search(eq("Bobby"), any(), any(), any()))
-                .thenReturn(List.of(result3));
+        // Mock fuzzy search to return user3 as a matching result
+        when(fuzzySearchService.search(eq(searchQuery), eq(mockUsers), any(), any()))
+                .thenReturn(List.of(
+                        new FuzzySearchService.SearchResult<>(user3, 0.85, "name", false)
+                ));
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Bobby", null);
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
         assertEquals(1, result.size(), "Expected Bob to be included even if filtering removes too many users.");
+        assertEquals("Bob Smith", result.get(0).getName());
     }
 
     @Test
     void testSearchByQuery_SortsUsersByJaroWinklerDistance() {
-        // Simulate database returning users with names starting with "a"
-        when(userRepository.findUsersWithPrefix(eq("a"), any()))
-                .thenReturn(Arrays.asList(user5, user4, user2, user1));
+        // Arrange
+        String searchQuery = "alice";
+        List<User> mockUsers = List.of(user1, user2); // user1="Alice Johnson", user2="Alicia Jameson"
+        when(userRepository.findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class))).thenReturn(mockUsers);
 
-        // Mock fuzzy search to return user2 (Alicia Jameson) as the best match
-        FuzzySearchService.SearchResult<User> result2 = new FuzzySearchService.SearchResult<>(user2, 0.99, "name", false);
-        FuzzySearchService.SearchResult<User> result1 = new FuzzySearchService.SearchResult<>(user1, 0.8, "name", false);
-        when(fuzzySearchService.search(eq("Alicia"), any(), any(), any()))
-                .thenReturn(List.of(result2, result1));
+        // Mock fuzzy search to return users sorted by similarity (user1 has higher score than user2)
+        when(fuzzySearchService.search(eq(searchQuery), eq(mockUsers), any(), any()))
+                .thenReturn(List.of(
+                        new FuzzySearchService.SearchResult<>(user1, 0.95, "name", false),
+                        new FuzzySearchService.SearchResult<>(user2, 0.80, "name", false)
+                ));
 
-        List<BaseUserDTO> result = userSearchService.searchByQuery("Alicia", null);
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
 
-        // Expect that the user with the closest match ("Alicia") appears first.
-        // Adjust assertions based on how your ranking works. For this test, we assume user2 ("Alicia") is best.
+        // Assert
         assertFalse(result.isEmpty(), "Expected non-empty result list.");
-        assertEquals("Alicia Jameson", result.get(0).getName(), "Alicia should be ranked highest based on similarity.");
+        assertEquals(2, result.size());
+        // The first result should be the one with higher similarity score
+        assertEquals("Alice Johnson", result.get(0).getName());
+        assertEquals("Alicia Jameson", result.get(1).getName());
     }
 
     @Test
@@ -345,61 +361,6 @@ class UserSearchServiceTests {
     }
 
     @Test
-    void isQueryMatch_ShouldMatchPartialFirstName() {
-        // Arrange
-        UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-
-        // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "Jo");
-        assertTrue(result);
-    }
-
-    @Test
-    void isQueryMatch_ShouldMatchPartialLastName() {
-        // Arrange
-        UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-
-        // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "oe");
-        assertTrue(result);
-    }
-
-    @Test
-    void isQueryMatch_ShouldMatchPartialUsername() {
-        // Arrange
-        UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-
-        // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "hnd");
-        assertTrue(result);
-    }
-
-    @Test
-    void isQueryMatch_ShouldBeCaseInsensitive() {
-        // Arrange
-        UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-
-        // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "JOHN");
-        assertTrue(result);
-    }
-
-    @Test
-    void isQueryMatch_ShouldReturnFalseWhenNoMatch() {
-        // Arrange
-        UUID userId = UUID.randomUUID();
-        AbstractUserDTO user = new BaseUserDTO(userId, "John Doe", "john@example.com", "johndoe", "Bio", "profile.jpg");
-
-        // Act & Assert - Using reflection to access private method
-        boolean result = (boolean) ReflectionTestUtils.invokeMethod(userSearchService, "isQueryMatch", user, "xyz");
-        assertFalse(result);
-    }
-
-    @Test
     void getRecommendedFriendsBySearch_ShouldHandleEmptySearchQuery() {
         // Arrange
         UUID userId = UUID.randomUUID();
@@ -482,6 +443,62 @@ class UserSearchServiceTests {
         assertEquals(requesterInfo.getId(), searchResultUser.getUser().getId());
         assertEquals(UserRelationshipType.INCOMING_FRIEND_REQUEST, searchResultUser.getRelationshipType());
         assertEquals(friendRequestId, searchResultUser.getFriendRequestId());
+    }
+
+    @Test
+    void testSearchByQuery_PartialMatchFunctionality() {
+        // Arrange
+        String searchQuery = "ali";
+        List<User> mockUsers = List.of(user1, user2); // user1="Alice Johnson", user2="Alicia Jameson"
+        when(userRepository.findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class))).thenReturn(mockUsers);
+
+        // Mock fuzzy search to return both users as matching results
+        when(fuzzySearchService.search(eq(searchQuery), eq(mockUsers), any(), any()))
+                .thenReturn(List.of(
+                        new FuzzySearchService.SearchResult<>(user1, 0.85, "name", false),
+                        new FuzzySearchService.SearchResult<>(user2, 0.90, "name", false)
+                ));
+
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(u -> u.getName().equals("Alice Johnson")));
+        assertTrue(result.stream().anyMatch(u -> u.getName().equals("Alicia Jameson")));
+        
+        // Verify that the partial match query was called with the correct parameters
+        verify(userRepository).findUsersWithPartialMatch(eq(searchQuery.toLowerCase()), any(Limit.class));
+    }
+
+    @Test
+    void testSearchByQuery_HandlesEmptyQuery() {
+        // Arrange
+        String searchQuery = "";
+
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
+        assertTrue(result.isEmpty());
+        
+        // Verify that the repository was not called for empty query
+        verify(userRepository, never()).findUsersWithPartialMatch(any(), any());
+    }
+
+    @Test
+    void testSearchByQuery_HandlesBlanksAndWhitespace() {
+        // Arrange
+        String searchQuery = "   ";
+
+        // Act
+        List<BaseUserDTO> result = userSearchService.searchByQuery(searchQuery, UUID.randomUUID());
+
+        // Assert
+        assertTrue(result.isEmpty());
+        
+        // Verify that the repository was not called for blank query
+        verify(userRepository, never()).findUsersWithPartialMatch(any(), any());
     }
 }
 

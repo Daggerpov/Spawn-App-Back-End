@@ -123,10 +123,9 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Getting incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
-            List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(id);
+            // Note: Blocked user filtering is now handled at the controller level
 
             List<FetchFriendRequestDTO> result = friendRequests.stream()
-                    .filter(fr -> !blockedUserIds.contains(fr.getSender().getId())) // Hide if sender is blocked
                     .map(fr -> FetchFriendRequestMapper.toDTO(fr,
                             userService.getMutualFriendCount(id, fr.getSender().getId())))
                     .toList();
@@ -311,10 +310,9 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Getting sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
-            List<UUID> blockedUserIds = blockedUserService.getBlockedUserIds(userId);
+            // Note: Blocked user filtering is now handled at the controller level
 
             List<FetchFriendRequestDTO> result = friendRequests.stream()
-                    .filter(fr -> !blockedUserIds.contains(fr.getReceiver().getId())) // Hide if receiver is blocked
                     .map(fr -> FetchFriendRequestMapper.toDTOForSentRequest(fr,
                             userService.getMutualFriendCount(userId, fr.getReceiver().getId())))
                     .toList();

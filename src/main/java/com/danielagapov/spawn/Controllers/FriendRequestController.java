@@ -7,6 +7,7 @@ import com.danielagapov.spawn.Enums.FriendRequestAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.http.HttpStatus;
@@ -22,10 +23,12 @@ import java.util.UUID;
 public class FriendRequestController {
 
     private final IFriendRequestService friendRequestService;
+    private final IBlockedUserService blockedUserService;
     private final ILogger logger;
 
-    public FriendRequestController(IFriendRequestService friendRequestService, ILogger logger) {
+    public FriendRequestController(IFriendRequestService friendRequestService, IBlockedUserService blockedUserService, ILogger logger) {
         this.friendRequestService = friendRequestService;
+        this.blockedUserService = blockedUserService;
         this.logger = logger;
     }
 
@@ -39,7 +42,9 @@ public class FriendRequestController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId), HttpStatus.OK);
+            List<FetchFriendRequestDTO> friendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(userId);
+            List<FetchFriendRequestDTO> filteredRequests = blockedUserService.filterOutBlockedUsers(friendRequests, userId);
+            return new ResponseEntity<>(filteredRequests, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for incoming friend requests: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
@@ -66,7 +71,9 @@ public class FriendRequestController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(friendRequestService.getSentFetchFriendRequestsByUserId(userId), HttpStatus.OK);
+            List<FetchFriendRequestDTO> friendRequests = friendRequestService.getSentFetchFriendRequestsByUserId(userId);
+            List<FetchFriendRequestDTO> filteredRequests = blockedUserService.filterOutBlockedUsers(friendRequests, userId);
+            return new ResponseEntity<>(filteredRequests, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for sent friend requests: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);

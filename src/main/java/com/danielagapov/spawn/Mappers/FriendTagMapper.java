@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
 import com.danielagapov.spawn.DTOs.FriendTag.AbstractFriendTagDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FriendTagCreationDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 
@@ -26,8 +25,6 @@ public class FriendTagMapper {
     public static FriendTag toEntity(AbstractFriendTagDTO dto) {
         if (dto instanceof FriendTagDTO) {
             return toEntity((FriendTagDTO) dto);
-        } else if (dto instanceof FriendTagCreationDTO) {
-            return toEntity((FriendTagCreationDTO) dto);
         } else {
             throw new IllegalArgumentException("Unsupported DTO type: " + dto.getClass().getSimpleName());
         }
@@ -40,17 +37,6 @@ public class FriendTagMapper {
                 dto.getColorHexCode(),
                 dto.getOwnerUserId(),
                 dto.isEveryone(),
-                null // lastModified will be set in the service
-        );
-    }
-
-    public static FriendTag toEntity(FriendTagCreationDTO dto) {
-        return new FriendTag(
-                dto.getId(),
-                dto.getDisplayName(),
-                dto.getColorHexCode(),
-                dto.getOwnerUserId(),
-                false,
                 null // lastModified will be set in the service
         );
     }

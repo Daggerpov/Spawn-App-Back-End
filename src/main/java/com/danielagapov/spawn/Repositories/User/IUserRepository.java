@@ -24,8 +24,8 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findUserByEmail(String email);
 
-    @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE CONCAT(:prefix, '%') OR LOWER(u.username) LIKE CONCAT(:prefix, '%')")
-    List<User> findUsersWithPrefix(String prefix, Limit limit);
+    @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE CONCAT('%', :query, '%') OR LOWER(u.username) LIKE CONCAT('%', :query, '%')")
+    List<User> findUsersWithPartialMatch(String query, Limit limit);
 
     // Exist
     boolean existsByUsername(String username);
