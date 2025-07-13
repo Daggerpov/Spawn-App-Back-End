@@ -38,7 +38,9 @@ public class SecurityConfig {
             "/api/v1/auth/refresh-token",
             "/api/v1/auth/register/verification/send",
             "/api/v1/auth/register/oauth",
-            "/api/v1/auth/register/verification/check"
+            "/api/v1/auth/register/verification/check",
+            "/api/v1/auth/register/verification/",
+            "/api/v1/auth/sign-in"
     };
 
     @Bean
