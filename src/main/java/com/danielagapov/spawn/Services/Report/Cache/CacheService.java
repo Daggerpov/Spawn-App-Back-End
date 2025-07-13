@@ -791,7 +791,16 @@ public class CacheService implements ICacheService {
      */
     private Instant getLatestFriendProfileUpdate(UUID userId) {
         try {
-            return userRepository.findLatestFriendProfileUpdate(userId);
+            Instant result = userRepository.findLatestFriendProfileUpdate(userId);
+            // Handle case where repository returns null (no friends or no updates)
+            if (result == null) {
+                logger.debug("No friend profile updates found for user {}, returning user creation time", userId);
+                // Get the user's creation time as fallback
+                return userRepository.findById(userId)
+                        .map(user -> user.getDateCreated().toInstant())
+                        .orElse(Instant.now()); // Fallback to current time if user not found
+            }
+            return result;
         } catch (Exception e) {
             logger.error("Error fetching latest friend profile update for user {}: {}", userId, e.getMessage(), e);
             return Instant.now();
