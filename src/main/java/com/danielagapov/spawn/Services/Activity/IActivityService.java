@@ -10,10 +10,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Service interface for managing activities (events) and their related operations.
+ * Provides CRUD operations, participation management, feed generation, and activity conversion utilities.
+ */
 public interface IActivityService {
+    
+    /**
+     * Retrieves all activities from the database.
+     * 
+     * @return List of ActivityDTO objects representing all activities
+     * @throws com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException if database access fails
+     */
     List<ActivityDTO> getAllActivities();
 
-    // CRUD operations:
+    /**
+     * Retrieves a specific activity by its unique identifier.
+     * 
+     * @param id the unique identifier of the activity
+     * @return ActivityDTO object representing the requested activity
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity with given ID is not found
+     */
     ActivityDTO getActivityById(UUID id);
     
     /**
@@ -24,41 +41,164 @@ public interface IActivityService {
      */
     ActivityInviteDTO getActivityInviteById(UUID id);
 
+    /**
+     * Saves an activity to the database.
+     * 
+     * @param activity the activity data to save
+     * @return the saved AbstractActivityDTO
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if saving fails
+     */
     AbstractActivityDTO saveActivity(AbstractActivityDTO activity);
 
+    /**
+     * Creates a new activity from creation DTO and handles invitations.
+     * 
+     * @param activityCreationDTO the DTO containing activity creation data
+     * @return the created AbstractActivityDTO
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if creation fails
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if referenced entities don't exist
+     */
     AbstractActivityDTO createActivity(ActivityCreationDTO activityCreationDTO);
 
+    /**
+     * Updates an existing activity or creates a new one if it doesn't exist.
+     * 
+     * @param activity the activity data to update with
+     * @param activityId the unique identifier of the activity to update
+     * @return the updated ActivityDTO
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if updating fails
+     */
     ActivityDTO replaceActivity(ActivityDTO activity, UUID activityId);
 
+    /**
+     * Deletes an activity by its unique identifier.
+     * 
+     * @param id the unique identifier of the activity to delete
+     * @return true if deletion was successful, false otherwise
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity with given ID is not found
+     */
     boolean deleteActivityById(UUID id);
 
-    // Participation-related methods:
+    /**
+     * Retrieves all users participating in a specific activity.
+     * 
+     * @param id the unique identifier of the activity
+     * @return List of UserDTO objects representing participating users
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
+     */
     List<UserDTO> getParticipatingUsersByActivityId(UUID id);
 
+    /**
+     * Gets the participation status of a user for a specific activity.
+     * 
+     * @param activityId the unique identifier of the activity
+     * @param userId the unique identifier of the user
+     * @return ParticipationStatus enum value indicating the user's participation status
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity or user doesn't exist
+     */
     ParticipationStatus getParticipationStatus(UUID activityId, UUID userId);
 
+    /**
+     * Invites a user to an activity.
+     * 
+     * @param activityId the unique identifier of the activity
+     * @param userId the unique identifier of the user to invite
+     * @return true if invitation was successful, false otherwise
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity or user doesn't exist
+     */
     boolean inviteUser(UUID activityId, UUID userId);
 
-    // returns back the updated activity dto, with participants and invited users updated:
+    /**
+     * Toggles a user's participation status for an activity and returns the updated activity.
+     * 
+     * @param activityId the unique identifier of the activity
+     * @param userId the unique identifier of the user
+     * @return updated FullFeedActivityDTO with participants and invited users updated
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity or user doesn't exist
+     */
     FullFeedActivityDTO toggleParticipation(UUID activityId, UUID userId);
 
+    /**
+     * Retrieves all activities that a user has been invited to.
+     * 
+     * @param id the unique identifier of the user
+     * @return List of ActivityDTO objects representing activities the user was invited to
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
     List<ActivityDTO> getActivitiesInvitedTo(UUID id);
 
+    /**
+     * Retrieves activities that a user has been invited to, filtered by friend tag.
+     * 
+     * @param friendTagId the unique identifier of the friend tag to filter by
+     * @param requestingUserId the unique identifier of the user making the request
+     * @return List of ActivityDTO objects for activities invited to by the specified friend tag
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag or user doesn't exist
+     */
     List<ActivityDTO> getActivitiesInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId);
 
-    // Get 'Full' Activity Methods:
+    /**
+     * Retrieves all activities that a user has been invited to as full feed activities.
+     * 
+     * @param id the unique identifier of the user
+     * @return List of FullFeedActivityDTO objects with complete activity information
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
     List<FullFeedActivityDTO> getFullActivitiesInvitedTo(UUID id);
 
+    /**
+     * Converts an ActivityDTO to FullFeedActivityDTO with complete information for a requesting user.
+     * 
+     * @param activity the ActivityDTO to convert
+     * @param requestingUserId the unique identifier of the user making the request
+     * @param visitedActivities set of activity IDs already visited (for circular reference prevention)
+     * @return FullFeedActivityDTO with complete activity information
+     */
     FullFeedActivityDTO getFullActivityByActivity(ActivityDTO activity, UUID requestingUserId, Set<UUID> visitedActivities);
 
+    /**
+     * Retrieves all activities as full feed activities.
+     * 
+     * @return List of FullFeedActivityDTO objects representing all activities
+     * @throws com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException if database access fails
+     */
     List<FullFeedActivityDTO> getAllFullActivities();
 
+    /**
+     * Retrieves a specific activity as a full feed activity for a requesting user.
+     * 
+     * @param id the unique identifier of the activity
+     * @param requestingUserId the unique identifier of the user making the request
+     * @return FullFeedActivityDTO with complete activity information
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
+     */
     FullFeedActivityDTO getFullActivityById(UUID id, UUID requestingUserId);
 
+    /**
+     * Converts a list of ActivityDTO objects to FullFeedActivityDTO objects for a requesting user.
+     * 
+     * @param activities the list of ActivityDTO objects to convert
+     * @param requestingUserId the unique identifier of the user making the request
+     * @return List of FullFeedActivityDTO objects with complete activity information
+     */
     List<FullFeedActivityDTO> convertActivitiesToFullFeedActivities(List<ActivityDTO> activities, UUID requestingUserId);
 
+    /**
+     * Converts a list of ActivityDTO objects to FullFeedActivityDTO objects for self-owned activities.
+     * 
+     * @param activities the list of ActivityDTO objects to convert
+     * @param requestingUserId the unique identifier of the user making the request
+     * @return List of FullFeedActivityDTO objects with complete activity information marked as self-owned
+     */
     List<FullFeedActivityDTO> convertActivitiesToFullFeedSelfOwnedActivities(List<ActivityDTO> activities, UUID requestingUserId);
 
+    /**
+     * Retrieves personalized feed activities for a user.
+     * 
+     * @param requestingUserId the unique identifier of the user requesting their feed
+     * @return List of FullFeedActivityDTO objects representing the user's personalized feed
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
     List<FullFeedActivityDTO> getFeedActivities(UUID requestingUserId);
     
     /**
@@ -80,13 +220,40 @@ public interface IActivityService {
      */
     List<ProfileActivityDTO> getPastActivitiesWhereUserInvited(UUID inviterUserId, UUID requestingUserId);
 
+    /**
+     * Retrieves feed activities filtered by a specific friend tag.
+     * 
+     * @param friendTagFilterId the unique identifier of the friend tag to filter by
+     * @return List of FullFeedActivityDTO objects filtered by the specified friend tag
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
+     */
     List<FullFeedActivityDTO> getFilteredFeedActivitiesByFriendTagId(UUID friendTagFilterId);
 
-    // Additional Methods:
+    /**
+     * Retrieves all activities associated with a specific friend tag.
+     * 
+     * @param friendTagId the unique identifier of the friend tag
+     * @return List of ActivityDTO objects associated with the specified friend tag
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
+     */
     List<ActivityDTO> getActivitiesByFriendTagId(UUID friendTagId);
 
+    /**
+     * Retrieves all activities created by a specific user.
+     * 
+     * @param creatorUserId the unique identifier of the user who created the activities
+     * @return List of ActivityDTO objects created by the specified user
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
     List<ActivityDTO> getActivitiesByOwnerId(UUID creatorUserId);
 
+    /**
+     * Gets the friend tag color hex code for a requesting user based on their relationship to the activity.
+     * 
+     * @param activityDTO the activity to get the color for
+     * @param requestingUserId the unique identifier of the user making the request
+     * @return hex color code string representing the friend tag color
+     */
     String getFriendTagColorHexCodeForRequestingUser(ActivityDTO activityDTO, UUID requestingUserId);
     
     /**
@@ -113,6 +280,13 @@ public interface IActivityService {
      */
     Instant getLatestUpdatedActivityTimestamp(UUID userId);
 
+    /**
+     * Retrieves all chat messages associated with a specific activity.
+     * 
+     * @param activityId the unique identifier of the activity
+     * @return List of FullActivityChatMessageDTO objects representing the activity's chat messages
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
+     */
     List<FullActivityChatMessageDTO> getChatMessagesByActivityId(UUID activityId);
     
     /**
