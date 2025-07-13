@@ -2,11 +2,7 @@ package com.danielagapov.spawn.Services.Auth;
 
 import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
 import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
-import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
-import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Enums.UserField;
@@ -39,8 +35,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -233,19 +229,13 @@ public class AuthService implements IAuthService {
         newUser.setEmail(email);
         newUser.setUsername(externalId);
         newUser.setPhoneNumber(externalId);
+        newUser.setName(externalId);
         newUser.setStatus(UserStatus.EMAIL_VERIFIED); // OAuth users are automatically verified
         newUser.setDateCreated(new Date());
 
         String profilePictureUrl = registrationDTO.getProfilePictureUrl();
         newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
 
-        String name = registrationDTO.getName();
-        if (name != null) {
-            newUser.setName(name);
-        } else {
-            // Use email prefix as default name if no name provided
-            newUser.setName(email.split("@")[0]);
-        }
         newUser = userService.createAndSaveUser(newUser);
         
         // Create OAuth mapping
