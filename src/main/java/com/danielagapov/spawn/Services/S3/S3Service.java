@@ -169,6 +169,24 @@ public class S3Service implements IS3Service {
         }
     }
 
+    @Override
+    public String updateProfilePictureWithUserId(byte[] file, UUID userId) {
+        try {
+            if (file == null) {
+                return DEFAULT_PFP;
+            }
+
+            return putObjectWithKey(file, userId.toString());
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            throw e;
+        }
+    }
+
+    public static String getDefaultProfilePictureUrlString() {
+        return DEFAULT_PFP;
+    }
+
     /**
      * Deletes an object given the key (where it's stored)
      */

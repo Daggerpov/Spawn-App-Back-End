@@ -8,6 +8,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Getter
 public class LoginDTO implements Serializable {
-    final String username; // Could be an email
+    final String usernameOrEmail;
     final String password;
 }

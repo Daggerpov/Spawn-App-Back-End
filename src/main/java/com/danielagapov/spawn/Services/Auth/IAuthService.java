@@ -4,9 +4,11 @@ import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
 import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
+import com.danielagapov.spawn.DTOs.User.UserDTO;
 import org.springframework.http.HttpHeaders;
+
+import java.util.UUID;
 
 public interface IAuthService {
     /**
@@ -14,7 +16,7 @@ public interface IAuthService {
      */
     UserDTO registerUser(AuthUserDTO authUserDTO);
 
-    BaseUserDTO loginUser(AuthUserDTO authUserDTO);
+    BaseUserDTO loginUser(String usernameOrEmail, String password);
 
     boolean verifyEmail(String token);
     
@@ -63,4 +65,11 @@ public interface IAuthService {
      * @return the updated user DTO
      */
     BaseUserDTO updateUserDetails(UpdateUserDetailsDTO dto);
+
+    /**
+     * Update user status to ACTIVE (for Terms of Service acceptance)
+     * @param userId the ID of the user to update
+     * @return the updated user DTO
+     */
+    BaseUserDTO acceptTermsOfService(UUID userId);
 }

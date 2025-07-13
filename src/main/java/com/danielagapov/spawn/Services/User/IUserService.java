@@ -1,12 +1,9 @@
 package com.danielagapov.spawn.Services.User;
 
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
-import com.danielagapov.spawn.DTOs.User.RecentlySpawnedUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Util.SearchedUserResult;
@@ -127,4 +124,6 @@ public interface IUserService {
      * Get user profile information
      */
     UserProfileInfoDTO getUserProfileInfo(UUID userId);
+
+    BaseUserDTO setOptionalDetails(UUID userId, OptionalDetailsDTO optionalDetailsDTO);
 }

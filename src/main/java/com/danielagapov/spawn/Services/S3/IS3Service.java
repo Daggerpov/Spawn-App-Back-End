@@ -52,4 +52,6 @@ public interface IS3Service {
      * Since the cdn is read-only, the object key is extracted from the url string and deleted
      */
     void deleteObjectByURL(String urlString);
+
+    String updateProfilePictureWithUserId(byte[] file, UUID userId);
 }

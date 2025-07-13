@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Optional;
+import java.util.UUID;
 
 
 @RestController()
@@ -156,19 +157,19 @@ public class AuthController {
 
     // full path: /api/v1/auth/login
     @PostMapping("login")
-    public ResponseEntity<BaseUserDTO> login(@RequestBody AuthUserDTO authUserDTO) {
+    public ResponseEntity<BaseUserDTO> login(@RequestBody LoginDTO loginDTO) {
         try {
-            BaseUserDTO existingUserDTO = authService.loginUser(authUserDTO);
+            BaseUserDTO existingUserDTO = authService.loginUser(loginDTO.getUsernameOrEmail(), loginDTO.getPassword());
             HttpHeaders headers = authService.makeHeadersForTokens(existingUserDTO.getUsername());
             return ResponseEntity.ok().headers(headers).body(existingUserDTO);
         } catch (BadCredentialsException e) {
-            logger.warn("Login failed - bad credentials for user: " + authUserDTO.getUsername());
+            logger.warn("Login failed - bad credentials for user: " + loginDTO.getUsernameOrEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during login: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
-            logger.error(String.format("Error logging in user: {user: %s}. Error: %s", authUserDTO, e.getMessage()));
+            logger.error("Error logging in user:  Error: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -304,6 +305,21 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Error updating user details: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to update user details"));
+        }
+    }
+
+    // full path: /api/v1/auth/accept-tos/{userId}
+    @PostMapping("accept-tos/{userId}")
+    public ResponseEntity<?> acceptTermsOfService(@PathVariable UUID userId) {
+        try {
+            BaseUserDTO updatedUser = authService.acceptTermsOfService(userId);
+            return ResponseEntity.ok(updatedUser);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for TOS acceptance: " + userId + ", entity type: " + e.entityType);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
+        } catch (Exception e) {
+            logger.error("Error accepting Terms of Service for user: " + userId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to accept Terms of Service"));
         }
     }
 

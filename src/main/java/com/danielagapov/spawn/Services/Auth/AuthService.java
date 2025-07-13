@@ -20,6 +20,7 @@ import com.danielagapov.spawn.Repositories.IEmailVerificationRepository;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import com.danielagapov.spawn.Services.S3.S3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.VerificationCodeGenerator;
@@ -69,22 +70,40 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public BaseUserDTO loginUser(AuthUserDTO authUserDTO) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        authUserDTO.getUsername(),
-                        authUserDTO.getPassword()
-                )
-        );
-        if (authentication.isAuthenticated()) {
-            String username = ((UserDetails) authentication.getPrincipal()).getUsername();
+    public BaseUserDTO loginUser(String usernameOrEmail, String password) {
+        String username;
+        final String errorMsg = "Incorrect username, email, or password";
 
-            User user = userService.getUserEntityByUsername(username);
-            return UserMapper.toDTO(user);
-        } else {
-            logger.warn("Failed authentication attempt for username: " + authUserDTO.getUsername());
-            throw new BadCredentialsException("Invalid username or password");
+        if (usernameOrEmail == null || usernameOrEmail.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalArgumentException("Username, email, and password must be provided");
         }
+
+        User user = null;
+        if (usernameOrEmail.contains("@")) { // This is an email
+            user = userService.getUserByEmail(usernameOrEmail);
+            if (user == null) {
+                throw new BadCredentialsException(errorMsg);
+            }
+
+            username = user.getUsername();
+        } else { // This is a username
+            username = usernameOrEmail;
+        }
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+
+        if (authentication.isAuthenticated()) {
+            String authenticatedUsername = ((UserDetails) authentication.getPrincipal()).getUsername();
+
+            if (user == null) {
+                user = userService.getUserEntityByUsername(authenticatedUsername);
+            }
+
+            return UserMapper.toDTO(user);
+        }
+        throw new BadCredentialsException(errorMsg);
     }
 
     @Override
@@ -209,9 +228,8 @@ public class AuthService implements IAuthService {
         newUser.setDateCreated(new Date());
 
         String profilePictureUrl = registrationDTO.getProfilePictureUrl();
-        if (profilePictureUrl != null) {
-            newUser.setProfilePictureUrlString(profilePictureUrl);
-        }
+        newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
+
         String name = registrationDTO.getName();
         if (name != null) {
             newUser.setName(name);
@@ -346,6 +364,23 @@ public class AuthService implements IAuthService {
         
         logger.info("User created successfully after email verification: " + LoggingUtils.formatUserInfo(newUser));
         return UserMapper.toDTO(newUser);
+    }
+
+    @Override
+    public BaseUserDTO acceptTermsOfService(UUID userId) {
+        try {
+            logger.info("Accepting Terms of Service for user: " + LoggingUtils.formatUserIdInfo(userId));
+
+            User user = userService.getUserEntityById(userId);
+            user.setStatus(UserStatus.ACTIVE);
+            user = userService.saveEntity(user);
+
+            logger.info("Successfully updated user status to ACTIVE: " + LoggingUtils.formatUserInfo(user));
+            return UserMapper.toDTO(user);
+        } catch (Exception e) {
+            logger.error("Error accepting Terms of Service for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
     }
 
 

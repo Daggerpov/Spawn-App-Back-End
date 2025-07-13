@@ -124,6 +124,22 @@ public class UserController {
         }
     }
 
+    // full path: /api/v1/users/{id}/optional-details
+    @PostMapping("{id}/optional-details")
+    public ResponseEntity<?> setOptionalDetails(@PathVariable UUID id, @RequestBody OptionalDetailsDTO optionalDetailsDTO) {
+        if (id == null) {
+            logger.error("Invalid parameter: user ID is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            BaseUserDTO baseUserDTO = userService.setOptionalDetails(id, optionalDetailsDTO);
+            return new ResponseEntity<>(baseUserDTO, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving default profile picture: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // full path: /api/v1/users/default-pfp
     @GetMapping("default-pfp")
     public ResponseEntity<String> getDefaultProfilePicture() {
