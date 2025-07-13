@@ -9,6 +9,7 @@ import com.danielagapov.spawn.Repositories.User.Profile.IUserSocialMediaReposito
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -35,8 +36,15 @@ public class UserSocialMediaService implements IUserSocialMediaService {
         
         UserSocialMedia socialMedia = userSocialMediaRepository.findByUserId(userId)
                 .orElseGet(() -> {
-                    UserSocialMedia newSocialMedia = new UserSocialMedia(user);
-                    return userSocialMediaRepository.save(newSocialMedia);
+                    try {
+                        UserSocialMedia newSocialMedia = new UserSocialMedia(user);
+                        return userSocialMediaRepository.save(newSocialMedia);
+                    } catch (DataIntegrityViolationException e) {
+                        // Handle race condition - another thread already created the record
+                        // So we fetch it again
+                        return userSocialMediaRepository.findByUserId(userId)
+                                .orElseThrow(() -> new RuntimeException("Failed to create or find social media record for user: " + userId));
+                    }
                 });
         
         return convertToDTO(socialMedia);
