@@ -219,7 +219,7 @@ public class AuthService implements IAuthService {
         if (existingUser.isPresent()) {
             AuthResponseDTO authResponse = existingUser.get();
             if (authResponse.getStatus() == null || authResponse.getStatus() == UserStatus.ACTIVE) {
-                logger.info("ACTIVE user attempting to register - redirecting to sign-in flow: " + authResponse.getEmail());
+                logger.info("ACTIVE user attempting to register - redirecting to sign-in flow: " + authResponse.getUser().getEmail());
                 return authResponse;
             }
         }

@@ -25,15 +25,8 @@ public class UserMapper {
     }
 
     public static AuthResponseDTO toAuthResponseDTO(User user) {
-        return new AuthResponseDTO(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getUsername(),
-                user.getBio(),
-                user.getProfilePictureUrlString(),
-                user.getStatus()
-        );
+        BaseUserDTO baseUserDTO = toDTO(user);
+        return new AuthResponseDTO(baseUserDTO, user.getStatus());
     }
 
     public static List<BaseUserDTO> toDTOList(List<User> users) {

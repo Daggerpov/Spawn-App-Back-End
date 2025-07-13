@@ -65,7 +65,7 @@ public class AuthController {
             
             if (optionalDTO.isPresent()) {
                 AuthResponseDTO authResponseDTO = optionalDTO.get();
-                HttpHeaders headers = authService.makeHeadersForTokens(authResponseDTO.getUsername());
+                HttpHeaders headers = authService.makeHeadersForTokens(authResponseDTO.getUser().getUsername());
                 return ResponseEntity.ok().headers(headers).body(authResponseDTO);
             }
             return ResponseEntity.ok().body(null);
@@ -216,7 +216,7 @@ public class AuthController {
     public ResponseEntity<?> registerViaOAuth(@RequestBody OAuthRegistrationDTO registration) {
         try {
             AuthResponseDTO user = authService.registerUserViaOAuth(registration);
-            HttpHeaders headers = authService.makeHeadersForTokens(user.getUsername());
+            HttpHeaders headers = authService.makeHeadersForTokens(user.getUser().getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (AccountAlreadyExistsException e) {
             logger.warn("OAuth registration failed - account already exists: " + e.getMessage());
