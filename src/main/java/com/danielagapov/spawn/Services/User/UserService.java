@@ -8,6 +8,7 @@ import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.DTOs.UserIdActivityTimeDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -486,7 +487,6 @@ public class UserService implements IUserService {
         try {
             logger.info("Marking user as verified " + username);
             User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
-            user.setVerified(true);
             repository.save(user);
         } catch (Exception e) {
             logger.error("Unexpected error while marking user as verified: " + e.getMessage());
@@ -787,6 +787,7 @@ public class UserService implements IUserService {
             if (optionalDetailsDTO.getProfilePictureData() != null) {
                 user.setProfilePictureUrlString(s3Service.updateProfilePictureWithUserId(optionalDetailsDTO.getProfilePictureData(), user.getId()));
             }
+            user.setStatus(UserStatus.NAME_AND_PHOTO);
             user = repository.save(user);
             return UserMapper.toDTO(user);
         } catch (Exception e) {

@@ -21,9 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -59,7 +57,6 @@ class ActivityTypeInitializerTests {
             user.setEmail("user" + i + "@example.com");
             user.setUsername("user" + i);
             user.setName("User " + i);
-            user.setVerified(true);
             user.setDateCreated(new Date());
             testUsers.add(user);
         }

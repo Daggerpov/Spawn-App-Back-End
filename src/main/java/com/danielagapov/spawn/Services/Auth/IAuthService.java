@@ -30,7 +30,7 @@ public interface IAuthService {
      */
     boolean changePassword(String username, String currentPassword, String newPassword);
 
-    BaseUserDTO getUserByToken(String token);
+    AuthResponseDTO getUserByToken(String token);
 
     /**
      * Sends an email verification code to the specified email address for new user registration
