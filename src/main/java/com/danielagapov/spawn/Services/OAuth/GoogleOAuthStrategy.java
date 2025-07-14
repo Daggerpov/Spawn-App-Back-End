@@ -3,6 +3,9 @@ package com.danielagapov.spawn.Services.OAuth;
 
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
+import com.danielagapov.spawn.Exceptions.TokenExpiredException;
+import com.danielagapov.spawn.Exceptions.OAuthProviderUnavailableException;
+import com.danielagapov.spawn.Util.RetryHelper;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -50,33 +53,58 @@ public class GoogleOAuthStrategy implements OAuthStrategy {
             logger.info("Attempting to verify Google ID token");
             logger.info("Using client ID: " + googleClientId);
 
-            // Verify the token
-            GoogleIdToken googleIdToken = verifier.verify(idToken);
-            if (googleIdToken == null) {
-                logger.error("Token verification failed - invalid token");
-                throw new SecurityException("Invalid ID token");
-            }
+            // Use retry helper for token verification
+            return RetryHelper.executeOAuthWithRetry(() -> {
+                try {
+                    // Verify the token
+                    GoogleIdToken googleIdToken = verifier.verify(idToken);
+                    if (googleIdToken == null) {
+                        logger.error("Token verification failed - invalid token");
+                        throw new SecurityException("Invalid Google ID token - token may be expired or malformed");
+                    }
 
-            logger.info("Token verified successfully");
-            // Get payload data
-            GoogleIdToken.Payload payload = googleIdToken.getPayload();
-            String userId = payload.getSubject();  // Get the user's ID
-            logger.info("Extracted user ID: " + userId);
+                    logger.info("Token verified successfully");
+                    // Get payload data
+                    GoogleIdToken.Payload payload = googleIdToken.getPayload();
+                    String userId = payload.getSubject();  // Get the user's ID
+                    logger.info("Extracted user ID: " + userId);
 
-            // Verify additional claims if needed
-            // For example, verify email is verified
-            Boolean emailVerified = payload.getEmailVerified();
-            if (emailVerified == null || !emailVerified) {
-                logger.error("Email not verified");
-                throw new SecurityException("Email not verified");
-            }
+                    // Check token expiration
+                    Long expiration = payload.getExpirationTimeSeconds();
+                    if (expiration != null && expiration < System.currentTimeMillis() / 1000) {
+                        logger.error("Token has expired");
+                        throw new TokenExpiredException("Google ID token has expired, please sign in again");
+                    }
 
-            return userId;
+                    // Verify additional claims if needed
+                    // For example, verify email is verified
+                    Boolean emailVerified = payload.getEmailVerified();
+                    if (emailVerified == null || !emailVerified) {
+                        logger.error("Email not verified");
+                        throw new SecurityException("Google account email is not verified");
+                    }
 
-        } catch (GeneralSecurityException | IOException e) {
-            logger.error("Error verifying Google ID token: " + e.getMessage());
+                    return userId;
+
+                } catch (GeneralSecurityException e) {
+                    logger.error("Security error during token verification: " + e.getMessage());
+                    throw new SecurityException("Security error during Google token verification: " + e.getMessage(), e);
+                } catch (IOException e) {
+                    logger.error("Network error during token verification: " + e.getMessage());
+                    throw new OAuthProviderUnavailableException("Google authentication service is temporarily unavailable. Please try again later.", e);
+                }
+            });
+
+        } catch (TokenExpiredException e) {
+            logger.error("Token expired: " + e.getMessage());
+            throw e;
+        } catch (OAuthProviderUnavailableException e) {
+            logger.error("OAuth provider unavailable: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error during token verification: " + e.getMessage());
             logger.error("Token details: " + (idToken != null ? idToken.substring(0, Math.min(20, idToken.length())) + "..." : "null"));
-            throw new SecurityException("Error verifying Google ID token", e);
+            throw new SecurityException("Unexpected error during Google token verification: " + e.getMessage(), e);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Services.OAuth;
 
+import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -33,11 +34,11 @@ public interface IOAuthService {
      * @param idToken the OAuth ID token to verify
      * @param email the user's email address
      * @param provider the OAuth provider used for authentication
-     * @return Optional containing BaseUserDTO if user exists, empty otherwise
+     * @return Optional containing AuthResponseDTO if user exists, empty otherwise
      * @throws com.danielagapov.spawn.Exceptions.IncorrectProviderException if user exists but with different provider
      * @throws SecurityException if token verification fails
      */
-    Optional<BaseUserDTO> signInUser(String idToken, String email, OAuthProvider provider);
+    Optional<AuthResponseDTO> signInUser(String idToken, String email, OAuthProvider provider);
 
     /**
      * Given an external user id from an oauth provider, check whether it belongs it a user account.
@@ -48,7 +49,7 @@ public interface IOAuthService {
      * @return a BaseUserDTO if user exists, null otherwise
      * @throws com.danielagapov.spawn.Exceptions.IncorrectProviderException if user exists but with different provider
      */
-    Optional<BaseUserDTO> getUserIfExistsbyExternalId(String externalUserId, String email);
+    Optional<AuthResponseDTO> getUserIfExistsbyExternalId(String externalUserId, String email);
 
     /**
      * Creates a user from either Google ID token or Apple external user ID

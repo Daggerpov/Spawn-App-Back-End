@@ -2,10 +2,7 @@ package com.danielagapov.spawn.Services.Auth;
 
 import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
 import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
-import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Enums.UserField;
@@ -38,6 +35,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -203,7 +201,7 @@ public class AuthService implements IAuthService {
 
 
     @Override
-    public BaseUserDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO) {
+    public AuthResponseDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO) {
         String email = registrationDTO.getEmail();
         String idToken = registrationDTO.getIdToken();  // Changed from getExternalIdToken to getIdToken
         OAuthProvider provider = registrationDTO.getProvider();
@@ -212,37 +210,96 @@ public class AuthService implements IAuthService {
             throw new IllegalArgumentException("Email and idToken cannot be null for OAuth registration");
         }
         
-        // Check if user already exists
-        if (userService.existsByEmail(email)) {
-            throw new EmailAlreadyExistsException("Email already exists");
-        }
-        
         // Verify OAuth token and get external ID
+        // Note: checkOAuthRegistration will handle incomplete users by deleting them
         String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
+        
+        // Check if user already exists and is ACTIVE - if so, redirect to sign-in behavior
+        Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
+        if (existingUser.isPresent()) {
+            AuthResponseDTO authResponse = existingUser.get();
+            if (authResponse.getStatus() == null || authResponse.getStatus() == UserStatus.ACTIVE) {
+                logger.info("ACTIVE user attempting to register - redirecting to sign-in flow: " + authResponse.getUser().getEmail());
+                return authResponse;
+            }
+        }
         
         // Create verified user immediately for OAuth
         User newUser = new User();
         newUser.setEmail(email);
         newUser.setUsername(externalId);
-        newUser.setName(externalId);
         newUser.setPhoneNumber(externalId);
+        newUser.setName(externalId);
         newUser.setStatus(UserStatus.EMAIL_VERIFIED); // OAuth users are automatically verified
         newUser.setDateCreated(new Date());
 
         String profilePictureUrl = registrationDTO.getProfilePictureUrl();
         newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
 
-        String name = registrationDTO.getName();
-        if (name != null) {
-            newUser.setName(name);
-        }
         newUser = userService.createAndSaveUser(newUser);
         
         // Create OAuth mapping
         oauthService.createAndSaveMapping(newUser, externalId, provider);
         
         logger.info("OAuth user registered successfully: " + LoggingUtils.formatUserInfo(newUser));
-        return UserMapper.toDTO(newUser);
+        return UserMapper.toAuthResponseDTO(newUser);
+    }
+
+    @Override
+    public AuthResponseDTO handleOAuthRegistrationGracefully(OAuthRegistrationDTO registrationDTO, Exception exception) {
+        String email = registrationDTO.getEmail();
+        String idToken = registrationDTO.getIdToken();
+        OAuthProvider provider = registrationDTO.getProvider();
+        
+        logger.info("Handling OAuth registration gracefully for exception: " + exception.getClass().getSimpleName() + " - " + exception.getMessage());
+        
+        try {
+            // First, try to verify the token and get the external ID
+            String externalId = null;
+            try {
+                externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
+            } catch (Exception e) {
+                logger.warn("Could not verify OAuth token in graceful handler: " + e.getMessage());
+                // If we can't verify the token, we can't proceed with any user creation
+                return null;
+            }
+            
+            // Check if an existing user can be found and returned
+            Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
+            if (existingUser.isPresent()) {
+                logger.info("Found existing user in graceful handler, returning user data");
+                return existingUser.get();
+            }
+            
+            // If no existing user found, create a new user at EMAIL_VERIFIED status
+            // This ensures the user goes through the proper onboarding flow
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setUsername(externalId); // Temporary username that will be changed
+            newUser.setPhoneNumber(externalId); // Temporary phone that will be changed
+            newUser.setStatus(UserStatus.EMAIL_VERIFIED); // Start at EMAIL_VERIFIED for OAuth users
+            newUser.setDateCreated(new Date());
+            
+            String profilePictureUrl = registrationDTO.getProfilePictureUrl();
+            newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
+            
+            String name = registrationDTO.getName();
+            if (name != null) {
+                newUser.setName(name);
+            } else {
+                newUser.setName(email.split("@")[0]);
+            }
+            
+            newUser = userService.createAndSaveUser(newUser);
+            oauthService.createAndSaveMapping(newUser, externalId, provider);
+            
+            logger.info("OAuth user created gracefully with EMAIL_VERIFIED status: " + LoggingUtils.formatUserInfo(newUser));
+            return UserMapper.toAuthResponseDTO(newUser);
+            
+        } catch (Exception e) {
+            logger.error("Failed to handle OAuth registration gracefully: " + e.getMessage());
+            return null;
+        }
     }
 
     @Override

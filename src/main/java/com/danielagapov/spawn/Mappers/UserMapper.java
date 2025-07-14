@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Mappers;
 
+import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserCreationDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
@@ -21,6 +22,11 @@ public class UserMapper {
                 user.getBio(),
                 user.getProfilePictureUrlString()
         );
+    }
+
+    public static AuthResponseDTO toAuthResponseDTO(User user) {
+        BaseUserDTO baseUserDTO = toDTO(user);
+        return new AuthResponseDTO(baseUserDTO, user.getStatus());
     }
 
     public static List<BaseUserDTO> toDTOList(List<User> users) {

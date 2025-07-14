@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.Auth;
 
 import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
 import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
+import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
@@ -49,9 +50,17 @@ public interface IAuthService {
     /**
      * Registers a new user via OAuth (Google or Apple)
      *
-     * @return the created user DTO
+     * @return the created user DTO with status for onboarding navigation
      */
-    BaseUserDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO);
+    AuthResponseDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO);
+
+    /**
+     * Handles OAuth registration gracefully by converting exceptions to appropriate user states
+     * @param registrationDTO the OAuth registration data
+     * @param exception the exception that occurred during registration
+     * @return a graceful AuthResponseDTO that guides the user to the appropriate next step
+     */
+    AuthResponseDTO handleOAuthRegistrationGracefully(OAuthRegistrationDTO registrationDTO, Exception exception);
 
     /**
      * Helper method to call access/refresh token-generating methods and place them in the appropriate

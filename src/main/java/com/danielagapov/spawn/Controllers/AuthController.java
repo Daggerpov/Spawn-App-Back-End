@@ -6,10 +6,14 @@ import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
 import com.danielagapov.spawn.DTOs.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
+import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.EmailVerificationException;
 import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
+import com.danielagapov.spawn.Exceptions.TokenExpiredException;
+import com.danielagapov.spawn.Exceptions.OAuthProviderUnavailableException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
@@ -56,18 +60,24 @@ public class AuthController {
             @RequestParam(value = "provider", required = true) OAuthProvider provider,
             @RequestParam(value = "email", required = false) String email) {
         try {
-            Optional<BaseUserDTO> optionalDTO;
+            Optional<AuthResponseDTO> optionalDTO;
             optionalDTO = oauthService.signInUser(idToken, email, provider);
             
             if (optionalDTO.isPresent()) {
-                BaseUserDTO baseUserDTO = optionalDTO.get();
-                HttpHeaders headers = authService.makeHeadersForTokens(baseUserDTO.getUsername());
-                return ResponseEntity.ok().headers(headers).body(baseUserDTO);
+                AuthResponseDTO authResponseDTO = optionalDTO.get();
+                HttpHeaders headers = authService.makeHeadersForTokens(authResponseDTO.getUser().getUsername());
+                return ResponseEntity.ok().headers(headers).body(authResponseDTO);
             }
             return ResponseEntity.ok().body(null);
         } catch (IncorrectProviderException e) {
             logger.error("Incorrect provider error during sign-in: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
+        } catch (TokenExpiredException e) {
+            logger.error("Token expired during sign-in: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage()));
+        } catch (OAuthProviderUnavailableException e) {
+            logger.error("OAuth provider unavailable during sign-in: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(e.getMessage()));
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during sign-in: " + e.entityType);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.entityType);
@@ -205,12 +215,30 @@ public class AuthController {
     @PostMapping("register/oauth")
     public ResponseEntity<?> registerViaOAuth(@RequestBody OAuthRegistrationDTO registration) {
         try {
-            BaseUserDTO user = authService.registerUserViaOAuth(registration);
-            HttpHeaders headers = authService.makeHeadersForTokens(user.getUsername());
+            AuthResponseDTO user = authService.registerUserViaOAuth(registration);
+            HttpHeaders headers = authService.makeHeadersForTokens(user.getUser().getUsername());
             return ResponseEntity.ok().headers(headers).body(user);
+        } catch (AccountAlreadyExistsException e) {
+            logger.warn("OAuth registration failed - account already exists: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
         } catch (FieldAlreadyExistsException e) {
             logger.warn("OAuth registration failed - field already exists: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
+        } catch (IncorrectProviderException e) {
+            logger.warn("OAuth registration failed - incorrect provider: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
+        } catch (TokenExpiredException e) {
+            logger.warn("OAuth registration failed - token expired: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage()));
+        } catch (OAuthProviderUnavailableException e) {
+            logger.warn("OAuth registration failed - provider unavailable: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(e.getMessage()));
+        } catch (SecurityException e) {
+            logger.warn("OAuth registration failed - security error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid token: " + e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            logger.warn("OAuth registration failed - invalid arguments: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
             logger.error("Error during OAuth registration: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to register user via OAuth"));
