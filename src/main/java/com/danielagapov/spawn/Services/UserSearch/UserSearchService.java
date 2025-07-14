@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.UserSearch;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
@@ -10,6 +9,7 @@ import com.danielagapov.spawn.DTOs.User.SearchResultUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Enums.UserRelationshipType;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FriendUserMapper;
 import com.danielagapov.spawn.Mappers.UserMapper;
@@ -17,14 +17,12 @@ import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.Analytics.SearchAnalyticsService;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
-import com.danielagapov.spawn.Services.User.IUserService;
-import com.danielagapov.spawn.Services.Analytics.SearchAnalyticsService;
 import com.danielagapov.spawn.Services.FuzzySearch.FuzzySearchService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.SearchedUserResult;
-import lombok.AllArgsConstructor;
-import org.apache.commons.text.similarity.JaroWinklerDistance;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
@@ -585,7 +583,7 @@ public class UserSearchService implements IUserSearchService {
         if (requestingUserId != null) {
             Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
             users = users.stream()
-                    .filter(user -> !excludedUserIds.contains(user.getId()))
+                    .filter(user -> !excludedUserIds.contains(user.getId()) && user.getStatus() == UserStatus.ACTIVE)
                     .collect(Collectors.toList());
         }
         

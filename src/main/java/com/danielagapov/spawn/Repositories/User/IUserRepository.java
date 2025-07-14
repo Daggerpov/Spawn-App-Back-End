@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Repositories.User;
 
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Models.User.User;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Limit;
@@ -23,6 +24,9 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
 
     Optional<User> findUserByEmail(String email);
+
+    @Query("SELECT u FROM User u WHERE u.status = :status")
+    List<User> findAllUsersByStatus(UserStatus status);
 
     @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE CONCAT('%', :query, '%') OR LOWER(u.username) LIKE CONCAT('%', :query, '%')")
     List<User> findUsersWithPartialMatch(String query, Limit limit);

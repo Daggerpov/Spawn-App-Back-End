@@ -336,7 +336,7 @@ public class UserService implements IUserService {
 
     private List<UserDTO> getUserDTOs() {
         try {
-            List<User> users = repository.findAll();
+            List<User> users = repository.findAllUsersByStatus(UserStatus.ACTIVE);
             Map<User, List<UUID>> friendUserIdsMap = users.stream()
                     .collect(Collectors.toMap(
                             user -> user,
