@@ -98,7 +98,7 @@ public class UserServiceTests {
 
         assertFalse(result.isEmpty());
         assertEquals("john_doe", result.get(0).getUsername());
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAllUsersByStatus(UserStatus.ACTIVE);
     }
 
     @Test
@@ -315,7 +315,7 @@ public class UserServiceTests {
         List<UserDTO> result = userService.getAllUsers();
 
         assertTrue(result.isEmpty());
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAllUsersByStatus(UserStatus.ACTIVE);
     }
 
     @Test
