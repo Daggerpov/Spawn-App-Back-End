@@ -56,7 +56,6 @@ public class AdminUserInitializer {
                     // Set as verified and created now
                     adminUser.setStatus(UserStatus.ACTIVE);
                     adminUser.setDateCreated(new Date());
-                    adminUser.setStatus(UserStatus.ACTIVE);
                     
                     // Save to database
                     userRepository.save(adminUser);

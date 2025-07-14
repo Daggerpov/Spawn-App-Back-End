@@ -10,7 +10,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
-@Profile("!test") // Don't load this configuration in test profile
+@Profile({"!test", "!dev"}) // Don't load this configuration in test or dev profile
 public class S3Config {
 
     @Bean

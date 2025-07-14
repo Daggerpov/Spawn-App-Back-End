@@ -38,16 +38,6 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    // Delete
-
-    /**
-     * Used by CleanUnverifiedService to remove expired, unverified users
-     */
-    @Modifying
-    @Transactional
-    @Query(value = "DELETE FROM user WHERE verified = false AND date_created <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
-    int deleteAllExpiredUnverifiedUsers();
-
     @Query(value = "SELECT MAX(u.last_updated) FROM user u " +
             "JOIN user_friend_tag uft ON u.id = uft.user_id " +
             "JOIN friend_tag ft ON uft.friend_tag_id = ft.id " +
