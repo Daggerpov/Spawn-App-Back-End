@@ -487,7 +487,6 @@ public class UserService implements IUserService {
         try {
             logger.info("Marking user as verified " + username);
             User user = repository.findByUsername(username).orElseThrow(() -> new BaseNotFoundException(EntityType.User, username, "username"));
-            user.setVerified(true);
             repository.save(user);
         } catch (Exception e) {
             logger.error("Unexpected error while marking user as verified: " + e.getMessage());

@@ -54,7 +54,7 @@ public class AdminUserInitializer {
                     adminUser.setPassword(passwordEncoder.encode(adminPassword));
                     
                     // Set as verified and created now
-                    adminUser.setVerified(true);
+                    adminUser.setStatus(UserStatus.ACTIVE);
                     adminUser.setDateCreated(new Date());
                     adminUser.setStatus(UserStatus.ACTIVE);
                     

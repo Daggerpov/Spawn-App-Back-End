@@ -1,22 +1,17 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
-import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Models.EmailVerification;
-import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Repositories.IEmailVerificationRepository;
 import com.danielagapov.spawn.Services.Auth.AuthService;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -26,21 +21,15 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import jakarta.mail.MessagingException;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.lenient;
 
 /**
@@ -116,7 +105,6 @@ class AuthServiceTests {
         testUser.setPhoneNumber(testPhone);
         testUser.setBio(testBio);
         testUser.setProfilePictureUrlString(testProfilePicture);
-        testUser.setVerified(false);
         testUser.setDateCreated(new Date());
 
         // Setup test UserDTO - uses constructor
