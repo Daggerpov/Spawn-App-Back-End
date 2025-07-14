@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 
 @Service
 @AllArgsConstructor
@@ -70,7 +71,8 @@ public class ActivityTypeService implements IActivityTypeService {
                 // Auto-assign order numbers for new activity types
                 List<ActivityTypeDTO> processedDTOs = assignOrderNumbersForNewActivityTypes(userId, activityTypeDTOs.getUpdatedActivityTypes());
                 
-                List<ActivityType> activityTypes = ActivityTypeMapper.toEntityList(processedDTOs, creator);
+                // Convert DTOs to entities with proper user lookup for associated friends
+                List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
                 repository.saveAll(activityTypes);
             }
             
@@ -243,29 +245,68 @@ public class ActivityTypeService implements IActivityTypeService {
         
         // Validate orderNum uniqueness against existing activity types that will remain
         // Get existing activity types that will remain after deletions/updates
-        Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
-                .map(ActivityTypeDTO::getId)
-                .collect(Collectors.toSet());
-        
-        List<ActivityType> remainingExistingTypes = existingActivityTypes.stream()
-                .filter(at -> !deletedIds.contains(at.getId()) && !updatedIds.contains(at.getId()))
+        List<ActivityType> remainingExistingActivityTypes = existingActivityTypes.stream()
+                .filter(at -> !deletedIds.contains(at.getId()) && 
+                             !existingIds.contains(at.getId()) || 
+                             !batchDTO.getUpdatedActivityTypes().stream()
+                                     .anyMatch(dto -> dto.getId().equals(at.getId())))
                 .toList();
         
-        Set<Integer> existingOrderNums = remainingExistingTypes.stream()
+        Set<Integer> remainingOrderNums = remainingExistingActivityTypes.stream()
                 .map(ActivityType::getOrderNum)
                 .collect(Collectors.toSet());
         
-        // Check for conflicts between updated orderNums and existing ones
-        // Only validate existing activity types being updated, not new ones
+        // Check for conflicts between updated activity types and remaining ones
         for (Integer orderNum : existingUpdateOrderNums) {
-            if (existingOrderNums.contains(orderNum)) {
+            if (remainingOrderNums.contains(orderNum)) {
                 throw new ActivityTypeValidationException(
-                    String.format("OrderNum %d conflicts with existing activity type. Each activity type must have a unique orderNum.", orderNum)
+                    String.format("orderNum %d conflicts with existing activity type. Each activity type must have a unique orderNum.", 
+                                  orderNum)
                 );
             }
         }
         
-        logger.info(String.format("✅ Activity type validation passed: %d pinned (max %d), orderNum range [0, %d], unique orderNums", 
-                                  finalPinnedCount, MAX_PINNED_ACTIVITY_TYPES, finalTotalCount - 1));
+        logger.info("Activity type validation passed: " + finalPinnedCount + " pinned (max " + MAX_PINNED_ACTIVITY_TYPES + "), " +
+                    "orderNum range [0, " + (finalTotalCount - 1) + "], unique orderNums");
+    }
+
+    /**
+     * Convert DTOs to entities with proper user lookup for associated friends
+     * This prevents issues with detached entities by fetching users from the database
+     */
+    private List<ActivityType> convertDTOsToEntitiesWithFriendLookup(List<ActivityTypeDTO> dtos, User creator) {
+        return dtos.stream()
+                .map(dto -> convertDTOToEntityWithFriendLookup(dto, creator))
+                .toList();
+    }
+
+    /**
+     * Convert a single DTO to entity with proper user lookup for associated friends
+     */
+    private ActivityType convertDTOToEntityWithFriendLookup(ActivityTypeDTO dto, User creator) {
+        // Get associated friends from database instead of creating detached entities
+        List<User> associatedFriends = new ArrayList<>();
+        if (dto.getAssociatedFriends() != null && !dto.getAssociatedFriends().isEmpty()) {
+            for (BaseUserDTO friendDTO : dto.getAssociatedFriends()) {
+                try {
+                    User friend = userService.getUserEntityById(friendDTO.getId());
+                    associatedFriends.add(friend);
+                } catch (Exception e) {
+                    // Log the error and skip this friend if they don't exist
+                    logger.error("Skipping associated friend with ID " + friendDTO.getId() + 
+                               " for activity type '" + dto.getTitle() + "' as user not found: " + e.getMessage());
+                }
+            }
+        }
+
+        return new ActivityType(
+                dto.getId(),
+                dto.getTitle(),
+                associatedFriends,
+                creator,
+                dto.getOrderNum(),
+                dto.getIcon(),
+                dto.getIsPinned() != null ? dto.getIsPinned() : false
+        );
     }
 }
