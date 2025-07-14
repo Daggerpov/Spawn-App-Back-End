@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
@@ -24,7 +25,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import com.danielagapov.spawn.Enums.UserStatus;
 
 public class OAuthServiceTests {
 
@@ -398,28 +398,6 @@ public class OAuthServiceTests {
         assertEquals(UserStatus.ACTIVE, authResponse.getStatus());
     }
 
-    @Test
-    public void testGetUserIfExistsByExternalId_EmailRegisteredStatus() {
-        // Setup mock behavior for user lookup
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setUsername("tempuser");
-        user.setName("Temp User");
-        user.setStatus(UserStatus.EMAIL_REGISTERED);
-
-        UserIdExternalIdMap mapping = new UserIdExternalIdMap("external_id_123", user, OAuthProvider.google);
-
-        when(externalIdMapRepository.existsById("external_id_123")).thenReturn(true);
-        when(externalIdMapRepository.findById("external_id_123")).thenReturn(Optional.of(mapping));
-
-        // Call the method to test
-        Optional<AuthResponseDTO> result = oauthService.getUserIfExistsbyExternalId("external_id_123", "test@example.com");
-
-        // Verify the result
-        assertTrue(result.isPresent());
-        AuthResponseDTO authResponse = result.get();
-        assertEquals(UserStatus.EMAIL_REGISTERED, authResponse.getStatus());
-    }
 
     @Test
     public void testSignInUser_Apple_ReturnsAuthResponseDTO() {

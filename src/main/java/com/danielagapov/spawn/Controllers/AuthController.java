@@ -310,8 +310,8 @@ public class AuthController {
     @GetMapping("quick-sign-in")
     public ResponseEntity<?> quickSignIn(HttpServletRequest request) {
         try {
-            BaseUserDTO user = authService.getUserByToken(request.getHeader("Authorization").substring(7));
-            return new ResponseEntity<>(user, HttpStatus.OK);
+            AuthResponseDTO authResponse = authService.getUserByToken(request.getHeader("Authorization").substring(7));
+            return new ResponseEntity<>(authResponse, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error retrieving user: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Error while performing quick sign-in"));
