@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/{userId}/activity-types")
+@RequestMapping("/api/v1/users/{userId}/activity-types")
 public class ActivityTypeController {
 
     private final IActivityTypeService activityTypeService;
@@ -28,7 +28,7 @@ public class ActivityTypeController {
 
     /**
      * Get activity types owned by a user
-     * GET /api/v1/{userId}/activity-types
+     * GET /api/v1/users/{userId}/activity-types
      */
     @GetMapping
     public ResponseEntity<List<ActivityTypeDTO>> getOwnedActivityTypesForUser(@PathVariable UUID userId) {
@@ -44,7 +44,7 @@ public class ActivityTypeController {
 
     /**
      * Batch update activity types (create, update, delete)
-     * PUT /api/v1/{userId}/activity-types
+     * PUT /api/v1/users/{userId}/activity-types
      */
     @PutMapping
     public ResponseEntity<List<ActivityTypeDTO>> updateActivityTypes(
