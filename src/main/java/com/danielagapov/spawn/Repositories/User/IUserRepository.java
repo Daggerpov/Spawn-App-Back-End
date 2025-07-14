@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Repositories.User;
 
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Models.User.User;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Limit;
@@ -24,6 +25,9 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findUserByEmail(String email);
 
+    @Query("SELECT u FROM User u WHERE u.status = :status")
+    List<User> findAllUsersByStatus(UserStatus status);
+
     @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE CONCAT('%', :query, '%') OR LOWER(u.username) LIKE CONCAT('%', :query, '%')")
     List<User> findUsersWithPartialMatch(String query, Limit limit);
 
@@ -33,16 +37,6 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
-
-    // Delete
-
-    /**
-     * Used by CleanUnverifiedService to remove expired, unverified users
-     */
-    @Modifying
-    @Transactional
-    @Query(value = "DELETE FROM user WHERE verified = false AND date_created <= DATE_SUB(NOW(), INTERVAL 1 DAY)", nativeQuery = true)
-    int deleteAllExpiredUnverifiedUsers();
 
     @Query(value = "SELECT MAX(u.last_updated) FROM user u " +
             "JOIN user_friend_tag uft ON u.id = uft.user_id " +

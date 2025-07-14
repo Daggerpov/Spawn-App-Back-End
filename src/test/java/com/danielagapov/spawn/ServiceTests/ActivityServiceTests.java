@@ -46,6 +46,7 @@ import org.springframework.dao.DataAccessException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -294,11 +295,15 @@ public class ActivityServiceTests {
         Set<UUID> expectedInvited = new HashSet<>(List.of(explicitInviteId));
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(new ArrayList<>(expectedInvited));
 
-        ActivityDTO ActivityDTO = (ActivityDTO) ActivityService.createActivity(creationDTO);
+        FullFeedActivityDTO ActivityDTO = (FullFeedActivityDTO) ActivityService.createActivity(creationDTO);
 
         assertNotNull(ActivityDTO);
         assertEquals("Test Activity", ActivityDTO.getTitle());
-        assertEquals(expectedInvited, new HashSet<>(ActivityDTO.getInvitedUserIds()));
+        // Extract user IDs from the FullFeedActivityDTO's invited users
+        Set<UUID> actualInvitedIds = ActivityDTO.getInvitedUsers().stream()
+                .map(user -> user.getId())
+                .collect(Collectors.toSet());
+        assertEquals(expectedInvited, actualInvitedIds);
 
         ArgumentCaptor<ActivityUser> captor = ArgumentCaptor.forClass(ActivityUser.class);
         verify(activityUserRepository, times(expectedInvited.size())).save(captor.capture());
@@ -387,12 +392,16 @@ public class ActivityServiceTests {
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of(commonUserId));
         when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
 
-        ActivityDTO ActivityDTO = (ActivityDTO) ActivityService.createActivity(creationDTO);
+        FullFeedActivityDTO ActivityDTO = (FullFeedActivityDTO) ActivityService.createActivity(creationDTO);
 
         assertNotNull(ActivityDTO);
         assertEquals("Merged Invites Activity", ActivityDTO.getTitle());
-        assertEquals(1, ActivityDTO.getInvitedUserIds().size());
-        assertTrue(ActivityDTO.getInvitedUserIds().contains(commonUserId));
+        assertEquals(1, ActivityDTO.getInvitedUsers().size());
+        // Extract user IDs from the FullFeedActivityDTO's invited users
+        Set<UUID> actualInvitedIds = ActivityDTO.getInvitedUsers().stream()
+                .map(user -> user.getId())
+                .collect(Collectors.toSet());
+        assertTrue(actualInvitedIds.contains(commonUserId));
 
         verify(activityUserRepository, times(1)).save(any(ActivityUser.class));
         

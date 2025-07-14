@@ -17,6 +17,7 @@ import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.ActivityMapper;
 import com.danielagapov.spawn.Mappers.LocationMapper;
+import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.ActivityUser;
@@ -251,10 +252,10 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
             @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
             @CacheEvict(value = "filteredFeedActivities", allEntries = true),
-            @CacheEvict(value = "userStatsById", key = "#result.creatorUserId")
+            @CacheEvict(value = "userStatsById", key = "#result.creatorUser.id")
     })
     public AbstractActivityDTO createActivity(ActivityCreationDTO ActivityCreationDTO) {
         try {
@@ -288,7 +289,40 @@ public class ActivityService implements IActivityService {
                 new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, new HashSet<>(ActivityCreationDTO.getInvitedFriendUserIds()))
             );
 
-            return ActivityMapper.toDTO(Activity, creator.getId(), null, new ArrayList<>(ActivityCreationDTO.getInvitedFriendUserIds()), null);
+            // Return a FullFeedActivityDTO instead of ActivityDTO to include full location information
+            LocationDTO locationDTO = LocationMapper.toDTO(location);
+            BaseUserDTO creatorUserDTO = UserMapper.toDTO(creator);
+            List<BaseUserDTO> invitedUserDTOs = ActivityCreationDTO.getInvitedFriendUserIds().stream()
+                    .map(userId -> {
+                        try {
+                            return UserMapper.toDTO(userRepository.findById(userId)
+                                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId)));
+                        } catch (Exception e) {
+                            logger.warn("Could not load invited user: " + userId);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            return new FullFeedActivityDTO(
+                    Activity.getId(),
+                    Activity.getTitle(),
+                    Activity.getStartTime(),
+                    Activity.getEndTime(),
+                    locationDTO,
+                    Activity.getActivityType() != null ? Activity.getActivityType().getId() : null,
+                    Activity.getNote(),
+                    Activity.getIcon(),
+                    creatorUserDTO,
+                    new ArrayList<>(), // participantUsers - empty for new activity
+                    invitedUserDTOs,
+                    new ArrayList<>(), // chatMessages - empty for new activity
+                    null, // activityFriendTagColorHexCodeForRequestingUser - not needed for creation response
+                    null, // participationStatus - not applicable for creator
+                    true, // isSelfOwned - true since this is the creator
+                    Activity.getCreatedAt()
+            );
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
             throw new ApplicationException("Failed to create Activity", e);

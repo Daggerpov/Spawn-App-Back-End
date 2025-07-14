@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
 import com.danielagapov.spawn.DTOs.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -265,8 +266,9 @@ public class AuthController {
     public ResponseEntity<?> verifyEmailAndCreateUser(@RequestBody CheckEmailVerificationRequestDTO request) {
         try {
             BaseUserDTO user = authService.checkEmailVerificationCode(request.getEmail(), request.getVerificationCode());
+            AuthResponseDTO authResponse = new AuthResponseDTO(user, UserStatus.EMAIL_VERIFIED);
             HttpHeaders headers = authService.makeHeadersForTokens(user.getUsername());
-            return ResponseEntity.ok().headers(headers).body(user);
+            return ResponseEntity.ok().headers(headers).body(authResponse);
         } catch (EmailVerificationException e) {
             logger.warn("Email verification failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));

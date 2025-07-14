@@ -57,7 +57,17 @@ public class UserSocialMediaService implements IUserSocialMediaService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         UserSocialMedia socialMedia = userSocialMediaRepository.findByUserId(userId)
-                .orElse(new UserSocialMedia(user));
+                .orElseGet(() -> {
+                    try {
+                        UserSocialMedia newSocialMedia = new UserSocialMedia(user);
+                        return userSocialMediaRepository.save(newSocialMedia);
+                    } catch (DataIntegrityViolationException e) {
+                        // Handle race condition - another thread already created the record
+                        // So we fetch it again
+                        return userSocialMediaRepository.findByUserId(userId)
+                                .orElseThrow(() -> new RuntimeException("Failed to create or find social media record for user: " + userId));
+                    }
+                });
 
         if (updateDTO.getWhatsappNumber() != null) {
             // Set to null if empty or blank, otherwise set the value

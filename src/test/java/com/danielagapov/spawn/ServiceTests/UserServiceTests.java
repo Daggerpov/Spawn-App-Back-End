@@ -6,6 +6,7 @@ import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.DTOs.UserIdActivityTimeDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
@@ -89,14 +90,15 @@ public class UserServiceTests {
     @Test
     void getAllUsers_ShouldReturnList_WhenUsersExist() {
         User user = new User(UUID.randomUUID(), "john_doe", "profile.jpg", "John Doe", "A bio", "john.doe@example.com");
+        user.setStatus(UserStatus.ACTIVE);
 
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAllUsersByStatus(UserStatus.ACTIVE)).thenReturn(List.of(user));
 
         List<UserDTO> result = userService.getAllUsers();
 
         assertFalse(result.isEmpty());
         assertEquals("john_doe", result.get(0).getUsername());
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAllUsersByStatus(UserStatus.ACTIVE);
     }
 
     @Test
@@ -260,7 +262,7 @@ public class UserServiceTests {
 
     @Test
     void getAllUsers_ShouldThrowException_WhenDatabaseErrorOccurs() {
-        when(userRepository.findAll()).thenThrow(new DataAccessException("Database error") {
+        when(userRepository.findAllUsersByStatus(UserStatus.ACTIVE)).thenThrow(new DataAccessException("Database error") {
         });
 
         BasesNotFoundException exception = assertThrows(BasesNotFoundException.class, () -> userService.getAllUsers());
@@ -308,12 +310,12 @@ public class UserServiceTests {
 
     @Test
     void getAllUsers_ShouldReturnEmptyList_WhenNoUsersExist() {
-        when(userRepository.findAll()).thenReturn(List.of());
+        when(userRepository.findAllUsersByStatus(UserStatus.ACTIVE)).thenReturn(List.of());
 
         List<UserDTO> result = userService.getAllUsers();
 
         assertTrue(result.isEmpty());
-        verify(userRepository, times(1)).findAll();
+        verify(userRepository, times(1)).findAllUsersByStatus(UserStatus.ACTIVE);
     }
 
     @Test

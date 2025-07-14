@@ -2,12 +2,11 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.DTOs.User.SearchResultUserDTO;
 import com.danielagapov.spawn.Enums.UserRelationshipType;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
@@ -24,15 +23,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Limit;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,6 +75,11 @@ class UserSearchServiceTests {
         user3 = new User(UUID.randomUUID(), "bob99", null, "Bob Smith", "Bio of Bob", "bob@example.com");
         user4 = new User(UUID.randomUUID(), "albert007", null, "Albert Jones", "Bio of Albert", "albert@example.com");
         user5 = new User(UUID.randomUUID(), "alexw", null, "Alex Williams", "Bio of Alex", "alex@example.com");
+        user1.setStatus(UserStatus.ACTIVE);
+        user2.setStatus(UserStatus.ACTIVE);
+        user3.setStatus(UserStatus.ACTIVE);
+        user4.setStatus(UserStatus.ACTIVE);
+        user5.setStatus(UserStatus.ACTIVE);
     }
 
     @Test
