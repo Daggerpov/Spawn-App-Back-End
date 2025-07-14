@@ -19,6 +19,9 @@ public class FriendRequestNotificationEvent extends NotificationEvent {
         // Set data
         addData("senderId", sender.getId().toString());
         
+        // Override the default type mapping to match what the mobile app expects
+        addData("type", "friend-request");
+        
         // Set title and message
         setTitle("New Friend Request");
         setMessage(sender.getUsername() + " sent you a friend request");

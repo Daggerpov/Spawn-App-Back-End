@@ -85,8 +85,22 @@ public class FriendRequestService implements IFriendRequestService {
                 logger.info("Friend request already exists in reverse direction from receiver: " + LoggingUtils.formatUserInfo(receiver) +
                         " to sender: " + LoggingUtils.formatUserInfo(sender) + ". Auto-accepting the existing request.");
                 
-                // Auto-accept the existing friend request
+                // Auto-accept the existing friend request (this will create the friendship and send notification to the original sender)
                 acceptFriendRequest(reverseRequest.getId());
+                
+                // Send an additional notification to the current sender (who tried to send the request)
+                // to let them know their attempted request resulted in becoming friends
+                eventPublisher.publishEvent(
+                    new FriendRequestAcceptedNotificationEvent(sender, receiverId)
+                );
+                
+                // Evict friend request caches for both users since mutual requests were resolved
+                if (cacheManager.getCache("incomingFetchFriendRequests") != null) {
+                    cacheManager.getCache("incomingFetchFriendRequests").evict(senderId);
+                }
+                if (cacheManager.getCache("sentFetchFriendRequests") != null) {
+                    cacheManager.getCache("sentFetchFriendRequests").evict(senderId);
+                }
                 
                 // Return the DTO for the reverse request that was accepted
                 return FriendRequestMapper.toDTO(reverseRequest);

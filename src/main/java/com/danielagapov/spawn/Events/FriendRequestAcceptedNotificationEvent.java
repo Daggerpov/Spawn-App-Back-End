@@ -19,6 +19,9 @@ public class FriendRequestAcceptedNotificationEvent extends NotificationEvent {
         // Set data
         addData("receiverId", receiver.getId().toString());
         
+        // Override the default type mapping to match what the mobile app expects
+        addData("type", "friend-accepted");
+        
         // Set title and message
         setTitle("Friend Request Accepted");
         setMessage(receiver.getUsername() + " has accepted your friend request");
