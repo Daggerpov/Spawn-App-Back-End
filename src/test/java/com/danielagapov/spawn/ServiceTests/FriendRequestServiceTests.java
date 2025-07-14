@@ -227,4 +227,116 @@ class FriendRequestServiceTests {
         verify(repository, times(1)).findByReceiverId(receiverId);
     }
 
+    @Test
+    void saveFriendRequest_ShouldReturnExistingRequest_WhenRequestAlreadyExists() {
+        // Arrange: Mock existing request in same direction
+        when(userService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(repository.findBySenderIdAndReceiverId(senderId, receiverId))
+            .thenReturn(List.of(friendRequest));
+        when(repository.findBySenderIdAndReceiverId(receiverId, senderId))
+            .thenReturn(List.of()); // No reverse request
+
+        // Act
+        CreateFriendRequestDTO result = friendRequestService.saveFriendRequest(friendRequestDTO);
+
+        // Assert: Should return existing request without creating new one
+        assertNotNull(result);
+        assertEquals(friendRequest.getId(), result.getId());
+        assertEquals(senderId, result.getSenderUserId());
+        assertEquals(receiverId, result.getReceiverUserId());
+        
+        // Verify: No new request was saved
+        verify(repository, never()).save(any(FriendRequest.class));
+        
+        // Verify: Existing request lookup was performed
+        verify(repository).findBySenderIdAndReceiverId(senderId, receiverId);
+    }
+
+    @Test
+    void saveFriendRequest_ShouldAutoAcceptReverseRequest_WhenReverseRequestExists() {
+        // Arrange: Create reverse friend request (receiver -> sender)
+        FriendRequest reverseRequest = new FriendRequest();
+        UUID reverseRequestId = UUID.randomUUID();
+        reverseRequest.setId(reverseRequestId);
+        reverseRequest.setSender(receiver);
+        reverseRequest.setReceiver(sender);
+
+        when(userService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        
+        // Mock: No existing request in the same direction
+        when(repository.findBySenderIdAndReceiverId(senderId, receiverId))
+            .thenReturn(List.of());
+        
+        // Mock: Reverse request exists
+        when(repository.findBySenderIdAndReceiverId(receiverId, senderId))
+            .thenReturn(List.of(reverseRequest));
+        
+        // Mock: Reverse request can be found by ID for acceptance
+        when(repository.findById(reverseRequestId)).thenReturn(Optional.of(reverseRequest));
+        
+        // Mock cache behavior for auto-acceptance
+        when(cacheManager.getCache("incomingFetchFriendRequests")).thenReturn(mockCache);
+        when(cacheManager.getCache("sentFetchFriendRequests")).thenReturn(mockCache);
+        when(cacheManager.getCache("friendsByUserId")).thenReturn(mockCache);
+
+        // Act: User A tries to send request to User B (who already requested User A)
+        CreateFriendRequestDTO result = friendRequestService.saveFriendRequest(friendRequestDTO);
+
+        // Assert: Should return the reverse request that was accepted
+        assertNotNull(result);
+        assertEquals(reverseRequestId, result.getId());
+        assertEquals(receiverId, result.getSenderUserId()); // Original sender of reverse request
+        assertEquals(senderId, result.getReceiverUserId()); // Original receiver of reverse request
+
+        // Verify: Friendship was created
+        verify(userService).saveFriendToUser(receiverId, senderId);
+
+        // Verify: Reverse request was deleted (as part of acceptance)
+        verify(repository).deleteById(reverseRequestId);
+
+        // Verify: Two notifications were published (both should be FriendRequestAcceptedNotificationEvent)
+        verify(eventPublisher, times(2)).publishEvent(any(Object.class));
+
+        // Verify: No new request was saved since we auto-accepted existing one
+        verify(repository, never()).save(any(FriendRequest.class));
+
+        // Verify: Cache evictions occurred
+        verify(mockCache, atLeast(3)).evict(any());
+    }
+
+    @Test
+    void saveFriendRequest_ShouldCreateNewRequest_WhenNoExistingRequests() {
+        // Arrange: No existing requests in either direction
+        when(userService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(repository.findBySenderIdAndReceiverId(senderId, receiverId))
+            .thenReturn(List.of());
+        when(repository.findBySenderIdAndReceiverId(receiverId, senderId))
+            .thenReturn(List.of());
+        when(repository.save(any(FriendRequest.class))).thenReturn(friendRequest);
+        
+        // Mock cache behavior
+        when(cacheManager.getCache("recommendedFriends")).thenReturn(mockCache);
+
+        // Act
+        CreateFriendRequestDTO result = friendRequestService.saveFriendRequest(friendRequestDTO);
+
+        // Assert: New request was created
+        assertNotNull(result);
+        assertEquals(friendRequest.getId(), result.getId());
+        assertEquals(senderId, result.getSenderUserId());
+        assertEquals(receiverId, result.getReceiverUserId());
+
+        // Verify: New request was saved
+        verify(repository).save(any(FriendRequest.class));
+
+        // Verify: Friend request notification was published (not acceptance notification)
+        verify(eventPublisher).publishEvent(any(Object.class));
+
+        // Verify: Recommended friends cache was evicted
+        verify(mockCache, times(2)).evict(any()); // For both sender and receiver
+    }
+
 }
