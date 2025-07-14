@@ -50,7 +50,6 @@ public class User implements Serializable {
     @Column(nullable = true, unique = true)
     private String email;
     private String password;
-    private boolean verified;
     private Date dateCreated;
     
     @Column(name = "last_updated")
