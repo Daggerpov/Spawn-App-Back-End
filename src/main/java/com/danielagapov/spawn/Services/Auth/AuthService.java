@@ -113,7 +113,6 @@ public class AuthService implements IAuthService {
                 logger.info("Verifying email for user with username: " + username);
                 
                 User user = userService.getUserEntityByUsername(username);
-                user.setVerified(true);
                 userService.saveEntity(user);
                 
                 logger.info("Email verified successfully for user: " + LoggingUtils.formatUserInfo(user));
@@ -495,7 +494,6 @@ public class AuthService implements IAuthService {
         user.setPassword(passwordEncoder.encode(authUserDTO.getPassword()));
         user.setName(authUserDTO.getName()); // Set the name from AuthUserDTO
         user.setPhoneNumber(authUserDTO.getUsername()); // Use username as phone number placeholder
-        user.setVerified(false);
         user.setDateCreated(new Date());
 
         user = userService.createAndSaveUser(user);
