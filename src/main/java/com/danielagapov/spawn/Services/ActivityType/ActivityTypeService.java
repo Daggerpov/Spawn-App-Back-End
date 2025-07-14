@@ -245,11 +245,12 @@ public class ActivityTypeService implements IActivityTypeService {
         
         // Validate orderNum uniqueness against existing activity types that will remain
         // Get existing activity types that will remain after deletions/updates
+        Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
+                .map(ActivityTypeDTO::getId)
+                .collect(Collectors.toSet());
+        
         List<ActivityType> remainingExistingActivityTypes = existingActivityTypes.stream()
-                .filter(at -> !deletedIds.contains(at.getId()) && 
-                             !existingIds.contains(at.getId()) || 
-                             !batchDTO.getUpdatedActivityTypes().stream()
-                                     .anyMatch(dto -> dto.getId().equals(at.getId())))
+                .filter(at -> !deletedIds.contains(at.getId()) && !updatedIds.contains(at.getId()))
                 .toList();
         
         Set<Integer> remainingOrderNums = remainingExistingActivityTypes.stream()
