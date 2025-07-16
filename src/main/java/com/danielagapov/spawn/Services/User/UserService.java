@@ -29,6 +29,7 @@ import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Util.LoggingUtils;
+import com.danielagapov.spawn.Util.PhoneNumberValidator;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -792,6 +793,61 @@ public class UserService implements IUserService {
             return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error("Error getting user profile info: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public List<BaseUserDTO> findUsersByPhoneNumbers(List<String> phoneNumbers, UUID requestingUserId) {
+        try {
+            logger.info("Finding users by phone numbers for contact cross-reference. Phone numbers count: " + phoneNumbers.size() + ", requesting user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
+            
+            List<User> matchingUsers = new ArrayList<>();
+            
+            // Clean and normalize phone numbers before searching
+            for (String phoneNumber : phoneNumbers) {
+                if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
+                    String cleanedPhoneNumber = PhoneNumberValidator.cleanPhoneNumber(phoneNumber);
+                    
+                    // Skip if the cleaned phone number is empty or invalid
+                    if (cleanedPhoneNumber != null && !cleanedPhoneNumber.isEmpty()) {
+                        // Search for users with this phone number
+                        try {
+                            List<User> usersWithPhone = repository.findAll()
+                                .stream()
+                                .filter(user -> {
+                                    String userPhone = user.getPhoneNumber();
+                                    if (userPhone != null) {
+                                        String cleanedUserPhone = PhoneNumberValidator.cleanPhoneNumber(userPhone);
+                                        return cleanedUserPhone != null && cleanedUserPhone.equals(cleanedPhoneNumber);
+                                    }
+                                    return false;
+                                })
+                                .collect(Collectors.toList());
+                            
+                            matchingUsers.addAll(usersWithPhone);
+                        } catch (Exception e) {
+                            logger.warn("Error searching for phone number: " + cleanedPhoneNumber + ": " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            
+            // Remove duplicates and filter out the requesting user and admin users
+            List<User> filteredUsers = matchingUsers.stream()
+                .distinct()
+                .filter(user -> !user.getId().equals(requestingUserId)) // Exclude requesting user
+                .filter(user -> !isAdminUser(user)) // Exclude admin users
+                .filter(user -> user.getStatus() == UserStatus.ACTIVE) // Only include active users
+                .collect(Collectors.toList());
+            
+            logger.info("Found " + filteredUsers.size() + " matching users for contact cross-reference");
+            
+            // Convert to DTOs
+            return UserMapper.toDTOList(filteredUsers);
+            
+        } catch (Exception e) {
+            logger.error("Error finding users by phone numbers for user: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ": " + e.getMessage());
             throw e;
         }
     }

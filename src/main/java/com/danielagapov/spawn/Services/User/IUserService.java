@@ -364,4 +364,13 @@ public interface IUserService {
     UserProfileInfoDTO getUserProfileInfo(UUID userId);
 
     BaseUserDTO setOptionalDetails(UUID userId, OptionalDetailsDTO optionalDetailsDTO);
+
+    /**
+     * Finds users by their phone numbers for contact cross-referencing.
+     *
+     * @param phoneNumbers list of phone numbers to search for
+     * @param requestingUserId the unique identifier of the user making the request (to exclude from results)
+     * @return List of BaseUserDTO objects for users with matching phone numbers
+     */
+    List<BaseUserDTO> findUsersByPhoneNumbers(List<String> phoneNumbers, UUID requestingUserId);
 }
