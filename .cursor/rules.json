@@ -27,6 +27,35 @@
         "auto_import": true
       }
     },
+    "lombok_usage": {
+      "description": "CRITICAL: Always use Lombok annotations to reduce boilerplate code",
+      "mandatory_rules": [
+        "ALWAYS use @Data instead of manually writing getters, setters, toString, equals, hashCode",
+        "ALWAYS use @NoArgsConstructor and @AllArgsConstructor instead of manual constructors",
+        "NEVER write boilerplate code that Lombok can generate",
+        "Use @Builder for complex object construction patterns",
+        "Import Lombok annotations consistently and in proper order"
+      ],
+      "common_annotations": {
+        "@Data": "Generates getters, setters, toString, equals, hashCode, and requiredArgsConstructor",
+        "@NoArgsConstructor": "Generates a parameter-less constructor",
+        "@AllArgsConstructor": "Generates a constructor with parameters for all fields",
+        "@Builder": "Implements the builder pattern for object construction",
+        "@Getter/@Setter": "Individual getter/setter generation (use sparingly, prefer @Data)",
+        "@ToString": "Generates toString method (included in @Data)",
+        "@EqualsAndHashCode": "Generates equals and hashCode methods (included in @Data)"
+      },
+      "import_pattern": [
+        "lombok.* imports should come after javax.* and before project-specific imports",
+        "Order: lombok.AllArgsConstructor, lombok.Data, lombok.NoArgsConstructor (alphabetical)"
+      ],
+      "forbidden_patterns": [
+        "Manual getter/setter methods when @Data can be used",
+        "Manual toString() methods when @Data/@ToString can be used", 
+        "Manual equals()/hashCode() methods when @Data/@EqualsAndHashCode can be used",
+        "Manual constructors when @NoArgsConstructor/@AllArgsConstructor can be used"
+      ]
+    },
     "architecture": {
       "description": "CRITICAL: Maintain proper separation of concerns between layers",
       "service_controller_separation": {
@@ -222,18 +251,60 @@
         "**/DTOs/**/*.java"
       ],
       "tags": ["dto", "data-transfer"],
+      "mandatory_rules": [
+        "ALWAYS use Lombok annotations (@Data, @NoArgsConstructor, @AllArgsConstructor) instead of manual getters/setters",
+        "NEVER write manual constructors, getters, or setters when Lombok can generate them",
+        "ALWAYS implement Serializable interface for DTOs that might be cached",
+        "Import Lombok annotations at the top of the file in consistent order",
+        "Use proper import organization: lombok imports after java/javax imports"
+      ],
+      "required_annotations": [
+        "@Data - Generates getters, setters, toString, equals, hashCode",
+        "@NoArgsConstructor - Generates default constructor", 
+        "@AllArgsConstructor - Generates constructor with all fields"
+      ],
+      "import_order": [
+        "java.* imports",
+        "javax.* imports", 
+        "External library imports (lombok.*)",
+        "Project-specific imports (com.danielagapov.spawn.*)"
+      ],
+      "forbidden_patterns": [
+        "Manual getter/setter methods when Lombok can generate them",
+        "Manual constructors when @NoArgsConstructor/@AllArgsConstructor can be used",
+        "DTOs without Lombok annotations",
+        "Missing Serializable interface for cacheable DTOs"
+      ],
       "snippets": {
         "dto_class": {
           "prefix": "dto",
           "body": [
+            "import lombok.AllArgsConstructor;",
+            "import lombok.Data;", 
+            "import lombok.NoArgsConstructor;",
+            "",
+            "import java.io.Serializable;",
+            "",
             "@Data",
             "@NoArgsConstructor",
+            "@AllArgsConstructor",
+            "public class ${1:${TM_FILENAME_BASE}} implements Serializable {",
+            "    $0",
+            "}"
+          ],
+          "description": "Create a DTO class with proper Lombok annotations and Serializable interface"
+        },
+        "simple_dto": {
+          "prefix": "simpledto",
+          "body": [
+            "@Data",
+            "@NoArgsConstructor", 
             "@AllArgsConstructor",
             "public class ${1:${TM_FILENAME_BASE}} {",
             "    $0",
             "}"
           ],
-          "description": "Create a DTO class"
+          "description": "Create a simple DTO class with Lombok annotations (no Serializable)"
         }
       }
     }
