@@ -30,6 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -201,15 +202,61 @@ public class AuthService implements IAuthService {
 
 
     @Override
+    @Transactional
     public AuthResponseDTO registerUserViaOAuth(OAuthRegistrationDTO registrationDTO) {
         String email = registrationDTO.getEmail();
-        String idToken = registrationDTO.getIdToken();  // Changed from getExternalIdToken to getIdToken
+        String idToken = registrationDTO.getIdToken();
         OAuthProvider provider = registrationDTO.getProvider();
         
         if (email == null && idToken == null) {
             throw new IllegalArgumentException("Email and idToken cannot be null for OAuth registration");
         }
         
+        // Retry logic to handle concurrent OAuth registrations
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return registerUserViaOAuthInternal(registrationDTO, email, idToken, provider, attempt, maxRetries);
+            } catch (org.springframework.dao.DataIntegrityViolationException | 
+                     org.springframework.dao.OptimisticLockingFailureException | 
+                     org.hibernate.StaleObjectStateException e) {
+                
+                logger.warn("Concurrent OAuth registration detected on attempt " + attempt + "/" + maxRetries + 
+                           " for email: " + email + ". " + e.getMessage());
+                
+                if (attempt == maxRetries) {
+                    logger.error("Failed to complete OAuth registration after " + maxRetries + 
+                               " attempts due to concurrent modifications");
+                    throw new RuntimeException("Unable to process OAuth registration due to high concurrency. Please try again.");
+                }
+                
+                // Check if user was actually created by another concurrent request
+                try {
+                    String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
+                    Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
+                    if (existingUser.isPresent()) {
+                        logger.info("User was created by concurrent request, returning existing user");
+                        return existingUser.get();
+                    }
+                } catch (Exception checkEx) {
+                    logger.warn("Error checking for existing user during retry: " + checkEx.getMessage());
+                }
+                
+                // Wait briefly before retry
+                try {
+                    Thread.sleep(100 * attempt); // Progressive backoff
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted during OAuth registration retry");
+                }
+            }
+        }
+        
+        throw new RuntimeException("OAuth registration failed after all retry attempts");
+    }
+    
+    private AuthResponseDTO registerUserViaOAuthInternal(OAuthRegistrationDTO registrationDTO, String email, 
+                                                        String idToken, OAuthProvider provider, int attempt, int maxRetries) {
         // Verify OAuth token and get external ID
         // Note: checkOAuthRegistration will handle incomplete users by deleting them
         String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
@@ -236,6 +283,7 @@ public class AuthService implements IAuthService {
         String profilePictureUrl = registrationDTO.getProfilePictureUrl();
         newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
 
+        logger.info(String.format("Creating OAuth user on attempt %d/%d: %s", attempt, maxRetries, email));
         newUser = userService.createAndSaveUser(newUser);
         
         // Create OAuth mapping

@@ -301,9 +301,12 @@ public class OAuthService implements IOAuthService {
                         try {
                             userService.deleteUserById(existingUser.getId());
                             // The mapping will be cascade deleted with the user
+                            logger.info("Successfully deleted incomplete user, proceeding with fresh registration");
+                            return externalUserId; // Return immediately to allow fresh registration
                         } catch (Exception e) {
                             logger.warn("Error deleting incomplete user: " + e.getMessage());
                             // Continue with registration as the user might have been deleted by another transaction
+                            return externalUserId; // Still allow registration to proceed
                         }
                     } else {
                         // For ACTIVE users, return the external ID so the registration flow can handle it
@@ -370,18 +373,44 @@ public class OAuthService implements IOAuthService {
     @Override
     @Transactional
     public void createAndSaveMapping(User user, String externalUserId, OAuthProvider provider) {
-        try {
-            // Use upsert pattern by creating a new mapping with the same external ID
-            // JPA will merge/update if the ID already exists, or create new if it doesn't
-            // This prevents race conditions that occur with separate find-delete-create operations
-            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
-            logger.info(String.format("Upserting mapping for external ID: %s", externalUserId));
-            
-            UserIdExternalIdMap savedMapping = externalIdMapRepository.save(mapping);
-            logger.info("Mapping successfully saved/updated: " + savedMapping);
-        } catch (Exception e) {
-            logger.error("Error creating/updating mapping: " + e.getMessage());
-            throw e;
+        // Retry logic to handle concurrent modifications
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Use upsert pattern by creating a new mapping with the same external ID
+                // JPA will merge/update if the ID already exists, or create new if it doesn't
+                // This prevents race conditions that occur with separate find-delete-create operations
+                UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
+                logger.info(String.format("Upserting mapping for external ID: %s (attempt %d/%d)", externalUserId, attempt, maxRetries));
+                
+                UserIdExternalIdMap savedMapping = externalIdMapRepository.save(mapping);
+                logger.info("Mapping successfully saved/updated: " + savedMapping);
+                return; // Success - exit retry loop
+                
+            } catch (org.springframework.dao.OptimisticLockingFailureException | 
+                     org.hibernate.StaleObjectStateException | 
+                     org.springframework.dao.DataIntegrityViolationException e) {
+                
+                logger.warn("Concurrent modification detected during mapping creation on attempt " + attempt + "/" + maxRetries + 
+                           " for external ID: " + externalUserId + ". " + e.getMessage());
+                
+                if (attempt == maxRetries) {
+                    logger.error("Failed to create/update mapping after " + maxRetries + 
+                               " attempts due to concurrent modifications");
+                    throw new RuntimeException("Unable to complete OAuth mapping creation due to high concurrency. Please try again.");
+                }
+                
+                // Wait briefly before retry to allow other transactions to complete
+                try {
+                    Thread.sleep(50 * attempt); // Progressive backoff (50ms, 100ms, 150ms)
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted during OAuth mapping creation retry");
+                }
+            } catch (Exception e) {
+                logger.error("Unexpected error creating/updating mapping: " + e.getMessage());
+                throw e;
+            }
         }
     }
 
