@@ -1,22 +1,16 @@
 package com.danielagapov.spawn.DTOs;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
 import java.util.List;
 
-public class ContactCrossReferenceResponseDTO {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ContactCrossReferenceResponseDTO implements Serializable {
     private List<BaseUserDTO> users;
-
-    public ContactCrossReferenceResponseDTO() {}
-
-    public ContactCrossReferenceResponseDTO(List<BaseUserDTO> users) {
-        this.users = users;
-    }
-
-    public List<BaseUserDTO> getUsers() {
-        return users;
-    }
-
-    public void setUsers(List<BaseUserDTO> users) {
-        this.users = users;
-    }
 } 
