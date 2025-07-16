@@ -237,6 +237,35 @@ public class OAuthService implements IOAuthService {
     @Override
     @Transactional
     public String checkOAuthRegistration(String email, String idToken, OAuthProvider provider) {
+        // Retry logic to handle concurrent modifications
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return checkOAuthRegistrationInternal(email, idToken, provider);
+            } catch (org.springframework.dao.OptimisticLockingFailureException | 
+                     org.hibernate.StaleObjectStateException e) {
+                logger.warn("Concurrent modification detected on attempt " + attempt + "/" + maxRetries + 
+                           " for external user: " + email + ". " + e.getMessage());
+                
+                if (attempt == maxRetries) {
+                    logger.error("Failed to complete OAuth registration check after " + maxRetries + 
+                               " attempts due to concurrent modifications");
+                    throw new RuntimeException("Unable to process OAuth registration due to high concurrency. Please try again.");
+                }
+                
+                // Wait briefly before retry to allow other transactions to complete
+                try {
+                    Thread.sleep(100 * attempt); // Progressive backoff
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted during OAuth registration retry");
+                }
+            }
+        }
+        return null; // Should never reach here
+    }
+    
+    private String checkOAuthRegistrationInternal(String email, String idToken, OAuthProvider provider) {
         try {
             // Get the appropriate OAuth strategy
             OAuthStrategy oauthStrategy = oauthProviders.get(provider);
@@ -245,23 +274,37 @@ public class OAuthService implements IOAuthService {
                 String externalUserId = oauthStrategy.verifyIdToken(idToken);
                 logger.info("Successfully verified " + provider + " ID token and extracted user ID: " + externalUserId);
 
-                // Check if this external user already exists
-                boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
+                // Perform all checks atomically within the transaction
+                UserIdExternalIdMap existingMapping = null;
+                try {
+                    existingMapping = externalIdMapRepository.findById(externalUserId).orElse(null);
+                } catch (Exception e) {
+                    logger.warn("Error checking existing mapping: " + e.getMessage());
+                }
 
-                // Check if a user exists with this email
-                boolean existsByEmail = userService.existsByEmail(email);
+                User existingUserByEmail = null;
+                try {
+                    existingUserByEmail = userService.existsByEmail(email) ? userService.getUserByEmail(email) : null;
+                } catch (Exception e) {
+                    logger.warn("Error checking existing user by email: " + e.getMessage());
+                }
 
                 // Case 1: There's already a mapping for this externalId
-                if (existsByExternalId) {
+                if (existingMapping != null) {
                     logger.info("Existing user detected in checkOAuthRegistration, mapping already exists");
-                    User existingUser = getMapping(externalUserId).getUser();
+                    User existingUser = existingMapping.getUser();
                     
                     // Only delete users that have non-active statuses (null is treated as active for backward compatibility)
                     if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
                         logger.info("Found incomplete user account (status: " + existingUser.getStatus() + "). Allowing re-registration.");
                         // Delete the incomplete user and their mapping to allow fresh registration
-                        userService.deleteUserById(existingUser.getId());
-                        // The mapping will be cascade deleted with the user
+                        try {
+                            userService.deleteUserById(existingUser.getId());
+                            // The mapping will be cascade deleted with the user
+                        } catch (Exception e) {
+                            logger.warn("Error deleting incomplete user: " + e.getMessage());
+                            // Continue with registration as the user might have been deleted by another transaction
+                        }
                     } else {
                         // For ACTIVE users, return the external ID so the registration flow can handle it
                         // This allows the registerUserViaOAuth method to redirect to sign-in behavior
@@ -273,7 +316,7 @@ public class OAuthService implements IOAuthService {
                 // Case 2: There's already a Spawn user with this email address, but no mapping with this external id
                 // In this case, the user signed in with a different provider initially, so we should not allow creation
                 // with this provider
-                if (existsByEmail) {
+                if (existingUserByEmail != null) {
                     logger.info("Existing user detected in checkOAuthRegistration, email already exists");
                     try {
                         UserIdExternalIdMap externalIdMap = getMappingByUserEmail(email);
@@ -283,8 +326,13 @@ public class OAuthService implements IOAuthService {
                         if (existingUser.getStatus() != null && existingUser.getStatus() != UserStatus.ACTIVE) {
                             logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-registration.");
                             // Delete the incomplete user and their mapping to allow fresh registration
-                            userService.deleteUserById(existingUser.getId());
-                            // The mapping will be cascade deleted with the user
+                            try {
+                                userService.deleteUserById(existingUser.getId());
+                                // The mapping will be cascade deleted with the user
+                            } catch (Exception e) {
+                                logger.warn("Error deleting incomplete user by email: " + e.getMessage());
+                                // Continue with registration as the user might have been deleted by another transaction
+                            }
                         } else {
                             OAuthProvider existingProvider = externalIdMap.getProvider();
                             String providerName = existingProvider == OAuthProvider.google ? "Google" : "Apple";
@@ -294,9 +342,8 @@ public class OAuthService implements IOAuthService {
                         logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Cleaning up orphaned user.");
                         // Delete the orphaned user to allow new registration
                         try {
-                            User orphanedUser = userService.getUserByEmail(email);
-                            userService.deleteUserById(orphanedUser.getId());
-                            logger.info("Orphaned user deleted: " + orphanedUser.getId() + " with email: " + orphanedUser.getEmail());
+                            userService.deleteUserById(existingUserByEmail.getId());
+                            logger.info("Orphaned user deleted: " + existingUserByEmail.getId() + " with email: " + existingUserByEmail.getEmail());
                         } catch (Exception deleteException) {
                             logger.error("Failed to delete orphaned user: " + deleteException.getMessage());
                         }
@@ -324,24 +371,14 @@ public class OAuthService implements IOAuthService {
     @Transactional
     public void createAndSaveMapping(User user, String externalUserId, OAuthProvider provider) {
         try {
-            // Check if a mapping already exists for this external ID
-            UserIdExternalIdMap existingMapping = externalIdMapRepository.findById(externalUserId).orElse(null);
+            // Use upsert pattern by creating a new mapping with the same external ID
+            // JPA will merge/update if the ID already exists, or create new if it doesn't
+            // This prevents race conditions that occur with separate find-delete-create operations
+            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
+            logger.info(String.format("Upserting mapping for external ID: %s", externalUserId));
             
-            if (existingMapping != null) {
-                logger.info("Existing mapping found for external ID: " + externalUserId + ". Deleting and creating new mapping.");
-                // Delete the existing mapping and create a new one
-                externalIdMapRepository.delete(existingMapping);
-                logger.info("Existing mapping deleted");
-            }
-            
-            // Create new mapping (whether existing was deleted or not)
-            {
-                // Create new mapping
-                UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
-                logger.info(String.format("Saving new mapping: {mapping: %s}", mapping));
-                externalIdMapRepository.save(mapping);
-                logger.info("New mapping saved");
-            }
+            UserIdExternalIdMap savedMapping = externalIdMapRepository.save(mapping);
+            logger.info("Mapping successfully saved/updated: " + savedMapping);
         } catch (Exception e) {
             logger.error("Error creating/updating mapping: " + e.getMessage());
             throw e;
