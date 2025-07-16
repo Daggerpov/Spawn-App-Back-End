@@ -236,13 +236,25 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(e.getMessage()));
         } catch (SecurityException e) {
             logger.warn("OAuth registration failed - security error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Invalid token: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Authentication failed. Please try signing in again."));
         } catch (IllegalArgumentException e) {
             logger.warn("OAuth registration failed - invalid arguments: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Invalid registration data. Please try again."));
+        } catch (org.springframework.dao.DataAccessException e) {
+            logger.error("Database error during OAuth registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Registration temporarily unavailable. Please try again."));
+        } catch (RuntimeException e) {
+            // Handle concurrency and other runtime exceptions
+            if (e.getMessage() != null && e.getMessage().contains("high concurrency")) {
+                logger.warn("OAuth registration failed due to high concurrency: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Please wait a moment and try again."));
+            } else {
+                logger.error("Runtime error during OAuth registration: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Registration temporarily unavailable. Please try again."));
+            }
         } catch (Exception e) {
-            logger.error("Error during OAuth registration: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to register user via OAuth"));
+            logger.error("Unexpected error during OAuth registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Something went wrong. Please try again."));
         }
     }
 

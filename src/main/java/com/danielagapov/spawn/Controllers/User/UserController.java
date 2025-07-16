@@ -3,6 +3,8 @@ package com.danielagapov.spawn.Controllers.User;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
+import com.danielagapov.spawn.DTOs.ContactCrossReferenceRequestDTO;
+import com.danielagapov.spawn.DTOs.ContactCrossReferenceResponseDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
@@ -278,6 +280,42 @@ public class UserController {
             return ResponseEntity.ok(profileInfo);
         } catch (Exception e) {
             logger.error("Error getting user profile info for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/contacts/cross-reference
+    @PostMapping("contacts/cross-reference")
+    public ResponseEntity<ContactCrossReferenceResponseDTO> crossReferenceContacts(
+            @RequestBody ContactCrossReferenceRequestDTO request) {
+        if (request.getPhoneNumbers() == null || request.getPhoneNumbers().isEmpty()) {
+            logger.error("Invalid request: phone numbers list is empty or null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        if (request.getRequestingUserId() == null) {
+            logger.error("Invalid request: requesting user ID is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        
+        try {
+            List<BaseUserDTO> matchingUsers = userService.findUsersByPhoneNumbers(
+                request.getPhoneNumbers(), 
+                request.getRequestingUserId()
+            );
+            
+            // Filter out blocked users
+            List<BaseUserDTO> filteredUsers = blockedUserService.filterOutBlockedUsers(
+                matchingUsers, 
+                request.getRequestingUserId()
+            );
+            
+            ContactCrossReferenceResponseDTO response = new ContactCrossReferenceResponseDTO(filteredUsers);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for contact cross-reference: " + LoggingUtils.formatUserIdInfo(request.getRequestingUserId()) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error cross-referencing contacts for user: " + LoggingUtils.formatUserIdInfo(request.getRequestingUserId()) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

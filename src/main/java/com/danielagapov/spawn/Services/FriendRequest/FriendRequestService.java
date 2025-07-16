@@ -204,16 +204,29 @@ public class FriendRequestService implements IFriendRequestService {
 
             deleteFriendRequest(id);
 
+            // Evict friend request caches for both users
+            if (cacheManager.getCache("incomingFetchFriendRequests") != null) {
+                cacheManager.getCache("incomingFetchFriendRequests").evict(receiver.getId());
+            }
+            if (cacheManager.getCache("sentFetchFriendRequests") != null) {
+                cacheManager.getCache("sentFetchFriendRequests").evict(sender.getId());
+            }
+
+            // Evict other related caches
             if (cacheManager.getCache("filteredFeedActivities") != null) {
                 cacheManager.getCache("filteredFeedActivities").evict(sender.getId());
                 cacheManager.getCache("filteredFeedActivities").evict(receiver.getId());
             }
-            if (cacheManager.getCache("incomingFriendRequests") != null)
-                cacheManager.getCache("incomingFriendRequests").evict(receiver.getId());
 
             if (cacheManager.getCache("friendsByUserId") != null) {
                 cacheManager.getCache("friendsByUserId").evict(sender.getId());
                 cacheManager.getCache("friendsByUserId").evict(receiver.getId());
+            }
+
+            // Evict recommended friends cache for both users since they're now friends
+            if (cacheManager.getCache("recommendedFriends") != null) {
+                cacheManager.getCache("recommendedFriends").evict(sender.getId());
+                cacheManager.getCache("recommendedFriends").evict(receiver.getId());
             }
 
             logger.info("Friend request accepted and deleted successfully");
@@ -232,6 +245,14 @@ public class FriendRequestService implements IFriendRequestService {
                 User receiver = fr.getReceiver();
                 logger.info("Deleting friend request with ID: " + id + " from sender: " +
                         LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));
+                
+                // Evict friend request caches for both users
+                if (cacheManager.getCache("incomingFetchFriendRequests") != null) {
+                    cacheManager.getCache("incomingFetchFriendRequests").evict(receiver.getId());
+                }
+                if (cacheManager.getCache("sentFetchFriendRequests") != null) {
+                    cacheManager.getCache("sentFetchFriendRequests").evict(sender.getId());
+                }
                 
                 // Evict recommended friends cache for both users since their recommendation status has changed
                 if (cacheManager.getCache("recommendedFriends") != null) {
@@ -350,30 +371,33 @@ public class FriendRequestService implements IFriendRequestService {
     public Instant getLatestFriendRequestTimestamp(UUID userId) {
         try {
             logger.info("Getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId));
-
-            // First check incoming friend requests
-            Instant latestIncoming = repository.findTopByReceiverIdOrderByCreatedAtDesc(userId)
-                    .map(FriendRequest::getCreatedAt)
-                    .orElse(null);
-
-            // Then check outgoing friend requests
-            Instant latestOutgoing = repository.findTopBySenderIdOrderByCreatedAtDesc(userId)
-                    .map(FriendRequest::getCreatedAt)
-                    .orElse(null);
-
-            // Return the most recent timestamp, or null if no requests exist
-            if (latestIncoming == null && latestOutgoing == null) {
-                return null;
-            } else if (latestIncoming == null) {
-                return latestOutgoing;
-            } else if (latestOutgoing == null) {
-                return latestIncoming;
-            } else {
-                return latestIncoming.isAfter(latestOutgoing) ? latestIncoming : latestOutgoing;
+            
+            // Get the latest incoming friend request
+            java.util.Optional<FriendRequest> latestIncoming = repository.findTopByReceiverIdOrderByCreatedAtDesc(userId);
+            
+            // Get the latest sent friend request
+            java.util.Optional<FriendRequest> latestSent = repository.findTopBySenderIdOrderByCreatedAtDesc(userId);
+            
+            Instant latestTimestamp = null;
+            
+            // Compare and find the most recent timestamp
+            if (latestIncoming.isPresent() && latestSent.isPresent()) {
+                latestTimestamp = latestIncoming.get().getCreatedAt().isAfter(latestSent.get().getCreatedAt()) 
+                    ? latestIncoming.get().getCreatedAt() 
+                    : latestSent.get().getCreatedAt();
+            } else if (latestIncoming.isPresent()) {
+                latestTimestamp = latestIncoming.get().getCreatedAt();
+            } else if (latestSent.isPresent()) {
+                latestTimestamp = latestSent.get().getCreatedAt();
             }
+            
+            logger.info("Latest friend request timestamp for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + latestTimestamp);
+            return latestTimestamp;
         } catch (Exception e) {
-            logger.error("Error getting latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            logger.error("Error retrieving latest friend request timestamp for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }
+
+
 }
