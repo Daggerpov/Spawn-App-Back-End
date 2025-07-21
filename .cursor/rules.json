@@ -307,6 +307,78 @@
           "description": "Create a simple DTO class with Lombok annotations (no Serializable)"
         }
       }
+    },
+    "test_organization": {
+      "description": "CRITICAL: Rules for organizing and creating test files in the Spawn App Back-End",
+      "apply_to": [
+        "**/test/**/*.java"
+      ],
+      "tags": ["testing", "organization"],
+      "avoid_creating_new_test_files": {
+        "mandatory_rules": [
+          "DO NOT create new test files unless absolutely necessary",
+          "ALWAYS check if an appropriate existing test file exists first",
+          "Add new tests to existing service test files whenever possible"
+        ]
+      },
+      "test_file_naming_convention": {
+        "service_tests": "{ServiceName}Tests.java (e.g., OAuthServiceTests.java, UserServiceTests.java)",
+        "directory": "src/test/java/com/danielagapov/spawn/ServiceTests/"
+      },
+      "when_to_add_tests_to_existing_files": [
+        "Unit tests: Add to the corresponding service test file (e.g., OAuth tests → OAuthServiceTests.java)",
+        "Integration tests: Add as inner static classes within the service test file with proper Spring annotations",
+        "Bug fix tests: Add to the service test file that covers the component being fixed",
+        "Race condition tests: Add to the service test file with appropriate concurrency testing setup"
+      ],
+      "when_new_test_files_are_acceptable": [
+        "Testing a completely new service that doesn't have an existing test file",
+        "Creating controller-specific tests that don't fit in service tests",
+        "Testing complex integration scenarios that span multiple services and need their own setup"
+      ],
+      "test_organization_within_files": [
+        "Group related tests together with descriptive comments",
+        "Use inner static classes for integration tests that require different Spring context setup",
+        "Maintain clear separation between unit tests (with mocks) and integration tests (with real dependencies)"
+      ],
+      "code_organization_rules": {
+        "service_layer": [
+          "Keep service interfaces lean and focused",
+          "Use dependency injection consistently",
+          "Handle transaction boundaries explicitly for data modification operations"
+        ],
+        "repository_layer": [
+          "Use @Modifying and @Query for custom delete operations",
+          "Always include @Transactional for modifying queries",
+          "Prefer explicit queries over relying solely on cascade operations for critical data integrity"
+        ],
+        "error_handling": [
+          "Use retry mechanisms with exponential backoff for transient errors",
+          "Log warnings for recoverable errors, errors for unrecoverable issues",
+          "Provide meaningful error messages that help with debugging"
+        ],
+        "database_operations": [
+          "Explicitly handle race conditions in concurrent scenarios",
+          "Use flush() when immediate persistence is required",
+          "Prefer explicit deletion over cascade deletion for critical relationships"
+        ]
+      },
+      "naming_conventions": {
+        "test_methods": [
+          "Use descriptive names that explain the scenario: testOAuthReRegistrationAfterIncompleteAccount()",
+          "Include the expected outcome: testExplicitMappingDeletion()",
+          "Group by functionality with consistent prefixes"
+        ],
+        "variables": [
+          "Use meaningful names that describe the data: incompleteUser, externalId, mappingRepository",
+          "Avoid abbreviations unless they're domain-specific and well-known"
+        ],
+        "comments": [
+          "Include bug report references when fixing specific issues",
+          "Explain complex business logic with inline comments",
+          "Document race condition handling and retry mechanisms"
+        ]
+      }
     }
   },
   "redis_cache_serialization": {
