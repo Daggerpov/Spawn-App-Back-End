@@ -76,6 +76,13 @@ public interface IAuthService {
     BaseUserDTO updateUserDetails(UpdateUserDetailsDTO dto);
 
     /**
+     * Mark contact import step as completed
+     * @param userId the ID of the user who completed contact import
+     * @return the updated user DTO
+     */
+    BaseUserDTO completeContactImport(UUID userId);
+
+    /**
      * Update user status to ACTIVE (for Terms of Service acceptance)
      * @param userId the ID of the user to update
      * @return the updated user DTO

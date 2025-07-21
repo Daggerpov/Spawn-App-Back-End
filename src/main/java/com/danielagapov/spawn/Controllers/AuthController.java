@@ -351,6 +351,21 @@ public class AuthController {
         }
     }
 
+    // full path: /api/v1/auth/complete-contact-import/{userId}
+    @PostMapping("complete-contact-import/{userId}")
+    public ResponseEntity<?> completeContactImport(@PathVariable UUID userId) {
+        try {
+            BaseUserDTO updatedUser = authService.completeContactImport(userId);
+            return ResponseEntity.ok(updatedUser);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for contact import completion: " + userId + ", entity type: " + e.entityType);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
+        } catch (Exception e) {
+            logger.error("Error completing contact import for user: " + userId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to complete contact import"));
+        }
+    }
+
     // full path: /api/v1/auth/accept-tos/{userId}
     @PostMapping("accept-tos/{userId}")
     public ResponseEntity<?> acceptTermsOfService(@PathVariable UUID userId) {

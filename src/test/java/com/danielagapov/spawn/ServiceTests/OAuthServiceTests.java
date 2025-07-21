@@ -3,22 +3,31 @@ package com.danielagapov.spawn.ServiceTests;
 import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.User.IUserIdExternalIdMapRepository;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.OAuth.AppleOAuthStrategy;
 import com.danielagapov.spawn.Services.OAuth.GoogleOAuthStrategy;
+import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import com.danielagapov.spawn.Services.OAuth.OAuthService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -469,5 +478,148 @@ public class OAuthServiceTests {
         assertThrows(Exception.class, () -> {
             spyService.signInUser("dummy_token", "test@example.com", OAuthProvider.google);
         });
+    }
+
+    // ================== Integration Tests for Race Condition Fixes ==================
+    // These tests require the full Spring context and real repositories
+    
+    /**
+     * Integration test class to verify that OAuth race condition issues are resolved.
+     * Specifically tests the scenario where a user deletes their account 
+     * and immediately tries to re-register with the same OAuth provider.
+     */
+    @SpringBootTest
+    @ActiveProfiles("test")
+    @Transactional
+    static class RaceConditionIntegrationTests {
+
+        @Autowired
+        private IAuthService authService;
+
+        @Autowired
+        private IOAuthService oauthService;
+
+        @Autowired
+        private IUserService userService;
+
+        @Autowired
+        private IUserRepository userRepository;
+
+        @Autowired
+        private IUserIdExternalIdMapRepository mappingRepository;
+
+        /**
+         * Tests the scenario from the bug report:
+         * 1. User has an incomplete account (EMAIL_VERIFIED status)
+         * 2. User tries to re-register with same Google OAuth token
+         * 3. System should delete the incomplete user and create a new one
+         * 4. Should not get "Row was updated or deleted by another transaction" error
+         */
+        @Test
+        public void testOAuthReRegistrationAfterIncompleteAccount() {
+            String email = "racetest@example.com";
+            String externalId = "109582192032674484261"; // Same as in the logs
+            OAuthProvider provider = OAuthProvider.google;
+
+            // Step 1: Create an incomplete user account (EMAIL_VERIFIED status)
+            User incompleteUser = new User();
+            incompleteUser.setEmail(email);
+            incompleteUser.setUsername(externalId);
+            incompleteUser.setPhoneNumber(externalId);
+            incompleteUser.setName(externalId);
+            incompleteUser.setStatus(UserStatus.EMAIL_VERIFIED);
+            incompleteUser.setDateCreated(new Date());
+            incompleteUser.setProfilePictureUrlString("default-profile-pic.jpg");
+            
+            User savedUser = userRepository.save(incompleteUser);
+
+            // Step 2: Create OAuth mapping for the incomplete user
+            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalId, savedUser, provider);
+            mappingRepository.save(mapping);
+
+            // Verify initial state
+            assertTrue(mappingRepository.existsById(externalId));
+            assertTrue(userRepository.existsById(savedUser.getId()));
+
+            // Step 3: Simulate OAuth re-registration (the scenario from the bug report)
+            OAuthRegistrationDTO registrationDTO = new OAuthRegistrationDTO(
+                email,
+                "mock-valid-google-token", // This would be mocked in a real test
+                provider,
+                "Test User",
+                "https://example.com/profile.jpg"
+            );
+
+            // This should NOT throw "Row was updated or deleted by another transaction" error
+            assertDoesNotThrow(() -> {
+                // In a real test, we'd mock the Google token verification
+                // For now, we'll test the mapping creation logic directly
+                
+                // Step 3a: Delete the incomplete user (this is what checkOAuthRegistration does)
+                userService.deleteUserById(savedUser.getId());
+                
+                // Step 3b: Verify the mapping was also deleted
+                assertFalse(mappingRepository.existsById(externalId));
+                assertFalse(userRepository.existsById(savedUser.getId()));
+                
+                // Step 3c: Create new user and mapping
+                User newUser = new User();
+                newUser.setEmail(email);
+                newUser.setUsername(externalId);
+                newUser.setPhoneNumber(externalId);
+                newUser.setName("Test User");
+                newUser.setStatus(UserStatus.EMAIL_VERIFIED);
+                newUser.setDateCreated(new Date());
+                newUser.setProfilePictureUrlString("https://example.com/profile.jpg");
+                
+                User savedNewUser = userRepository.save(newUser);
+                
+                // This should work without race condition errors
+                oauthService.createAndSaveMapping(savedNewUser, externalId, provider);
+                
+                // Verify the new mapping was created successfully
+                assertTrue(mappingRepository.existsById(externalId));
+                UserIdExternalIdMap newMapping = mappingRepository.findById(externalId).orElse(null);
+                assertNotNull(newMapping);
+                assertEquals(savedNewUser.getId(), newMapping.getUser().getId());
+                assertEquals(provider, newMapping.getProvider());
+            });
+        }
+
+        /**
+         * Test that explicit OAuth mapping deletion works correctly
+         */
+        @Test
+        public void testExplicitMappingDeletion() {
+            String email = "maptest@example.com";
+            String externalId = "test-external-id-123";
+            OAuthProvider provider = OAuthProvider.google;
+
+            // Create user and mapping
+            User user = new User();
+            user.setEmail(email);
+            user.setUsername("testuser");
+            user.setPhoneNumber("1234567890");
+            user.setName("Test User");
+            user.setStatus(UserStatus.EMAIL_VERIFIED);
+            user.setDateCreated(new Date());
+            user.setProfilePictureUrlString("default-profile-pic.jpg");
+            
+            User savedUser = userRepository.save(user);
+            
+            UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalId, savedUser, provider);
+            mappingRepository.save(mapping);
+
+            // Verify initial state
+            assertTrue(mappingRepository.existsById(externalId));
+            assertTrue(userRepository.existsById(savedUser.getId()));
+
+            // Delete user (which should also delete the mapping)
+            userService.deleteUserById(savedUser.getId());
+
+            // Verify both user and mapping are deleted
+            assertFalse(userRepository.existsById(savedUser.getId()));
+            assertFalse(mappingRepository.existsById(externalId));
+        }
     }
 }

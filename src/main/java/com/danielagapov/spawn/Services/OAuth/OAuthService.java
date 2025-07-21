@@ -69,7 +69,7 @@ public class OAuthService implements IOAuthService {
                     logger.info("Found incomplete user account (status: " + existingUser.getStatus() + "). Allowing re-creation.");
                     // Delete the incomplete user and their mapping to allow fresh creation
                     userService.deleteUserById(existingUser.getId());
-                    // The mapping will be cascade deleted with the user
+                    // The mapping will be explicitly deleted with the user
                 } else {
                     logger.info("Returning existing active user");
                     return UserMapper.toDTO(existingUser);
@@ -90,7 +90,7 @@ public class OAuthService implements IOAuthService {
                         logger.info("Found incomplete user account with email (status: " + existingUser.getStatus() + "). Allowing re-creation.");
                         // Delete the incomplete user and their mapping to allow fresh creation
                         userService.deleteUserById(existingUser.getId());
-                        // The mapping will be cascade deleted with the user
+                        // The mapping will be explicitly deleted with the user
                     } else {
                         logger.info("Returning existing active user with different provider");
                         return UserMapper.toDTO(existingUser);
@@ -300,7 +300,7 @@ public class OAuthService implements IOAuthService {
                         // Delete the incomplete user and their mapping to allow fresh registration
                         try {
                             userService.deleteUserById(existingUser.getId());
-                            // The mapping will be cascade deleted with the user
+                            // The mapping will be explicitly deleted with the user
                             logger.info("Successfully deleted incomplete user, proceeding with fresh registration");
                             return externalUserId; // Return immediately to allow fresh registration
                         } catch (Exception e) {
@@ -331,7 +331,7 @@ public class OAuthService implements IOAuthService {
                             // Delete the incomplete user and their mapping to allow fresh registration
                             try {
                                 userService.deleteUserById(existingUser.getId());
-                                // The mapping will be cascade deleted with the user
+                                // The mapping will be explicitly deleted with the user
                             } catch (Exception e) {
                                 logger.warn("Error deleting incomplete user by email: " + e.getMessage());
                                 // Continue with registration as the user might have been deleted by another transaction
@@ -377,11 +377,18 @@ public class OAuthService implements IOAuthService {
         int maxRetries = 3;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                // Use upsert pattern by creating a new mapping with the same external ID
-                // JPA will merge/update if the ID already exists, or create new if it doesn't
-                // This prevents race conditions that occur with separate find-delete-create operations
+                // First, explicitly delete any existing mapping with the same external ID
+                // This prevents race conditions from cascade deletes
+                Optional<UserIdExternalIdMap> existingMapping = externalIdMapRepository.findById(externalUserId);
+                if (existingMapping.isPresent()) {
+                    logger.info(String.format("Found existing mapping for external ID: %s, deleting it before creating new one", externalUserId));
+                    externalIdMapRepository.delete(existingMapping.get());
+                    externalIdMapRepository.flush(); // Ensure deletion is committed immediately
+                }
+                
+                // Now create the new mapping
                 UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
-                logger.info(String.format("Upserting mapping for external ID: %s (attempt %d/%d)", externalUserId, attempt, maxRetries));
+                logger.info(String.format("Creating mapping for external ID: %s (attempt %d/%d)", externalUserId, attempt, maxRetries));
                 
                 UserIdExternalIdMap savedMapping = externalIdMapRepository.save(mapping);
                 logger.info("Mapping successfully saved/updated: " + savedMapping);

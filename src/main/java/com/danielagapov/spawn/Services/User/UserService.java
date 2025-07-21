@@ -19,11 +19,13 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
 import com.danielagapov.spawn.Models.UserFriendTag;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
@@ -59,6 +61,7 @@ public class UserService implements IUserService {
     private final IUserSearchService userSearchService;
     private final CacheManager cacheManager;
     private final IActivityTypeService activityTypeService;
+    private final IUserIdExternalIdMapRepository userIdExternalIdMapRepository;
 
     @Value("${ADMIN_USERNAME:admin}")
     private String adminUsername;
@@ -73,7 +76,8 @@ public class UserService implements IUserService {
                        IS3Service s3Service, ILogger logger,
                        IUserSearchService userSearchService,
                        CacheManager cacheManager,
-                       IActivityTypeService activityTypeService) {
+                       IActivityTypeService activityTypeService,
+                       IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
         this.repository = repository;
         this.activityUserRepository = activityUserRepository;
         this.uftRepository = uftRepository;
@@ -84,6 +88,7 @@ public class UserService implements IUserService {
         this.userSearchService = userSearchService;
         this.cacheManager = cacheManager;
         this.activityTypeService = activityTypeService;
+        this.userIdExternalIdMapRepository = userIdExternalIdMapRepository;
     }
 
     /**
@@ -252,6 +257,9 @@ public class UserService implements IUserService {
                     cacheManager.getCache("recommendedFriends").evict(friendId);
                 }
             }
+
+            // Delete OAuth mappings for the user
+            userIdExternalIdMapRepository.deleteAllByUserId(id);
 
             repository.deleteById(id);
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());

@@ -475,6 +475,23 @@ public class AuthService implements IAuthService {
     }
 
     @Override
+    public BaseUserDTO completeContactImport(UUID userId) {
+        try {
+            logger.info("Completing contact import for user: " + LoggingUtils.formatUserIdInfo(userId));
+
+            User user = userService.getUserEntityById(userId);
+            user.setStatus(UserStatus.CONTACT_IMPORT);
+            user = userService.saveEntity(user);
+
+            logger.info("Successfully updated user status to CONTACT_IMPORT: " + LoggingUtils.formatUserInfo(user));
+            return UserMapper.toDTO(user);
+        } catch (Exception e) {
+            logger.error("Error completing contact import for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
     public BaseUserDTO acceptTermsOfService(UUID userId) {
         try {
             logger.info("Accepting Terms of Service for user: " + LoggingUtils.formatUserIdInfo(userId));
