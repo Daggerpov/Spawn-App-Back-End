@@ -810,28 +810,45 @@ public class UserService implements IUserService {
         try {
             logger.info("Finding users by phone numbers for contact cross-reference. Phone numbers count: " + phoneNumbers.size() + ", requesting user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
             
+            // Debug: Log all incoming phone numbers
+            logger.info("🔍 INCOMING PHONE NUMBERS:");
+            for (int i = 0; i < phoneNumbers.size(); i++) {
+                logger.info("  [" + i + "] Original: '" + phoneNumbers.get(i) + "'");
+            }
+            
             List<User> matchingUsers = new ArrayList<>();
             
             // Clean and normalize phone numbers before searching
             for (String phoneNumber : phoneNumbers) {
                 if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
                     String cleanedPhoneNumber = PhoneNumberValidator.cleanPhoneNumber(phoneNumber);
+                    logger.info("🧹 CLEANED: '" + phoneNumber + "' -> '" + cleanedPhoneNumber + "'");
                     
                     // Skip if the cleaned phone number is empty or invalid
                     if (cleanedPhoneNumber != null && !cleanedPhoneNumber.isEmpty()) {
                         // Search for users with this phone number
                         try {
-                            List<User> usersWithPhone = repository.findAll()
+                            // Debug: Get all users and their phone numbers for comparison
+                            List<User> allUsers = repository.findAll();
+                            logger.info("📊 TOTAL USERS IN DB: " + allUsers.size());
+                            
+                            List<User> usersWithPhone = allUsers
                                 .stream()
                                 .filter(user -> {
                                     String userPhone = user.getPhoneNumber();
                                     if (userPhone != null) {
                                         String cleanedUserPhone = PhoneNumberValidator.cleanPhoneNumber(userPhone);
+                                        logger.info("🔍 COMPARING: DB phone '" + userPhone + "' -> cleaned '" + cleanedUserPhone + "' vs incoming '" + cleanedPhoneNumber + "' -> MATCH: " + (cleanedUserPhone != null && cleanedUserPhone.equals(cleanedPhoneNumber)));
                                         return cleanedUserPhone != null && cleanedUserPhone.equals(cleanedPhoneNumber);
                                     }
                                     return false;
                                 })
                                 .collect(Collectors.toList());
+                            
+                            logger.info("📞 FOUND " + usersWithPhone.size() + " USERS WITH PHONE: " + cleanedPhoneNumber);
+                            for (User user : usersWithPhone) {
+                                logger.info("  - User: " + user.getUsername() + " (" + user.getName() + ") with phone: " + user.getPhoneNumber());
+                            }
                             
                             matchingUsers.addAll(usersWithPhone);
                         } catch (Exception e) {
@@ -841,15 +858,24 @@ public class UserService implements IUserService {
                 }
             }
             
+            logger.info("🔄 TOTAL MATCHING USERS BEFORE FILTERING: " + matchingUsers.size());
+            
             // Remove duplicates and filter out the requesting user and admin users
             List<User> filteredUsers = matchingUsers.stream()
                 .distinct()
-                .filter(user -> !user.getId().equals(requestingUserId)) // Exclude requesting user
-                .filter(user -> !isAdminUser(user)) // Exclude admin users
-                .filter(user -> user.getStatus() == UserStatus.ACTIVE) // Only include active users
+                .filter(user -> {
+                    boolean keep = !user.getId().equals(requestingUserId) && !isAdminUser(user) && user.getStatus() == UserStatus.ACTIVE;
+                    if (!keep) {
+                        logger.info("🚫 FILTERED OUT USER: " + user.getUsername() + " (requesting user: " + user.getId().equals(requestingUserId) + ", admin: " + isAdminUser(user) + ", status: " + user.getStatus() + ")");
+                    }
+                    return keep;
+                })
                 .collect(Collectors.toList());
             
-            logger.info("Found " + filteredUsers.size() + " matching users for contact cross-reference");
+            logger.info("✅ FINAL RESULT: Found " + filteredUsers.size() + " matching users for contact cross-reference");
+            for (User user : filteredUsers) {
+                logger.info("  - FINAL: " + user.getUsername() + " (" + user.getName() + ") with phone: " + user.getPhoneNumber());
+            }
             
             // Convert to DTOs
             return UserMapper.toDTOList(filteredUsers);

@@ -39,14 +39,21 @@ public class PhoneNumberValidator {
     public static String cleanPhoneNumber(String phoneNumber) {
         if (phoneNumber == null) return null;
 
+        System.out.println("🧹 BACKEND CLEANING PHONE: '" + phoneNumber + "'");
+
         // Remove all non-digit characters except +
         String cleaned = phoneNumber.replaceAll("[^+\\d]", "");
+        System.out.println("  Step 1 - remove non-digits except +: '" + cleaned + "'");
 
         // If no country code, assume it's a local number (add your default country code)
         if (!cleaned.startsWith("+")) {
             cleaned = "+1" + cleaned; // Default to US, change as needed
+            System.out.println("  Step 2 - add +1 prefix: '" + cleaned + "'");
+        } else {
+            System.out.println("  Step 2 - already has + prefix: '" + cleaned + "'");
         }
 
+        System.out.println("  FINAL RESULT: '" + cleaned + "'");
         return cleaned;
     }
 
