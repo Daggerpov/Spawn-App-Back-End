@@ -141,7 +141,7 @@ public class S3Service implements IS3Service {
     @Override
     public void deleteObjectByUserId(UUID userId) {
         try {
-            User user = UserMapper.toEntity(userService.getUserById(userId));
+            User user = userService.getUserEntityById(userId);
             String urlString = user.getProfilePictureUrlString();
             deleteObjectByURL(urlString);
             user.setProfilePictureUrlString(null);
