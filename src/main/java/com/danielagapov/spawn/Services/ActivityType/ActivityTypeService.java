@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -113,38 +115,80 @@ public class ActivityTypeService implements IActivityTypeService {
     }
     
     /**
-     * Updates existing activity types using a two-phase approach:
-     * Phase 1: Temporarily assign unique negative order numbers to avoid conflicts
-     * Phase 2: Update to final order numbers
+     * Updates existing activity types using a multi-phase approach to avoid unique constraint violations:
+     * Phase 1: Store target orderNum values and move all activity types being updated to temporary negative values
+     * Phase 2: Move any remaining activity types that conflict with target orderNum values to temporary values
+     * Phase 3: Update all activity types to their final orderNum values
+     * Phase 4: Reassign new orderNum values to previously conflicting activity types
      */
     private void updateExistingActivityTypesWithConstraintHandling(List<ActivityType> existingActivityTypes, UUID userId) {
         logger.info("Updating " + existingActivityTypes.size() + " existing activity types with constraint handling");
         
-        // Phase 1: Temporarily assign negative order numbers to avoid conflicts
+        // Get all current activity types for this user to check for conflicts
+        List<ActivityType> allUserActivityTypes = repository.findActivityTypesByCreatorId(userId);
+        
+        // Create a map of activity types being updated by their ID for quick lookup
+        Map<UUID, ActivityType> updatingActivityTypesMap = existingActivityTypes.stream()
+                .collect(Collectors.toMap(ActivityType::getId, at -> at));
+        
+        // Store the target orderNum values before modifying the objects
+        Map<UUID, Integer> targetOrderNums = existingActivityTypes.stream()
+                .collect(Collectors.toMap(ActivityType::getId, ActivityType::getOrderNum));
+        
+        // Get the set of target orderNum values for conflict detection
+        Set<Integer> targetOrderNumValues = new HashSet<>(targetOrderNums.values());
+        
+        // Phase 1: Move all activity types being updated to temporary negative orderNum values
         for (int i = 0; i < existingActivityTypes.size(); i++) {
             ActivityType activityType = existingActivityTypes.get(i);
             int tempOrderNum = -(i + 1000); // Use negative numbers starting from -1000
             
-            // Store the final order number for phase 2
-            int finalOrderNum = activityType.getOrderNum();
-            
-            // Temporarily set negative order number
+            logger.info("Phase 1: Moving '" + activityType.getTitle() + "' to temporary orderNum " + tempOrderNum);
             activityType.setOrderNum(tempOrderNum);
             repository.save(activityType);
+        }
+        
+        // Phase 2: Move any remaining activity types that conflict with target orderNum values to temporary values
+        List<ActivityType> conflictingActivityTypes = allUserActivityTypes.stream()
+                .filter(at -> !updatingActivityTypesMap.containsKey(at.getId())) // Not being updated in this batch
+                .filter(at -> targetOrderNumValues.contains(at.getOrderNum())) // Has a conflicting orderNum
+                .toList();
+        
+        for (int i = 0; i < conflictingActivityTypes.size(); i++) {
+            ActivityType conflictingType = conflictingActivityTypes.get(i);
+            int originalOrderNum = conflictingType.getOrderNum();
+            int tempOrderNum = -(i + 2000); // Use different negative range to avoid conflicts
             
-            // Restore the final order number for phase 2
+            logger.info("Phase 2: Moving conflicting activity type '" + conflictingType.getTitle() + 
+                       "' from orderNum " + originalOrderNum + " to temporary orderNum " + tempOrderNum);
+            conflictingType.setOrderNum(tempOrderNum);
+            repository.save(conflictingType);
+        }
+        
+        // Phase 3: Update activity types being updated to their final orderNum values
+        for (ActivityType activityType : existingActivityTypes) {
+            Integer finalOrderNum = targetOrderNums.get(activityType.getId());
             activityType.setOrderNum(finalOrderNum);
             
-            logger.info("Phase 1: Set temporary orderNum " + tempOrderNum + " for activity type: " + activityType.getTitle());
-        }
-        
-        // Phase 2: Update to final order numbers
-        for (ActivityType activityType : existingActivityTypes) {
+            logger.info("Phase 3: Setting final orderNum " + finalOrderNum + " for activity type: " + activityType.getTitle());
             repository.save(activityType);
-            logger.info("Phase 2: Set final orderNum " + activityType.getOrderNum() + " for activity type: " + activityType.getTitle());
         }
         
-        logger.info("Successfully completed two-phase update for existing activity types");
+        // Phase 4: Find new orderNum values for the conflicting activity types and update them
+        if (!conflictingActivityTypes.isEmpty()) {
+            // Get the max orderNum after all updates
+            Integer maxOrderNum = repository.findMaxOrderNumberByCreatorId(userId);
+            int nextAvailableOrderNum = maxOrderNum != null ? maxOrderNum + 1 : 0;
+            
+            for (ActivityType conflictingType : conflictingActivityTypes) {
+                logger.info("Phase 4: Reassigning conflicting activity type '" + conflictingType.getTitle() + 
+                           "' to new orderNum " + nextAvailableOrderNum);
+                conflictingType.setOrderNum(nextAvailableOrderNum++);
+                repository.save(conflictingType);
+            }
+        }
+        
+        logger.info("Successfully completed multi-phase update for existing activity types");
     }
 
     @Override
