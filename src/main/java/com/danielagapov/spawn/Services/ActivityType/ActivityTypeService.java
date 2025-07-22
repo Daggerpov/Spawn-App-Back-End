@@ -76,7 +76,7 @@ public class ActivityTypeService implements IActivityTypeService {
                 // Convert DTOs to entities with proper user lookup for associated friends
                 List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
                 
-                // Use two-phase update to avoid constraint violation
+                // Use multi-phase update to avoid constraint violations
                 updateActivityTypesWithConstraintHandling(activityTypes, userId);
             }
             
@@ -108,7 +108,7 @@ public class ActivityTypeService implements IActivityTypeService {
             logger.info("Saved " + newActivityTypes.size() + " new activity types");
         }
         
-        // For existing activity types, use two-phase update to avoid constraint violations
+        // For existing activity types, use multi-phase update to avoid constraint violations
         if (!existingActivityTypes.isEmpty()) {
             updateExistingActivityTypesWithConstraintHandling(existingActivityTypes, userId);
         }

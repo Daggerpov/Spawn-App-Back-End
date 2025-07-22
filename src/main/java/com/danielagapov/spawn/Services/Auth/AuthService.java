@@ -20,6 +20,7 @@ import com.danielagapov.spawn.Services.OAuth.IOAuthService;
 import com.danielagapov.spawn.Services.S3.S3Service;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
+import com.danielagapov.spawn.Util.PhoneNumberValidator;
 import com.danielagapov.spawn.Util.VerificationCodeGenerator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -178,23 +179,37 @@ public class AuthService implements IAuthService {
         }
 
         // Check for username uniqueness if changed
-        if (!dto.getUsername().equals(user.getUsername())) {
+        String currentUsername = user.getOptionalUsername().orElse("");
+        if (!dto.getUsername().equals(currentUsername)) {
             if (userService.existsByUsername(dto.getUsername())) {
                 throw new FieldAlreadyExistsException("Username already exists", UserField.USERNAME);
             }
             user.setUsername(dto.getUsername());
             user.setName(dto.getUsername());
         }
-        // Update phone number
-        if (!userService.existsByPhoneNumber(dto.getPhoneNumber())) {
-            user.setPhoneNumber(dto.getPhoneNumber());
-        } else {
-            throw new PhoneNumberAlreadyExistsException("Phone number already exists");
+        
+        // Clean and validate phone number before storing
+        String cleanedPhoneNumber = PhoneNumberValidator.cleanPhoneNumber(dto.getPhoneNumber());
+        if (cleanedPhoneNumber == null || cleanedPhoneNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invalid phone number format");
         }
+        
+        // Check if the cleaned phone number already exists (excluding placeholder values)
+        String currentPhone = user.getOptionalPhoneNumber().orElse("");
+        if (!cleanedPhoneNumber.equals(currentPhone)) {
+            if (userService.existsByPhoneNumber(cleanedPhoneNumber)) {
+                throw new PhoneNumberAlreadyExistsException("Phone number already exists");
+            }
+            user.setPhoneNumber(cleanedPhoneNumber);
+            logger.info("Updated phone number for user: " + LoggingUtils.formatUserIdInfo(user.getId()) + 
+                       " from '" + currentPhone + "' to '" + cleanedPhoneNumber + "'");
+        }
+        
         // Update password if provided
-        if (dto.getPassword() != null && !dto.getPassword().isEmpty() && user.getPassword() == null) {
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty() && !user.getOptionalPassword().isPresent()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
+        
         user.setStatus(UserStatus.USERNAME_AND_PHONE_NUMBER);
         userService.saveEntity(user);
         return UserMapper.toDTO(user);
@@ -274,9 +289,19 @@ public class AuthService implements IAuthService {
         // Create verified user immediately for OAuth
         User newUser = new User();
         newUser.setEmail(email);
-        newUser.setUsername(externalId);
-        newUser.setPhoneNumber(externalId);
-        newUser.setName(externalId);
+        // Leave username and phoneNumber as null - user will provide them during onboarding
+        newUser.setUsername(null);
+        newUser.setPhoneNumber(null);
+        
+        // Use provided name from OAuth or fallback to email prefix
+        String providedName = registrationDTO.getName();
+        if (providedName != null && !providedName.trim().isEmpty()) {
+            newUser.setName(providedName.trim());
+        } else {
+            // Fallback to email prefix as initial name
+            newUser.setName(email.split("@")[0]);
+        }
+        
         newUser.setStatus(UserStatus.EMAIL_VERIFIED); // OAuth users are automatically verified
         newUser.setDateCreated(new Date());
 
@@ -323,17 +348,18 @@ public class AuthService implements IAuthService {
             // This ensures the user goes through the proper onboarding flow
             User newUser = new User();
             newUser.setEmail(email);
-            newUser.setUsername(externalId); // Temporary username that will be changed
-            newUser.setPhoneNumber(externalId); // Temporary phone that will be changed
+            // Leave username and phoneNumber as null - user will provide them during onboarding
+            newUser.setUsername(null);
+            newUser.setPhoneNumber(null);
             newUser.setStatus(UserStatus.EMAIL_VERIFIED); // Start at EMAIL_VERIFIED for OAuth users
             newUser.setDateCreated(new Date());
             
             String profilePictureUrl = registrationDTO.getProfilePictureUrl();
             newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
             
-            String name = registrationDTO.getName();
-            if (name != null) {
-                newUser.setName(name);
+            String providedName = registrationDTO.getName();
+            if (providedName != null && !providedName.trim().isEmpty()) {
+                newUser.setName(providedName.trim());
             } else {
                 newUser.setName(email.split("@")[0]);
             }
@@ -497,6 +523,11 @@ public class AuthService implements IAuthService {
             logger.info("Accepting Terms of Service for user: " + LoggingUtils.formatUserIdInfo(userId));
 
             User user = userService.getUserEntityById(userId);
+            
+            // Validate and clean up user data before changing status to ACTIVE
+            // This prevents constraint violations for OAuth users with placeholder data
+            validateAndCleanupUserData(user);
+            
             user.setStatus(UserStatus.ACTIVE);
             user = userService.saveEntity(user);
 
@@ -508,6 +539,29 @@ public class AuthService implements IAuthService {
         }
     }
 
+    /**
+     * Validates user data before setting status to ACTIVE
+     * Uses Optional-based methods for safe null handling
+     */
+    private void validateAndCleanupUserData(User user) {
+        // Ensure email exists since that's required for ACTIVE users
+        if (!user.getOptionalEmail().isPresent()) {
+            throw new IllegalStateException("Cannot activate user without email address");
+        }
+        
+        // Check if user has required fields for their current status progression
+        if (!user.hasRequiredFieldsForStatus()) {
+            logger.warn("User " + LoggingUtils.formatUserIdInfo(user.getId()) + 
+                       " is being set to ACTIVE but may be missing required fields for their status progression");
+        }
+        
+        // Log current state for debugging using Optional methods
+        logger.info("User " + LoggingUtils.formatUserIdInfo(user.getId()) + 
+                   " ready for ACTIVE status - username: " + (user.getOptionalUsername().isPresent() ? "set" : "null") +
+                   ", phoneNumber: " + (user.getOptionalPhoneNumber().isPresent() ? "set" : "null") +
+                   ", name: " + (user.getOptionalName().isPresent() ? "set" : "null") +
+                   ", displayName: '" + user.getDisplayName() + "'");
+    }
 
     private long getSendVerificationTimeout(int numAttempts) {
         long secondsToWait;

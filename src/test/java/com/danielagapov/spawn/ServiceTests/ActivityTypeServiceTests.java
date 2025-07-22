@@ -651,10 +651,10 @@ class ActivityTypeServiceTests {
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
     
-    // MARK: - Two-Phase Update & Constraint Handling Tests
+    // MARK: - Multi-Phase Update & Constraint Handling Tests
     
     @Test
-    void batchUpdate_ShouldHandleTwoPhaseUpdate_WhenExistingActivityTypesReordered() {
+    void batchUpdate_ShouldHandleMultiPhaseUpdate_WhenExistingActivityTypesReordered() {
         // Arrange - Simulate the exact reordering scenario that caused constraint violation
         ActivityTypeDTO reorderedChill = new ActivityTypeDTO(
             activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
@@ -692,11 +692,11 @@ class ActivityTypeServiceTests {
         assertNotNull(result);
         assertEquals(3, result.size());
         
-        // Verify that individual save was called multiple times for two-phase update
+        // Verify that individual save was called multiple times for multi-phase update
         // (2 times per existing activity type: once for temp orderNum, once for final orderNum)
         verify(activityTypeRepository, times(6)).save(any(ActivityType.class));
         verify(logger, times(1)).info(contains("Updating 3 existing activity types"));
-        verify(logger, times(1)).info(contains("Successfully completed two-phase update"));
+        verify(logger, times(1)).info(contains("Successfully completed multi-phase update"));
     }
     
     @Test
@@ -815,14 +815,14 @@ class ActivityTypeServiceTests {
         // Assert
         assertNotNull(result);
         
-        // Verify all 10 existing types went through two-phase update (20 save calls total)
+        // Verify all 10 existing types went through multi-phase update (20 save calls total)
         verify(activityTypeRepository, times(20)).save(any(ActivityType.class));
         verify(logger, times(1)).info(contains("Updating 10 existing activity types"));
     }
     
     @Test
     void batchUpdate_ShouldHandlePartialFailure_WhenPhase2Fails() {
-        // Arrange - Simulate failure in phase 2 of two-phase update
+        // Arrange - Simulate failure in phase 2 of multi-phase update
         ActivityTypeDTO reorderedType = new ActivityTypeDTO(
             activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
         );

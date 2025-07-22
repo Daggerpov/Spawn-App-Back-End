@@ -816,66 +816,60 @@ public class UserService implements IUserService {
                 logger.info("  [" + i + "] Original: '" + phoneNumbers.get(i) + "'");
             }
             
-            List<User> matchingUsers = new ArrayList<>();
+            // Clean and normalize phone numbers before querying
+            List<String> cleanedPhoneNumbers = phoneNumbers.stream()
+                .filter(phoneNumber -> phoneNumber != null && !phoneNumber.trim().isEmpty())
+                .map(phoneNumber -> {
+                    String cleaned = PhoneNumberValidator.cleanPhoneNumber(phoneNumber);
+                    logger.info("🧹 CLEANED: '" + phoneNumber + "' -> '" + cleaned + "'");
+                    return cleaned;
+                })
+                .filter(cleaned -> cleaned != null && !cleaned.trim().isEmpty())
+                .distinct() // Remove duplicates
+                .collect(Collectors.toList());
             
-            // Clean and normalize phone numbers before searching
-            for (String phoneNumber : phoneNumbers) {
-                if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
-                    String cleanedPhoneNumber = PhoneNumberValidator.cleanPhoneNumber(phoneNumber);
-                    logger.info("🧹 CLEANED: '" + phoneNumber + "' -> '" + cleanedPhoneNumber + "'");
-                    
-                    // Skip if the cleaned phone number is empty or invalid
-                    if (cleanedPhoneNumber != null && !cleanedPhoneNumber.isEmpty()) {
-                        // Search for users with this phone number
-                        try {
-                            // Debug: Get all users and their phone numbers for comparison
-                            List<User> allUsers = repository.findAll();
-                            logger.info("📊 TOTAL USERS IN DB: " + allUsers.size());
-                            
-                            List<User> usersWithPhone = allUsers
-                                .stream()
-                                .filter(user -> {
-                                    String userPhone = user.getPhoneNumber();
-                                    if (userPhone != null) {
-                                        String cleanedUserPhone = PhoneNumberValidator.cleanPhoneNumber(userPhone);
-                                        logger.info("🔍 COMPARING: DB phone '" + userPhone + "' -> cleaned '" + cleanedUserPhone + "' vs incoming '" + cleanedPhoneNumber + "' -> MATCH: " + (cleanedUserPhone != null && cleanedUserPhone.equals(cleanedPhoneNumber)));
-                                        return cleanedUserPhone != null && cleanedUserPhone.equals(cleanedPhoneNumber);
-                                    }
-                                    return false;
-                                })
-                                .collect(Collectors.toList());
-                            
-                            logger.info("📞 FOUND " + usersWithPhone.size() + " USERS WITH PHONE: " + cleanedPhoneNumber);
-                            for (User user : usersWithPhone) {
-                                logger.info("  - User: " + user.getUsername() + " (" + user.getName() + ") with phone: " + user.getPhoneNumber());
-                            }
-                            
-                            matchingUsers.addAll(usersWithPhone);
-                        } catch (Exception e) {
-                            logger.warn("Error searching for phone number: " + cleanedPhoneNumber + ": " + e.getMessage());
-                        }
-                    }
-                }
+            if (cleanedPhoneNumbers.isEmpty()) {
+                logger.info("❌ No valid phone numbers to search for after cleaning");
+                return Collections.emptyList();
             }
             
-            logger.info("🔄 TOTAL MATCHING USERS BEFORE FILTERING: " + matchingUsers.size());
+            logger.info("📋 SEARCHING FOR CLEANED PHONE NUMBERS: " + cleanedPhoneNumbers.size());
+            cleanedPhoneNumbers.forEach(phone -> logger.info("  - '" + phone + "'"));
             
-            // Remove duplicates and filter out the requesting user and admin users
+            // Use database query instead of loading all users into memory
+            List<User> matchingUsers = repository.findByPhoneNumberIn(cleanedPhoneNumbers);
+            
+            logger.info("📞 FOUND " + matchingUsers.size() + " USERS WITH MATCHING PHONE NUMBERS");
+            matchingUsers.forEach(user -> {
+                String displayPhone = user.getOptionalPhoneNumber().orElse("(no phone)");
+                logger.info("  - User: " + user.getDisplayName() + " (" + user.getOptionalUsername().orElse("no username") + ") with phone: " + displayPhone);
+            });
+            
+            // Filter out the requesting user, admin users, and inactive users
             List<User> filteredUsers = matchingUsers.stream()
                 .distinct()
                 .filter(user -> {
-                    boolean keep = !user.getId().equals(requestingUserId) && !isAdminUser(user) && user.getStatus() == UserStatus.ACTIVE;
+                    boolean keep = !user.getId().equals(requestingUserId) && 
+                                  !isAdminUser(user) && 
+                                  user.getStatus() == UserStatus.ACTIVE &&
+                                  user.getOptionalPhoneNumber().isPresent(); // Ensure phone number is actually present
+                    
                     if (!keep) {
-                        logger.info("🚫 FILTERED OUT USER: " + user.getUsername() + " (requesting user: " + user.getId().equals(requestingUserId) + ", admin: " + isAdminUser(user) + ", status: " + user.getStatus() + ")");
+                        String reason = user.getId().equals(requestingUserId) ? "requesting user" :
+                                       isAdminUser(user) ? "admin user" :
+                                       user.getStatus() != UserStatus.ACTIVE ? "inactive status: " + user.getStatus() :
+                                       !user.getOptionalPhoneNumber().isPresent() ? "no valid phone number" : "unknown";
+                        logger.info("🚫 FILTERED OUT USER: " + user.getDisplayName() + " (reason: " + reason + ")");
                     }
                     return keep;
                 })
                 .collect(Collectors.toList());
             
             logger.info("✅ FINAL RESULT: Found " + filteredUsers.size() + " matching users for contact cross-reference");
-            for (User user : filteredUsers) {
-                logger.info("  - FINAL: " + user.getUsername() + " (" + user.getName() + ") with phone: " + user.getPhoneNumber());
-            }
+            filteredUsers.forEach(user -> {
+                String displayPhone = user.getOptionalPhoneNumber().orElse("(no phone)");
+                logger.info("  - FINAL: " + user.getDisplayName() + " (" + user.getOptionalUsername().orElse("no username") + ") with phone: " + displayPhone);
+            });
             
             // Convert to DTOs
             return UserMapper.toDTOList(filteredUsers);

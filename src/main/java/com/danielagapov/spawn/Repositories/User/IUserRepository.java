@@ -31,6 +31,25 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE CONCAT('%', :query, '%') OR LOWER(u.username) LIKE CONCAT('%', :query, '%')")
     List<User> findUsersWithPartialMatch(String query, Limit limit);
 
+    // Phone number queries
+    /**
+     * Find users by a list of phone numbers.
+     * This method performs a proper database query instead of loading all users into memory.
+     * 
+     * @param phoneNumbers List of phone numbers to search for
+     * @return List of users with matching phone numbers
+     */
+    @Query("SELECT u FROM User u WHERE u.phoneNumber IN :phoneNumbers")
+    List<User> findByPhoneNumberIn(@Param("phoneNumbers") List<String> phoneNumbers);
+
+    /**
+     * Find a single user by phone number
+     * 
+     * @param phoneNumber The phone number to search for
+     * @return Optional containing the user if found
+     */
+    Optional<User> findByPhoneNumber(String phoneNumber);
+
     // Exist
     boolean existsByUsername(String username);
 
