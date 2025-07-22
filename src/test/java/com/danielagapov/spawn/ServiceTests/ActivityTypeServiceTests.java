@@ -650,4 +650,324 @@ class ActivityTypeServiceTests {
         verify(activityTypeRepository, times(1)).deleteAllById(anyList());
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
+    
+    // MARK: - Two-Phase Update & Constraint Handling Tests
+    
+    @Test
+    void batchUpdate_ShouldHandleTwoPhaseUpdate_WhenExistingActivityTypesReordered() {
+        // Arrange - Simulate the exact reordering scenario that caused constraint violation
+        ActivityTypeDTO reorderedChill = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+        );
+        ActivityTypeDTO reorderedFood = new ActivityTypeDTO(
+            activityTypeId2, "Food", List.of(), "🍽️", 1, userId, true
+        );
+        ActivityTypeDTO reorderedActive = new ActivityTypeDTO(
+            activityTypeId3, "Active", List.of(), "🏃", 2, userId, false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(reorderedChill, reorderedFood, reorderedActive),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        
+        // Mock existsById to simulate existing activity types
+        when(activityTypeRepository.existsById(activityTypeId1)).thenReturn(true);
+        when(activityTypeRepository.existsById(activityTypeId2)).thenReturn(true);
+        when(activityTypeRepository.existsById(activityTypeId3)).thenReturn(true);
+        
+        // Mock individual save calls for two-phase update
+        when(activityTypeRepository.save(any(ActivityType.class))).thenReturn(chillActivityType);
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(3, result.size());
+        
+        // Verify that individual save was called multiple times for two-phase update
+        // (2 times per existing activity type: once for temp orderNum, once for final orderNum)
+        verify(activityTypeRepository, times(6)).save(any(ActivityType.class));
+        verify(logger, times(1)).info(contains("Updating 3 existing activity types"));
+        verify(logger, times(1)).info(contains("Successfully completed two-phase update"));
+    }
+    
+    @Test
+    void batchUpdate_ShouldSeparateNewAndExistingTypes_WhenMixedBatchUpdate() {
+        // Arrange - Mix of new and existing activity types
+        UUID newId = UUID.randomUUID();
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "Study", List.of(), "✏️", 3, userId, false);
+        ActivityTypeDTO existingType = new ActivityTypeDTO(
+            activityTypeId1, "Chill Updated", List.of(), "🛋️", 0, userId, true
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(newType, existingType),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        
+        // Mock existsById to simulate one new, one existing
+        when(activityTypeRepository.existsById(newId)).thenReturn(false);
+        when(activityTypeRepository.existsById(activityTypeId1)).thenReturn(true);
+        
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(new ActivityType()));
+        when(activityTypeRepository.save(any(ActivityType.class))).thenReturn(chillActivityType);
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        
+        // Verify new types saved via saveAll, existing types saved individually
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+        verify(activityTypeRepository, times(2)).save(any(ActivityType.class)); // 2 phase for 1 existing
+        verify(logger, times(1)).info(contains("Saved 1 new activity types"));
+        verify(logger, times(1)).info(contains("Updating 1 existing activity types"));
+    }
+    
+    @Test
+    void batchUpdate_ShouldHandleConstraintViolationGracefully_WhenDatabaseConstraintFails() {
+        // Arrange - Simulate database constraint violation during two-phase update
+        ActivityTypeDTO reorderedType = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(reorderedType),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.existsById(activityTypeId1)).thenReturn(true);
+        
+        // Mock constraint violation during save
+        when(activityTypeRepository.save(any(ActivityType.class)))
+                .thenThrow(new org.springframework.dao.DataIntegrityViolationException(
+                    "Duplicate entry for key 'UK_activity_type_creator_order'"
+                ));
+
+        // Act & Assert
+        org.springframework.dao.DataIntegrityViolationException exception = 
+            assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Duplicate entry"));
+        verify(logger, times(1)).error(contains("Error batch updating activity types"));
+    }
+    
+    @Test
+    void batchUpdate_ShouldHandleLargeReorderingBatch_WhenManyActivityTypes() {
+        // Arrange - Test with larger number of activity types (10 items)
+        List<ActivityType> manyActivityTypes = new ArrayList<>();
+        List<ActivityTypeDTO> manyActivityTypeDTOs = new ArrayList<>();
+        
+        for (int i = 0; i < 10; i++) {
+            UUID id = UUID.randomUUID();
+            ActivityType entity = new ActivityType();
+            entity.setId(id);
+            entity.setTitle("Type " + i);
+            entity.setIcon("🎯");
+            entity.setCreator(testUser);
+            entity.setOrderNum(i);
+            entity.setIsPinned(false);
+            manyActivityTypes.add(entity);
+            
+            // Create reordered DTO (reverse order)
+            ActivityTypeDTO dto = new ActivityTypeDTO(id, "Type " + i, List.of(), "🎯", 9-i, userId, false);
+            manyActivityTypeDTOs.add(dto);
+        }
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(manyActivityTypeDTOs, List.of());
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(10L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(manyActivityTypes);
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        
+        // Mock all as existing
+        for (ActivityType type : manyActivityTypes) {
+            when(activityTypeRepository.existsById(type.getId())).thenReturn(true);
+        }
+        
+        when(activityTypeRepository.save(any(ActivityType.class))).thenReturn(new ActivityType());
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        
+        // Verify all 10 existing types went through two-phase update (20 save calls total)
+        verify(activityTypeRepository, times(20)).save(any(ActivityType.class));
+        verify(logger, times(1)).info(contains("Updating 10 existing activity types"));
+    }
+    
+    @Test
+    void batchUpdate_ShouldHandlePartialFailure_WhenPhase2Fails() {
+        // Arrange - Simulate failure in phase 2 of two-phase update
+        ActivityTypeDTO reorderedType = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(reorderedType),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.existsById(activityTypeId1)).thenReturn(true);
+        
+        // Mock phase 1 success, phase 2 failure
+        when(activityTypeRepository.save(any(ActivityType.class)))
+                .thenReturn(chillActivityType) // Phase 1 success
+                .thenThrow(new RuntimeException("Phase 2 database error")); // Phase 2 failure
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Phase 2 database error"));
+        verify(activityTypeRepository, times(2)).save(any(ActivityType.class));
+    }
+    
+    @Test
+    void batchUpdate_ShouldValidateOrderNumUniqueness_WhenConflictWithRemainingTypes() {
+        // Arrange - Update only some activity types, but create orderNum conflict with remaining ones
+        // Existing: Chill(0), Food(1), Active(2)
+        // Update: only Chill to orderNum=1 (conflicts with Food)
+        ActivityTypeDTO conflictingUpdate = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false // Conflicts with Food's orderNum
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(conflictingUpdate),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+
+        // Act & Assert
+        ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("orderNum 1 conflicts with existing activity type"));
+        verify(activityTypeRepository, never()).save(any(ActivityType.class));
+        verify(activityTypeRepository, never()).saveAll(anyList());
+    }
+    
+    @Test
+    void batchUpdate_ShouldHandleEmptyExistingList_WhenUserHasNoActivityTypes() {
+        // Arrange - User has no existing activity types, only creating new ones
+        UUID newId = UUID.randomUUID();
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "First Type", List.of(), "🎯", 0, userId, false);
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(newType),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(0L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of());
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.existsById(newId)).thenReturn(false);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(new ActivityType()));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        
+        // Should only use saveAll for new types, no individual saves
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+        verify(activityTypeRepository, never()).save(any(ActivityType.class));
+        verify(logger, times(1)).info(contains("Saved 1 new activity types"));
+        verify(logger, never()).info(contains("Updating"));
+    }
+    
+    @Test
+    void batchUpdate_ShouldHandleRepositoryFailure_WhenSaveAllFails() {
+        // Arrange - Test failure in saveAll for new activity types
+        UUID newId = UUID.randomUUID();
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "New Type", List.of(), "🎯", 0, userId, false);
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(newType),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(0L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of());
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.existsById(newId)).thenReturn(false);
+        when(activityTypeRepository.saveAll(anyList()))
+                .thenThrow(new org.springframework.dao.DataAccessException("Database connection lost") {});
+
+        // Act & Assert
+        org.springframework.dao.DataAccessException exception = 
+            assertThrows(org.springframework.dao.DataAccessException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Database connection lost"));
+        verify(logger, times(1)).error(contains("Error batch updating activity types"));
+    }
+    
+    @Test
+    void batchUpdate_ShouldHandleConcurrentModification_WhenActivityTypeDeletedDuringUpdate() {
+        // Arrange - Simulate activity type being deleted by another process during update
+        ActivityTypeDTO updateType = new ActivityTypeDTO(
+            activityTypeId1, "Updated Chill", List.of(), "🛋️", 0, userId, false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(updateType),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        
+        // Simulate concurrent deletion - existsById returns false during update
+        when(activityTypeRepository.existsById(activityTypeId1)).thenReturn(false);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(new ActivityType()));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert - Should treat as new activity type since existsById returned false
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+        verify(activityTypeRepository, never()).save(any(ActivityType.class));
+        verify(logger, times(1)).info(contains("Saved 1 new activity types"));
+    }
 } 
