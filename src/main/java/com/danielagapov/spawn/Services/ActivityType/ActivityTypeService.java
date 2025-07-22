@@ -73,7 +73,9 @@ public class ActivityTypeService implements IActivityTypeService {
                 
                 // Convert DTOs to entities with proper user lookup for associated friends
                 List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
-                repository.saveAll(activityTypes);
+                
+                // Use two-phase update to avoid constraint violation
+                updateActivityTypesWithConstraintHandling(activityTypes, userId);
             }
             
             // Return all activity types for the user after updates
@@ -82,6 +84,67 @@ public class ActivityTypeService implements IActivityTypeService {
             logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Updates activity types using a two-phase approach to avoid unique constraint violations
+     * on the (creator_id, order_num) combination during batch updates.
+     */
+    private void updateActivityTypesWithConstraintHandling(List<ActivityType> activityTypes, UUID userId) {
+        // Separate existing and new activity types
+        List<ActivityType> existingActivityTypes = activityTypes.stream()
+                .filter(at -> repository.existsById(at.getId()))
+                .toList();
+        
+        List<ActivityType> newActivityTypes = activityTypes.stream()
+                .filter(at -> !repository.existsById(at.getId()))
+                .toList();
+        
+        // Save new activity types first (they won't have conflicts)
+        if (!newActivityTypes.isEmpty()) {
+            repository.saveAll(newActivityTypes);
+            logger.info("Saved " + newActivityTypes.size() + " new activity types");
+        }
+        
+        // For existing activity types, use two-phase update to avoid constraint violations
+        if (!existingActivityTypes.isEmpty()) {
+            updateExistingActivityTypesWithConstraintHandling(existingActivityTypes, userId);
+        }
+    }
+    
+    /**
+     * Updates existing activity types using a two-phase approach:
+     * Phase 1: Temporarily assign unique negative order numbers to avoid conflicts
+     * Phase 2: Update to final order numbers
+     */
+    private void updateExistingActivityTypesWithConstraintHandling(List<ActivityType> existingActivityTypes, UUID userId) {
+        logger.info("Updating " + existingActivityTypes.size() + " existing activity types with constraint handling");
+        
+        // Phase 1: Temporarily assign negative order numbers to avoid conflicts
+        for (int i = 0; i < existingActivityTypes.size(); i++) {
+            ActivityType activityType = existingActivityTypes.get(i);
+            int tempOrderNum = -(i + 1000); // Use negative numbers starting from -1000
+            
+            // Store the final order number for phase 2
+            int finalOrderNum = activityType.getOrderNum();
+            
+            // Temporarily set negative order number
+            activityType.setOrderNum(tempOrderNum);
+            repository.save(activityType);
+            
+            // Restore the final order number for phase 2
+            activityType.setOrderNum(finalOrderNum);
+            
+            logger.info("Phase 1: Set temporary orderNum " + tempOrderNum + " for activity type: " + activityType.getTitle());
+        }
+        
+        // Phase 2: Update to final order numbers
+        for (ActivityType activityType : existingActivityTypes) {
+            repository.save(activityType);
+            logger.info("Phase 2: Set final orderNum " + activityType.getOrderNum() + " for activity type: " + activityType.getTitle());
+        }
+        
+        logger.info("Successfully completed two-phase update for existing activity types");
     }
 
     @Override
