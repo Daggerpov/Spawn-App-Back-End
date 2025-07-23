@@ -31,6 +31,7 @@ import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Util.LoggingUtils;
+import com.danielagapov.spawn.Util.PhoneNumberMatchingUtil;
 import com.danielagapov.spawn.Util.PhoneNumberValidator;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -816,28 +817,20 @@ public class UserService implements IUserService {
                 logger.info("  [" + i + "] Original: '" + phoneNumbers.get(i) + "'");
             }
             
-            // Clean and normalize phone numbers before querying
-            List<String> cleanedPhoneNumbers = phoneNumbers.stream()
-                .filter(phoneNumber -> phoneNumber != null && !phoneNumber.trim().isEmpty())
-                .map(phoneNumber -> {
-                    String cleaned = PhoneNumberValidator.cleanPhoneNumber(phoneNumber);
-                    logger.info("🧹 CLEANED: '" + phoneNumber + "' -> '" + cleaned + "'");
-                    return cleaned;
-                })
-                .filter(cleaned -> cleaned != null && !cleaned.trim().isEmpty())
-                .distinct() // Remove duplicates
-                .collect(Collectors.toList());
+            // Generate all possible search variants for flexible matching
+            // This allows us to find matches even when numbers are stored in different formats
+            List<String> searchVariants = PhoneNumberMatchingUtil.getSearchVariants(phoneNumbers);
             
-            if (cleanedPhoneNumbers.isEmpty()) {
-                logger.info("❌ No valid phone numbers to search for after cleaning");
+            logger.info("🔄 GENERATED " + searchVariants.size() + " SEARCH VARIANTS:");
+            searchVariants.forEach(variant -> logger.info("  - '" + variant + "'"));
+            
+            if (searchVariants.isEmpty()) {
+                logger.info("❌ No valid phone number variants to search for");
                 return Collections.emptyList();
             }
             
-            logger.info("📋 SEARCHING FOR CLEANED PHONE NUMBERS: " + cleanedPhoneNumbers.size());
-            cleanedPhoneNumbers.forEach(phone -> logger.info("  - '" + phone + "'"));
-            
-            // Use database query instead of loading all users into memory
-            List<User> matchingUsers = repository.findByPhoneNumberIn(cleanedPhoneNumbers);
+            // Use database query with all variants instead of loading all users into memory
+            List<User> matchingUsers = repository.findByPhoneNumberIn(searchVariants);
             
             logger.info("📞 FOUND " + matchingUsers.size() + " USERS WITH MATCHING PHONE NUMBERS");
             matchingUsers.forEach(user -> {
