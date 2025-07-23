@@ -90,20 +90,49 @@ public class JWTService implements IJWTService {
         }
         // Extract the JWT token from the Authorization header (removing the "Bearer " prefix)
         final String token = authHeader.substring(7);
-        final String username;
+        final String subject;
         try {
-            username = extractUsername(token);
+            subject = extractUsername(token); // This actually extracts the subject, which could be username or email
         } catch (Exception e) {
-            logger.error("Failed to extract username. Invalid or expired token");
+            logger.error("Failed to extract subject. Invalid or expired token");
             throw e;
         }
-        if (username == null || !userService.existsByUsername(username)) {
-            logger.warn("Extracted username does not correspond to any user entity");
+        
+        if (subject == null) {
+            logger.warn("Token subject is null");
             throw new BadTokenException();
         }
+        
+        // Check if subject corresponds to a user - first try as username, then as email
+        boolean userExists = false;
+        String usernameForNewToken = null;
+        
+        if (userService.existsByUsername(subject)) {
+            // Subject is a username
+            userExists = true;
+            usernameForNewToken = subject;
+        } else if (userService.existsByEmail(subject)) {
+            // Subject is an email (for OAuth users with null usernames)
+            userExists = true;
+            // For OAuth users, we need to determine what to use for the new token
+            try {
+                var user = userService.getUserByEmail(subject);
+                // Use username if available, otherwise use email
+                usernameForNewToken = user.getOptionalUsername().orElse(user.getEmail());
+            } catch (Exception e) {
+                logger.error("Failed to get user by email: " + subject);
+                throw new BadTokenException();
+            }
+        }
+        
+        if (!userExists) {
+            logger.warn("Subject does not correspond to any user entity: " + subject);
+            throw new BadTokenException();
+        }
+        
         if (isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.REFRESH)) {
             // This is a valid refresh token, grant a new access token to the requester
-            String newAccessToken = generateAccessToken(username);
+            String newAccessToken = generateAccessToken(usernameForNewToken);
             return newAccessToken;
         } else {
             logger.warn("Expired token found");

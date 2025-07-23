@@ -258,9 +258,9 @@ public class UserService implements IUserService {
                 }
             }
 
-            // Delete OAuth mappings for the user
-            userIdExternalIdMapRepository.deleteAllByUserId(id);
-
+            // OAuth mappings will be automatically deleted by database cascade deletion
+            // Removing explicit deletion to avoid race conditions during concurrent OAuth operations
+            
             repository.deleteById(id);
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
         } catch (Exception e) {

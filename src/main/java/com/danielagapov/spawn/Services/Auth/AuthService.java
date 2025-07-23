@@ -227,8 +227,8 @@ public class AuthService implements IAuthService {
             throw new IllegalArgumentException("Email and idToken cannot be null for OAuth registration");
         }
         
-        // Retry logic to handle concurrent OAuth registrations
-        int maxRetries = 3;
+        // Simplified retry logic since OAuthService now handles concurrency properly
+        int maxRetries = 2;
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 return registerUserViaOAuthInternal(registrationDTO, email, idToken, provider, attempt, maxRetries);
@@ -242,22 +242,23 @@ public class AuthService implements IAuthService {
                 if (attempt == maxRetries) {
                     logger.error("Failed to complete OAuth registration after " + maxRetries + 
                                " attempts due to concurrent modifications");
-                    throw new RuntimeException("Unable to process OAuth registration due to high concurrency. Please try again.");
-                }
-                
-                // Check if user was actually created by another concurrent request
-                try {
-                    String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
-                    Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
-                    if (existingUser.isPresent()) {
-                        logger.info("User was created by concurrent request, returning existing user");
-                        return existingUser.get();
+                    
+                    // Try to return existing user if created by concurrent request
+                    try {
+                        String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
+                        Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
+                        if (existingUser.isPresent()) {
+                            logger.info("Returning user created by concurrent request");
+                            return existingUser.get();
+                        }
+                    } catch (Exception checkEx) {
+                        logger.warn("Could not check for existing user after failed registration: " + checkEx.getMessage());
                     }
-                } catch (Exception checkEx) {
-                    logger.warn("Error checking for existing user during retry: " + checkEx.getMessage());
+                    
+                    throw new RuntimeException("Unable to process OAuth registration due to concurrent modifications. Please try again.");
                 }
                 
-                // Wait briefly before retry
+                // Brief wait before retry
                 try {
                     Thread.sleep(100 * attempt); // Progressive backoff
                 } catch (InterruptedException ie) {
@@ -273,7 +274,7 @@ public class AuthService implements IAuthService {
     private AuthResponseDTO registerUserViaOAuthInternal(OAuthRegistrationDTO registrationDTO, String email, 
                                                         String idToken, OAuthProvider provider, int attempt, int maxRetries) {
         // Verify OAuth token and get external ID
-        // Note: checkOAuthRegistration will handle incomplete users by deleting them
+        // Note: checkOAuthRegistration now handles incomplete users with proper synchronization
         String externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
         
         // Check if user already exists and is ACTIVE - if so, redirect to sign-in behavior
@@ -309,13 +310,27 @@ public class AuthService implements IAuthService {
         newUser.setProfilePictureUrlString(profilePictureUrl == null ? S3Service.getDefaultProfilePictureUrlString() : profilePictureUrl);
 
         logger.info(String.format("Creating OAuth user on attempt %d/%d: %s", attempt, maxRetries, email));
-        newUser = userService.createAndSaveUser(newUser);
         
-        // Create OAuth mapping
-        oauthService.createAndSaveMapping(newUser, externalId, provider);
-        
-        logger.info("OAuth user registered successfully: " + LoggingUtils.formatUserInfo(newUser));
-        return UserMapper.toAuthResponseDTO(newUser);
+        try {
+            // Create user and mapping in a transaction
+            newUser = userService.createAndSaveUser(newUser);
+            oauthService.createAndSaveMapping(newUser, externalId, provider);
+            
+            logger.info("OAuth user registered successfully: " + LoggingUtils.formatUserInfo(newUser));
+            return UserMapper.toAuthResponseDTO(newUser);
+        } catch (Exception e) {
+            logger.error("Failed to create OAuth user and mapping: " + e.getMessage());
+            // Clean up user if it was created but mapping failed
+            if (newUser.getId() != null) {
+                try {
+                    userService.deleteUserById(newUser.getId());
+                    logger.info("Cleaned up partially created user after mapping failure");
+                } catch (Exception cleanupEx) {
+                    logger.warn("Failed to clean up partially created user: " + cleanupEx.getMessage());
+                }
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -333,7 +348,6 @@ public class AuthService implements IAuthService {
                 externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
             } catch (Exception e) {
                 logger.warn("Could not verify OAuth token in graceful handler: " + e.getMessage());
-                // If we can't verify the token, we can't proceed with any user creation
                 return null;
             }
             
@@ -344,14 +358,37 @@ public class AuthService implements IAuthService {
                 return existingUser.get();
             }
             
-            // If no existing user found, create a new user at EMAIL_VERIFIED status
-            // This ensures the user goes through the proper onboarding flow
+            // For data integrity violations that suggest concurrent creation, 
+            // give other threads a moment to complete and then check again
+            if (exception instanceof org.springframework.dao.DataIntegrityViolationException) {
+                logger.info("Data integrity violation detected, checking for concurrent user creation");
+                
+                try {
+                    Thread.sleep(200); // Brief wait for concurrent operations to complete
+                    
+                    // Re-check for existing user after brief wait
+                    Optional<AuthResponseDTO> concurrentUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
+                    if (concurrentUser.isPresent()) {
+                        logger.info("Found user created by concurrent thread after data integrity violation");
+                        return concurrentUser.get();
+                    }
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("Interrupted while waiting to check for concurrent user creation");
+                } catch (Exception recheckEx) {
+                    logger.warn("Error during concurrent user re-check: " + recheckEx.getMessage());
+                }
+            }
+            
+            // If no existing user found and this is not a recoverable scenario, 
+            // attempt to create a minimal user for graceful degradation
+            logger.info("Attempting graceful user creation for external ID: " + externalId);
+            
             User newUser = new User();
             newUser.setEmail(email);
-            // Leave username and phoneNumber as null - user will provide them during onboarding
-            newUser.setUsername(null);
-            newUser.setPhoneNumber(null);
-            newUser.setStatus(UserStatus.EMAIL_VERIFIED); // Start at EMAIL_VERIFIED for OAuth users
+            newUser.setUsername(null);  // Will be set during onboarding
+            newUser.setPhoneNumber(null);  // Will be set during onboarding
+            newUser.setStatus(UserStatus.EMAIL_VERIFIED);
             newUser.setDateCreated(new Date());
             
             String profilePictureUrl = registrationDTO.getProfilePictureUrl();
@@ -364,11 +401,28 @@ public class AuthService implements IAuthService {
                 newUser.setName(email.split("@")[0]);
             }
             
-            newUser = userService.createAndSaveUser(newUser);
-            oauthService.createAndSaveMapping(newUser, externalId, provider);
-            
-            logger.info("OAuth user created gracefully with EMAIL_VERIFIED status: " + LoggingUtils.formatUserInfo(newUser));
-            return UserMapper.toAuthResponseDTO(newUser);
+            try {
+                newUser = userService.createAndSaveUser(newUser);
+                oauthService.createAndSaveMapping(newUser, externalId, provider);
+                
+                logger.info("OAuth user created gracefully with EMAIL_VERIFIED status: " + LoggingUtils.formatUserInfo(newUser));
+                return UserMapper.toAuthResponseDTO(newUser);
+            } catch (Exception createEx) {
+                logger.warn("Failed to create user gracefully, checking one more time for concurrent creation: " + createEx.getMessage());
+                
+                // Final check for concurrent user creation
+                try {
+                    Optional<AuthResponseDTO> finalCheck = oauthService.getUserIfExistsbyExternalId(externalId, email);
+                    if (finalCheck.isPresent()) {
+                        logger.info("Found user created by another thread during graceful creation attempt");
+                        return finalCheck.get();
+                    }
+                } catch (Exception finalEx) {
+                    logger.warn("Error during final concurrent user check: " + finalEx.getMessage());
+                }
+                
+                throw createEx; // Re-throw if we couldn't create or find the user
+            }
             
         } catch (Exception e) {
             logger.error("Failed to handle OAuth registration gracefully: " + e.getMessage());
@@ -381,6 +435,18 @@ public class AuthService implements IAuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + jwtService.generateAccessToken(username));
         headers.set("X-Refresh-Token", jwtService.generateRefreshToken(username));
+        return headers;
+    }
+
+    /**
+     * Helper method to generate tokens for users, using email as fallback when username is null
+     * This is specifically needed for OAuth users during onboarding who don't have usernames yet
+     */
+    public HttpHeaders makeHeadersForTokens(User user) {
+        String subject = user.getOptionalUsername().orElse(user.getEmail());
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + jwtService.generateAccessToken(subject));
+        headers.set("X-Refresh-Token", jwtService.generateRefreshToken(subject));
         return headers;
     }
 

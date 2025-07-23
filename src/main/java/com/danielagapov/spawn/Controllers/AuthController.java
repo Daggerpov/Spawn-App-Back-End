@@ -35,6 +35,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Optional;
 import java.util.UUID;
+import com.danielagapov.spawn.Models.User.User;
+import com.danielagapov.spawn.Services.User.IUserService;
 
 
 @RestController()
@@ -46,6 +48,7 @@ public class AuthController {
     private final ILogger logger;
     private final IAuthService authService;
     private final IEmailService emailService;
+    private final IUserService userService;
 
     /**
      * This method is meant to check whether an externally signed-in user through either Google or Apple
@@ -59,14 +62,17 @@ public class AuthController {
     public ResponseEntity<?> signIn(
             @RequestParam(value = "idToken", required = true) String idToken,
             @RequestParam(value = "provider", required = true) OAuthProvider provider,
-            @RequestParam(value = "email", required = false) String email) {
+            @RequestParam(value = "email", required = false) String email)
+    {
         try {
             Optional<AuthResponseDTO> optionalDTO;
             optionalDTO = oauthService.signInUser(idToken, email, provider);
             
             if (optionalDTO.isPresent()) {
                 AuthResponseDTO authResponseDTO = optionalDTO.get();
-                HttpHeaders headers = authService.makeHeadersForTokens(authResponseDTO.getUser().getUsername());
+                // Use User object for token generation to handle null usernames
+                User user = userService.getUserEntityById(authResponseDTO.getUser().getId());
+                HttpHeaders headers = authService.makeHeadersForTokens(user);
                 return ResponseEntity.ok().headers(headers).body(authResponseDTO);
             }
             return ResponseEntity.ok().body(null);
@@ -217,7 +223,9 @@ public class AuthController {
     public ResponseEntity<?> registerViaOAuth(@RequestBody OAuthRegistrationDTO registration) {
         try {
             AuthResponseDTO user = authService.registerUserViaOAuth(registration);
-            HttpHeaders headers = authService.makeHeadersForTokens(user.getUser().getUsername());
+            // Use User object for token generation to handle null usernames
+            User userEntity = userService.getUserEntityById(user.getUser().getId());
+            HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
             return ResponseEntity.ok().headers(headers).body(user);
         } catch (AccountAlreadyExistsException e) {
             logger.warn("OAuth registration failed - account already exists: " + e.getMessage());
@@ -225,36 +233,20 @@ public class AuthController {
         } catch (FieldAlreadyExistsException e) {
             logger.warn("OAuth registration failed - field already exists: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
-        } catch (IncorrectProviderException e) {
-            logger.warn("OAuth registration failed - incorrect provider: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
-        } catch (TokenExpiredException e) {
-            logger.warn("OAuth registration failed - token expired: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(e.getMessage()));
-        } catch (OAuthProviderUnavailableException e) {
-            logger.warn("OAuth registration failed - provider unavailable: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ErrorResponse(e.getMessage()));
-        } catch (SecurityException e) {
-            logger.warn("OAuth registration failed - security error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("Authentication failed. Please try signing in again."));
-        } catch (IllegalArgumentException e) {
-            logger.warn("OAuth registration failed - invalid arguments: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("Invalid registration data. Please try again."));
-        } catch (org.springframework.dao.DataAccessException e) {
-            logger.error("Database error during OAuth registration: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Registration temporarily unavailable. Please try again."));
-        } catch (RuntimeException e) {
-            // Handle concurrency and other runtime exceptions
-            if (e.getMessage() != null && e.getMessage().contains("high concurrency")) {
-                logger.warn("OAuth registration failed due to high concurrency: " + e.getMessage());
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Please wait a moment and try again."));
-            } else {
-                logger.error("Runtime error during OAuth registration: " + e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Registration temporarily unavailable. Please try again."));
-            }
         } catch (Exception e) {
-            logger.error("Unexpected error during OAuth registration: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Something went wrong. Please try again."));
+            logger.error("Error during OAuth registration: " + e.getMessage());
+            // Try graceful handling if registration fails
+            try {
+                AuthResponseDTO gracefulUser = authService.handleOAuthRegistrationGracefully(registration, e);
+                if (gracefulUser != null) {
+                    User userEntity = userService.getUserEntityById(gracefulUser.getUser().getId());
+                    HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
+                    return ResponseEntity.ok().headers(headers).body(gracefulUser);
+                }
+            } catch (Exception gracefulException) {
+                logger.error("Graceful handling also failed: " + gracefulException.getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Registration failed"));
         }
     }
 
@@ -279,7 +271,9 @@ public class AuthController {
         try {
             BaseUserDTO user = authService.checkEmailVerificationCode(request.getEmail(), request.getVerificationCode());
             AuthResponseDTO authResponse = new AuthResponseDTO(user, UserStatus.EMAIL_VERIFIED);
-            HttpHeaders headers = authService.makeHeadersForTokens(user.getUsername());
+            // Use User object for token generation to handle users with null usernames
+            User userEntity = userService.getUserEntityById(user.getId());
+            HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
             return ResponseEntity.ok().headers(headers).body(authResponse);
         } catch (EmailVerificationException e) {
             logger.warn("Email verification failed: " + e.getMessage());
@@ -337,7 +331,9 @@ public class AuthController {
     public ResponseEntity<?> updateUserDetails(@RequestBody UpdateUserDetailsDTO dto) {
         try {
             BaseUserDTO updatedUser = authService.updateUserDetails(dto);
-            HttpHeaders headers = authService.makeHeadersForTokens(updatedUser.getUsername());
+            // Use User object for token generation to handle cases where username was just set
+            User user = userService.getUserEntityById(updatedUser.getId());
+            HttpHeaders headers = authService.makeHeadersForTokens(user);
             return ResponseEntity.ok().headers(headers).body(updatedUser);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for update: " + dto.getId() + ", entity type: " + e.entityType);

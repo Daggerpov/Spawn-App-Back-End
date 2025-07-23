@@ -7,6 +7,7 @@ import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.Models.User.User;
 import org.springframework.http.HttpHeaders;
 
 import java.util.UUID;
@@ -67,6 +68,12 @@ public interface IAuthService {
      * HTTP headers
      */
     HttpHeaders makeHeadersForTokens(String username);
+
+    /**
+     * Helper method to generate tokens for users, using email as fallback when username is null
+     * This is specifically needed for OAuth users during onboarding who don't have usernames yet
+     */
+    HttpHeaders makeHeadersForTokens(User user);
 
     /**
      * Updates user details (username, phone number, password) for an existing user
