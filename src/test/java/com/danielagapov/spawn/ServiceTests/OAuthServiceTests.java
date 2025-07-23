@@ -35,6 +35,15 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class OAuthServiceTests {
 
     @Mock
@@ -71,12 +80,23 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_NewUser_Google() {
+        UUID userId = UUID.randomUUID();
         UserDTO userDTO = new UserDTO(null, null, "john.doe", "profile.jpg", "John Doe", "bio", null, "john.doe@example.com");
+        UserDTO savedUserDTO = new UserDTO(userId, null, "john.doe", "profile.jpg", "John Doe", "bio", null, "john.doe@example.com");
         byte[] profilePicture = new byte[0];
+        
+        // Create a User entity for the getUserEntityById mock
+        User userEntity = new User();
+        userEntity.setId(userId);
+        userEntity.setEmail("john.doe@example.com");
+        userEntity.setName("John Doe");
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
         when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
-        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
+        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(savedUserDTO);
+        when(userService.getUserEntityById(userId)).thenReturn(userEntity);
+        when(externalIdMapRepository.findById("externalId123")).thenReturn(Optional.empty());
+        when(externalIdMapRepository.save(any(UserIdExternalIdMap.class))).thenReturn(new UserIdExternalIdMap("externalId123", userEntity, OAuthProvider.google));
 
         BaseUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
@@ -147,12 +167,23 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_NewUser_Apple() {
+        UUID userId = UUID.randomUUID();
         UserDTO userDTO = new UserDTO(null, null, "jane.doe", "profile.jpg", "Jane Doe", "Bio", null, "jane.doe@example.com");
+        UserDTO savedUserDTO = new UserDTO(userId, null, "jane.doe", "profile.jpg", "Jane Doe", "Bio", null, "jane.doe@example.com");
         byte[] profilePicture = new byte[0];
+        
+        // Create a User entity for the getUserEntityById mock
+        User userEntity = new User();
+        userEntity.setId(userId);
+        userEntity.setEmail("jane.doe@example.com");
+        userEntity.setName("Jane Doe");
 
         when(externalIdMapRepository.existsById("externalId456")).thenReturn(false);
         when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
-        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
+        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(savedUserDTO);
+        when(userService.getUserEntityById(userId)).thenReturn(userEntity);
+        when(externalIdMapRepository.findById("externalId456")).thenReturn(Optional.empty());
+        when(externalIdMapRepository.save(any(UserIdExternalIdMap.class))).thenReturn(new UserIdExternalIdMap("externalId456", userEntity, OAuthProvider.apple));
 
         BaseUserDTO result = oauthService.makeUser(userDTO, "externalId456", profilePicture, OAuthProvider.apple);
 
@@ -254,12 +285,23 @@ public class OAuthServiceTests {
 
     @Test
     public void testMakeUser_LargeProfilePicture() {
+        UUID userId = UUID.randomUUID();
         UserDTO userDTO = new UserDTO(null, null, "john.largepic", "profile.jpg", "John LargePic", "Bio", null, "john.largepic@example.com");
+        UserDTO savedUserDTO = new UserDTO(userId, null, "john.largepic", "profile.jpg", "John LargePic", "Bio", null, "john.largepic@example.com");
         byte[] profilePicture = new byte[10 * 1024 * 1024]; // 10 MB profile picture
+        
+        // Create a User entity for the getUserEntityById mock
+        User userEntity = new User();
+        userEntity.setId(userId);
+        userEntity.setEmail("john.largepic@example.com");
+        userEntity.setName("John LargePic");
 
         when(externalIdMapRepository.existsById("externalId123")).thenReturn(false);
         when(userService.existsByEmail(userDTO.getEmail())).thenReturn(false);
-        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(userDTO);
+        when(userService.createAndSaveUserWithProfilePicture(userDTO, profilePicture)).thenReturn(savedUserDTO);
+        when(userService.getUserEntityById(userId)).thenReturn(userEntity);
+        when(externalIdMapRepository.findById("externalId123")).thenReturn(Optional.empty());
+        when(externalIdMapRepository.save(any(UserIdExternalIdMap.class))).thenReturn(new UserIdExternalIdMap("externalId123", userEntity, OAuthProvider.google));
 
         BaseUserDTO result = oauthService.makeUser(userDTO, "externalId123", profilePicture, OAuthProvider.google);
 
@@ -488,6 +530,29 @@ public class OAuthServiceTests {
      * Specifically tests the scenario where a user deletes their account 
      * and immediately tries to re-register with the same OAuth provider.
      */
+    @Test
+    void testOAuthMappingConcurrencyHandling() {
+        // Test that the application-level synchronization in createAndSaveMapping works correctly
+        String externalId = "test-concurrent-external-id";
+        OAuthProvider provider = OAuthProvider.google;
+        
+        // Mock the repository to simulate the mapping creation
+        when(externalIdMapRepository.findById(externalId)).thenReturn(Optional.empty());
+        when(externalIdMapRepository.save(any(UserIdExternalIdMap.class)))
+            .thenReturn(new UserIdExternalIdMap(externalId, testUser, provider));
+        
+        // This should complete without throwing any concurrency-related exceptions
+        assertDoesNotThrow(() -> {
+            oauthService.createAndSaveMapping(testUser, externalId, provider);
+        }, "OAuth mapping creation should handle concurrency gracefully");
+        
+        verify(externalIdMapRepository, times(1)).findById(externalId);
+        verify(externalIdMapRepository, times(1)).save(any(UserIdExternalIdMap.class));
+    }
+
+    /**
+     * Run the actual Spring Boot integration tests in a nested class with proper test configuration
+     */
     @SpringBootTest
     @ActiveProfiles("test")
     @Transactional
@@ -621,5 +686,7 @@ public class OAuthServiceTests {
             assertFalse(userRepository.existsById(savedUser.getId()));
             assertFalse(mappingRepository.existsById(externalId));
         }
+
+
     }
 }

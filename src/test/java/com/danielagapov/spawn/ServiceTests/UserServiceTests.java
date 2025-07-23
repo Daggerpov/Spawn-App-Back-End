@@ -230,13 +230,13 @@ public class UserServiceTests {
         when(cacheManager.getCache("recommendedFriends")).thenReturn(null);
         doNothing().when(s3Service).deleteObjectByURL(anyString());
         doNothing().when(userRepository).deleteById(userId);
-        doNothing().when(userIdExternalIdMapRepository).deleteAllByUserId(userId);
 
         userService.deleteUserById(userId);
 
         verify(userRepository, times(1)).deleteById(userId);
         verify(s3Service, times(1)).deleteObjectByURL("profile.jpg");
-        verify(userIdExternalIdMapRepository, times(1)).deleteAllByUserId(userId);
+        // OAuth mappings should be deleted by database cascade, not explicit service call
+        verify(userIdExternalIdMapRepository, never()).deleteAllByUserId(userId);
     }
 
     @Test
