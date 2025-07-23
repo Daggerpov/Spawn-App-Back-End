@@ -185,7 +185,7 @@ public class AuthService implements IAuthService {
                 throw new FieldAlreadyExistsException("Username already exists", UserField.USERNAME);
             }
             user.setUsername(dto.getUsername());
-            user.setName(dto.getUsername());
+            // Don't automatically set name to username - let user choose their display name
         }
         
         // Clean and validate phone number before storing
