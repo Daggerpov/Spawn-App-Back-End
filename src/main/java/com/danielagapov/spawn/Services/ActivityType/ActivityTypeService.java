@@ -121,11 +121,9 @@ public class ActivityTypeService implements IActivityTypeService {
      * Phase 3: Update all activity types to their final orderNum values
      * Phase 4: Reassign new orderNum values to previously conflicting activity types
      */
+    @Transactional
     private void updateExistingActivityTypesWithConstraintHandling(List<ActivityType> existingActivityTypes, UUID userId) {
         logger.info("Updating " + existingActivityTypes.size() + " existing activity types with constraint handling");
-        
-        // Get all current activity types for this user to check for conflicts
-        List<ActivityType> allUserActivityTypes = repository.findActivityTypesByCreatorId(userId);
         
         // Create a map of activity types being updated by their ID for quick lookup
         Map<UUID, ActivityType> updatingActivityTypesMap = existingActivityTypes.stream()
@@ -148,8 +146,9 @@ public class ActivityTypeService implements IActivityTypeService {
             repository.save(activityType);
         }
         
-        // Phase 2: Move any remaining activity types that conflict with target orderNum values to temporary values
-        List<ActivityType> conflictingActivityTypes = allUserActivityTypes.stream()
+        // Phase 2: Refresh the list to get current state after Phase 1, then move any remaining conflicting activity types
+        List<ActivityType> currentUserActivityTypes = repository.findActivityTypesByCreatorId(userId);
+        List<ActivityType> conflictingActivityTypes = currentUserActivityTypes.stream()
                 .filter(at -> !updatingActivityTypesMap.containsKey(at.getId())) // Not being updated in this batch
                 .filter(at -> targetOrderNumValues.contains(at.getOrderNum())) // Has a conflicting orderNum
                 .toList();
