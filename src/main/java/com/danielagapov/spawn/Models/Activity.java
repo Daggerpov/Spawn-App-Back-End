@@ -51,6 +51,9 @@ public class Activity implements Serializable {
 
     private String note;
 
+    @Column(name = "participant_limit")
+    private Integer participantLimit; // null means unlimited participants
+
     @ManyToOne
     @JoinColumn(name = "creator_id", referencedColumnName = "id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)

@@ -39,6 +39,7 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             UUID activityTypeId,
                             String note,
                             String icon,
+                            Integer participantLimit,
                             BaseUserDTO creatorUser,
                             List<BaseUserDTO> participantUsers,
                             List<BaseUserDTO> invitedUsers,
@@ -47,7 +48,7 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             ParticipationStatus participationStatus, 
                             boolean isSelfOwned,
                             Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, createdAt);
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
         this.location = location;
         this.activityTypeId = activityTypeId;
         this.creatorUser = creatorUser;

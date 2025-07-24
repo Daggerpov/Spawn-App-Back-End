@@ -26,6 +26,7 @@ public class ActivityMapper {
                 entity.getActivityType() != null ? entity.getActivityType().getId() : null, // Map ActivityType to ActivityTypeDTO
                 entity.getNote(),
                 entity.getIcon(),
+                entity.getParticipantLimit(),
                 creatorUserId,
                 participantUserIds,
                 invitedUserIds,
@@ -47,6 +48,7 @@ public class ActivityMapper {
                 dto.getIcon()
         );
         activity.setActivityType(activityType); // Set the ActivityType entity
+        activity.setParticipantLimit(dto.getParticipantLimit()); // Set the participant limit
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
             activity.setCreatedAt(dto.getCreatedAt());
@@ -113,6 +115,7 @@ public class ActivityMapper {
         activity.setLocation(location); // Set the location
 
         activity.setNote(dto.getNote()); // Set the note
+        activity.setParticipantLimit(dto.getParticipantLimit()); // Set the participant limit
 
         // Convert BaseUserDTO to User entity (assuming a similar method exists)
         User creator = UserMapper.toEntity(dto.getCreatorUser());
@@ -136,6 +139,7 @@ public class ActivityMapper {
         activity.setNote(dto.getNote());
         activity.setCreator(creator);
         activity.setIcon(dto.getIcon());
+        activity.setParticipantLimit(dto.getParticipantLimit()); // Set the participant limit
         // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
         if (dto.getCreatedAt() != null) {
             activity.setCreatedAt(dto.getCreatedAt());

@@ -115,6 +115,7 @@ public class ActivityServiceTests {
                 null, // activityTypeId
                 "Note",
                 "icon",
+                null, // participantLimit
                 UUID.randomUUID(),
                 List.of(),
                 List.of(),
@@ -185,7 +186,7 @@ public class ActivityServiceTests {
         UUID locationId = UUID.randomUUID();
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(2), location.getId(), null, "Bring your own snacks!", "icon", UUID.randomUUID(),
+                OffsetDateTime.now().plusHours(2), location.getId(), null, "Bring your own snacks!", "icon", null, UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
         User creator = new User(
                 UUID.randomUUID(),
@@ -209,7 +210,7 @@ public class ActivityServiceTests {
         UUID locationId = UUID.randomUUID();
         Location location = new Location(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
-                OffsetDateTime.now().plusHours(2), location.getId(), null, "Bring your own snacks!", "icon", UUID.randomUUID(),
+                OffsetDateTime.now().plusHours(2), location.getId(), null, "Bring your own snacks!", "icon", null, UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
 
         when(locationRepository.findById(locationId)).thenReturn(Optional.of(location));
@@ -263,6 +264,7 @@ public class ActivityServiceTests {
                 null, // activityTypeId
                 "Test note",
                 "icon",
+                null, // participantLimit
                 creatorId,
                 List.of(explicitInviteId),
                 null
@@ -332,6 +334,7 @@ public class ActivityServiceTests {
                 null, // activityTypeId
                 "Test note",
                 "icon",
+                null, // participantLimit
                 creatorId,
                 List.of(),
                 null
@@ -360,6 +363,7 @@ public class ActivityServiceTests {
                 null, // activityTypeId
                 "Merged invites test",
                 "icon",
+                null, // participantLimit
                 creatorId,
                 List.of(commonUserId),
                 null
@@ -777,6 +781,7 @@ public class ActivityServiceTests {
                 null, // activityTypeId
                 "Note",
                 "icon",
+                null, // participantLimit
                 UUID.randomUUID(),
                 List.of(), List.of(), List.of(), Instant.now());
         when(locationService.getLocationById(ActivityDTO.getLocationId()))
@@ -802,7 +807,7 @@ public class ActivityServiceTests {
         UUID creatorId = UUID.randomUUID();
         ActivityDTO ActivityDTO = new ActivityDTO(
                 UUID.randomUUID(), "Activity", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1),
-                UUID.randomUUID(), null, "Note", "icon", creatorId, List.of(), List.of(), List.of(), Instant.now());
+                UUID.randomUUID(), null, "Note", "icon", null, creatorId, List.of(), List.of(), List.of(), Instant.now());
         UUID requestingUserId = UUID.randomUUID();
         FriendTagDTO friendTag = mock(FriendTagDTO.class);
         when(friendTag.getColorHexCode()).thenReturn("#ABCDEF");

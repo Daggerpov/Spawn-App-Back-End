@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Exceptions.ActivityFullException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -169,6 +170,9 @@ public class ActivityController {
                 logger.error("Entity not found for participation toggle: " + e.getMessage());
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             }
+        } catch (ActivityFullException e) {
+            logger.error("Activity is full for participation toggle: " + ActivityId + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             logger.error("Error toggling participation for user: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + ActivityId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

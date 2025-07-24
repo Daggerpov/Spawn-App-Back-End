@@ -28,5 +28,6 @@ public abstract class AbstractActivityDTO implements Serializable {
      * Java String supports full UTF-8 emoji characters.
      */
     String icon;
+    Integer participantLimit; // null means unlimited participants
     Instant createdAt;
 }

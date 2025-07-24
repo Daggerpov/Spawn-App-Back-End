@@ -32,12 +32,13 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
     UUID locationId,
     String note,
     String icon,
+    Integer participantLimit,
     BaseUserDTO creatorUser,
     List<BaseUserDTO> participantUsers,
     List<BaseUserDTO> invitedUsers,
     List<UUID> chatMessageIds,
     Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, createdAt);
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
         this.locationId = locationId;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
@@ -65,6 +66,7 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
             fullFeedActivityDTO.getLocation().getId(),
             fullFeedActivityDTO.getNote(),
             fullFeedActivityDTO.getIcon(),
+            fullFeedActivityDTO.getParticipantLimit(),
             fullFeedActivityDTO.getCreatorUser(),
             fullFeedActivityDTO.getParticipantUsers(),
             fullFeedActivityDTO.getInvitedUsers(),

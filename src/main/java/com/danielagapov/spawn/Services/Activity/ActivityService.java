@@ -10,6 +10,7 @@ import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Events.ActivityInviteNotificationEvent;
 import com.danielagapov.spawn.Events.ActivityParticipationNotificationEvent;
 import com.danielagapov.spawn.Events.ActivityUpdateNotificationEvent;
+import com.danielagapov.spawn.Exceptions.ActivityFullException;
 import com.danielagapov.spawn.Exceptions.ApplicationException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -152,6 +153,7 @@ public class ActivityService implements IActivityService {
                 activity.getActivityType() != null ? activity.getActivityType().getId() : null,
                 activity.getNote(),
                 activity.getIcon(),
+                activity.getParticipantLimit(),
                 activity.getCreator().getId(),
                 participatingUserIds,
                 invitedUserIds,
@@ -314,6 +316,7 @@ public class ActivityService implements IActivityService {
                     Activity.getActivityType() != null ? Activity.getActivityType().getId() : null,
                     Activity.getNote(),
                     Activity.getIcon(),
+                    Activity.getParticipantLimit(),
                     creatorUserDTO,
                     new ArrayList<>(), // participantUsers - empty for new activity
                     invitedUserDTOs,
@@ -521,6 +524,15 @@ public class ActivityService implements IActivityService {
         if (ActivityUser.getStatus() == ParticipationStatus.participating) {
             ActivityUser.setStatus(ParticipationStatus.invited);
         } else if (ActivityUser.getStatus().equals(ParticipationStatus.invited)) {
+            // Check if activity has a participant limit and if it's already full
+            final Activity activity = ActivityUser.getActivity();
+            if (activity.getParticipantLimit() != null) {
+                // Count current participants
+                long currentParticipants = activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating).size();
+                if (currentParticipants >= activity.getParticipantLimit()) {
+                    throw new ActivityFullException(ActivityId, activity.getParticipantLimit());
+                }
+            }
             ActivityUser.setStatus(ParticipationStatus.participating);
         }
         
@@ -689,6 +701,7 @@ public class ActivityService implements IActivityService {
                     Activity.getActivityTypeId(),
                     Activity.getNote(),
                     Activity.getIcon(),
+                    Activity.getParticipantLimit(),
                     creator,
                     userService.getParticipantsByActivityId(Activity.getId()),
                     userService.getInvitedByActivityId(Activity.getId()),
@@ -809,10 +822,19 @@ public class ActivityService implements IActivityService {
                 
                 // If they're just invited, automatically set them to participating
                 if (activityUser.getStatus() == ParticipationStatus.invited) {
+                    // Check if activity has a participant limit and if it's already full
+                    final Activity activity = activityUser.getActivity();
+                    if (activity.getParticipantLimit() != null) {
+                        // Count current participants
+                        long currentParticipants = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating).size();
+                        if (currentParticipants >= activity.getParticipantLimit()) {
+                            throw new ActivityFullException(activityId, activity.getParticipantLimit());
+                        }
+                    }
+                    
                     activityUser.setStatus(ParticipationStatus.participating);
                     
                     // Publish participation event
-                    final Activity activity = activityUser.getActivity();
                     final User user = activityUser.getUser();
                     eventPublisher.publishEvent(
                         ActivityParticipationNotificationEvent.forJoining(user, activity)
@@ -828,6 +850,15 @@ public class ActivityService implements IActivityService {
                         .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
                 Activity activity = repository.findById(activityId)
                         .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, activityId));
+
+                // Check if activity has a participant limit and if it's already full
+                if (activity.getParticipantLimit() != null) {
+                    // Count current participants
+                    long currentParticipants = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating).size();
+                    if (currentParticipants >= activity.getParticipantLimit()) {
+                        throw new ActivityFullException(activityId, activity.getParticipantLimit());
+                    }
+                }
 
                 ActivityUser newActivityUser = new ActivityUser();
                 newActivityUser.setId(compositeId);
