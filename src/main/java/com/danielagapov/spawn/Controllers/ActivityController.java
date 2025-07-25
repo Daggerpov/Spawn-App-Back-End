@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
-import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.Exceptions.ActivityFullException;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -71,20 +71,22 @@ public class ActivityController {
 
     // full path: /api/v1/activities
     @PostMapping
-    public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityCreationDTO activityCreationDTO) {
+    public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityDTO activityDTO) {
         try {
-            AbstractActivityDTO createdActivity = activityService.createActivity(activityCreationDTO);
+            AbstractActivityDTO createdActivity = activityService.createActivity(activityDTO);
             return new ResponseEntity<>(createdActivity, HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid request for activity creation: " + e.getMessage());
+            return new ResponseEntity<AbstractActivityDTO>(HttpStatus.BAD_REQUEST);
+        } catch (BaseNotFoundException e) {
+            logger.error("Entity not found during activity creation: " + e.getMessage());
+            return new ResponseEntity<AbstractActivityDTO>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error creating activity: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/activities/{id}
     @PutMapping("{id}")
     public ResponseEntity<?> replaceActivity(@RequestBody ActivityDTO newActivity, @PathVariable UUID id) {
@@ -169,6 +171,9 @@ public class ActivityController {
                 logger.error("Entity not found for participation toggle: " + e.getMessage());
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             }
+        } catch (ActivityFullException e) {
+            logger.error("Activity is full for participation toggle: " + ActivityId + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             logger.error("Error toggling participation for user: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + ActivityId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -272,7 +277,7 @@ public class ActivityController {
     }
 
     @GetMapping("{activityId}/chats")
-    public ResponseEntity<?> getChatMessagesForActivity(@RequestParam UUID activityId) {
+    public ResponseEntity<?> getChatMessagesForActivity(@PathVariable UUID activityId) {
         try {
             return new ResponseEntity<>(activityService.getChatMessagesByActivityId(activityId), HttpStatus.OK);
         } catch (Exception e) {

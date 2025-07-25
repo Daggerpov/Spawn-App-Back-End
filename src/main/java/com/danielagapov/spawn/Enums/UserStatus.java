@@ -8,5 +8,6 @@ public enum UserStatus {
     EMAIL_VERIFIED,
     USERNAME_AND_PHONE_NUMBER,
     NAME_AND_PHOTO,
+    CONTACT_IMPORT,
     ACTIVE
 }

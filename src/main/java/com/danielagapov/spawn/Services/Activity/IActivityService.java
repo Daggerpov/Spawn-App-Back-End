@@ -51,24 +51,24 @@ public interface IActivityService {
     AbstractActivityDTO saveActivity(AbstractActivityDTO activity);
 
     /**
-     * Creates a new activity from creation DTO and handles invitations.
+     * Creates a new activity from DTO and handles invitations.
      * 
-     * @param activityCreationDTO the DTO containing activity creation data
+     * @param activityDTO the DTO containing activity creation data
      * @return the created AbstractActivityDTO
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if creation fails
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if referenced entities don't exist
      */
-    AbstractActivityDTO createActivity(ActivityCreationDTO activityCreationDTO);
+    AbstractActivityDTO createActivity(ActivityDTO activityDTO);
 
     /**
      * Updates an existing activity or creates a new one if it doesn't exist.
      * 
      * @param activity the activity data to update with
      * @param activityId the unique identifier of the activity to update
-     * @return the updated ActivityDTO
+     * @return the updated FullFeedActivityDTO
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if updating fails
      */
-    ActivityDTO replaceActivity(ActivityDTO activity, UUID activityId);
+    FullFeedActivityDTO replaceActivity(ActivityDTO activity, UUID activityId);
 
     /**
      * Deletes an activity by its unique identifier.

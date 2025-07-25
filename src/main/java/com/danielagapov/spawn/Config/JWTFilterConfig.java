@@ -54,6 +54,7 @@ public class JWTFilterConfig extends OncePerRequestFilter {
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 try {
                     // Load the UserDetails object for the extracted username using the UserInfoService
+                    // The subject could be a username or email (for OAuth users)
                     UserDetails userDetails = context.getBean(UserInfoService.class).loadUserByUsername(username);
 
                     // Validate the JWT token against the UserDetails
@@ -77,7 +78,19 @@ public class JWTFilterConfig extends OncePerRequestFilter {
                         logger.warn("Invalid token, user is not authenticated");
                     }
                 } catch (UsernameNotFoundException e) {
-                    logger.warn("User not found: " + username);
+                    // Try loading by email if username lookup failed (for OAuth users with email-based tokens)
+                    try {
+                        UserDetails userDetails = context.getBean(UserInfoService.class).loadUserByEmail(username);
+                        if (jwtService.isValidToken(jwt, userDetails)) {
+                            UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                            token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(token);
+                        } else {
+                            logger.warn("Invalid token, user is not authenticated");
+                        }
+                    } catch (Exception emailException) {
+                        logger.warn("User not found by username or email: " + username);
+                    }
                 } catch (Exception e) {
                     logger.error("Error during authentication: " + e.getMessage());
                 }

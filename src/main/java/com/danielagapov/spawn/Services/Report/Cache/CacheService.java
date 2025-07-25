@@ -55,6 +55,7 @@ public class CacheService implements ICacheService {
     private static final String OTHER_PROFILES_CACHE = "otherProfiles";
     private static final String RECOMMENDED_FRIENDS_CACHE = "recommendedFriends";
     private static final String FRIEND_REQUESTS_CACHE = "friendRequests";
+    private static final String SENT_FRIEND_REQUESTS_CACHE = "sentFriendRequests";
     private static final String RECENTLY_SPAWNED_CACHE = "recentlySpawned";
     private static final String PROFILE_STATS_CACHE = "profileStats";
     private static final String PROFILE_INTERESTS_CACHE = "profileInterests";
@@ -132,6 +133,7 @@ public class CacheService implements ICacheService {
             response.put(OTHER_PROFILES_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(RECOMMENDED_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(FRIEND_REQUESTS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(SENT_FRIEND_REQUESTS_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(RECENTLY_SPAWNED_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(PROFILE_STATS_CACHE, new CacheValidationResponseDTO(true, null));
             response.put(PROFILE_INTERESTS_CACHE, new CacheValidationResponseDTO(true, null));
@@ -173,6 +175,11 @@ public class CacheService implements ICacheService {
         // Validate friend requests cache
         if (clientCacheTimestamps.containsKey(FRIEND_REQUESTS_CACHE)) {
             response.put(FRIEND_REQUESTS_CACHE, validateFriendRequestsCache(user, clientCacheTimestamps.get(FRIEND_REQUESTS_CACHE)));
+        }
+
+        // Validate sent friend requests cache
+        if (clientCacheTimestamps.containsKey(SENT_FRIEND_REQUESTS_CACHE)) {
+            response.put(SENT_FRIEND_REQUESTS_CACHE, validateSentFriendRequestsCache(user, clientCacheTimestamps.get(SENT_FRIEND_REQUESTS_CACHE)));
         }
 
         // Validate recently-spawned cache
@@ -482,25 +489,90 @@ public class CacheService implements ICacheService {
             // Parse the client timestamp
             ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
 
-            // Friend requests should always be fresh
-            // This data is critical for UX, so we'll typically invalidate with updated data
+            // Get the latest friend request timestamp for this user
+            Instant latestFriendRequestActivity = friendRequestService.getLatestFriendRequestTimestamp(user.getId());
 
-            try {
-                List<FetchFriendRequestDTO> friendRequests =
-                        friendRequestService.getIncomingFetchFriendRequestsByUserId(user.getId());
-                byte[] requestsData = objectMapper.writeValueAsBytes(friendRequests);
-
-                if (requestsData.length < 100_000) {
-                    return new CacheValidationResponseDTO(true, requestsData);
-                }
-            } catch (Exception e) {
-                logger.error("Failed to serialize friend requests data", e);
+            // If there are no friend requests, check if client has any cached data
+            if (latestFriendRequestActivity == null) {
+                // No friend requests exist, client cache should be empty
+                return new CacheValidationResponseDTO(false, null);
             }
 
-            return new CacheValidationResponseDTO(true, null);
+            // If client cache is older than the latest friend request activity, invalidate
+            boolean needsUpdate = latestFriendRequestActivity.isAfter(clientTime.toInstant());
+
+            if (needsUpdate) {
+                // Include updated data if possible to save an extra API call
+                try {
+                    List<FetchFriendRequestDTO> friendRequests =
+                            friendRequestService.getIncomingFetchFriendRequestsByUserId(user.getId());
+                    byte[] requestsData = objectMapper.writeValueAsBytes(friendRequests);
+
+                    if (requestsData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, requestsData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize friend requests data", e);
+                }
+
+                // If we couldn't include the data, just tell the client to refresh
+                return new CacheValidationResponseDTO(true, null);
+            }
+
+            // Client cache is still valid
+            return new CacheValidationResponseDTO(false, null);
 
         } catch (Exception e) {
             logger.error("Error validating friend requests cache for user {}: {}", user.getId(), e.getMessage());
+            // On error, tell client to refresh to be safe
+            return new CacheValidationResponseDTO(true, null);
+        }
+    }
+
+    /**
+     * Validates the sent friend requests cache.
+     */
+    private CacheValidationResponseDTO validateSentFriendRequestsCache(User user, String clientTimestamp) {
+        try {
+            // Parse the client timestamp
+            ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
+
+            // Get the latest friend request timestamp for this user (same timestamp used for both incoming and sent)
+            Instant latestFriendRequestActivity = friendRequestService.getLatestFriendRequestTimestamp(user.getId());
+
+            // If there are no friend requests, check if client has any cached data
+            if (latestFriendRequestActivity == null) {
+                // No friend requests exist, client cache should be empty
+                return new CacheValidationResponseDTO(false, null);
+            }
+
+            // If client cache is older than the latest friend request activity, invalidate
+            boolean needsUpdate = latestFriendRequestActivity.isAfter(clientTime.toInstant());
+
+            if (needsUpdate) {
+                // Include updated data if possible to save an extra API call
+                try {
+                    List<FetchFriendRequestDTO> sentFriendRequests =
+                            friendRequestService.getSentFetchFriendRequestsByUserId(user.getId());
+                    byte[] requestsData = objectMapper.writeValueAsBytes(sentFriendRequests);
+
+                    if (requestsData.length < 100_000) {
+                        return new CacheValidationResponseDTO(true, requestsData);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to serialize sent friend requests data", e);
+                }
+
+                // If we couldn't include the data, just tell the client to refresh
+                return new CacheValidationResponseDTO(true, null);
+            }
+
+            // Client cache is still valid
+            return new CacheValidationResponseDTO(false, null);
+
+        } catch (Exception e) {
+            logger.error("Error validating sent friend requests cache for user {}: {}", user.getId(), e.getMessage());
+            // On error, tell client to refresh to be safe
             return new CacheValidationResponseDTO(true, null);
         }
     }

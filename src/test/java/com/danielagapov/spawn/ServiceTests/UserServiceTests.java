@@ -17,6 +17,8 @@ import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendTagRepository;
 import com.danielagapov.spawn.Repositories.IUserFriendTagRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.Repositories.User.IUserIdExternalIdMapRepository;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
@@ -32,6 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
 
 import java.time.OffsetDateTime;
@@ -72,6 +75,15 @@ public class UserServiceTests {
 
     @Mock
     private IActivityUserRepository activityUserRepository;
+
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private IActivityTypeService activityTypeService;
+
+    @Mock
+    private IUserIdExternalIdMapRepository userIdExternalIdMapRepository;
 
     @Spy
     @InjectMocks
@@ -213,6 +225,9 @@ public class UserServiceTests {
         User user = new User(userId, "JohnDoe123", "profile.jpg", "John Doe", null, "johndoe@anon.com");
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userFriendTagRepository.findFriendIdsByUserId(userId)).thenReturn(new ArrayList<>());
+        when(cacheManager.getCache("friendsByUserId")).thenReturn(null);
+        when(cacheManager.getCache("recommendedFriends")).thenReturn(null);
         doNothing().when(s3Service).deleteObjectByURL(anyString());
         doNothing().when(userRepository).deleteById(userId);
 
@@ -220,6 +235,8 @@ public class UserServiceTests {
 
         verify(userRepository, times(1)).deleteById(userId);
         verify(s3Service, times(1)).deleteObjectByURL("profile.jpg");
+        // OAuth mappings should be deleted by database cascade, not explicit service call
+        verify(userIdExternalIdMapRepository, never()).deleteAllByUserId(userId);
     }
 
     @Test
@@ -228,7 +245,11 @@ public class UserServiceTests {
         User user = new User(userId, "JohnDoe123", "profile.jpg", "John Doe", null, "johndoe@anon.com");
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userFriendTagRepository.findFriendIdsByUserId(userId)).thenReturn(new ArrayList<>());
+        when(cacheManager.getCache("friendsByUserId")).thenReturn(null);
+        when(cacheManager.getCache("recommendedFriends")).thenReturn(null);
         doNothing().when(s3Service).deleteObjectByURL(anyString());
+        doNothing().when(userIdExternalIdMapRepository).deleteAllByUserId(userId);
         doThrow(new RuntimeException("Unexpected error")).when(userRepository).deleteById(userId);
 
         Exception exception = assertThrows(RuntimeException.class, () -> userService.deleteUserById(userId));

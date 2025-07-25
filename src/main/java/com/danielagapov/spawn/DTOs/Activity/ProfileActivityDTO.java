@@ -19,7 +19,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class ProfileActivityDTO extends AbstractActivityDTO {
-    private UUID locationId;
+    private LocationDTO location;
     private BaseUserDTO creatorUser;
     private List<BaseUserDTO> participantUsers;
     private List<BaseUserDTO> invitedUsers;
@@ -29,16 +29,17 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
     String title,
     OffsetDateTime startTime,
     OffsetDateTime endTime,
-    UUID locationId,
+    LocationDTO location,
     String note,
     String icon,
+    Integer participantLimit,
     BaseUserDTO creatorUser,
     List<BaseUserDTO> participantUsers,
     List<BaseUserDTO> invitedUsers,
     List<UUID> chatMessageIds,
     Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, createdAt);
-        this.locationId = locationId;
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
+        this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
         this.invitedUsers = invitedUsers;
@@ -62,9 +63,10 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
             fullFeedActivityDTO.getTitle(),
             fullFeedActivityDTO.getStartTime(),
             fullFeedActivityDTO.getEndTime(),
-            fullFeedActivityDTO.getLocation().getId(),
+            fullFeedActivityDTO.getLocation(),
             fullFeedActivityDTO.getNote(),
             fullFeedActivityDTO.getIcon(),
+            fullFeedActivityDTO.getParticipantLimit(),
             fullFeedActivityDTO.getCreatorUser(),
             fullFeedActivityDTO.getParticipantUsers(),
             fullFeedActivityDTO.getInvitedUsers(),

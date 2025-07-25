@@ -27,6 +27,35 @@
         "auto_import": true
       }
     },
+    "lombok_usage": {
+      "description": "CRITICAL: Always use Lombok annotations to reduce boilerplate code",
+      "mandatory_rules": [
+        "ALWAYS use @Data instead of manually writing getters, setters, toString, equals, hashCode",
+        "ALWAYS use @NoArgsConstructor and @AllArgsConstructor instead of manual constructors",
+        "NEVER write boilerplate code that Lombok can generate",
+        "Use @Builder for complex object construction patterns",
+        "Import Lombok annotations consistently and in proper order"
+      ],
+      "common_annotations": {
+        "@Data": "Generates getters, setters, toString, equals, hashCode, and requiredArgsConstructor",
+        "@NoArgsConstructor": "Generates a parameter-less constructor",
+        "@AllArgsConstructor": "Generates a constructor with parameters for all fields",
+        "@Builder": "Implements the builder pattern for object construction",
+        "@Getter/@Setter": "Individual getter/setter generation (use sparingly, prefer @Data)",
+        "@ToString": "Generates toString method (included in @Data)",
+        "@EqualsAndHashCode": "Generates equals and hashCode methods (included in @Data)"
+      },
+      "import_pattern": [
+        "lombok.* imports should come after javax.* and before project-specific imports",
+        "Order: lombok.AllArgsConstructor, lombok.Data, lombok.NoArgsConstructor (alphabetical)"
+      ],
+      "forbidden_patterns": [
+        "Manual getter/setter methods when @Data can be used",
+        "Manual toString() methods when @Data/@ToString can be used", 
+        "Manual equals()/hashCode() methods when @Data/@EqualsAndHashCode can be used",
+        "Manual constructors when @NoArgsConstructor/@AllArgsConstructor can be used"
+      ]
+    },
     "architecture": {
       "description": "CRITICAL: Maintain proper separation of concerns between layers",
       "service_controller_separation": {
@@ -222,19 +251,133 @@
         "**/DTOs/**/*.java"
       ],
       "tags": ["dto", "data-transfer"],
+      "mandatory_rules": [
+        "ALWAYS use Lombok annotations (@Data, @NoArgsConstructor, @AllArgsConstructor) instead of manual getters/setters",
+        "NEVER write manual constructors, getters, or setters when Lombok can generate them",
+        "ALWAYS implement Serializable interface for DTOs that might be cached",
+        "Import Lombok annotations at the top of the file in consistent order",
+        "Use proper import organization: lombok imports after java/javax imports"
+      ],
+      "required_annotations": [
+        "@Data - Generates getters, setters, toString, equals, hashCode",
+        "@NoArgsConstructor - Generates default constructor", 
+        "@AllArgsConstructor - Generates constructor with all fields"
+      ],
+      "import_order": [
+        "java.* imports",
+        "javax.* imports", 
+        "External library imports (lombok.*)",
+        "Project-specific imports (com.danielagapov.spawn.*)"
+      ],
+      "forbidden_patterns": [
+        "Manual getter/setter methods when Lombok can generate them",
+        "Manual constructors when @NoArgsConstructor/@AllArgsConstructor can be used",
+        "DTOs without Lombok annotations",
+        "Missing Serializable interface for cacheable DTOs"
+      ],
       "snippets": {
         "dto_class": {
           "prefix": "dto",
           "body": [
+            "import lombok.AllArgsConstructor;",
+            "import lombok.Data;", 
+            "import lombok.NoArgsConstructor;",
+            "",
+            "import java.io.Serializable;",
+            "",
             "@Data",
             "@NoArgsConstructor",
+            "@AllArgsConstructor",
+            "public class ${1:${TM_FILENAME_BASE}} implements Serializable {",
+            "    $0",
+            "}"
+          ],
+          "description": "Create a DTO class with proper Lombok annotations and Serializable interface"
+        },
+        "simple_dto": {
+          "prefix": "simpledto",
+          "body": [
+            "@Data",
+            "@NoArgsConstructor", 
             "@AllArgsConstructor",
             "public class ${1:${TM_FILENAME_BASE}} {",
             "    $0",
             "}"
           ],
-          "description": "Create a DTO class"
+          "description": "Create a simple DTO class with Lombok annotations (no Serializable)"
         }
+      }
+    },
+    "test_organization": {
+      "description": "CRITICAL: Rules for organizing and creating test files in the Spawn App Back-End",
+      "apply_to": [
+        "**/test/**/*.java"
+      ],
+      "tags": ["testing", "organization"],
+      "avoid_creating_new_test_files": {
+        "mandatory_rules": [
+          "DO NOT create new test files unless absolutely necessary",
+          "ALWAYS check if an appropriate existing test file exists first",
+          "Add new tests to existing service test files whenever possible"
+        ]
+      },
+      "test_file_naming_convention": {
+        "service_tests": "{ServiceName}Tests.java (e.g., OAuthServiceTests.java, UserServiceTests.java)",
+        "directory": "src/test/java/com/danielagapov/spawn/ServiceTests/"
+      },
+      "when_to_add_tests_to_existing_files": [
+        "Unit tests: Add to the corresponding service test file (e.g., OAuth tests → OAuthServiceTests.java)",
+        "Integration tests: Add as inner static classes within the service test file with proper Spring annotations",
+        "Bug fix tests: Add to the service test file that covers the component being fixed",
+        "Race condition tests: Add to the service test file with appropriate concurrency testing setup"
+      ],
+      "when_new_test_files_are_acceptable": [
+        "Testing a completely new service that doesn't have an existing test file",
+        "Creating controller-specific tests that don't fit in service tests",
+        "Testing complex integration scenarios that span multiple services and need their own setup"
+      ],
+      "test_organization_within_files": [
+        "Group related tests together with descriptive comments",
+        "Use inner static classes for integration tests that require different Spring context setup",
+        "Maintain clear separation between unit tests (with mocks) and integration tests (with real dependencies)"
+      ],
+      "code_organization_rules": {
+        "service_layer": [
+          "Keep service interfaces lean and focused",
+          "Use dependency injection consistently",
+          "Handle transaction boundaries explicitly for data modification operations"
+        ],
+        "repository_layer": [
+          "Use @Modifying and @Query for custom delete operations",
+          "Always include @Transactional for modifying queries",
+          "Prefer explicit queries over relying solely on cascade operations for critical data integrity"
+        ],
+        "error_handling": [
+          "Use retry mechanisms with exponential backoff for transient errors",
+          "Log warnings for recoverable errors, errors for unrecoverable issues",
+          "Provide meaningful error messages that help with debugging"
+        ],
+        "database_operations": [
+          "Explicitly handle race conditions in concurrent scenarios",
+          "Use flush() when immediate persistence is required",
+          "Prefer explicit deletion over cascade deletion for critical relationships"
+        ]
+      },
+      "naming_conventions": {
+        "test_methods": [
+          "Use descriptive names that explain the scenario: testOAuthReRegistrationAfterIncompleteAccount()",
+          "Include the expected outcome: testExplicitMappingDeletion()",
+          "Group by functionality with consistent prefixes"
+        ],
+        "variables": [
+          "Use meaningful names that describe the data: incompleteUser, externalId, mappingRepository",
+          "Avoid abbreviations unless they're domain-specific and well-known"
+        ],
+        "comments": [
+          "Include bug report references when fixing specific issues",
+          "Explain complex business logic with inline comments",
+          "Document race condition handling and retry mechanisms"
+        ]
       }
     }
   },

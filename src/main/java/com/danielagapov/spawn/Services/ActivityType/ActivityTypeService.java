@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -73,7 +75,9 @@ public class ActivityTypeService implements IActivityTypeService {
                 
                 // Convert DTOs to entities with proper user lookup for associated friends
                 List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
-                repository.saveAll(activityTypes);
+                
+                // Use multi-phase update to avoid constraint violations
+                updateActivityTypesWithConstraintHandling(activityTypes, userId);
             }
             
             // Return all activity types for the user after updates
@@ -82,6 +86,108 @@ public class ActivityTypeService implements IActivityTypeService {
             logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Updates activity types using a two-phase approach to avoid unique constraint violations
+     * on the (creator_id, order_num) combination during batch updates.
+     */
+    private void updateActivityTypesWithConstraintHandling(List<ActivityType> activityTypes, UUID userId) {
+        // Separate existing and new activity types
+        List<ActivityType> existingActivityTypes = activityTypes.stream()
+                .filter(at -> repository.existsById(at.getId()))
+                .toList();
+        
+        List<ActivityType> newActivityTypes = activityTypes.stream()
+                .filter(at -> !repository.existsById(at.getId()))
+                .toList();
+        
+        // Save new activity types first (they won't have conflicts)
+        if (!newActivityTypes.isEmpty()) {
+            repository.saveAll(newActivityTypes);
+            logger.info("Saved " + newActivityTypes.size() + " new activity types");
+        }
+        
+        // For existing activity types, use multi-phase update to avoid constraint violations
+        if (!existingActivityTypes.isEmpty()) {
+            updateExistingActivityTypesWithConstraintHandling(existingActivityTypes, userId);
+        }
+    }
+    
+    /**
+     * Updates existing activity types using a multi-phase approach to avoid unique constraint violations:
+     * Phase 1: Store target orderNum values and move all activity types being updated to temporary negative values
+     * Phase 2: Move any remaining activity types that conflict with target orderNum values to temporary values
+     * Phase 3: Update all activity types to their final orderNum values
+     * Phase 4: Reassign new orderNum values to previously conflicting activity types
+     */
+    @Transactional
+    private void updateExistingActivityTypesWithConstraintHandling(List<ActivityType> existingActivityTypes, UUID userId) {
+        logger.info("Updating " + existingActivityTypes.size() + " existing activity types with constraint handling");
+        
+        // Create a map of activity types being updated by their ID for quick lookup
+        Map<UUID, ActivityType> updatingActivityTypesMap = existingActivityTypes.stream()
+                .collect(Collectors.toMap(ActivityType::getId, at -> at));
+        
+        // Store the target orderNum values before modifying the objects
+        Map<UUID, Integer> targetOrderNums = existingActivityTypes.stream()
+                .collect(Collectors.toMap(ActivityType::getId, ActivityType::getOrderNum));
+        
+        // Get the set of target orderNum values for conflict detection
+        Set<Integer> targetOrderNumValues = new HashSet<>(targetOrderNums.values());
+        
+        // Phase 1: Move all activity types being updated to temporary negative orderNum values
+        for (int i = 0; i < existingActivityTypes.size(); i++) {
+            ActivityType activityType = existingActivityTypes.get(i);
+            int tempOrderNum = -(i + 1000); // Use negative numbers starting from -1000
+            
+            logger.info("Phase 1: Moving '" + activityType.getTitle() + "' to temporary orderNum " + tempOrderNum);
+            activityType.setOrderNum(tempOrderNum);
+            repository.save(activityType);
+        }
+        
+        // Phase 2: Refresh the list to get current state after Phase 1, then move any remaining conflicting activity types
+        List<ActivityType> currentUserActivityTypes = repository.findActivityTypesByCreatorId(userId);
+        List<ActivityType> conflictingActivityTypes = currentUserActivityTypes.stream()
+                .filter(at -> !updatingActivityTypesMap.containsKey(at.getId())) // Not being updated in this batch
+                .filter(at -> targetOrderNumValues.contains(at.getOrderNum())) // Has a conflicting orderNum
+                .toList();
+        
+        for (int i = 0; i < conflictingActivityTypes.size(); i++) {
+            ActivityType conflictingType = conflictingActivityTypes.get(i);
+            int originalOrderNum = conflictingType.getOrderNum();
+            int tempOrderNum = -(i + 2000); // Use different negative range to avoid conflicts
+            
+            logger.info("Phase 2: Moving conflicting activity type '" + conflictingType.getTitle() + 
+                       "' from orderNum " + originalOrderNum + " to temporary orderNum " + tempOrderNum);
+            conflictingType.setOrderNum(tempOrderNum);
+            repository.save(conflictingType);
+        }
+        
+        // Phase 3: Update activity types being updated to their final orderNum values
+        for (ActivityType activityType : existingActivityTypes) {
+            Integer finalOrderNum = targetOrderNums.get(activityType.getId());
+            activityType.setOrderNum(finalOrderNum);
+            
+            logger.info("Phase 3: Setting final orderNum " + finalOrderNum + " for activity type: " + activityType.getTitle());
+            repository.save(activityType);
+        }
+        
+        // Phase 4: Find new orderNum values for the conflicting activity types and update them
+        if (!conflictingActivityTypes.isEmpty()) {
+            // Get the max orderNum after all updates
+            Integer maxOrderNum = repository.findMaxOrderNumberByCreatorId(userId);
+            int nextAvailableOrderNum = maxOrderNum != null ? maxOrderNum + 1 : 0;
+            
+            for (ActivityType conflictingType : conflictingActivityTypes) {
+                logger.info("Phase 4: Reassigning conflicting activity type '" + conflictingType.getTitle() + 
+                           "' to new orderNum " + nextAvailableOrderNum);
+                conflictingType.setOrderNum(nextAvailableOrderNum++);
+                repository.save(conflictingType);
+            }
+        }
+        
+        logger.info("Successfully completed multi-phase update for existing activity types");
     }
 
     @Override

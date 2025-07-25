@@ -47,6 +47,11 @@ public class UserMapper {
         );
     }
 
+    /**
+     * WARNING: This method creates a User entity with incomplete data (missing phoneNumber, status, etc.).
+     * It should ONLY be used for creating new users, never for updating existing ones.
+     * Use userService.getUserEntityById() to get complete User entities for updates.
+     */
     public static User toEntity(BaseUserDTO dto) {
         return new User(
                 dto.getId(),

@@ -40,12 +40,15 @@ public class SecurityConfig {
             "/api/v1/auth/register/oauth",
             "/api/v1/auth/register/verification/check",
             "/api/v1/auth/sign-in",
-            "/api/v1/auth/login"
+            "/api/v1/auth/login",
+            "/api/v1/users/contacts/cross-reference"
     };
 
     // Additional regex patterns for whitelisted URLs
     private final String[] whitelistedUrlPatterns = new String[] {
-            "/api/v1/auth/accept-tos/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+            "/api/v1/auth/accept-tos/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+            "/api/v1/auth/complete-contact-import/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+            "/api/v1/users/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/optional-details"
     };
 
     @Bean

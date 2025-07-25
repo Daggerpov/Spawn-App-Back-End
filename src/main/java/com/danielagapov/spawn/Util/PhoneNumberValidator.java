@@ -28,7 +28,7 @@ public class PhoneNumberValidator {
         String cleanNumber = cleanPhoneNumber(phoneNumber);
 
         // Basic format validation
-        if (!PHONE_PATTERN.matcher(cleanNumber).matches()) {
+        if (cleanNumber == null || !PHONE_PATTERN.matcher(cleanNumber).matches()) {
             return false;
         }
 
@@ -36,29 +36,49 @@ public class PhoneNumberValidator {
         return validateByCountryCode(cleanNumber);
     }
 
+    /**
+     * Cleans a phone number without making assumptions about country codes.
+     * This replaces the old approach that defaulted to +1.
+     */
     public static String cleanPhoneNumber(String phoneNumber) {
         if (phoneNumber == null) return null;
 
-        // Remove all non-digit characters except +
-        String cleaned = phoneNumber.replaceAll("[^+\\d]", "");
+        System.out.println("🧹 BACKEND CLEANING PHONE: '" + phoneNumber + "'");
 
-        // If no country code, assume it's a local number (add your default country code)
-        if (!cleaned.startsWith("+")) {
-            cleaned = "+1" + cleaned; // Default to US, change as needed
+        // Check if it's obviously not a phone number first
+        if (!PhoneNumberMatchingUtil.isReasonablePhoneNumber(phoneNumber)) {
+            System.out.println("  REJECTED: Not a reasonable phone number format");
+            return null;
         }
 
-        return cleaned;
+        // Use the new matching util for normalization
+        String normalized = PhoneNumberMatchingUtil.normalizeForStorage(phoneNumber);
+        System.out.println("  NORMALIZED: '" + normalized + "'");
+
+        // If we got a clean result, return it
+        if (normalized != null && !normalized.trim().isEmpty()) {
+            System.out.println("  FINAL RESULT: '" + normalized + "'");
+            return normalized;
+        }
+
+        System.out.println("  FINAL RESULT: null (invalid)");
+        return null;
     }
 
     private static boolean validateByCountryCode(String phoneNumber) {
-        for (Map.Entry<String, String> entry : COUNTRY_PATTERNS.entrySet()) {
-            if (phoneNumber.startsWith(entry.getKey())) {
-                return Pattern.compile(entry.getValue()).matcher(phoneNumber).matches();
+        // If it has a + prefix, try country-specific validation
+        if (phoneNumber.startsWith("+")) {
+            for (Map.Entry<String, String> entry : COUNTRY_PATTERNS.entrySet()) {
+                if (phoneNumber.startsWith(entry.getKey())) {
+                    return Pattern.compile(entry.getValue()).matcher(phoneNumber).matches();
+                }
             }
         }
 
-        // If no specific pattern found, use general validation
-        return phoneNumber.length() >= 10 && phoneNumber.length() <= 15;
+        // For numbers without country codes, use general validation
+        // Don't assume any specific country
+        String digitsOnly = phoneNumber.replaceAll("[^0-9]", "");
+        return digitsOnly.length() >= 7 && digitsOnly.length() <= 15;
     }
 
     public static String getCountryCode(String phoneNumber) {
