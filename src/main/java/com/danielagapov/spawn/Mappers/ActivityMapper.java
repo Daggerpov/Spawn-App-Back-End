@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Mappers;
 
-import com.danielagapov.spawn.DTOs.Activity.ActivityCreationDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.Models.Activity;
@@ -22,7 +21,7 @@ public class ActivityMapper {
                 entity.getTitle(),
                 entity.getStartTime(),
                 entity.getEndTime(),
-                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()).getId() : null, // Map Location to LocationDTO
+                entity.getLocation() != null ? LocationMapper.toDTO(entity.getLocation()) : null, // location (full DTO)
                 entity.getActivityType() != null ? entity.getActivityType().getId() : null, // Map ActivityType to ActivityTypeDTO
                 entity.getNote(),
                 entity.getIcon(),
@@ -77,11 +76,14 @@ public class ActivityMapper {
     public static List<Activity> toEntityList(List<ActivityDTO> activityDTOS, List<Location> locations, List<User> creators, List<ActivityType> activityTypes) {
         return activityDTOS.stream()
                 .map(dto -> {
-                    // Find the Location entity based on the locationId from DTO
-                    Location location = locations.stream()
-                            .filter(loc -> loc.getId().equals(dto.getLocationId())) // Match LocationDTO's UUID with Location entity
-                            .findFirst()
-                            .orElse(null);
+                    // Find the Location entity based on the location DTO from ActivityDTO
+                    Location location = null;
+                    if (dto.getLocation() != null) {
+                        location = locations.stream()
+                                .filter(loc -> loc.getId().equals(dto.getLocation().getId())) // Match LocationDTO's UUID with Location entity
+                                .findFirst()
+                                .orElse(null);
+                    }
 
                     // Find the User entity (creator) based on the creatorUserId from DTO
                     User creator = creators.stream()
@@ -129,21 +131,5 @@ public class ActivityMapper {
         return activity;
     }
 
-    public static Activity fromCreationDTO(ActivityCreationDTO dto, Location location, User creator, ActivityType activityType) {
-        Activity activity = new Activity();
-        activity.setTitle(dto.getTitle());
-        activity.setStartTime(dto.getStartTime());
-        activity.setEndTime(dto.getEndTime());
-        activity.setLocation(location); // Use the saved/persisted location.
-        activity.setActivityType(activityType); // Set the ActivityType entity
-        activity.setNote(dto.getNote());
-        activity.setCreator(creator);
-        activity.setIcon(dto.getIcon());
-        activity.setParticipantLimit(dto.getParticipantLimit()); // Set the participant limit
-        // Set createdAt if it exists in the DTO, otherwise it will be set by @PrePersist
-        if (dto.getCreatedAt() != null) {
-            activity.setCreatedAt(dto.getCreatedAt());
-        }
-        return activity;
-    }
+
 }

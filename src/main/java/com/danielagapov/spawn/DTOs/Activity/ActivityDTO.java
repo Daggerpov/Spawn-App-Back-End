@@ -13,7 +13,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class ActivityDTO extends AbstractActivityDTO {
-    UUID locationId;
+    LocationDTO location;
     UUID activityTypeId;
     UUID creatorUserId;
     List<UUID> participantUserIds;
@@ -24,7 +24,7 @@ public class ActivityDTO extends AbstractActivityDTO {
     String title,
     OffsetDateTime startTime,
     OffsetDateTime endTime,
-    UUID locationId,
+    LocationDTO location,
     UUID activityTypeId,
     String note,
     String icon,
@@ -35,7 +35,7 @@ public class ActivityDTO extends AbstractActivityDTO {
     List<UUID> chatMessageIds,
     Instant createdAt) {
         super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
-        this.locationId = locationId;
+        this.location = location;
         this.activityTypeId = activityTypeId;
         this.creatorUserId = creatorUserId;
         this.participantUserIds = participantUserIds;

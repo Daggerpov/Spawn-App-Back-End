@@ -212,7 +212,10 @@ public class ActivityService implements IActivityService {
             if (Activity instanceof FullFeedActivityDTO fullFeedActivityDTO) {
                 ActivityEntity = ActivityMapper.convertFullFeedActivityDTOToActivityEntity(fullFeedActivityDTO);
             } else if (Activity instanceof ActivityDTO ActivityDTO) {
-                Location location = locationRepository.findById(ActivityDTO.getLocationId()).orElse(null);
+                Location location = null;
+                if (ActivityDTO.getLocation() != null) {
+                    location = locationService.save(LocationMapper.toEntity(ActivityDTO.getLocation()));
+                }
                 ActivityType activityType = ActivityDTO.getActivityTypeId() != null 
                     ? activityTypeRepository.findById(ActivityDTO.getActivityTypeId()).orElse(null) 
                     : null;
@@ -259,64 +262,89 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "filteredFeedActivities", allEntries = true),
             @CacheEvict(value = "userStatsById", key = "#result.creatorUser.id")
     })
-    public AbstractActivityDTO createActivity(ActivityCreationDTO ActivityCreationDTO) {
+    public AbstractActivityDTO createActivity(ActivityDTO activityDTO) {
         try {
-            Location location = locationService.save(LocationMapper.toEntity(ActivityCreationDTO.getLocation()));
-
-            User creator = userRepository.findById(ActivityCreationDTO.getCreatorUserId())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, ActivityCreationDTO.getCreatorUserId()));
-
-            ActivityType activityType = ActivityCreationDTO.getActivityTypeId() != null
-                    ? activityTypeRepository.findById(ActivityCreationDTO.getActivityTypeId()).orElse(null)
-                    : null;
-
-            Activity Activity = ActivityMapper.fromCreationDTO(ActivityCreationDTO, location, creator, activityType);
-
-            Activity = repository.save(Activity);
-
-            for (UUID userId: ActivityCreationDTO.getInvitedFriendUserIds()) {
-                User invitedUser = userRepository.findById(userId)
-                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
-                ActivityUsersId compositeId = new ActivityUsersId(Activity.getId(), userId);
-                ActivityUser ActivityUser = new ActivityUser();
-                ActivityUser.setId(compositeId);
-                ActivityUser.setActivity(Activity);
-                ActivityUser.setUser(invitedUser);
-                ActivityUser.setStatus(ParticipationStatus.invited);
-                activityUserRepository.save(ActivityUser);
+            // Handle location - save the provided LocationDTO
+            Location location = null;
+            if (activityDTO.getLocation() != null) {
+                location = locationService.save(LocationMapper.toEntity(activityDTO.getLocation()));
+            } else {
+                throw new IllegalArgumentException("Location must be provided");
             }
 
-            // Create and publish Activity invite notification directly
-            eventPublisher.publishEvent(
-                new ActivityInviteNotificationEvent(Activity.getCreator(), Activity, new HashSet<>(ActivityCreationDTO.getInvitedFriendUserIds()))
-            );
+            User creator = userRepository.findById(activityDTO.getCreatorUserId())
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, activityDTO.getCreatorUserId()));
+
+            ActivityType activityType = activityDTO.getActivityTypeId() != null
+                    ? activityTypeRepository.findById(activityDTO.getActivityTypeId()).orElse(null)
+                    : null;
+
+            // Create Activity entity from ActivityDTO
+            Activity activity = new Activity();
+            activity.setTitle(activityDTO.getTitle());
+            activity.setStartTime(activityDTO.getStartTime());
+            activity.setEndTime(activityDTO.getEndTime());
+            activity.setNote(activityDTO.getNote());
+            activity.setIcon(activityDTO.getIcon());
+            activity.setParticipantLimit(activityDTO.getParticipantLimit());
+            activity.setLocation(location);
+            activity.setCreator(creator);
+            activity.setActivityType(activityType);
+
+            activity = repository.save(activity);
+
+            // Handle invited friends
+            List<UUID> invitedIds = activityDTO.getInvitedUserIds();
+                
+            if (invitedIds != null) {
+                for (UUID userId: invitedIds) {
+                    User invitedUser = userRepository.findById(userId)
+                            .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+                    ActivityUsersId compositeId = new ActivityUsersId(activity.getId(), userId);
+                    ActivityUser activityUser = new ActivityUser();
+                    activityUser.setId(compositeId);
+                    activityUser.setActivity(activity);
+                    activityUser.setUser(invitedUser);
+                    activityUser.setStatus(ParticipationStatus.invited);
+                    activityUserRepository.save(activityUser);
+                }
+
+                // Create and publish Activity invite notification directly
+                eventPublisher.publishEvent(
+                    new ActivityInviteNotificationEvent(activity.getCreator(), activity, new HashSet<>(invitedIds))
+                );
+            }
 
             // Return a FullFeedActivityDTO instead of ActivityDTO to include full location information
             LocationDTO locationDTO = LocationMapper.toDTO(location);
             BaseUserDTO creatorUserDTO = UserMapper.toDTO(creator);
-            List<BaseUserDTO> invitedUserDTOs = ActivityCreationDTO.getInvitedFriendUserIds().stream()
-                    .map(userId -> {
-                        try {
-                            return UserMapper.toDTO(userRepository.findById(userId)
-                                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId)));
-                        } catch (Exception e) {
-                            logger.warn("Could not load invited user: " + userId);
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            List<BaseUserDTO> invitedUserDTOs = new ArrayList<>();
+            
+            if (invitedIds != null) {
+                invitedUserDTOs = invitedIds.stream()
+                        .map(userId -> {
+                            try {
+                                return UserMapper.toDTO(userRepository.findById(userId)
+                                        .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId)));
+                            } catch (Exception e) {
+                                logger.warn("Could not load invited user: " + userId);
+                                return null;
+                            }
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+            }
 
             return new FullFeedActivityDTO(
-                    Activity.getId(),
-                    Activity.getTitle(),
-                    Activity.getStartTime(),
-                    Activity.getEndTime(),
+                    activity.getId(),
+                    activity.getTitle(),
+                    activity.getStartTime(),
+                    activity.getEndTime(),
                     locationDTO,
-                    Activity.getActivityType() != null ? Activity.getActivityType().getId() : null,
-                    Activity.getNote(),
-                    Activity.getIcon(),
-                    Activity.getParticipantLimit(),
+                    activity.getActivityType() != null ? activity.getActivityType().getId() : null,
+                    activity.getNote(),
+                    activity.getIcon(),
+                    activity.getParticipantLimit(),
                     creatorUserDTO,
                     new ArrayList<>(), // participantUsers - empty for new activity
                     invitedUserDTOs,
@@ -324,7 +352,7 @@ public class ActivityService implements IActivityService {
                     null, // activityFriendTagColorHexCodeForRequestingUser - not needed for creation response
                     null, // participationStatus - not applicable for creator
                     true, // isSelfOwned - true since this is the creator
-                    Activity.getCreatedAt()
+                    activity.getCreatedAt()
             );
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
@@ -355,46 +383,65 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
             @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
             @CacheEvict(value = "filteredFeedActivities", allEntries = true)
     })
-    public ActivityDTO replaceActivity(ActivityDTO newActivity, UUID id) {
-        return repository.findById(id).map(Activity -> {
-            // Update basic Activity details
-            Activity.setTitle(newActivity.getTitle());
-            Activity.setNote(newActivity.getNote());
-            Activity.setEndTime(newActivity.getEndTime());
-            Activity.setStartTime(newActivity.getStartTime());
+    public FullFeedActivityDTO replaceActivity(ActivityDTO newActivity, UUID id) {
+        return repository.findById(id).map(activity -> {
+            // Update basic activity details
+            activity.setTitle(newActivity.getTitle());
+            activity.setNote(newActivity.getNote());
+            activity.setEndTime(newActivity.getEndTime());
+            activity.setStartTime(newActivity.getStartTime());
+            activity.setIcon(newActivity.getIcon());
+            activity.setParticipantLimit(newActivity.getParticipantLimit());
 
-            // Fetch the location entity by locationId from DTO
-            Activity.setLocation(locationService.getLocationEntityById(newActivity.getLocationId()));
+            // Handle location
+            if (newActivity.getLocation() != null) {
+                Location location = locationService.save(LocationMapper.toEntity(newActivity.getLocation()));
+                activity.setLocation(location);
+            }
 
-            // Save updated Activity
-            repository.save(Activity);
+            // Update activity type if provided
+            if (newActivity.getActivityTypeId() != null) {
+                ActivityType activityType = activityTypeRepository.findById(newActivity.getActivityTypeId()).orElse(null);
+                activity.setActivityType(activityType);
+            }
+
+            // Save updated activity
+            Activity savedActivity = repository.save(activity);
+
+            // Handle invited friends updates if provided
+            List<UUID> invitedIds = newActivity.getInvitedUserIds();
+                
+            if (invitedIds != null) {
+                // Remove existing invitations
+                List<ActivityUser> existingActivityUsers = activityUserRepository.findByActivity_Id(id);
+                activityUserRepository.deleteAll(existingActivityUsers);
+                
+                // Add new invitations
+                for (UUID userId : invitedIds) {
+                    User invitedUser = userRepository.findById(userId)
+                            .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+                    ActivityUsersId compositeId = new ActivityUsersId(id, userId);
+                    ActivityUser activityUser = new ActivityUser();
+                    activityUser.setId(compositeId);
+                    activityUser.setActivity(savedActivity);
+                    activityUser.setUser(invitedUser);
+                    activityUser.setStatus(ParticipationStatus.invited);
+                    activityUserRepository.save(activityUser);
+                }
+            }
 
             eventPublisher.publishEvent(
-                new ActivityUpdateNotificationEvent(Activity.getCreator(), Activity, activityUserRepository)
+                new ActivityUpdateNotificationEvent(savedActivity.getCreator(), savedActivity, activityUserRepository)
             );
-            return constructDTOFromEntity(Activity);
-        }).orElseGet(() -> {
-            // Map and save new Activity, fetch location and creator
-            Location location = locationService.getLocationEntityById(newActivity.getLocationId());
-            User creator = userService.getUserEntityById(newActivity.getCreatorUserId());
-            ActivityType activityType = newActivity.getActivityTypeId() != null
-                    ? activityTypeRepository.findById(newActivity.getActivityTypeId()).orElse(null)
-                    : null;
-
-            // Convert DTO to entity
-            Activity ActivityEntity = ActivityMapper.toEntity(newActivity, location, creator, activityType);
-            ActivityEntity = repository.save(ActivityEntity);
-            
-            eventPublisher.publishEvent(
-                new ActivityUpdateNotificationEvent(ActivityEntity.getCreator(), ActivityEntity, activityUserRepository)
-            );
-            return constructDTOFromEntity(ActivityEntity);
-        });
+            return getFullActivityById(savedActivity.getId(), newActivity.getCreatorUserId());
+        }).orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
     }
+
+
 
     private List<UUID> getParticipatingUserIdsByActivityId(UUID ActivityId) {
         try {
@@ -686,9 +733,7 @@ public class ActivityService implements IActivityService {
             visitedActivities.add(Activity.getId());
 
             // Safely fetch location and creator
-            LocationDTO location = Activity.getLocationId() != null
-                    ? locationService.getLocationById(Activity.getLocationId())
-                    : null;
+            LocationDTO location = Activity.getLocation();
 
             UserDTO creator = userService.getUserById(Activity.getCreatorUserId());
 
