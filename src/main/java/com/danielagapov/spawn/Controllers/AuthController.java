@@ -75,7 +75,9 @@ public class AuthController {
                 HttpHeaders headers = authService.makeHeadersForTokens(user);
                 return ResponseEntity.ok().headers(headers).body(authResponseDTO);
             }
-            return ResponseEntity.ok().body(null);
+            // User doesn't exist - return 404 instead of 200 with null body
+            logger.info("User not found during OAuth sign-in - returning 404");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
         } catch (IncorrectProviderException e) {
             logger.error("Incorrect provider error during sign-in: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
