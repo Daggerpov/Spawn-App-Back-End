@@ -123,7 +123,7 @@ public class ChatMessageService implements IChatMessageService {
             @CacheEvict(value = "feedActivities", allEntries = true),
             @CacheEvict(value = "filteredFeedActivities", allEntries = true)
     })
-    public ChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO) {
+    public FullActivityChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO) {
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
                 UUID.randomUUID(),
                 newChatMessageDTO.getContent(),
@@ -145,7 +145,8 @@ public class ChatMessageService implements IChatMessageService {
         eventPublisher.publishEvent(new NewCommentNotificationEvent(
                 sender, activity, savedMessage, activityUserRepository));
 
-        return savedMessage;
+        // Convert to FullActivityChatMessageDTO before returning
+        return getFullChatMessageByChatMessage(savedMessage);
     }
 
     @Override
