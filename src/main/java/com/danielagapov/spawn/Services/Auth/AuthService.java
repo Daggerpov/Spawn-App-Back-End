@@ -282,7 +282,7 @@ public class AuthService implements IAuthService {
         if (existingUser.isPresent()) {
             AuthResponseDTO authResponse = existingUser.get();
             if (authResponse.getStatus() == null || authResponse.getStatus() == UserStatus.ACTIVE) {
-                logger.info("ACTIVE user attempting to register - redirecting to sign-in flow: " + authResponse.getUser().getEmail());
+                logger.info("ACTIVE user attempting to register - returning existing user instead of error: " + authResponse.getUser().getEmail());
                 return authResponse;
             }
         }
@@ -303,7 +303,7 @@ public class AuthService implements IAuthService {
             newUser.setName(email.split("@")[0]);
         }
         
-        newUser.setStatus(UserStatus.EMAIL_VERIFIED); // OAuth users are automatically verified
+        newUser.setStatus(UserStatus.EMAIL_VERIFIED);
         newUser.setDateCreated(new Date());
 
         String profilePictureUrl = registrationDTO.getProfilePictureUrl();
