@@ -294,20 +294,48 @@ public class ActivityTypeService implements IActivityTypeService {
         long deletedCount = batchDTO.getDeletedActivityTypeIds().size();
         long updatedCount = batchDTO.getUpdatedActivityTypes().size();
         
-        // Count how many of the deleted items are pinned
+        // Get existing activity types and categorize them
         List<ActivityType> existingActivityTypes = repository.findActivityTypesByCreatorId(userId);
         Set<UUID> deletedIds = Set.copyOf(batchDTO.getDeletedActivityTypeIds());
+        Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
+                .map(ActivityTypeDTO::getId)
+                .collect(Collectors.toSet());
+        
+        // Count currently pinned activity types that will be deleted
         long deletedPinnedCount = existingActivityTypes.stream()
                 .filter(at -> deletedIds.contains(at.getId()) && at.getIsPinned())
                 .count();
         
-        // Count how many updated items are pinned
+        // Count currently pinned activity types that will remain unchanged (not updated or deleted)
+        long unchangedPinnedCount = existingActivityTypes.stream()
+                .filter(at -> !deletedIds.contains(at.getId()) && !updatedIds.contains(at.getId()) && at.getIsPinned())
+                .count();
+        
+        // Count activity types in the update request that are marked as pinned
         long updatedPinnedCount = batchDTO.getUpdatedActivityTypes().stream()
                 .filter(dto -> dto.getIsPinned() != null && dto.getIsPinned())
                 .count();
         
-        // Calculate final pinned count
-        long finalPinnedCount = currentPinnedCount - deletedPinnedCount + updatedPinnedCount;
+        // Debug logging for request details
+        logger.info("=== VALIDATION DEBUG ===");
+        logger.info("Current state: " + currentPinnedCount + " pinned, " + currentTotalCount + " total");
+        logger.info("Request deletions: " + deletedCount + " (pinned deletions: " + deletedPinnedCount + ")");
+        logger.info("Request updates: " + updatedCount);
+        logger.info("Unchanged pinned activity types: " + unchangedPinnedCount);
+        
+        // Log each updated activity type's pinned status
+        for (ActivityTypeDTO dto : batchDTO.getUpdatedActivityTypes()) {
+            logger.info("Update request - ID: " + dto.getId() + ", Title: " + dto.getTitle() + 
+                       ", isPinned: " + dto.getIsPinned() + ", orderNum: " + dto.getOrderNum());
+        }
+        
+        logger.info("Updated items marked as pinned: " + updatedPinnedCount);
+        
+        // Calculate final pinned count correctly (unchanged + updated, no double counting)
+        long finalPinnedCount = unchangedPinnedCount + updatedPinnedCount;
+        
+        logger.info("Calculation: " + unchangedPinnedCount + " (unchanged) + " + updatedPinnedCount + " (updated) = " + finalPinnedCount);
+        logger.info("=== END VALIDATION DEBUG ===");
         
         // Calculate final total count (accounting for new vs existing updates)
         Set<UUID> existingIds = existingActivityTypes.stream()
@@ -355,9 +383,6 @@ public class ActivityTypeService implements IActivityTypeService {
         
         // Validate orderNum uniqueness against existing activity types that will remain
         // Get existing activity types that will remain after deletions/updates
-        Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
-                .map(ActivityTypeDTO::getId)
-                .collect(Collectors.toSet());
         
         List<ActivityType> remainingExistingActivityTypes = existingActivityTypes.stream()
                 .filter(at -> !deletedIds.contains(at.getId()) && !updatedIds.contains(at.getId()))
