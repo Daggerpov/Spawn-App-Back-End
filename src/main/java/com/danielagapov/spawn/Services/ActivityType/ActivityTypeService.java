@@ -48,43 +48,46 @@ public class ActivityTypeService implements IActivityTypeService {
     @Transactional
     @CacheEvict(value = "activityTypesByUserId", key = "#userId")
     public List<ActivityTypeDTO> updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
-        try {
-            if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
-                throw new IllegalArgumentException("No activity types to update or delete");
-            }
+        // Synchronize on userId to prevent race conditions for the same user
+        synchronized (("activity_type_update_" + userId.toString()).intern()) {
+            try {
+                if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                    throw new IllegalArgumentException("No activity types to update or delete");
+                }
 
-            // Validate if there are updates
-            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
-                validateActivityTypeUpdate(userId, activityTypeDTOs);
+                // Validate if there are updates
+                if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                    validateActivityTypeUpdate(userId, activityTypeDTOs);
+                }
+                
+                // Handle deletions first
+                if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                    logger.info("Deleting activity types with IDs: " + activityTypeDTOs.getDeletedActivityTypeIds());
+                    repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
+                }
+                
+                // Handle updates/creations
+                if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                    User creator = userService.getUserEntityById(userId);
+                    
+                    logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
+                    
+                    // Auto-assign order numbers for new activity types
+                    List<ActivityTypeDTO> processedDTOs = assignOrderNumbersForNewActivityTypes(userId, activityTypeDTOs.getUpdatedActivityTypes());
+                    
+                    // Convert DTOs to entities with proper user lookup for associated friends
+                    List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
+                    
+                    // Use multi-phase update to avoid constraint violations
+                    updateActivityTypesWithConstraintHandling(activityTypes, userId);
+                }
+                
+                // Return all activity types for the user after updates
+                return getActivityTypesByUserId(userId);
+            } catch (Exception e) {
+                logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
+                throw e;
             }
-            
-            // Handle deletions first
-            if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
-                logger.info("Deleting activity types with IDs: " + activityTypeDTOs.getDeletedActivityTypeIds());
-                repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
-            }
-            
-            // Handle updates/creations
-            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
-                User creator = userService.getUserEntityById(userId);
-                
-                logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
-                
-                // Auto-assign order numbers for new activity types
-                List<ActivityTypeDTO> processedDTOs = assignOrderNumbersForNewActivityTypes(userId, activityTypeDTOs.getUpdatedActivityTypes());
-                
-                // Convert DTOs to entities with proper user lookup for associated friends
-                List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
-                
-                // Use multi-phase update to avoid constraint violations
-                updateActivityTypesWithConstraintHandling(activityTypes, userId);
-            }
-            
-            // Return all activity types for the user after updates
-            return getActivityTypesByUserId(userId);
-        } catch (Exception e) {
-            logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
-            throw e;
         }
     }
 
@@ -282,7 +285,8 @@ public class ActivityTypeService implements IActivityTypeService {
      * Validates activity type updates for pinned count, orderNum range, and orderNum uniqueness
      */
     private void validateActivityTypeUpdate(UUID userId, BatchActivityTypeUpdateDTO batchDTO) {
-        // Get current state
+        // Get current state - ensure we have the most up-to-date data
+        repository.flush(); // Ensure any pending changes are persisted before validation
         long currentPinnedCount = repository.countByCreatorIdAndIsPinnedTrue(userId);
         long currentTotalCount = repository.countByCreatorId(userId);
         
