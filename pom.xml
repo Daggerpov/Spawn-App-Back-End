@@ -118,12 +118,12 @@
         </dependency>
         <!-- Add rate limiting dependency -->
         <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
+            <groupId>com.bucket4j</groupId>
             <artifactId>bucket4j-core</artifactId>
             <version>8.7.0</version>
         </dependency>
         <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
+            <groupId>com.bucket4j</groupId>
             <artifactId>bucket4j-redis</artifactId>
             <version>8.7.0</version>
         </dependency>
