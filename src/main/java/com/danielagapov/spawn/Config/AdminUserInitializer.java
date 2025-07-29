@@ -20,10 +20,10 @@ import java.util.UUID;
 @Configuration
 public class AdminUserInitializer {
 
-    @Value("${ADMIN_USERNAME:admin}")
+    @Value("${ADMIN_USERNAME:}")
     private String adminUsername;
 
-    @Value("${ADMIN_PASSWORD:spawn-admin-secure-password}")
+    @Value("${ADMIN_PASSWORD:}")
     private String adminPassword;
 
     @Value("${ADMIN_PHONE_NUMBER:+1234567890}")
@@ -36,10 +36,27 @@ public class AdminUserInitializer {
             ILogger logger) {
         
         return args -> {
+            // Validate admin credentials are properly configured
+            if (adminUsername == null || adminUsername.trim().isEmpty()) {
+                logger.warn("ADMIN_USERNAME environment variable not set. Admin user will not be created.");
+                return;
+            }
+            
+            if (adminPassword == null || adminPassword.trim().isEmpty()) {
+                logger.warn("ADMIN_PASSWORD environment variable not set. Admin user will not be created.");
+                return;
+            }
+            
+            // Validate password strength
+            if (!isStrongPassword(adminPassword)) {
+                logger.error("Admin password does not meet security requirements. Password must be at least 12 characters long and contain uppercase, lowercase, numbers, and special characters.");
+                throw new SecurityException("Admin password does not meet security requirements");
+            }
+            
             // Check if admin user already exists
             if (!userRepository.existsByUsername(adminUsername)) {
                 try {
-                    logger.info("Creating admin user");
+                    logger.info("Creating admin user with username: " + adminUsername);
                     
                     // Create a new admin user
                     User adminUser = new User();
@@ -60,11 +77,30 @@ public class AdminUserInitializer {
                     // Save to database
                     userRepository.save(adminUser);
                     
-                    logger.info("Admin user created successfully");
+                    logger.info("Admin user created successfully with ID: " + adminUser.getId());
                 } catch (Exception e) {
                     logger.error("Failed to create admin user: " + e.getMessage());
+                    throw new RuntimeException("Failed to create admin user", e);
                 }
-            } 
+            } else {
+                logger.info("Admin user already exists with username: " + adminUsername);
+            }
         };
+    }
+    
+    /**
+     * Validates that the admin password meets security requirements
+     */
+    private boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 12) {
+            return false;
+        }
+        
+        boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
+        boolean hasLower = password.chars().anyMatch(Character::isLowerCase);
+        boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        boolean hasSpecial = password.chars().anyMatch(ch -> "!@#$%^&*()_+-=[]{}|;:,.<>?".indexOf(ch) >= 0);
+        
+        return hasUpper && hasLower && hasDigit && hasSpecial;
     }
 } 

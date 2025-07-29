@@ -14,8 +14,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.io.ByteArrayInputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
-
+import java.util.regex.Pattern;
 
 @Service
 @Profile("!test") // Don't load this service in test profile
@@ -23,12 +26,26 @@ public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
     private static final String CDN_BASE;
     private static final String DEFAULT_PFP;
+    
+    // Security constants
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
+        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
+    );
+    private static final List<byte[]> MALICIOUS_SIGNATURES = Arrays.asList(
+        // PHP signatures
+        new byte[]{'<', '?', 'p', 'h', 'p'},
+        new byte[]{'<', '?', 'P', 'H', 'P'},
+        // Script signatures  
+        new byte[]{'<', 's', 'c', 'r', 'i', 'p', 't'},
+        new byte[]{'<', 'S', 'C', 'R', 'I', 'P', 'T'}
+    );
+    private static final Pattern SAFE_FILENAME_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
 
     static {
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         DEFAULT_PFP = dotenv.get("DEFAULT_PFP");
         CDN_BASE = dotenv.get("CDN_BASE");
-
     }
 
     private final S3Client s3;
@@ -42,6 +59,109 @@ public class S3Service implements IS3Service {
     }
 
     /**
+     * Validates file security before upload
+     */
+    private void validateFileUpload(byte[] file, String contentType) {
+        // Validate file size
+        if (file == null || file.length == 0) {
+            throw new IllegalArgumentException("File cannot be null or empty");
+        }
+        
+        if (file.length > MAX_FILE_SIZE) {
+            logger.warn("File upload rejected: size " + file.length + " exceeds limit " + MAX_FILE_SIZE);
+            throw new IllegalArgumentException("File size exceeds maximum allowed size of 5MB");
+        }
+
+        // Validate content type
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+            logger.warn("File upload rejected: invalid content type " + contentType);
+            throw new IllegalArgumentException("Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed");
+        }
+
+        // Check for malicious content signatures
+        if (containsMaliciousContent(file)) {
+            logger.warn("File upload rejected: potentially malicious content detected");
+            throw new SecurityException("File contains potentially malicious content");
+        }
+
+        // Validate image file headers (magic numbers)
+        if (!isValidImageFile(file, contentType)) {
+            logger.warn("File upload rejected: file content does not match declared type");
+            throw new IllegalArgumentException("File content does not match the declared image type");
+        }
+    }
+
+    /**
+     * Checks for malicious content signatures in the file
+     */
+    private boolean containsMaliciousContent(byte[] file) {
+        for (byte[] signature : MALICIOUS_SIGNATURES) {
+            if (containsSequence(file, signature)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Validates image file headers to ensure file is actually an image
+     */
+    private boolean isValidImageFile(byte[] file, String contentType) {
+        if (file.length < 8) return false;
+        
+        switch (contentType.toLowerCase()) {
+            case "image/jpeg":
+            case "image/jpg":
+                return file[0] == (byte) 0xFF && file[1] == (byte) 0xD8;
+            case "image/png":
+                return file[0] == (byte) 0x89 && file[1] == 'P' && file[2] == 'N' && file[3] == 'G';
+            case "image/gif":
+                return (file[0] == 'G' && file[1] == 'I' && file[2] == 'F');
+            case "image/webp":
+                return file[8] == 'W' && file[9] == 'E' && file[10] == 'B' && file[11] == 'P';
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Helper method to check if byte array contains a specific sequence
+     */
+    private boolean containsSequence(byte[] array, byte[] sequence) {
+        for (int i = 0; i <= array.length - sequence.length; i++) {
+            boolean found = true;
+            for (int j = 0; j < sequence.length; j++) {
+                if (array[i + j] != sequence[j]) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Sanitizes filename to prevent path traversal and injection attacks
+     */
+    private String sanitizeKey(String key) {
+        if (key == null || key.trim().isEmpty()) {
+            return UUID.randomUUID().toString();
+        }
+        
+        // Remove path traversal attempts
+        key = key.replaceAll("\\.\\./", "").replaceAll("\\\\", "");
+        
+        // Keep only safe characters
+        if (!SAFE_FILENAME_PATTERN.matcher(key).matches()) {
+            // If key contains unsafe characters, generate a new UUID
+            key = UUID.randomUUID().toString();
+        }
+        
+        return key;
+    }
+
+    /**
      * This is the closest method directly to our S3Client, which puts an object to
      * our S3 bucket, given a key to map it to
      * <p>
@@ -49,17 +169,32 @@ public class S3Service implements IS3Service {
      */
     @Override
     public String putObjectWithKey(byte[] file, String key) {
+        return putObjectWithKey(file, key, "image/jpeg"); // Default to JPEG
+    }
+
+    /**
+     * Enhanced version with content type validation
+     */
+    public String putObjectWithKey(byte[] file, String key, String contentType) {
+        // Validate file upload security
+        validateFileUpload(file, contentType);
+        
+        // Sanitize the key
+        String sanitizedKey = sanitizeKey(key);
+        
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(BUCKET)
-                .key(key)
-                .contentType("image/jpeg")
+                .key(sanitizedKey)
+                .contentType(contentType)
+                .serverSideEncryption("AES256") // Enable server-side encryption
                 .build();
         try {
+            logger.info("Uploading file with key: " + sanitizedKey + ", size: " + file.length + " bytes");
             s3.putObject(request, RequestBody.fromBytes(file));
-            return CDN_BASE + key;
+            return CDN_BASE + sanitizedKey;
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
+            logger.error("Failed to upload file: " + e.getMessage());
+            throw new ApplicationException("Failed to upload file to storage", e);
         }
     }
 
@@ -68,12 +203,19 @@ public class S3Service implements IS3Service {
      */
     @Override
     public String putObject(byte[] file) {
+        return putObject(file, "image/jpeg"); // Default to JPEG
+    }
+
+    /**
+     * Enhanced version with content type validation
+     */
+    public String putObject(byte[] file, String contentType) {
         try {
             String key = UUID.randomUUID().toString();
-            return putObjectWithKey(file, key);
+            return putObjectWithKey(file, key, contentType);
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
+            logger.error("Failed to upload file: " + e.getMessage());
+            throw new ApplicationException("Failed to upload file to storage", e);
         }
     }
 
