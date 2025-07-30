@@ -25,7 +25,7 @@ public class ChatMessageMapper {
 
     public static ChatMessage toEntity(ChatMessageDTO dto, User userSender, Activity activity) {
         return new ChatMessage(
-                dto.getId(),
+                dto.getId(), // null for new entities, existing ID for updates
                 dto.getContent(),
                 dto.getTimestamp(),
                 userSender,
