@@ -34,6 +34,27 @@ public interface IActivityUserRepository extends JpaRepository<ActivityUser, Act
     List<UserIdActivityTimeDTO> findOtherUserIdsByActivityIds(List<UUID> activityIds, UUID userId, ParticipationStatus status);
 
     Optional<ActivityUser> findByActivity_IdAndUser_Id(UUID activityId, UUID userId);
+    
+    /**
+     * Batch query to get participant user IDs for multiple activities at once.
+     * This prevents N+1 query problems when loading multiple activities.
+     * 
+     * @param activityIds List of activity IDs to get participants for
+     * @param status The participation status to filter by
+     * @return Map of activity ID to list of user IDs
+     */
+    @Query("SELECT au.activity.id, au.user.id FROM ActivityUser au WHERE au.activity.id IN :activityIds AND au.status = :status")
+    List<Object[]> findUserIdsByActivityIdsAndStatus(@Param("activityIds") List<UUID> activityIds, @Param("status") ParticipationStatus status);
+    
+    /**
+     * Batch query to get all activity user relationships for multiple activities.
+     * More efficient than separate queries for each status.
+     * 
+     * @param activityIds List of activity IDs
+     * @return List of ActivityUser objects for all requested activities
+     */
+    @Query("SELECT au FROM ActivityUser au WHERE au.activity.id IN :activityIds")
+    List<ActivityUser> findAllByActivityIds(@Param("activityIds") List<UUID> activityIds);
 
     @Query("SELECT au FROM ActivityUser au JOIN au.activity a WHERE au.user.id = :userId AND au.status = :status ORDER BY a.lastUpdated DESC LIMIT 1")
     Optional<ActivityUser> findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(@Param("userId") UUID userId, @Param("status") ParticipationStatus status);

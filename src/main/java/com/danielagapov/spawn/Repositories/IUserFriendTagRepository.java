@@ -68,4 +68,18 @@ public interface IUserFriendTagRepository extends JpaRepository<UserFriendTag, U
            "AND uft.friendTag.isEveryone = true " +
            "AND uft.friend.id = :potentialFriendId")
     boolean isUserFriendOfUser(@Param("userId") UUID userId, @Param("potentialFriendId") UUID potentialFriendId);
+    
+    /**
+     * Efficiently calculates mutual friend count between two users using database-level operations.
+     * This is much more efficient than fetching friend lists and calculating intersection in memory.
+     * 
+     * @param userId1 The first user's ID
+     * @param userId2 The second user's ID
+     * @return Count of mutual friends between the two users
+     */
+    @Query("SELECT COUNT(DISTINCT uft1.friend.id) FROM UserFriendTag uft1, UserFriendTag uft2 " +
+           "WHERE uft1.friendTag.ownerId = :userId1 AND uft1.friendTag.isEveryone = true " +
+           "AND uft2.friendTag.ownerId = :userId2 AND uft2.friendTag.isEveryone = true " +
+           "AND uft1.friend.id = uft2.friend.id")
+    int getMutualFriendCount(@Param("userId1") UUID userId1, @Param("userId2") UUID userId2);
 }
