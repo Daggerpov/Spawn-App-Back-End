@@ -265,14 +265,14 @@ public class ChatMessageServiceTests {
         chatMessage.setActivity(dummyActivity);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(chatMessage));
         when(chatMessageLikesRepository.findByChatMessage(chatMessage)).thenReturn(new ArrayList<>());
-        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
-        when(userService.getUserById(any(UUID.class))).thenReturn(userDTO);
+        BaseUserDTO baseUserDTO = new BaseUserDTO(senderId, "John Doe", "email@example.com", "username", "bio", "avatar.jpg");
+        when(userService.getBaseUserById(any(UUID.class))).thenReturn(baseUserDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         FullActivityChatMessageDTO result = chatMessageService.getFullChatMessageById(chatMessageId);
         assertNotNull(result);
         assertEquals(chatMessageId, result.getId());
         assertEquals("Full message", result.getContent());
-        assertEquals(userDTO, result.getSenderUser());
+        assertEquals(baseUserDTO, result.getSenderUser());
     }
 
     @Test
@@ -524,8 +524,8 @@ public class ChatMessageServiceTests {
         dummyChatMessage.setActivity(dummyActivity);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
-        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
-        when(userService.getUserById(senderId)).thenReturn(userDTO);
+        BaseUserDTO baseUserDTO = new BaseUserDTO(senderId, "John Doe", "email@example.com", "username", "bio", "avatar.jpg");
+        when(userService.getBaseUserById(senderId)).thenReturn(baseUserDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         FullActivityChatMessageDTO fullDto = chatMessageService.getFullChatMessageByChatMessage(chatMessageDTO);
         assertNotNull(fullDto);
@@ -533,7 +533,7 @@ public class ChatMessageServiceTests {
         assertEquals("Full chat message", fullDto.getContent());
         assertEquals(timestamp, fullDto.getTimestamp());
         assertEquals(ActivityId, fullDto.getActivityId());
-        assertEquals(userDTO, fullDto.getSenderUser());
+        assertEquals(baseUserDTO, fullDto.getSenderUser());
     }
 
     @Test
@@ -560,8 +560,8 @@ public class ChatMessageServiceTests {
         dummyChatMessage.setActivity(dummyActivity);
         when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.of(dummyChatMessage));
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(new ArrayList<>());
-        UserDTO userDTO = new UserDTO(senderId, List.of(), "username", "avatar.jpg", "John Doe", "bio", List.of(), "email@example.com");
-        when(userService.getUserById(senderId)).thenReturn(userDTO);
+        BaseUserDTO baseUserDTO = new BaseUserDTO(senderId, "John Doe", "email@example.com", "username", "bio", "avatar.jpg");
+        when(userService.getBaseUserById(senderId)).thenReturn(baseUserDTO);
         when(userService.getAllUsers()).thenReturn(new ArrayList<>());
         List<FullActivityChatMessageDTO> result = chatMessageService.convertChatMessagesToFullFeedActivityChatMessages(chatMessageDTOs);
         assertNotNull(result);
@@ -571,6 +571,6 @@ public class ChatMessageServiceTests {
         assertEquals("Chat message conversion", fullDto.getContent());
         assertEquals(timestamp, fullDto.getTimestamp());
         assertEquals(ActivityId, fullDto.getActivityId());
-        assertEquals(userDTO, fullDto.getSenderUser());
+        assertEquals(baseUserDTO, fullDto.getSenderUser());
     }
 }
