@@ -66,4 +66,14 @@ public interface IOAuthService {
     String checkOAuthRegistration(String email, String idToken, OAuthProvider provider);
 
     void createAndSaveMapping(User user, String externalId, OAuthProvider provider);
+
+    /**
+     * Performs comprehensive cleanup of orphaned OAuth data that can occur during concurrent operations.
+     * This method should be called when data inconsistencies are detected during OAuth flows.
+     * 
+     * @param email The email to check for orphaned data
+     * @param externalUserId The external user ID to check for orphaned mappings
+     * @return true if cleanup was performed, false if no cleanup was needed
+     */
+    boolean performDataConsistencyCleanup(String email, String externalUserId);
 }

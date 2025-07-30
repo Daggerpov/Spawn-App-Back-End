@@ -243,12 +243,37 @@ public class AuthController {
                 if (gracefulUser != null) {
                     User userEntity = userService.getUserEntityById(gracefulUser.getUser().getId());
                     HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
+                    logger.info("OAuth registration succeeded via graceful handling");
                     return ResponseEntity.ok().headers(headers).body(gracefulUser);
+                } else {
+                    logger.warn("Graceful handling returned null - attempting final fallback check");
+                    
+                    // Final fallback: try to sign in the user if they already exist
+                    try {
+                        Optional<AuthResponseDTO> signInUser = oauthService.signInUser(
+                            registration.getIdToken(), 
+                            registration.getEmail(), 
+                            registration.getProvider()
+                        );
+                        
+                        if (signInUser.isPresent()) {
+                            User userEntity = userService.getUserEntityById(signInUser.get().getUser().getId());
+                            HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
+                            logger.info("OAuth registration succeeded via final fallback sign-in");
+                            return ResponseEntity.ok().headers(headers).body(signInUser.get());
+                        }
+                    } catch (Exception fallbackEx) {
+                        logger.warn("Final fallback sign-in also failed: " + fallbackEx.getMessage());
+                    }
                 }
             } catch (Exception gracefulException) {
                 logger.error("Graceful handling also failed: " + gracefulException.getMessage());
             }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Registration failed"));
+            
+            // If all recovery attempts failed, return detailed error
+            logger.error("All OAuth registration attempts failed for email: " + registration.getEmail());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Registration failed. Please try again or contact support if the issue persists."));
         }
     }
 

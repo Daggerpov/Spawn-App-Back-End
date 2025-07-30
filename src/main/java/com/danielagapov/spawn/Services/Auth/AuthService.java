@@ -339,11 +339,11 @@ public class AuthService implements IAuthService {
         String idToken = registrationDTO.getIdToken();
         OAuthProvider provider = registrationDTO.getProvider();
         
-        logger.info("Handling OAuth registration gracefully for exception: " + exception.getClass().getSimpleName() + " - " + exception.getMessage());
+        logger.info("Attempting graceful OAuth registration recovery for email: " + email + " due to exception: " + exception.getMessage());
         
         try {
-            // First, try to verify the token and get the external ID
-            String externalId = null;
+            // Verify OAuth token to get external ID
+            String externalId;
             try {
                 externalId = oauthService.checkOAuthRegistration(email, idToken, provider);
             } catch (Exception e) {
@@ -351,25 +351,39 @@ public class AuthService implements IAuthService {
                 return null;
             }
             
-            // Check if an existing user can be found and returned
+            // Perform data consistency cleanup before attempting recovery
+            logger.info("Performing data consistency cleanup before graceful recovery");
+            try {
+                boolean cleanupPerformed = oauthService.performDataConsistencyCleanup(email, externalId);
+                
+                if (cleanupPerformed) {
+                    logger.info("Data cleanup performed, waiting briefly for cleanup to complete");
+                    Thread.sleep(100); // Brief wait for cleanup to complete
+                }
+            } catch (Exception cleanupEx) {
+                logger.warn("Could not perform data consistency cleanup: " + cleanupEx.getMessage());
+            }
+            
+            // Check if an existing user can be found and returned after cleanup
             Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
             if (existingUser.isPresent()) {
-                logger.info("Found existing user in graceful handler, returning user data");
+                logger.info("Found existing user after cleanup in graceful handler, returning user data");
                 return existingUser.get();
             }
             
             // For data integrity violations that suggest concurrent creation, 
             // give other threads a moment to complete and then check again
-            if (exception instanceof org.springframework.dao.DataIntegrityViolationException) {
-                logger.info("Data integrity violation detected, checking for concurrent user creation");
+            if (exception instanceof org.springframework.dao.DataIntegrityViolationException ||
+                exception instanceof org.hibernate.StaleObjectStateException) {
+                logger.info("Concurrency-related exception detected, checking for concurrent user creation");
                 
                 try {
-                    Thread.sleep(200); // Brief wait for concurrent operations to complete
+                    Thread.sleep(300); // Longer wait for concurrent operations to complete
                     
-                    // Re-check for existing user after brief wait
+                    // Re-check for existing user after wait
                     Optional<AuthResponseDTO> concurrentUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
                     if (concurrentUser.isPresent()) {
-                        logger.info("Found user created by concurrent thread after data integrity violation");
+                        logger.info("Found user created by concurrent thread after concurrency exception");
                         return concurrentUser.get();
                     }
                 } catch (InterruptedException ie) {
@@ -401,6 +415,7 @@ public class AuthService implements IAuthService {
                 newUser.setName(email.split("@")[0]);
             }
             
+            // Try graceful user creation with additional error handling
             try {
                 newUser = userService.createAndSaveUser(newUser);
                 oauthService.createAndSaveMapping(newUser, externalId, provider);
@@ -408,20 +423,37 @@ public class AuthService implements IAuthService {
                 logger.info("OAuth user created gracefully with EMAIL_VERIFIED status: " + LoggingUtils.formatUserInfo(newUser));
                 return UserMapper.toAuthResponseDTO(newUser);
             } catch (Exception createEx) {
-                logger.warn("Failed to create user gracefully, checking one more time for concurrent creation: " + createEx.getMessage());
+                logger.warn("Failed to create user gracefully, performing final checks: " + createEx.getMessage());
                 
-                // Final check for concurrent user creation
+                // Final comprehensive check for concurrent user creation
                 try {
+                    // Wait a bit longer and try multiple approaches to find the user
+                    Thread.sleep(200);
+                    
+                    // Try by external ID first
                     Optional<AuthResponseDTO> finalCheck = oauthService.getUserIfExistsbyExternalId(externalId, email);
                     if (finalCheck.isPresent()) {
                         logger.info("Found user created by another thread during graceful creation attempt");
                         return finalCheck.get();
                     }
+                    
+                    // Try one more data consistency cleanup and check
+                    boolean cleanupPerformed = oauthService.performDataConsistencyCleanup(email, externalId);
+                    
+                    // Final check after cleanup
+                    finalCheck = oauthService.getUserIfExistsbyExternalId(externalId, email);
+                    if (finalCheck.isPresent()) {
+                        logger.info("Found user after final cleanup in graceful handler");
+                        return finalCheck.get();
+                    }
+                    
                 } catch (Exception finalEx) {
-                    logger.warn("Error during final concurrent user check: " + finalEx.getMessage());
+                    logger.warn("Error during final comprehensive user check: " + finalEx.getMessage());
                 }
                 
-                throw createEx; // Re-throw if we couldn't create or find the user
+                // If we still can't create or find the user, return null to let the caller handle it
+                logger.error("Graceful handling failed completely for email: " + email);
+                return null;
             }
             
         } catch (Exception e) {

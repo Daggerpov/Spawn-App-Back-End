@@ -217,12 +217,30 @@ public class OAuthService implements IOAuthService {
                     throw new IncorrectProviderException("The email: " + email + " is already associated to a " + providerName + " account. Please login through " + providerName + " instead");
                 }
             } catch (BaseNotFoundException e) {
-                logger.warn("User email exists but no mapping found - likely due to recent user deletion during OAuth re-registration. Treating as no user found.");
-                // This is a common case during OAuth re-registration where a user with EMAIL_VERIFIED status
-                // was just deleted but the email check still sees the user due to transaction timing.
-                // Rather than attempting complex repair logic, we treat this as "no user found" to allow
-                // the registration flow to proceed with creating a fresh user.
-                return Optional.empty();
+                logger.warn("User email exists but no mapping found - checking for data inconsistency and attempting cleanup.");
+                
+                // Get the user by email to check their status
+                try {
+                    User orphanedUser = userService.getUserByEmail(email);
+                    
+                    // If user has non-active status (likely EMAIL_VERIFIED), they were likely orphaned during a previous OAuth flow
+                    if (orphanedUser.getStatus() != null && orphanedUser.getStatus() != UserStatus.ACTIVE) {
+                        logger.info("Found orphaned user with status: " + orphanedUser.getStatus() + ". Cleaning up for re-registration.");
+                        
+                        // Clean up the orphaned user to allow fresh registration
+                        userService.deleteUserById(orphanedUser.getId());
+                        logger.info("Orphaned user deleted. Treating as no user found to allow fresh registration.");
+                        return Optional.empty();
+                    } else {
+                        logger.warn("Active user exists without OAuth mapping - possible data corruption. Manual intervention may be required.");
+                        return Optional.empty();
+                    }
+                } catch (Exception cleanupEx) {
+                    logger.error("Error during orphaned user cleanup: " + cleanupEx.getMessage());
+                    // Fallback: treat as no user found to allow registration to proceed
+                    logger.info("Fallback: treating as no user found due to cleanup error.");
+                    return Optional.empty();
+                }
             }
         } else { // No account exists for this external id or email
             logger.info("No existing user found for external ID: " + externalUserId + " or email: " + email);
@@ -444,7 +462,7 @@ public class OAuthService implements IOAuthService {
     
     /**
      * Internal method to create and save mapping with proper synchronization.
-     * Relies on database cascade deletion instead of explicit mapping deletion to avoid race conditions.
+     * Handles orphaned mappings and data inconsistencies by cleaning up stale data.
      */
     @Transactional(isolation = Isolation.SERIALIZABLE)
     private void createAndSaveMappingWithLock(User user, String externalUserId, OAuthProvider provider) {
@@ -459,13 +477,31 @@ public class OAuthService implements IOAuthService {
                     logger.info("Mapping already exists for the same user, no action needed");
                     return;
                 } else {
-                    // This should not happen in normal flow as we delete users before creating new ones
                     logger.warn("Mapping exists for different user. This indicates a race condition or data inconsistency.");
-                    // Let the database constraint handle this - don't try to delete manually to avoid race conditions
+                    
+                    // Check if the existing mapping points to a deleted/non-existent user
+                    try {
+                        User existingMappedUser = existing.getUser();
+                        boolean userStillExists = userService.existsByUserId(existingMappedUser.getId());
+                        
+                        if (!userStillExists) {
+                            logger.warn("Existing mapping points to deleted user. Cleaning up orphaned mapping for external ID: " + externalUserId);
+                            externalIdMapRepository.delete(existing);
+                            externalIdMapRepository.flush(); // Ensure deletion is committed before proceeding
+                        } else {
+                            logger.error("Mapping exists for a different valid user. Cannot proceed with mapping creation.");
+                            throw new RuntimeException("OAuth mapping conflict: External ID already mapped to a different active user");
+                        }
+                    } catch (Exception checkEx) {
+                        logger.warn("Could not verify existing mapped user, treating as orphaned mapping: " + checkEx.getMessage());
+                        // If we can't verify the user exists, assume it's orphaned and delete the mapping
+                        externalIdMapRepository.delete(existing);
+                        externalIdMapRepository.flush();
+                    }
                 }
             }
             
-            // Create the new mapping - let database constraints handle uniqueness
+            // Create the new mapping - database constraints should now allow this
             UserIdExternalIdMap mapping = new UserIdExternalIdMap(externalUserId, user, provider);
             logger.info("Creating mapping for external ID: " + externalUserId + " and user: " + user.getId());
             
@@ -532,5 +568,74 @@ public class OAuthService implements IOAuthService {
             logger.error("No mapping found for email: " + email);
             throw e;
         }
+    }
+
+    /**
+     * Performs comprehensive cleanup of orphaned OAuth data that can occur during concurrent operations.
+     * This method should be called when data inconsistencies are detected.
+     * 
+     * @param email The email to check for orphaned data
+     * @param externalUserId The external user ID to check for orphaned mappings
+     * @return true if cleanup was performed, false if no cleanup was needed
+     */
+    @Override
+    public boolean performDataConsistencyCleanup(String email, String externalUserId) {
+        logger.info("Performing data consistency cleanup for email: " + email + " and external ID: " + externalUserId);
+        boolean cleanupPerformed = false;
+        
+        try {
+            // Check for orphaned mappings (mappings pointing to deleted users)
+            Optional<UserIdExternalIdMap> orphanedMapping = externalIdMapRepository.findById(externalUserId);
+            if (orphanedMapping.isPresent()) {
+                UserIdExternalIdMap mapping = orphanedMapping.get();
+                try {
+                    User mappedUser = mapping.getUser();
+                    if (!userService.existsByUserId(mappedUser.getId())) {
+                        logger.warn("Found orphaned mapping pointing to deleted user. Cleaning up mapping for external ID: " + externalUserId);
+                        externalIdMapRepository.delete(mapping);
+                        cleanupPerformed = true;
+                    }
+                } catch (Exception e) {
+                    logger.warn("Error checking mapped user existence, deleting potentially orphaned mapping: " + e.getMessage());
+                    externalIdMapRepository.delete(mapping);
+                    cleanupPerformed = true;
+                }
+            }
+            
+            // Check for orphaned users (users without OAuth mappings that should have them)
+            if (userService.existsByEmail(email)) {
+                try {
+                    User user = userService.getUserByEmail(email);
+                    
+                    // If user has non-active status, they were likely orphaned during a previous OAuth flow
+                    // Try to find their OAuth mapping - if none exists, they're orphaned
+                    if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
+                        try {
+                            getMappingByUserEmail(email);
+                            // If we get here, user has a mapping, so they're not orphaned
+                            logger.info("User has OAuth mapping, not orphaned");
+                        } catch (BaseNotFoundException e) {
+                            // User has no OAuth mapping but exists - this is an orphaned user
+                            logger.warn("Found orphaned user with no OAuth mapping and status: " + user.getStatus() + ". Cleaning up user: " + user.getId());
+                            userService.deleteUserById(user.getId());
+                            cleanupPerformed = true;
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("Error during orphaned user cleanup: " + e.getMessage());
+                }
+            }
+            
+            if (cleanupPerformed) {
+                logger.info("Data consistency cleanup completed for email: " + email);
+            } else {
+                logger.info("No cleanup needed for email: " + email);
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error during data consistency cleanup: " + e.getMessage());
+        }
+        
+        return cleanupPerformed;
     }
 }
