@@ -970,4 +970,482 @@ class ActivityTypeServiceTests {
         verify(activityTypeRepository, never()).save(any(ActivityType.class));
         verify(logger, times(1)).info(contains("Saved 1 new activity types"));
     }
+
+    // MARK: - Extended Front-End Scenario Tests
+
+    @Test
+    void batchUpdate_ShouldHandleAssociatedFriends_WhenActivityTypeHasFriendsAssociated() {
+        // Arrange - Test with associated friends (front-end feature)
+        UUID friend1Id = UUID.randomUUID();
+        UUID friend2Id = UUID.randomUUID();
+        
+                 ActivityTypeDTO activityTypeWithFriends = new ActivityTypeDTO(
+             activityTypeId1,
+             "Chill",
+             Arrays.asList(
+                 new com.danielagapov.spawn.DTOs.User.BaseUserDTO(friend1Id, "Friend One", "friend1@test.com", "friend1", "bio1", "pic1.jpg"),
+                 new com.danielagapov.spawn.DTOs.User.BaseUserDTO(friend2Id, "Friend Two", "friend2@test.com", "friend2", "bio2", "pic2.jpg")
+             ),
+            "🛋️",
+            0,
+            userId,
+            false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(activityTypeWithFriends),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleEmptyAssociatedFriends_WhenRemovingAllFriends() {
+        // Arrange - Update activity type to remove all associated friends
+        ActivityTypeDTO activityTypeWithoutFriends = new ActivityTypeDTO(
+            activityTypeId1,
+            "Chill",
+            List.of(), // Empty friends list
+            "🛋️",
+            0,
+            userId,
+            false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(activityTypeWithoutFriends),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleMaxLengthTitle_WhenTitleIsVeryLong() {
+        // Arrange - Test with very long title (boundary testing)
+        String longTitle = "A".repeat(255); // Typical database varchar limit
+        
+        ActivityTypeDTO activityTypeWithLongTitle = new ActivityTypeDTO(
+            activityTypeId1,
+            longTitle,
+            List.of(),
+            "🛋️",
+            0,
+            userId,
+            false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(activityTypeWithLongTitle),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleSpecialCharactersInTitle_WhenTitleContainsUnicodeAndSymbols() {
+        // Arrange - Test with special characters, emojis, and symbols
+        String specialTitle = "🎉🎊 Test & Activity (新年) - Special Event! @#$%^&*()_+ <>";
+        
+        ActivityTypeDTO activityTypeWithSpecialChars = new ActivityTypeDTO(
+            activityTypeId1,
+            specialTitle,
+            List.of(),
+            "🎉",
+            0,
+            userId,
+            false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(activityTypeWithSpecialChars),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleZeroOrderNum_WhenActivityTypeMovedToFirst() {
+        // Arrange - Ensure orderNum=0 is handled properly
+        ActivityTypeDTO firstActivityType = new ActivityTypeDTO(
+            activityTypeId1,
+            "Chill",
+            List.of(),
+            "🛋️",
+            0, // First position
+            userId,
+            true // Pin it to make it truly first
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(firstActivityType),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleGapInOrderNums_WhenUserDeletesMiddleActivityType() {
+        // Arrange - Delete middle activity type creating order gap (0, 2 instead of 0, 1, 2)
+        // This tests if the validation handles non-consecutive order numbers properly
+        ActivityTypeDTO updatedChill = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+        );
+        ActivityTypeDTO updatedActive = new ActivityTypeDTO(
+            activityTypeId3, "Active", List.of(), "🏃", 1, userId, false // Moved from 2 to 1
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(updatedChill, updatedActive),
+            List.of(activityTypeId2) // Delete food (was at position 1)
+        );
+
+        // Mock the initial state (3 activity types, 0 pinned)
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType))
+                .thenReturn(List.of(chillActivityType, activeActivityType)); // After deletion, only return remaining ones
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType, activeActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        verify(activityTypeRepository, times(1)).deleteAllById(List.of(activityTypeId2));
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleIdenticalTitles_WhenUserCreatesActivityTypesWithSameName() {
+        // Arrange - Create multiple activity types with identical titles (should be allowed)
+        UUID newId1 = UUID.randomUUID();
+        UUID newId2 = UUID.randomUUID();
+        
+        ActivityTypeDTO duplicate1 = new ActivityTypeDTO(
+            newId1, "Study", List.of(), "📚", 0, userId, false
+        );
+        ActivityTypeDTO duplicate2 = new ActivityTypeDTO(
+            newId2, "Study", List.of(), "✏️", 1, userId, false // Same title, different icon
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(duplicate1, duplicate2),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(0L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of());
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(new ActivityType(), new ActivityType()));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert - Should allow identical titles
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleBoundaryPinnedCount_WhenExactlyAtLimit() {
+        // Arrange - Test exactly at the pinned limit boundary (3 pinned)
+        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, true);
+        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 1, userId, true);
+        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 2, userId, true);
+        
+        UUID newId = UUID.randomUUID();
+        ActivityTypeDTO unpinned = new ActivityTypeDTO(newId, "Study", List.of(), "📚", 3, userId, false);
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(pinned1, pinned2, pinned3, unpinned),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(new ActivityType()));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert - Should pass with exactly 3 pinned
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleNullIcon_WhenIconIsNotProvided() {
+        // Arrange - Test with null icon (should be handled gracefully)
+        ActivityTypeDTO activityTypeWithNullIcon = new ActivityTypeDTO(
+            activityTypeId1,
+            "Chill",
+            List.of(),
+            null, // Null icon
+            0,
+            userId,
+            false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(activityTypeWithNullIcon),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleEmptyTitle_WhenTitleIsEmpty() {
+        // Arrange - Test with empty title (should be handled or validated)
+        ActivityTypeDTO activityTypeWithEmptyTitle = new ActivityTypeDTO(
+            activityTypeId1,
+            "", // Empty title
+            List.of(),
+            "🛋️",
+            0,
+            userId,
+            false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(activityTypeWithEmptyTitle),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act
+        List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
+
+        // Assert
+        assertNotNull(result);
+        verify(activityTypeRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleRapidFireUpdates_WhenUserMakesQuickChanges() {
+        // Arrange - Simulate rapid consecutive updates (like user quickly toggling pins)
+        ActivityTypeDTO quickUpdate1 = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, true // Pin
+        );
+        ActivityTypeDTO quickUpdate2 = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false // Unpin
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO1 = new BatchActivityTypeUpdateDTO(List.of(quickUpdate1), List.of());
+        BatchActivityTypeUpdateDTO batchDTO2 = new BatchActivityTypeUpdateDTO(List.of(quickUpdate2), List.of());
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType));
+
+        // Act - Simulate rapid updates
+        List<ActivityTypeDTO> result1 = activityTypeService.updateActivityTypes(userId, batchDTO1);
+        List<ActivityTypeDTO> result2 = activityTypeService.updateActivityTypes(userId, batchDTO2);
+
+        // Assert
+        assertNotNull(result1);
+        assertNotNull(result2);
+        verify(activityTypeRepository, times(2)).saveAll(anyList());
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleNegativeOrderNum_WhenDataCorrupted() {
+        // Arrange - Test with negative order number (data corruption scenario)
+        ActivityTypeDTO corruptedOrderDTO = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", -5, userId, false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(corruptedOrderDTO),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+
+        // Act & Assert
+        ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Invalid orderNum -5"));
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleExtremelyHighOrderNum_WhenDataCorrupted() {
+        // Arrange - Test with extremely high order number
+        ActivityTypeDTO corruptedOrderDTO = new ActivityTypeDTO(
+            activityTypeId1, "Chill", List.of(), "🛋️", Integer.MAX_VALUE, userId, false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(corruptedOrderDTO),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+
+        // Act & Assert
+        ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Invalid orderNum " + Integer.MAX_VALUE));
+    }
+
+    @Test
+    void fetchActivityTypes_ShouldHandleRepositoryTimeout_WhenDatabaseSlow() {
+        // Arrange - Simulate database timeout
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenThrow(new org.springframework.dao.QueryTimeoutException("Query timeout"));
+
+        // Act & Assert
+        org.springframework.dao.QueryTimeoutException exception = 
+            assertThrows(org.springframework.dao.QueryTimeoutException.class,
+                () -> activityTypeService.getActivityTypesByUserId(userId));
+
+        assertTrue(exception.getMessage().contains("Query timeout"));
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleRepositoryOptimisticLockingException_WhenConcurrentUpdate() {
+        // Arrange - Simulate optimistic locking exception
+        ActivityTypeDTO updateDTO = new ActivityTypeDTO(
+            activityTypeId1, "Updated Chill", List.of(), "🛋️", 0, userId, false
+        );
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(updateDTO),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.saveAll(anyList()))
+                .thenThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException("Version conflict", new Exception()));
+
+        // Act & Assert
+        org.springframework.orm.ObjectOptimisticLockingFailureException exception = 
+            assertThrows(org.springframework.orm.ObjectOptimisticLockingFailureException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Version conflict"));
+    }
+
+    @Test
+    void batchUpdate_ShouldHandleTransactionRollback_WhenPartialUpdateFails() {
+        // Arrange - Test transaction behavior when part of the update fails
+        UUID newId = UUID.randomUUID();
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "New Type", List.of(), "🎯", 0, userId, false);
+        ActivityTypeDTO existingType = new ActivityTypeDTO(activityTypeId1, "Updated", List.of(), "🛋️", 1, userId, false);
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+            List.of(newType, existingType),
+            List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(1L);
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType));
+        when(userService.getUserEntityById(userId)).thenReturn(testUser);
+        when(activityTypeRepository.existsById(newId)).thenReturn(false);
+        when(activityTypeRepository.existsById(activityTypeId1)).thenReturn(true);
+        
+        // Fail on saveAll but succeed on individual save
+        when(activityTypeRepository.saveAll(anyList()))
+                .thenThrow(new org.springframework.dao.DataAccessException("Transaction failed") {});
+
+        // Act & Assert
+        org.springframework.dao.DataAccessException exception = 
+            assertThrows(org.springframework.dao.DataAccessException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Transaction failed"));
+    }
 } 

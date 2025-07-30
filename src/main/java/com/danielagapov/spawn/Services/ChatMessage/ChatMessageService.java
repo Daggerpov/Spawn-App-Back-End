@@ -306,7 +306,7 @@ public class ChatMessageService implements IChatMessageService {
                 chatMessage.getId(),
                 chatMessage.getContent(),
                 chatMessage.getTimestamp(),
-                userService.getUserById(chatMessage.getSenderUserId()),
+                userService.getBaseUserById(chatMessage.getSenderUserId()),
                 chatMessage.getActivityId(),
                 getChatMessageLikes(chatMessage.getId())
         );
