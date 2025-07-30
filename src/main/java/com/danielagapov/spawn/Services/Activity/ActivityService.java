@@ -687,7 +687,8 @@ public class ActivityService implements IActivityService {
      * @return the modified list
      */
     private List<FullFeedActivityDTO> removeExpiredActivities(List<FullFeedActivityDTO> Activities) {
-        OffsetDateTime now = OffsetDateTime.now();
+        // Use UTC for consistent timezone comparison across server and client timezones
+        OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
 
         if (Activities == null) {
             return Collections.emptyList();
@@ -695,7 +696,15 @@ public class ActivityService implements IActivityService {
 
         return Activities.stream()
                 .filter(Objects::nonNull)
-                .filter(Activity -> Activity.getEndTime() == null || !Activity.getEndTime().isBefore(now))
+                .filter(Activity -> {
+                    if (Activity.getEndTime() == null) {
+                        return true; // Keep activities with no end time
+                    }
+                    
+                    // Convert both times to UTC for proper comparison
+                    OffsetDateTime activityEndTimeUtc = Activity.getEndTime().withOffsetSameInstant(java.time.ZoneOffset.UTC);
+                    return !activityEndTimeUtc.isBefore(now);
+                })
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -942,7 +951,8 @@ public class ActivityService implements IActivityService {
     @Override
     public List<ProfileActivityDTO> getPastActivitiesWhereUserInvited(UUID inviterUserId, UUID requestingUserId) {
         try {
-            OffsetDateTime now = OffsetDateTime.now();
+            // Use UTC for consistent timezone comparison across server and client timezones
+            OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
             List<Activity> pastActivities = repository.getPastActivitiesWhereUserInvited(inviterUserId, requestingUserId, now);
             List<ActivityDTO> pastActivityDTOs = getActivityDTOs(pastActivities);
             

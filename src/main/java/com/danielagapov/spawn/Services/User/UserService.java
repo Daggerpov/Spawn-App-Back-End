@@ -46,6 +46,7 @@ import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -720,7 +721,9 @@ public class UserService implements IUserService {
         try {
             final int activityLimit = 10;
             final int userLimit = 40;
-            List<UUID> pastActivityIds = activityUserRepository.findPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, Limit.of(activityLimit));
+            // Use UTC for consistent timezone comparison across server and client timezones
+            OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
+            List<UUID> pastActivityIds = activityUserRepository.findPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
             List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityUserRepository.findOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
             Set<UUID> excludedIds = userSearchService.getExcludedUserIds(requestingUserId);
 

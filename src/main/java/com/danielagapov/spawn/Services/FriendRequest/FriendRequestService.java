@@ -143,9 +143,21 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Getting incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+            
+            // Filter out any friend requests with null IDs to prevent JSON decoding errors
+            List<FriendRequest> validFriendRequests = friendRequests.stream()
+                    .filter(fr -> fr.getId() != null)
+                    .toList();
+            
+            // Log if any invalid friend requests were found
+            int invalidCount = friendRequests.size() - validFriendRequests.size();
+            if (invalidCount > 0) {
+                logger.warn("Found " + invalidCount + " friend requests with null IDs for user: " + LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response.");
+            }
+            
             // Note: Blocked user filtering is now handled at the controller level
 
-            List<FetchFriendRequestDTO> result = friendRequests.stream()
+            List<FetchFriendRequestDTO> result = validFriendRequests.stream()
                     .map(fr -> FetchFriendRequestMapper.toDTO(fr,
                             userService.getMutualFriendCount(id, fr.getSender().getId())))
                     .toList();
@@ -352,9 +364,21 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Getting sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
+            
+            // Filter out any friend requests with null IDs to prevent JSON decoding errors
+            List<FriendRequest> validFriendRequests = friendRequests.stream()
+                    .filter(fr -> fr.getId() != null)
+                    .toList();
+            
+            // Log if any invalid friend requests were found
+            int invalidCount = friendRequests.size() - validFriendRequests.size();
+            if (invalidCount > 0) {
+                logger.warn("Found " + invalidCount + " friend requests with null IDs for user: " + LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response.");
+            }
+            
             // Note: Blocked user filtering is now handled at the controller level
 
-            List<FetchFriendRequestDTO> result = friendRequests.stream()
+            List<FetchFriendRequestDTO> result = validFriendRequests.stream()
                     .map(fr -> FetchFriendRequestMapper.toDTOForSentRequest(fr,
                             userService.getMutualFriendCount(userId, fr.getReceiver().getId())))
                     .toList();
