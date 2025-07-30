@@ -19,6 +19,7 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.ChatMessage;
 import com.danielagapov.spawn.Models.ChatMessageLikes;
+import com.danielagapov.spawn.Models.CompositeKeys.ChatMessageLikesId;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.IActivityRepository;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
@@ -125,7 +126,7 @@ public class ChatMessageService implements IChatMessageService {
     })
     public FullActivityChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO) {
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
-                UUID.randomUUID(),
+                null, // Let Hibernate auto-generate the ID
                 newChatMessageDTO.getContent(),
                 Instant.now(),
                 newChatMessageDTO.getSenderUserId(),
@@ -169,15 +170,15 @@ public class ChatMessageService implements IChatMessageService {
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
             User userSender = userRepository.findById(chatMessageDTO.getSenderUserId())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.getSenderUserId()));
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, chatMessageDTO.getSenderUserId()));
             Activity activity = ActivityRepository.findById(chatMessageDTO.getActivityId())
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageDTO.getActivityId()));
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, chatMessageDTO.getActivityId()));
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, activity);
 
-            chatMessageRepository.save(chatMessageEntity);
+            ChatMessage savedEntity = chatMessageRepository.save(chatMessageEntity);
 
-            return ChatMessageMapper.toDTO(chatMessageEntity, List.of()); // Empty likedByUserIds list
+            return ChatMessageMapper.toDTO(savedEntity, List.of()); // Empty likedByUserIds list
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Failed to save chatMessage: " + e.getMessage());
@@ -234,7 +235,11 @@ public class ChatMessageService implements IChatMessageService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new BaseSaveException("UserId: " + userId));
 
+            // Create the composite key
+            ChatMessageLikesId id = new ChatMessageLikesId(chatMessageId, userId);
+            
             ChatMessageLikes chatMessageLikes = new ChatMessageLikes();
+            chatMessageLikes.setId(id);
             chatMessageLikes.setChatMessage(chatMessage);
             chatMessageLikes.setUser(user);
 
@@ -251,7 +256,7 @@ public class ChatMessageService implements IChatMessageService {
     @Override
     public List<BaseUserDTO> getChatMessageLikes(UUID chatMessageId) {
         ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId));
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageId));
 
         List<ChatMessageLikes> likes = chatMessageLikesRepository.findByChatMessage(chatMessage);
 
