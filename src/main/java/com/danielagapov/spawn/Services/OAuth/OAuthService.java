@@ -217,63 +217,11 @@ public class OAuthService implements IOAuthService {
                     throw new IncorrectProviderException("The email: " + email + " is already associated to a " + providerName + " account. Please login through " + providerName + " instead");
                 }
             } catch (BaseNotFoundException e) {
-                logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Attempting graceful repair.");
-                
-                // Attempt to repair the data inconsistency gracefully
-                try {
-                    User orphanedUser = userService.getUserByEmail(email);
-                    logger.info("Found orphaned user for email: " + email + ", user ID: " + orphanedUser.getId());
-                    
-                    // For users with reasonable data, attempt to create a mapping
-                    if (orphanedUser.getStatus() != null && 
-                        (orphanedUser.getStatus() == UserStatus.ACTIVE || 
-                         orphanedUser.getStatus() == UserStatus.USERNAME_AND_PHONE_NUMBER ||
-                         orphanedUser.getStatus() == UserStatus.NAME_AND_PHOTO ||
-                         orphanedUser.getStatus() == UserStatus.CONTACT_IMPORT)) {
-                        
-                        // This appears to be a legitimate user - attempt to create missing OAuth mapping
-                        logger.info("Attempting to create missing OAuth mapping for legitimate user: " + orphanedUser.getId());
-                        
-                        // Determine provider based on email domain for safety
-                        OAuthProvider inferredProvider = email.endsWith("@gmail.com") ? OAuthProvider.google : 
-                                                       email.endsWith("@icloud.com") || email.endsWith("@me.com") || email.endsWith("@mac.com") ? OAuthProvider.apple : 
-                                                       null;
-                        
-                        if (inferredProvider != null) {
-                            try {
-                                // Create mapping with the provided external ID
-                                createAndSaveMapping(orphanedUser, externalUserId, inferredProvider);
-                                logger.info("Successfully created missing OAuth mapping for user: " + orphanedUser.getId());
-                                
-                                // Return the repaired user
-                                AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(orphanedUser);
-                                logger.info("Returning repaired user with ID: " + authResponseDTO.getUser().getId());
-                                return Optional.of(authResponseDTO);
-                                
-                            } catch (Exception mappingException) {
-                                logger.warn("Failed to create OAuth mapping for orphaned user: " + mappingException.getMessage());
-                                // If mapping creation fails, check if user should be cleaned up
-                                if (orphanedUser.getStatus() == UserStatus.EMAIL_VERIFIED && 
-                                    orphanedUser.getOptionalUsername().isEmpty() && 
-                                    orphanedUser.getOptionalPhoneNumber().isEmpty()) {
-                                    logger.info("Cleaning up incomplete orphaned user to allow fresh creation");
-                                    userService.deleteUserById(orphanedUser.getId());
-                                }
-                            }
-                        } else {
-                            logger.warn("Could not infer OAuth provider for email domain: " + email);
-                        }
-                    } else {
-                        // For EMAIL_VERIFIED users or users with null status, clean them up to allow fresh creation
-                        logger.info("Cleaning up incomplete orphaned user (status: " + orphanedUser.getStatus() + ") to allow fresh creation");
-                        userService.deleteUserById(orphanedUser.getId());
-                    }
-                } catch (Exception repairException) {
-                    logger.error("Failed to repair orphaned user data inconsistency: " + repairException.getMessage());
-                }
-                
-                // If repair failed or user was cleaned up, treat as new user
-                logger.info("Treating as new user after repair attempt");
+                logger.warn("User email exists but no mapping found - likely due to recent user deletion during OAuth re-registration. Treating as no user found.");
+                // This is a common case during OAuth re-registration where a user with EMAIL_VERIFIED status
+                // was just deleted but the email check still sees the user due to transaction timing.
+                // Rather than attempting complex repair logic, we treat this as "no user found" to allow
+                // the registration flow to proceed with creating a fresh user.
                 return Optional.empty();
             }
         } else { // No account exists for this external id or email
