@@ -8,6 +8,7 @@ import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Models.User.User;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Service interface for managing OAuth authentication operations.
@@ -76,4 +77,6 @@ public interface IOAuthService {
      * @return true if cleanup was performed, false if no cleanup was needed
      */
     boolean performDataConsistencyCleanup(String email, String externalUserId);
+
+    boolean isOAuthUser(UUID userId);
 }

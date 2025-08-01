@@ -160,7 +160,7 @@ public class AuthService implements IAuthService {
     public AuthResponseDTO getUserByToken(String token) {
         final String username = jwtService.extractUsername(token);
         User user = userService.getUserEntityByUsername(username);
-        return UserMapper.toAuthResponseDTO(user);
+        return UserMapper.toAuthResponseDTO(user, oauthService.isOAuthUser(user.getId()));
     }
 
     @Override

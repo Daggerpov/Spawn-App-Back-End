@@ -16,5 +16,5 @@ public class UpdateUserDetailsDTO implements Serializable {
     private UUID id;
     private String username;
     private String phoneNumber;
-    private String password; // Optional, can be null if not updating password
+    private String password;
 } 
