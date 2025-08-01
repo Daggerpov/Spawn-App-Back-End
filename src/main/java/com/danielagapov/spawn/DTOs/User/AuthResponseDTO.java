@@ -15,4 +15,5 @@ import java.io.Serializable;
 public class AuthResponseDTO implements Serializable {
     private BaseUserDTO user;
     private UserStatus status;
+    private Boolean isOAuthUser;
 } 
