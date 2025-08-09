@@ -243,7 +243,7 @@ public class FriendRequestService implements IFriendRequestService {
 
             logger.info("Friend request accepted and deleted successfully");
         } catch (Exception e) {
-            logger.error("Error accepting friend request with ID: " + id + ": " + e.getMessage());
+            logger.warn("Error accepting friend request with ID: " + id + ": " + e.getMessage());
             throw e;
         }
     }
