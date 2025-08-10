@@ -797,9 +797,7 @@ public class UserService implements IUserService {
             if (optionalDetailsDTO.getName() != null) {
                 user.setName(optionalDetailsDTO.getName());
             }
-            if (optionalDetailsDTO.getProfilePictureData() != null) {
-                user.setProfilePictureUrlString(s3Service.updateProfilePictureWithUserId(optionalDetailsDTO.getProfilePictureData(), user.getId()));
-            }
+            user.setProfilePictureUrlString(s3Service.updateProfilePictureWithUserId(optionalDetailsDTO.getProfilePictureData(), user.getId()));
             user.setStatus(UserStatus.NAME_AND_PHOTO);
             user = repository.save(user);
             return UserMapper.toDTO(user);
