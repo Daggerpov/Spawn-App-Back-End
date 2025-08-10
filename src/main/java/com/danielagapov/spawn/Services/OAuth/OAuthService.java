@@ -186,7 +186,7 @@ public class OAuthService implements IOAuthService {
     public Optional<AuthResponseDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
         logger.info("Checking if user exists by external ID: " + externalUserId + " and email: " + email);
         boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
-        boolean existsByEmail = userService.existsByEmail(email);
+        boolean existsByEmail = email != null && userService.existsByEmail(email);
         logger.info("User exists by externalId: " + existsByExternalId + ", exists by email: " + existsByEmail);
 
         if (existsByExternalId) { // A Spawn account exists with this external id

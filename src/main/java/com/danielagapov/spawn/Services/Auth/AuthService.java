@@ -206,7 +206,7 @@ public class AuthService implements IAuthService {
         }
         
         // Update password if provided
-        if (dto.getPassword() != null && !dto.getPassword().isEmpty() && !user.getOptionalPassword().isPresent()) {
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty() && user.getOptionalPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
         
@@ -298,7 +298,7 @@ public class AuthService implements IAuthService {
         String providedName = registrationDTO.getName();
         if (providedName != null && !providedName.trim().isEmpty()) {
             newUser.setName(providedName.trim());
-        } else {
+        } else if (email != null) {
             // Fallback to email prefix as initial name
             newUser.setName(email.split("@")[0]);
         }
@@ -643,7 +643,7 @@ public class AuthService implements IAuthService {
      */
     private void validateAndCleanupUserData(User user) {
         // Ensure email exists since that's required for ACTIVE users
-        if (!user.getOptionalEmail().isPresent()) {
+        if (user.getOptionalEmail().isEmpty()) {
             throw new IllegalStateException("Cannot activate user without email address");
         }
         
