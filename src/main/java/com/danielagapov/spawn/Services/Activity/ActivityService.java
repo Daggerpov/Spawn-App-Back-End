@@ -85,11 +85,108 @@ public class ActivityService implements IActivityService {
 
     @Override
     public List<FullFeedActivityDTO> getAllFullActivities() {
-        ArrayList<FullFeedActivityDTO> fullActivities = new ArrayList<>();
-        for (ActivityDTO e : getAllActivities()) {
-            fullActivities.add(getFullActivityByActivity(e, null, new HashSet<>()));
+        try {
+            List<Activity> activities = repository.findAll();
+            return getOptimizedFullActivities(activities, null);
+        } catch (Exception e) {
+            logger.error("Error fetching all full activities: " + e.getMessage());
+            throw e;
         }
-        return fullActivities;
+    }
+    
+    /**
+     * Optimized method to convert a list of activities to FullFeedActivityDTOs
+     * using batch queries to prevent N+1 query problems.
+     */
+    private List<FullFeedActivityDTO> getOptimizedFullActivities(List<Activity> activities, UUID requestingUserId) {
+        if (activities.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        List<UUID> activityIds = activities.stream()
+                .map(Activity::getId)
+                .collect(Collectors.toList());
+        
+        // Batch fetch all related data
+        Map<UUID, List<UUID>> participantsByActivity = getBatchParticipantIds(activityIds);
+        Map<UUID, List<UUID>> invitedByActivity = getBatchInvitedIds(activityIds);
+        Map<UUID, List<UUID>> chatMessagesByActivity = getBatchChatMessageIds(activityIds);
+        
+        // Convert to DTOs efficiently
+        List<FullFeedActivityDTO> result = new ArrayList<>();
+        Set<UUID> visitedActivities = new HashSet<>();
+        
+        for (Activity activity : activities) {
+            try {
+                ActivityDTO activityDTO = ActivityMapper.toDTO(
+                    activity,
+                    activity.getCreator().getId(),
+                    participantsByActivity.getOrDefault(activity.getId(), List.of()),
+                    invitedByActivity.getOrDefault(activity.getId(), List.of()),
+                    chatMessagesByActivity.getOrDefault(activity.getId(), List.of())
+                );
+                
+                FullFeedActivityDTO fullActivity = getFullActivityByActivity(activityDTO, requestingUserId, visitedActivities);
+                if (fullActivity != null) {
+                    result.add(fullActivity);
+                }
+            } catch (Exception e) {
+                logger.warn("Skipping activity " + activity.getId() + " due to error: " + e.getMessage());
+                // Continue with other activities instead of failing completely
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Batch fetch participant user IDs for multiple activities.
+     */
+    private Map<UUID, List<UUID>> getBatchParticipantIds(List<UUID> activityIds) {
+        List<Object[]> results = activityUserRepository.findUserIdsByActivityIdsAndStatus(
+            activityIds, ParticipationStatus.participating);
+        
+        return results.stream()
+                .collect(Collectors.groupingBy(
+                    row -> (UUID) row[0], // activity ID
+                    Collectors.mapping(
+                        row -> (UUID) row[1], // user ID
+                        Collectors.toList()
+                    )
+                ));
+    }
+    
+    /**
+     * Batch fetch invited user IDs for multiple activities.
+     */
+    private Map<UUID, List<UUID>> getBatchInvitedIds(List<UUID> activityIds) {
+        List<Object[]> results = activityUserRepository.findUserIdsByActivityIdsAndStatus(
+            activityIds, ParticipationStatus.invited);
+        
+        return results.stream()
+                .collect(Collectors.groupingBy(
+                    row -> (UUID) row[0], // activity ID
+                    Collectors.mapping(
+                        row -> (UUID) row[1], // user ID
+                        Collectors.toList()
+                    )
+                ));
+    }
+    
+    /**
+     * Batch fetch chat message IDs for multiple activities.
+     */
+    private Map<UUID, List<UUID>> getBatchChatMessageIds(List<UUID> activityIds) {
+        List<Object[]> results = chatMessageService.getChatMessageIdsByActivityIds(activityIds);
+        
+        return results.stream()
+                .collect(Collectors.groupingBy(
+                    row -> (UUID) row[0], // activity ID
+                    Collectors.mapping(
+                        row -> (UUID) row[1], // message ID
+                        Collectors.toList()
+                    )
+                ));
     }
 
     @Override

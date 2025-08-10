@@ -78,6 +78,15 @@ public interface IChatMessageService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
      */
     List<UUID> getChatMessageIdsByActivityId(UUID activityId);
+    
+    /**
+     * Batch method to retrieve chat message IDs for multiple activities at once.
+     * This prevents N+1 query problems when loading multiple activities.
+     *
+     * @param activityIds List of activity IDs to get chat messages for
+     * @return List of Object[] containing [activityId, messageId] pairs
+     */
+    List<Object[]> getChatMessageIdsByActivityIds(List<UUID> activityIds);
 
     /**
      * Creates a like for a chat message from a specific user.

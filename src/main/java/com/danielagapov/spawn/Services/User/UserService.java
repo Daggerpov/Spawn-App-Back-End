@@ -649,12 +649,15 @@ public class UserService implements IUserService {
 
     @Override
     public int getMutualFriendCount(UUID userId1, UUID userId2) {
-        List<UUID> user1Friends = new ArrayList<>(getFriendUserIdsByUserId(userId1));
-        List<UUID> user2Friends = getFriendUserIdsByUserId(userId2);
-
-        // Create a mutable copy of user1Friends and retain only elements that are also in user2Friends
-        user1Friends.retainAll(user2Friends);
-        return user1Friends.size();
+        try {
+            // Use efficient database-level query instead of fetching and processing in memory
+            return uftRepository.getMutualFriendCount(userId1, userId2);
+        } catch (Exception e) {
+            logger.error("Error calculating mutual friend count between users " + 
+                        LoggingUtils.formatUserIdInfo(userId1) + " and " + 
+                        LoggingUtils.formatUserIdInfo(userId2) + ": " + e.getMessage());
+            throw e;
+        }
     }
 
     @Override

@@ -341,72 +341,47 @@ public class UserServiceTests {
 
     @Test
     void getMutualFriendCount_ShouldReturnCorrectCount_WhenUsersHaveMutualFriends() {
-        // Setup
         UUID user1Id = UUID.randomUUID();
         UUID user2Id = UUID.randomUUID();
-        UUID mutualFriend1Id = UUID.randomUUID();
-        UUID mutualFriend2Id = UUID.randomUUID();
-        UUID uniqueFriend1Id = UUID.randomUUID();
-        UUID uniqueFriend2Id = UUID.randomUUID();
 
-        // User1's friends: mutualFriend1, mutualFriend2, uniqueFriend1
-        when(userFriendTagRepository.findFriendIdsByUserId(any()))
-                .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend1Id))
-                .thenReturn(List.of(mutualFriend1Id, mutualFriend2Id, uniqueFriend2Id));
-
-        // User2's friends: mutualFriend1, mutualFriend2, uniqueFriend2
+        // Mock the new optimized database-level query
+        when(userFriendTagRepository.getMutualFriendCount(user1Id, user2Id))
+                .thenReturn(2);
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(2, result);
-        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
+        verify(userFriendTagRepository, times(1)).getMutualFriendCount(user1Id, user2Id);
     }
 
     @Test
     void getMutualFriendCount_ShouldReturnZero_WhenNoMutualFriends() {
         UUID user1Id = UUID.randomUUID();
         UUID user2Id = UUID.randomUUID();
-        UUID friend1Id = UUID.randomUUID();
-        UUID friend2Id = UUID.randomUUID();
 
-        // User1's friends: friend1
-        when(friendTagRepository.findByOwnerId(user1Id))
-                .thenReturn(List.of(createEveryoneTag(user1Id)));
-        when(userFriendTagRepository.findFriendIdsByTagId(any()))
-                .thenReturn(List.of(friend1Id))
-                .thenReturn(List.of(friend2Id));
-
-        // User2's friends: friend2
-        when(friendTagRepository.findByOwnerId(user2Id))
-                .thenReturn(List.of(createEveryoneTag(user2Id)));
+        // Mock the new optimized database-level query
+        when(userFriendTagRepository.getMutualFriendCount(user1Id, user2Id))
+                .thenReturn(0);
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
+        verify(userFriendTagRepository, times(1)).getMutualFriendCount(user1Id, user2Id);
     }
 
     @Test
     void getMutualFriendCount_ShouldReturnZero_WhenOneUserHasNoFriends() {
         UUID user1Id = UUID.randomUUID();
         UUID user2Id = UUID.randomUUID();
-        UUID friendId = UUID.randomUUID();
 
-        // User1 has one friend
-        when(friendTagRepository.findByOwnerId(user1Id))
-                .thenReturn(List.of(createEveryoneTag(user1Id)));
-        when(userFriendTagRepository.findFriendIdsByTagId(any()))
-                .thenReturn(List.of(friendId))
-                .thenReturn(Collections.emptyList()); // User2 has no friends
-
-        // User2 has no friends (empty everyone tag)
-        when(friendTagRepository.findByOwnerId(user2Id))
-                .thenReturn(List.of(createEveryoneTag(user2Id)));
+        // Mock the new optimized database-level query
+        when(userFriendTagRepository.getMutualFriendCount(user1Id, user2Id))
+                .thenReturn(0);
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
+        verify(userFriendTagRepository, times(1)).getMutualFriendCount(user1Id, user2Id);
     }
 
     @Test
@@ -414,16 +389,14 @@ public class UserServiceTests {
         UUID user1Id = UUID.randomUUID();
         UUID user2Id = UUID.randomUUID();
 
-        // Both users have empty everyone tags
-        when(friendTagRepository.findByOwnerId(any()))
-                .thenReturn(List.of(createEveryoneTag(UUID.randomUUID())));
-        when(userFriendTagRepository.findFriendIdsByTagId(any()))
-                .thenReturn(Collections.emptyList());
+        // Mock the new optimized database-level query
+        when(userFriendTagRepository.getMutualFriendCount(user1Id, user2Id))
+                .thenReturn(0);
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
+        verify(userFriendTagRepository, times(1)).getMutualFriendCount(user1Id, user2Id);
     }
 
     @Test
@@ -431,14 +404,14 @@ public class UserServiceTests {
         UUID user1Id = UUID.randomUUID();
         UUID user2Id = UUID.randomUUID();
 
-        // Users have no everyone tag
-        when(friendTagRepository.findByOwnerId(any()))
-                .thenReturn(List.of());
+        // Mock the new optimized database-level query
+        when(userFriendTagRepository.getMutualFriendCount(user1Id, user2Id))
+                .thenReturn(0);
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
+        verify(userFriendTagRepository, times(1)).getMutualFriendCount(user1Id, user2Id);
     }
 
     @Test
@@ -446,13 +419,14 @@ public class UserServiceTests {
         UUID user1Id = UUID.randomUUID();
         UUID user2Id = UUID.randomUUID();
 
-        when(friendTagRepository.findByOwnerId(any()))
-                .thenReturn(List.of());
+        // Mock the new optimized database-level query
+        when(userFriendTagRepository.getMutualFriendCount(user1Id, user2Id))
+                .thenReturn(0);
 
         int result = userService.getMutualFriendCount(user1Id, user2Id);
 
         assertEquals(0, result);
-        verify(userFriendTagRepository, times(2)).findFriendIdsByUserId(any());
+        verify(userFriendTagRepository, times(1)).getMutualFriendCount(user1Id, user2Id);
     }
 
     @Test
