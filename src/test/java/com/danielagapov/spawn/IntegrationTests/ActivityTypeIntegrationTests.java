@@ -93,7 +93,7 @@ class ActivityTypeIntegrationTests {
         chill.setTitle("Chill");
         chill.setIcon("🛋️");
         chill.setCreator(testUser);
-        chill.setOrderNum(0);
+        chill.setOrderNum(1);
         chill.setIsPinned(false);
         types.add(chill);
         
@@ -102,7 +102,7 @@ class ActivityTypeIntegrationTests {
         food.setTitle("Food");
         food.setIcon("🍽️");
         food.setCreator(testUser);
-        food.setOrderNum(1);
+        food.setOrderNum(2);
         food.setIsPinned(true);
         types.add(food);
         
@@ -111,7 +111,7 @@ class ActivityTypeIntegrationTests {
         active.setTitle("Active");
         active.setIcon("🏃");
         active.setCreator(testUser);
-        active.setOrderNum(2);
+        active.setOrderNum(3);
         active.setIsPinned(false);
         types.add(active);
         
@@ -144,9 +144,9 @@ class ActivityTypeIntegrationTests {
 
         UUID newStudyId = UUID.randomUUID();
         List<ActivityTypeDTO> batchUpdates = Arrays.asList(
-                new ActivityTypeDTO(defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 0, userId, true), // Pinned
-                new ActivityTypeDTO(defaultActivityTypes.get(1).getId(), "Food", List.of(), "🍽️", 1, userId, false), // Unpinned
-                new ActivityTypeDTO(newStudyId, "Study", List.of(), "📚", 2, userId, false) // New
+                new ActivityTypeDTO(defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 1, userId, true), // Pinned
+                new ActivityTypeDTO(defaultActivityTypes.get(1).getId(), "Food", List.of(), "🍽️", 2, userId, false), // Unpinned
+                new ActivityTypeDTO(newStudyId, "Study", List.of(), "📚", 3, userId, false) // New
         );
 
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -219,14 +219,14 @@ class ActivityTypeIntegrationTests {
         List<ActivityType> manyActivityTypes = new ArrayList<>();
         List<ActivityTypeDTO> manyUpdates = new ArrayList<>();
         
-        for (int i = 0; i < 25; i++) {
+        for (int i = 1; i <= 25; i++) {
             ActivityType type = new ActivityType();
             type.setId(UUID.randomUUID());
-            type.setTitle("Type " + i);
+            type.setTitle("Type " + (i - 1));
             type.setIcon("🎯");
             type.setCreator(testUser);
             type.setOrderNum(i);
-            type.setIsPinned(i < 3); // First 3 are pinned
+            type.setIsPinned(i <= 3); // First 3 are pinned
             manyActivityTypes.add(type);
             
             // Create corresponding DTO
@@ -265,10 +265,10 @@ class ActivityTypeIntegrationTests {
     void errorRecoveryWorkflow_ShouldHandleGracefully_WhenValidationFails() throws Exception {
         // Simulate user attempting invalid operation (too many pins)
         List<ActivityTypeDTO> invalidUpdates = Arrays.asList(
-                new ActivityTypeDTO(UUID.randomUUID(), "Type1", List.of(), "🎯", 0, userId, true),
-                new ActivityTypeDTO(UUID.randomUUID(), "Type2", List.of(), "🎯", 1, userId, true),
-                new ActivityTypeDTO(UUID.randomUUID(), "Type3", List.of(), "🎯", 2, userId, true),
-                new ActivityTypeDTO(UUID.randomUUID(), "Type4", List.of(), "🎯", 3, userId, true) // 4th pin - invalid
+                new ActivityTypeDTO(UUID.randomUUID(), "Type1", List.of(), "🎯", 1, userId, true),
+                new ActivityTypeDTO(UUID.randomUUID(), "Type2", List.of(), "🎯", 2, userId, true),
+                new ActivityTypeDTO(UUID.randomUUID(), "Type3", List.of(), "🎯", 3, userId, true),
+                new ActivityTypeDTO(UUID.randomUUID(), "Type4", List.of(), "🎯", 4, userId, true) // 4th pin - invalid
         );
 
         BatchActivityTypeUpdateDTO invalidBatchDTO = new BatchActivityTypeUpdateDTO(invalidUpdates, List.of());
@@ -292,10 +292,10 @@ class ActivityTypeIntegrationTests {
     void concurrentUserWorkflow_ShouldHandleLocking_WhenMultipleUpdates() {
         // Simulate concurrent updates to same user's activity types
         ActivityTypeDTO update1 = new ActivityTypeDTO(
-            defaultActivityTypes.get(0).getId(), "Chill Updated 1", List.of(), "🛋️", 0, userId, false
+            defaultActivityTypes.get(0).getId(), "Chill Updated 1", List.of(), "🛋️", 1, userId, false
         );
         ActivityTypeDTO update2 = new ActivityTypeDTO(
-            defaultActivityTypes.get(0).getId(), "Chill Updated 2", List.of(), "🛋️", 0, userId, true
+            defaultActivityTypes.get(0).getId(), "Chill Updated 2", List.of(), "🛋️", 1, userId, true
         );
 
         BatchActivityTypeUpdateDTO batch1 = new BatchActivityTypeUpdateDTO(Arrays.asList(update1), List.of());
@@ -320,10 +320,10 @@ class ActivityTypeIntegrationTests {
     void mobileAppWorkflow_ShouldHandleQuickActions_WhenUserMakesRapidChanges() throws Exception {
         // Simulate mobile app rapid pin/unpin actions
         ActivityTypeDTO quickPin = new ActivityTypeDTO(
-            defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 0, userId, true
+            defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 1, userId, true
         );
         ActivityTypeDTO quickUnpin = new ActivityTypeDTO(
-            defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 0, userId, false
+            defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 1, userId, false
         );
 
         when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L);
@@ -358,11 +358,11 @@ class ActivityTypeIntegrationTests {
 
         List<ActivityTypeDTO> offlineChanges = Arrays.asList(
                 // Modified existing
-                new ActivityTypeDTO(defaultActivityTypes.get(0).getId(), "Chill & Relax", List.of(), "🛋️", 0, userId, true),
+                new ActivityTypeDTO(defaultActivityTypes.get(0).getId(), "Chill & Relax", List.of(), "🛋️", 1, userId, true),
                 // Created while offline
-                new ActivityTypeDTO(study1Id, "Study Session", List.of(), "📚", 1, userId, false),
-                new ActivityTypeDTO(study2Id, "Deep Work", List.of(), "💻", 2, userId, false),
-                new ActivityTypeDTO(study3Id, "Reading", List.of(), "📖", 3, userId, false)
+                new ActivityTypeDTO(study1Id, "Study Session", List.of(), "📚", 2, userId, false),
+                new ActivityTypeDTO(study2Id, "Deep Work", List.of(), "💻", 3, userId, false),
+                new ActivityTypeDTO(study3Id, "Reading", List.of(), "📖", 4, userId, false)
         );
 
         // Deleted while offline
@@ -417,11 +417,11 @@ class ActivityTypeIntegrationTests {
 
         List<ActivityTypeDTO> complexChanges = Arrays.asList(
                 // Existing items reordered and pin status changed
-                new ActivityTypeDTO(defaultActivityTypes.get(1).getId(), "Food", List.of(), "🍽️", 0, userId, false), // Was pinned, now not
-                new ActivityTypeDTO(defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 1, userId, true),  // Was not pinned, now pinned
+                new ActivityTypeDTO(defaultActivityTypes.get(1).getId(), "Food", List.of(), "🍽️", 1, userId, false), // Was pinned, now not
+                new ActivityTypeDTO(defaultActivityTypes.get(0).getId(), "Chill", List.of(), "🛋️", 2, userId, true),  // Was not pinned, now pinned
                 // New items
-                new ActivityTypeDTO(newType1Id, "Work", List.of(), "💼", 2, userId, false),
-                new ActivityTypeDTO(newType2Id, "Travel", List.of(), "✈️", 3, userId, false)
+                new ActivityTypeDTO(newType1Id, "Work", List.of(), "💼", 3, userId, false),
+                new ActivityTypeDTO(newType2Id, "Travel", List.of(), "✈️", 4, userId, false)
         );
 
         List<UUID> toDelete = Arrays.asList(defaultActivityTypes.get(2).getId()); // Delete Active

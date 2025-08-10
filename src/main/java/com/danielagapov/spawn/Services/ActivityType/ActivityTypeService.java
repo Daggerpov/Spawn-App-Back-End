@@ -206,7 +206,7 @@ public class ActivityTypeService implements IActivityTypeService {
             
             // Get the current max order number for this user
             Integer maxOrder = repository.findMaxOrderNumberByCreatorId(user.getId());
-            int startingOrder = maxOrder != null ? maxOrder + 1 : 0;
+            int startingOrder = maxOrder != null ? maxOrder + 1 : 1; // 1-based indexing
             
             // Create default activity types with sequential order numbers
             List<ActivityType> defaultActivityTypes = new ArrayList<>();
@@ -240,7 +240,7 @@ public class ActivityTypeService implements IActivityTypeService {
     @Override
     public void setOrderNumber(ActivityType activityType) {
         Integer maxOrder = repository.findMaxOrderNumberByCreatorId(activityType.getCreator().getId());
-        activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 0);
+        activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 1); // 1-based indexing
     }
 
     /**
@@ -254,7 +254,7 @@ public class ActivityTypeService implements IActivityTypeService {
         
         // Get the current max order number
         Integer maxOrder = repository.findMaxOrderNumberByCreatorId(userId);
-        int nextOrderNum = maxOrder != null ? maxOrder + 1 : 0;
+        int nextOrderNum = maxOrder != null ? maxOrder + 1 : 1; // 1-based indexing
         
         List<ActivityTypeDTO> processedDTOs = new ArrayList<>();
         
@@ -345,6 +345,7 @@ public class ActivityTypeService implements IActivityTypeService {
                 .filter(dto -> !existingIds.contains(dto.getId()))
                 .count();
         long finalTotalCount = currentTotalCount - deletedCount + newActivityTypeCount;
+        boolean hasNewCreations = newActivityTypeCount > 0;
         
         // Validate pinned count
         if (finalPinnedCount > MAX_PINNED_ACTIVITY_TYPES) {
@@ -359,13 +360,12 @@ public class ActivityTypeService implements IActivityTypeService {
                 .filter(dto -> existingIds.contains(dto.getId()))
                 .toList();
         
-        // Validate orderNum range ONLY for existing activity types being updated
-        // New activity types will get auto-assigned order numbers, so skip validation for them
+        // Validate orderNum range ONLY for existing activity types being updated (1-based inclusive range)
         for (ActivityTypeDTO dto : existingActivityTypesToUpdate) {
-            if (dto.getOrderNum() < 0 || dto.getOrderNum() >= finalTotalCount) {
+            if (dto.getOrderNum() < 1 || dto.getOrderNum() > finalTotalCount) {
                 throw new ActivityTypeValidationException(
-                    String.format("Invalid orderNum %d for activity type '%s'. Must be in range [0, %d]", 
-                                  dto.getOrderNum(), dto.getTitle(), finalTotalCount - 1)
+                    String.format("Invalid orderNum %d for activity type '%s'. Must be in range [1, %d]", 
+                                  dto.getOrderNum(), dto.getTitle(), finalTotalCount)
                 );
             }
         }
@@ -403,7 +403,7 @@ public class ActivityTypeService implements IActivityTypeService {
         }
         
         logger.info("Activity type validation passed: " + finalPinnedCount + " pinned (max " + MAX_PINNED_ACTIVITY_TYPES + "), " +
-                    "orderNum range [0, " + (finalTotalCount - 1) + "], unique orderNums");
+                    "orderNum range [1, " + (finalTotalCount) + "], unique orderNums");
     }
 
     /**
