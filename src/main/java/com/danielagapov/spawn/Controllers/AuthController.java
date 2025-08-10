@@ -7,21 +7,17 @@ import com.danielagapov.spawn.DTOs.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Enums.UserStatus;
-import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
-import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
+import com.danielagapov.spawn.Exceptions.*;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.EmailVerificationException;
-import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
-import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
-import com.danielagapov.spawn.Exceptions.TokenExpiredException;
-import com.danielagapov.spawn.Exceptions.OAuthProviderUnavailableException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.ErrorResponse;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,8 +31,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Optional;
 import java.util.UUID;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Services.User.IUserService;
 
 
 @RestController()
@@ -400,6 +394,24 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
         } catch (Exception e) {
             logger.error("Error accepting Terms of Service for user: " + userId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to accept Terms of Service"));
+        }
+    }
+
+    // full path: /api/v1/auth/onboarding-cancel
+    @PostMapping("onboarding-cancel/{userId}")
+    public ResponseEntity<?> onboardingCancel(@PathVariable UUID userId) {
+        try {
+            authService.cancelOnboarding(userId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            logger.warn("Attempt to delete active user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("Cannot delete active user"));
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for onboarding cancellation: " + userId + ", entity type: " + e.entityType);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
+        } catch (Exception e) {
+            logger.error("Error cancelling onboarding for user: " + userId + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to accept Terms of Service"));
         }
     }
