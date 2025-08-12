@@ -206,7 +206,7 @@ public class AuthService implements IAuthService {
         }
         
         // Update password if provided
-        if (dto.getPassword() != null && !dto.getPassword().isEmpty() && !user.getOptionalPassword().isPresent()) {
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty() && user.getOptionalPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
         
@@ -298,7 +298,7 @@ public class AuthService implements IAuthService {
         String providedName = registrationDTO.getName();
         if (providedName != null && !providedName.trim().isEmpty()) {
             newUser.setName(providedName.trim());
-        } else {
+        } else if (email != null) {
             // Fallback to email prefix as initial name
             newUser.setName(email.split("@")[0]);
         }
@@ -637,13 +637,24 @@ public class AuthService implements IAuthService {
         }
     }
 
+    @Override
+    public void cancelOnboarding(UUID userId) {
+        User user = userService.getUserEntityById(userId);
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new IllegalStateException("Cannot cancel onboarding for ACTIVE user");
+        } else {
+            logger.info("Cancelling onboarding for user with status: " + user.getStatus());
+            userService.deleteUserById(userId);
+        }
+    }
+
     /**
      * Validates user data before setting status to ACTIVE
      * Uses Optional-based methods for safe null handling
      */
     private void validateAndCleanupUserData(User user) {
         // Ensure email exists since that's required for ACTIVE users
-        if (!user.getOptionalEmail().isPresent()) {
+        if (user.getOptionalEmail().isEmpty()) {
             throw new IllegalStateException("Cannot activate user without email address");
         }
         

@@ -2,11 +2,7 @@ package com.danielagapov.spawn.Services.Auth;
 
 import com.danielagapov.spawn.DTOs.EmailVerificationResponseDTO;
 import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
-import com.danielagapov.spawn.DTOs.User.AuthResponseDTO;
-import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UpdateUserDetailsDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
+import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Models.User.User;
 import org.springframework.http.HttpHeaders;
 
@@ -95,4 +91,11 @@ public interface IAuthService {
      * @return the updated user DTO
      */
     BaseUserDTO acceptTermsOfService(UUID userId);
+
+    /**
+     * Cancels onboarding for a user with status < ACTIVE by deleting their account
+     * This is called when the user chooses to not resume an existing onboarding session on the client
+     * @param userId id of user to delete
+     */
+    void cancelOnboarding(UUID userId);
 }
