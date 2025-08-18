@@ -188,16 +188,11 @@ public class BlockedUserService implements IBlockedUserService {
     @Cacheable(value = "blockedUserIds", key = "#blockerId")
     public List<UUID> getBlockedUserIds(UUID blockerId) {
         try {
-            User blocker = userService.getUserEntityById(blockerId);
-            logger.info("Getting blocked user IDs for blocker: " + LoggingUtils.formatUserInfo(blocker));
-
             List<UUID> blockedUserIds = repository.findAllByBlocker_Id(blockerId).stream()
                     .map(BlockedUser::getBlocked)
                     .map(User::getId)
                     .collect(Collectors.toList());
 
-            logger.info("Found " + blockedUserIds.size() + " blocked user IDs for blocker: " +
-                    LoggingUtils.formatUserInfo(blocker));
             return blockedUserIds;
         } catch (Exception e) {
             logger.error("Error retrieving blocked user IDs for blocker " + LoggingUtils.formatUserIdInfo(blockerId) +
