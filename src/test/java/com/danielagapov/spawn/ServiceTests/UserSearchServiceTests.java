@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
+
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
@@ -283,10 +283,7 @@ class UserSearchServiceTests {
         RecommendedFriendUserDTO user3Full = new RecommendedFriendUserDTO(user3Id, "person", "profile.jpg", "Lorem Ipsum", "A bio", "email@e.com", 1);
         RecommendedFriendUserDTO user4Full = new RecommendedFriendUserDTO(user4Id, "LaurenIbson", "profile.jpg", "Lauren Ibson", "A bio", "lauren_ibson@e.ca", 1);
 
-        UUID ftId = UUID.randomUUID();
-        // Very incomplete relationship but it should suffice for a test.
-        FriendTagDTO ft = new FriendTagDTO(ftId, "Everyone", "#ffffff", user1Id, List.of(), true);
-        FullFriendUserDTO user5Full = new FullFriendUserDTO(user5Id, "thatPerson", "profile.jpg", "That Person", "A bio", "thatPerson@email.com", List.of(ft));
+        FullFriendUserDTO user5Full = new FullFriendUserDTO(user5Id, "thatPerson", "profile.jpg", "That Person", "A bio", "thatPerson@email.com");
 
         // Mock fuzzy search service to return both user3Full and user5Full as matches for "person"
         User userObject3 = new User();
