@@ -8,22 +8,7 @@ Table User {
     email String
 }
 
-Table FriendTag {
-    id UUID [pk]
-    displayName String
-    colorHexCode String
-    ownerId UUID
-    isEveryone boolean
-}
-
-// Junction table for User-FriendTag relationship (One-to-Many)
-Table UserFriendTag {
-    userId UUID [ref: > User.id]
-    friendTagId UUID [ref: > FriendTag.id]
-    indexes {
-        (userId, friendTagId) [pk]
-    }
-}
+// Friend tags have been replaced by the Friendship model
 
 Table Activity {
     id UUID [pk]
@@ -58,6 +43,17 @@ Table FriendRequests {
     receiverId UUID [ref: > User.id]
     indexes {
         (senderId, receiverId) [pk]
+    }
+}
+
+// Table for Friendships (Many-to-Many, symmetric)
+Table Friendship {
+    id UUID [pk]
+    user_a_id UUID [ref: > User.id]
+    user_b_id UUID [ref: > User.id]
+    created_at Timestamp
+    indexes {
+        (user_a_id, user_b_id) [unique]
     }
 }
 

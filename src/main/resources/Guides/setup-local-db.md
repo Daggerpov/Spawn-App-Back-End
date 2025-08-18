@@ -91,7 +91,8 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
       ((SELECT id FROM Activity WHERE title='Photography Workshop'), (SELECT id FROM user WHERE username='jane_smith'));
       
       -- Populate Friend Tags
-      INSERT INTO friend_tag (id, display_name, color) VALUES
+      -- Friend tags have been replaced by the Friendship model
+      -- INSERT INTO friend_tag (id, display_name, color) VALUES
       (UNHEX(REPLACE(UUID(), '-', '')), 'Close Friends', '#FF5733'),
       (UNHEX(REPLACE(UUID(), '-', '')), 'Work Friends', '#33FF57'),
       (UNHEX(REPLACE(UUID(), '-', '')), 'Family', '#3357FF');
@@ -106,15 +107,8 @@ Follow these steps to download, set up the database locally, create `spawn_db`, 
       (UNHEX(REPLACE(UUID(), '-', '')), (SELECT id FROM user WHERE username='john_doe'), (SELECT id FROM user WHERE username='sam_wilson')),
       (UNHEX(REPLACE(UUID(), '-', '')), (SELECT id FROM user WHERE username='jane_smith'), (SELECT id FROM user WHERE username='alex_jones'));
       
-      -- Populate User Friend Tags
-      INSERT INTO user_friend_tags (id, user_id, friend_tag_id) VALUES
-      (UNHEX(REPLACE(UUID(), '-', '')), (SELECT id FROM user WHERE username='john_doe'), (SELECT id FROM friend_tag WHERE display_name='Close Friends')),
-      (UNHEX(REPLACE(UUID(), '-', '')), (SELECT id FROM user WHERE username='jane_smith'), (SELECT id FROM friend_tag WHERE display_name='Work Friends'));
-      
-      -- Populate User Friend Tag Mapping
-      INSERT INTO user_friend_tag_mapping (id, user_1, user_2, friend_tag_id) VALUES
-      (UNHEX(REPLACE(UUID(), '-', '')), (SELECT id FROM user WHERE username='john_doe'), (SELECT id FROM user WHERE username='sam_wilson'), (SELECT id FROM friend_tag WHERE display_name='Close Friends')),
-      (UNHEX(REPLACE(UUID(), '-', '')), (SELECT id FROM user WHERE username='jane_smith'), (SELECT id FROM user WHERE username='alex_jones'), (SELECT id FROM friend_tag WHERE display_name='Work Friends'));
+      -- Friend tags have been replaced by the Friendship model
+      -- Sample friendships can be created through the friend request system
       ```
 
 6. **Run the Script**:
