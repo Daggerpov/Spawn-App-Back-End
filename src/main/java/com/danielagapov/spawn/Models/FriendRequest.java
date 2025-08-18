@@ -32,7 +32,7 @@ import java.util.UUID;
 @Setter
 public class FriendRequest implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
 
     @ManyToOne
