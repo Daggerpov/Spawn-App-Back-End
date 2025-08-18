@@ -142,6 +142,12 @@ public class FriendRequestService implements IFriendRequestService {
 
             List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
             
+            // Debug logging for friend request IDs
+            logger.info("Debug: Raw friend requests for user " + LoggingUtils.formatUserInfo(user) + ":");
+            for (FriendRequest fr : friendRequests) {
+                logger.info("  - Friend request: ID=" + fr.getId() + ", Sender=" + LoggingUtils.formatUserInfo(fr.getSender()));
+            }
+            
             // Filter out any friend requests with null IDs to prevent JSON decoding errors
             List<FriendRequest> validFriendRequests = friendRequests.stream()
                     .filter(fr -> fr.getId() != null)
@@ -156,8 +162,12 @@ public class FriendRequestService implements IFriendRequestService {
             // Note: Blocked user filtering is now handled at the controller level
 
             List<FetchFriendRequestDTO> result = validFriendRequests.stream()
-                    .map(fr -> FetchFriendRequestMapper.toDTO(fr,
-                            userService.getMutualFriendCount(id, fr.getSender().getId())))
+                    .map(fr -> {
+                        FetchFriendRequestDTO dto = FetchFriendRequestMapper.toDTO(fr,
+                                userService.getMutualFriendCount(id, fr.getSender().getId()));
+                        logger.info("Debug: Created DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId());
+                        return dto;
+                    })
                     .toList();
 
             logger.info("Found " + result.size() + " incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
@@ -371,6 +381,12 @@ public class FriendRequestService implements IFriendRequestService {
 
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
             
+            // Debug logging for friend request IDs
+            logger.info("Debug: Raw sent friend requests for user " + LoggingUtils.formatUserInfo(user) + ":");
+            for (FriendRequest fr : friendRequests) {
+                logger.info("  - Friend request: ID=" + fr.getId() + ", Receiver=" + LoggingUtils.formatUserInfo(fr.getReceiver()));
+            }
+            
             // Filter out any friend requests with null IDs to prevent JSON decoding errors
             List<FriendRequest> validFriendRequests = friendRequests.stream()
                     .filter(fr -> fr.getId() != null)
@@ -385,8 +401,12 @@ public class FriendRequestService implements IFriendRequestService {
             // Note: Blocked user filtering is now handled at the controller level
 
             List<FetchFriendRequestDTO> result = validFriendRequests.stream()
-                    .map(fr -> FetchFriendRequestMapper.toDTOForSentRequest(fr,
-                            userService.getMutualFriendCount(userId, fr.getReceiver().getId())))
+                    .map(fr -> {
+                        FetchFriendRequestDTO dto = FetchFriendRequestMapper.toDTOForSentRequest(fr,
+                                userService.getMutualFriendCount(userId, fr.getReceiver().getId()));
+                        logger.info("Debug: Created sent DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId());
+                        return dto;
+                    })
                     .toList();
 
             logger.info("Found " + result.size() + " sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
