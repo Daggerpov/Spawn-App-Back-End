@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collection;
+
 import java.util.Map;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,8 +79,12 @@ public class APNSNotificationStrategy implements NotificationStrategy {
                 logger.error("APNS certificate validation failed. Notifications may not be delivered.");
             }
             
-            // Check for device tokens that need to be removed
-            checkForInvalidDeviceTokens();
+            // Check for device tokens that need to be removed (only in production to avoid dev warnings)
+            if (apnsProduction) {
+                checkForInvalidDeviceTokens();
+            } else {
+                logger.info("Skipping invalid device token check in development mode");
+            }
             
         } catch (Exception e) {
             logger.error("Error initializing APNS service: " + e.getMessage());
@@ -93,6 +97,12 @@ public class APNSNotificationStrategy implements NotificationStrategy {
             apnsService.getInactiveDevices();
             return true;
         } catch (Exception e) {
+            // Check if it's a network connectivity issue (common in dev/test environments)
+            if (e.getCause() instanceof java.net.UnknownHostException || 
+                e.getMessage().contains("feedback.push.apple.com")) {
+                logger.info("APNS feedback service not accessible (expected in dev/test): " + e.getMessage());
+                return !apnsProduction; // Consider valid in development mode
+            }
             logger.error("APNS connection validation failed: " + e.getMessage());
             return false;
         }
@@ -105,6 +115,12 @@ public class APNSNotificationStrategy implements NotificationStrategy {
             try {
                 inactiveDevices = apnsService.getInactiveDevices();
             } catch (Exception e) {
+                // Check if it's a network connectivity issue (common in dev/test environments)
+                if (e.getCause() instanceof java.net.UnknownHostException || 
+                    e.getMessage().contains("feedback.push.apple.com")) {
+                    logger.info("APNS feedback service not accessible (expected in dev/test): " + e.getMessage());
+                    return;
+                }
                 logger.warn("Could not get inactive devices: " + e.getMessage());
                 return;
             }
