@@ -2,10 +2,8 @@ package com.danielagapov.spawn.Services.FriendRequest;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Events.FriendRequestAcceptedNotificationEvent;
 import com.danielagapov.spawn.Events.FriendRequestNotificationEvent;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FetchFriendRequestMapper;
@@ -200,9 +198,22 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public void acceptFriendRequest(UUID id) {
         try {
-            FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+            // Check if friend request exists first
+            FriendRequest fr = repository.findById(id).orElse(null);
+            if (fr == null) {
+                logger.info("Friend request with ID: " + id + " not found - may have been already processed or auto-accepted");
+                return; // Gracefully handle already processed requests
+            }
+            
             User sender = fr.getSender();
             User receiver = fr.getReceiver();
+
+            // Check if users are already friends to avoid duplicate processing
+            if (userService.isUserFriendOfUser(sender.getId(), receiver.getId())) {
+                logger.info("Users are already friends, deleting stale friend request with ID: " + id);
+                deleteFriendRequest(id);
+                return;
+            }
 
             logger.info("Accepting friend request with ID: " + id + " from sender: " +
                     LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));

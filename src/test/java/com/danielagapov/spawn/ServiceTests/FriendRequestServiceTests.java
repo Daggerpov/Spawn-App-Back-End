@@ -145,12 +145,31 @@ class FriendRequestServiceTests {
     }
 
     @Test
-    void acceptFriendRequest_ShouldThrowBaseNotFoundException_WhenRequestNotFound() {
+    void acceptFriendRequest_ShouldHandleGracefully_WhenRequestNotFound() {
         UUID friendRequestId = UUID.randomUUID();
         when(repository.findById(friendRequestId)).thenReturn(Optional.empty());
 
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class, () -> friendRequestService.acceptFriendRequest(friendRequestId));
-        assertEquals("FriendRequest entity not found with ID: " + friendRequestId, exception.getMessage());
+        // Should not throw exception, but handle gracefully
+        assertDoesNotThrow(() -> friendRequestService.acceptFriendRequest(friendRequestId));
+        
+        // Verify that no user operations were attempted since request wasn't found
+        verify(userService, never()).saveFriendToUser(any(), any());
+        verify(userService, never()).isUserFriendOfUser(any(), any());
+    }
+
+    @Test
+    void acceptFriendRequest_ShouldHandleGracefully_WhenUsersAlreadyFriends() {
+        UUID friendRequestId = friendRequest.getId();
+        when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
+        when(userService.isUserFriendOfUser(senderId, receiverId)).thenReturn(true);
+
+        // Should not throw exception, but handle gracefully by deleting stale request
+        assertDoesNotThrow(() -> friendRequestService.acceptFriendRequest(friendRequestId));
+        
+        // Verify that friendship wasn't created again (since they're already friends)
+        verify(userService, never()).saveFriendToUser(any(), any());
+        // Verify that the stale friend request is cleaned up
+        verify(userService, times(1)).isUserFriendOfUser(senderId, receiverId);
     }
 
     @Test
