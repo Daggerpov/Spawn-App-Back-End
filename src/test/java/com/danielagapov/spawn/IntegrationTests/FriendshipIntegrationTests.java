@@ -18,6 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -42,6 +45,9 @@ class FriendshipIntegrationTests {
 
     @Autowired
     private IUserRepository userRepository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private User userA;
     private User userB;
@@ -238,6 +244,8 @@ class FriendshipIntegrationTests {
 
         // Delete user A
         userRepository.delete(userA);
+        entityManager.flush(); // Force the delete to execute
+        entityManager.clear(); // Clear the persistence context
 
         // Friendships involving user A should be deleted
         assertFalse(friendshipRepository.existsBidirectionally(userA.getId(), userB.getId()));

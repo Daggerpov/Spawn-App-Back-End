@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -26,6 +27,9 @@ class FriendshipRepositoryTests {
 
     @Autowired
     private IUserRepository userRepository;
+    
+    @Autowired
+    private TestEntityManager entityManager;
 
     private User userA;
     private User userB;
@@ -193,10 +197,13 @@ class FriendshipRepositoryTests {
         // Given
         Friendship friendship = createFriendship(userA, userB);
         friendshipRepository.save(friendship);
+        entityManager.flush(); // Ensure the friendship is persisted
         assertTrue(friendshipRepository.existsByUserA_IdAndUserB_Id(userA.getId(), userB.getId()));
 
         // When - Delete one of the users
         userRepository.delete(userA);
+        entityManager.flush(); // Force the delete to execute
+        entityManager.clear(); // Clear the persistence context
 
         // Then - Friendship should be deleted due to cascade
         assertFalse(friendshipRepository.existsByUserA_IdAndUserB_Id(userA.getId(), userB.getId()));
