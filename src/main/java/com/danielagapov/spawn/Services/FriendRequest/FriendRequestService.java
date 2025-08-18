@@ -150,13 +150,24 @@ public class FriendRequestService implements IFriendRequestService {
             
             // Filter out any friend requests with null IDs to prevent JSON decoding errors
             List<FriendRequest> validFriendRequests = friendRequests.stream()
-                    .filter(fr -> fr.getId() != null)
+                    .filter(fr -> {
+                        if (fr.getId() == null) {
+                            logger.error("Critical: Friend request with null ID found for user: " + LoggingUtils.formatUserInfo(user) + 
+                                    ". Sender: " + (fr.getSender() != null ? LoggingUtils.formatUserInfo(fr.getSender()) : "null") +
+                                    ", Receiver: " + (fr.getReceiver() != null ? LoggingUtils.formatUserInfo(fr.getReceiver()) : "null") +
+                                    ". This indicates a data integrity issue that should be investigated.");
+                            return false;
+                        }
+                        return true;
+                    })
                     .toList();
             
             // Log if any invalid friend requests were found
             int invalidCount = friendRequests.size() - validFriendRequests.size();
             if (invalidCount > 0) {
-                logger.warn("Found " + invalidCount + " friend requests with null IDs for user: " + LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response.");
+                logger.error("CRITICAL DATA INTEGRITY ISSUE: Found " + invalidCount + " friend requests with null IDs for user: " + 
+                        LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response. " +
+                        "Database cleanup migration V13__Clean_Null_ID_Friend_Requests.sql should be run immediately.");
             }
             
             // Note: Blocked user filtering is now handled at the controller level
@@ -389,13 +400,24 @@ public class FriendRequestService implements IFriendRequestService {
             
             // Filter out any friend requests with null IDs to prevent JSON decoding errors
             List<FriendRequest> validFriendRequests = friendRequests.stream()
-                    .filter(fr -> fr.getId() != null)
+                    .filter(fr -> {
+                        if (fr.getId() == null) {
+                            logger.error("Critical: Friend request with null ID found for user: " + LoggingUtils.formatUserInfo(user) + 
+                                    ". Sender: " + (fr.getSender() != null ? LoggingUtils.formatUserInfo(fr.getSender()) : "null") +
+                                    ", Receiver: " + (fr.getReceiver() != null ? LoggingUtils.formatUserInfo(fr.getReceiver()) : "null") +
+                                    ". This indicates a data integrity issue that should be investigated.");
+                            return false;
+                        }
+                        return true;
+                    })
                     .toList();
             
             // Log if any invalid friend requests were found
             int invalidCount = friendRequests.size() - validFriendRequests.size();
             if (invalidCount > 0) {
-                logger.warn("Found " + invalidCount + " friend requests with null IDs for user: " + LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response.");
+                logger.error("CRITICAL DATA INTEGRITY ISSUE: Found " + invalidCount + " friend requests with null IDs for user: " + 
+                        LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response. " +
+                        "Database cleanup migration V13__Clean_Null_ID_Friend_Requests.sql should be run immediately.");
             }
             
             // Note: Blocked user filtering is now handled at the controller level
