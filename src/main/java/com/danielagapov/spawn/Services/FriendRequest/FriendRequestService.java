@@ -120,7 +120,7 @@ public class FriendRequestService implements IFriendRequestService {
             // Publish friend request notification Activity
             eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
 
-            // Return the saved friend request DTO with additional details (friends and friend tags)
+            // Return the saved friend request DTO
             return FriendRequestMapper.toDTO(friendRequest);
         } catch (DataAccessException e) {
             logger.error("Failed to save friend request from user " + LoggingUtils.formatUserIdInfo(friendRequestDTO.getSenderUserId()) +
@@ -235,11 +235,6 @@ public class FriendRequestService implements IFriendRequestService {
                 cacheManager.getCache("sentFetchFriendRequests").evict(sender.getId());
             }
 
-            // Evict other related caches
-            if (cacheManager.getCache("filteredFeedActivities") != null) {
-                cacheManager.getCache("filteredFeedActivities").evict(sender.getId());
-                cacheManager.getCache("filteredFeedActivities").evict(receiver.getId());
-            }
 
             if (cacheManager.getCache("friendsByUserId") != null) {
                 cacheManager.getCache("friendsByUserId").evict(sender.getId());
