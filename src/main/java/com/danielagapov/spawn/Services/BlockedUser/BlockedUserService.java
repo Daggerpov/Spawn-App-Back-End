@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Services.BlockedUser;
 
 import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -9,7 +8,7 @@ import com.danielagapov.spawn.Mappers.BlockedUserMapper;
 import com.danielagapov.spawn.Models.User.BlockedUser;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IBlockedUserRepository;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Repositories.IFriendshipRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import org.springframework.cache.Cache;
@@ -30,14 +29,14 @@ public class BlockedUserService implements IBlockedUserService {
 
     private final IBlockedUserRepository repository;
     private final IUserService userService;
-    private final IFriendTagService friendTagService;
+    private final IFriendshipRepository friendshipRepository;
     private final ILogger logger;
     private final CacheManager cacheManager;
 
-    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendTagService friendTagService, ILogger logger, CacheManager cacheManager) {
+    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendshipRepository friendshipRepository, ILogger logger, CacheManager cacheManager) {
         this.repository = repository;
         this.userService = userService;
-        this.friendTagService = friendTagService;
+        this.friendshipRepository = friendshipRepository;
         this.logger = logger;
         this.cacheManager = cacheManager;
     }
@@ -216,19 +215,7 @@ public class BlockedUserService implements IBlockedUserService {
             logger.info("Removing friendship between users: " + LoggingUtils.formatUserInfo(userA) +
                     " and " + LoggingUtils.formatUserInfo(userB));
 
-            List<FriendTagDTO> userATags = friendTagService.getFriendTagsByOwnerId(userAId);
-            for (FriendTagDTO tag : userATags) {
-                if (tag.getFriendUserIds().contains(userBId)) {
-                    friendTagService.removeUserFromFriendTag(tag.getId(), userBId);
-                }
-            }
-
-            List<FriendTagDTO> userBTags = friendTagService.getFriendTagsByOwnerId(userBId);
-            for (FriendTagDTO tag : userBTags) {
-                if (tag.getFriendUserIds().contains(userAId)) {
-                    friendTagService.removeUserFromFriendTag(tag.getId(), userAId);
-                }
-            }
+            friendshipRepository.deleteBidirectionally(userAId, userBId);
 
             logger.info("Successfully removed friendship between users: " + LoggingUtils.formatUserInfo(userA) +
                     " and " + LoggingUtils.formatUserInfo(userB));

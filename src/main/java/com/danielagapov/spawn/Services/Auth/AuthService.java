@@ -714,7 +714,7 @@ public class AuthService implements IAuthService {
         user.setDateCreated(new Date());
 
         user = userService.createAndSaveUser(user);
-        return UserMapper.toDTO(user, List.of(), List.of());
+        return UserMapper.toDTO(user, java.util.List.of());
     }
 
     private void createEmailTokenAndSendEmail(AuthUserDTO authUserDTO) {

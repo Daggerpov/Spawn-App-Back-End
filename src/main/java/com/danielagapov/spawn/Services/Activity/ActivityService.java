@@ -158,9 +158,6 @@ public class ActivityService implements IActivityService {
     }
 
     @Override
-    // Removed getActivitiesByFriendTagId due to deprecation of friend-tag-based filtering
-
-    @Override
     @Caching(evict = {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
             @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
@@ -314,7 +311,6 @@ public class ActivityService implements IActivityService {
                     new ArrayList<>(), // participantUsers - empty for new activity
                     invitedUserDTOs,
                     new ArrayList<>(), // chatMessages - empty for new activity
-                    null, // activityFriendTagColorHexCodeForRequestingUser - not needed for creation response
                     null, // participationStatus - not applicable for creator
                     true, // isSelfOwned - true since this is the creator
                     activity.getCreatedAt()
@@ -575,9 +571,6 @@ public class ActivityService implements IActivityService {
     }
 
     @Override
-    // Removed getActivitiesInvitedToByFriendTagId due to deprecation of friend-tag-based filtering
-
-    @Override
     @Cacheable(value = "fullActivitiesInvitedTo", key = "#id")
     public List<FullFeedActivityDTO> getFullActivitiesInvitedTo(UUID id) {
         List<ActivityUser> ActivityUsers = activityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.invited);
@@ -670,9 +663,6 @@ public class ActivityService implements IActivityService {
     }
 
     @Override
-    // Removed getFilteredFeedActivitiesByFriendTagId due to deprecation of friend-tag-based filtering
-
-    @Override
     public FullFeedActivityDTO getFullActivityByActivity(ActivityDTO Activity, UUID requestingUserId, Set<UUID> visitedActivities) {
         try {
             if (visitedActivities.contains(Activity.getId())) {
@@ -699,7 +689,6 @@ public class ActivityService implements IActivityService {
                     userService.getParticipantsByActivityId(Activity.getId()),
                     userService.getInvitedByActivityId(Activity.getId()),
                     chatMessageService.getFullChatMessagesByActivityId(Activity.getId()),
-                    null,
                     requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
                     Activity.getCreatorUserId().equals(requestingUserId),
                     Activity.getCreatedAt()
@@ -708,9 +697,6 @@ public class ActivityService implements IActivityService {
             return null;
         }
     }
-
-    @Override
-    // Removed getFriendTagColorHexCodeForRequestingUser
 
     @Override
     public List<FullFeedActivityDTO> convertActivitiesToFullFeedActivities(List<ActivityDTO> Activities, UUID requestingUserId) {

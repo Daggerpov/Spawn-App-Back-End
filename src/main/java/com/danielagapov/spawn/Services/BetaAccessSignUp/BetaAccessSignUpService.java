@@ -52,7 +52,7 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
             return BetaAccessSignUpMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
             logger.warn(e.getMessage());
-            throw new BasesNotFoundException(EntityType.FriendTag);
+            throw new BasesNotFoundException(EntityType.BetaAccessSignUp);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
