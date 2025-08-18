@@ -209,8 +209,8 @@ class BlockedUserControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].blockedUser.id").value(blockedId.toString()))
-                .andExpect(jsonPath("$[0].blockedUser.username").value("blocked_user"))
+                .andExpect(jsonPath("$[0].blockedId").value(blockedId.toString()))
+                .andExpect(jsonPath("$[0].blockedUsername").value("blocked_user"))
                 .andExpect(jsonPath("$[0].reason").value("Inappropriate behavior"));
 
         verify(blockedUserService).getBlockedUsers(blockerId);
@@ -475,19 +475,20 @@ class BlockedUserControllerTests {
     }
 
     @Test
-    void blockUser_ShouldStillBlock_WhenFriendRequestCleanupFails() throws Exception {
+    void blockUser_ShouldReturnError_WhenFriendRequestCleanupFails() throws Exception {
         // Arrange
         doThrow(new RuntimeException("Friend request cleanup failed"))
             .when(friendRequestService).deleteFriendRequestBetweenUsersIfExists(blockerId, blockedId);
-        doNothing().when(blockedUserService).blockUser(blockerId, blockedId, "Inappropriate behavior");
 
-        // Act & Assert - Should still return error since cleanup failed
+        // Act & Assert - Should return error since cleanup failed
         mockMvc.perform(post("/api/v1/blocked-users/block")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(blockedUserCreationDTO)))
                 .andExpect(status().isInternalServerError());
 
         verify(logger).error(contains("Error blocking user"));
+        // Verify blockedUserService.blockUser is never called due to early exception
+        verify(blockedUserService, never()).blockUser(any(), any(), any());
     }
 
     @Test

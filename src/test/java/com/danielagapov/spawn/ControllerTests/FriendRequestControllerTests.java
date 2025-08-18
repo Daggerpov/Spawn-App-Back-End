@@ -77,7 +77,7 @@ class FriendRequestControllerTests {
         friendRequestId = UUID.randomUUID();
 
         senderUserDTO = new BaseUserDTO(
-            senderId, "sender_user", "sender_pic.jpg", "Sender User", "Sender bio", "sender@example.com"
+            senderId, "Sender User", "sender@example.com", "sender_user", "Sender bio", "sender_pic.jpg"
         );
         
         // receiverUserDTO not used in tests but kept for potential future use
@@ -106,7 +106,7 @@ class FriendRequestControllerTests {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(friendRequestId.toString()))
                 .andExpect(jsonPath("$[0].senderUser.id").value(senderId.toString()))
-                .andExpect(jsonPath("$[0].senderUser.name").value("Sender User"))
+                .andExpect(jsonPath("$[0].senderUser.username").value("sender_user"))
                 .andExpect(jsonPath("$[0].mutualFriendCount").value(5));
 
         verify(friendRequestService).getIncomingFetchFriendRequestsByUserId(receiverId);
