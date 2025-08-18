@@ -127,15 +127,6 @@ public interface IActivityService {
      */
     List<ActivityDTO> getActivitiesInvitedTo(UUID id);
 
-    /**
-     * Retrieves activities that a user has been invited to, filtered by friend tag.
-     * 
-     * @param friendTagId the unique identifier of the friend tag to filter by
-     * @param requestingUserId the unique identifier of the user making the request
-     * @return List of ActivityDTO objects for activities invited to by the specified friend tag
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag or user doesn't exist
-     */
-    List<ActivityDTO> getActivitiesInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId);
 
     /**
      * Retrieves all activities that a user has been invited to as full feed activities.
@@ -220,23 +211,7 @@ public interface IActivityService {
      */
     List<ProfileActivityDTO> getPastActivitiesWhereUserInvited(UUID inviterUserId, UUID requestingUserId);
 
-    /**
-     * Retrieves feed activities filtered by a specific friend tag.
-     * 
-     * @param friendTagFilterId the unique identifier of the friend tag to filter by
-     * @return List of FullFeedActivityDTO objects filtered by the specified friend tag
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
-     */
-    List<FullFeedActivityDTO> getFilteredFeedActivitiesByFriendTagId(UUID friendTagFilterId);
 
-    /**
-     * Retrieves all activities associated with a specific friend tag.
-     * 
-     * @param friendTagId the unique identifier of the friend tag
-     * @return List of ActivityDTO objects associated with the specified friend tag
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
-     */
-    List<ActivityDTO> getActivitiesByFriendTagId(UUID friendTagId);
 
     /**
      * Retrieves all activities created by a specific user.
@@ -247,14 +222,6 @@ public interface IActivityService {
      */
     List<ActivityDTO> getActivitiesByOwnerId(UUID creatorUserId);
 
-    /**
-     * Gets the friend tag color hex code for a requesting user based on their relationship to the activity.
-     * 
-     * @param activityDTO the activity to get the color for
-     * @param requestingUserId the unique identifier of the user making the request
-     * @return hex color code string representing the friend tag color
-     */
-    String getFriendTagColorHexCodeForRequestingUser(ActivityDTO activityDTO, UUID requestingUserId);
     
     /**
      * Gets the timestamp of the latest activity created by the user.
