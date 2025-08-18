@@ -265,9 +265,9 @@ public class ActivityServiceTests {
     @Test
     void createActivity_Successful() {
         UUID creatorId = UUID.randomUUID();
-        UUID friendTagId = UUID.randomUUID();
+        // Friend tag functionality removed - activities now invite friends directly
         UUID explicitInviteId = UUID.randomUUID();
-        UUID friendTagUserId = UUID.randomUUID();
+        // Friend tag functionality removed
 
         LocationDTO locationDTO = new LocationDTO(null, "Test Location", 0.0, 0.0);
         ActivityDTO creationDTO = new ActivityDTO(
@@ -346,9 +346,9 @@ public class ActivityServiceTests {
     }
 
     @Test
-    void createActivity_Successful_WithFriendTagInvites() {
+    void createActivity_Successful_WithFriendInvites() {
         UUID creatorId = UUID.randomUUID();
-        UUID friendTagId = UUID.randomUUID();
+        // Friend tag functionality removed - activities now invite friends directly
         UUID commonUserId = UUID.randomUUID();
 
         ActivityDTO creationDTO = new ActivityDTO(

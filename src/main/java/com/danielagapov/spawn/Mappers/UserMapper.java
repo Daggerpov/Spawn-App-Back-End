@@ -67,7 +67,7 @@ public class UserMapper {
         );
     }
 
-    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UUID>> friendUserIdsMap, Map<User, List<UUID>> friendTagIdsMap) {
+    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UUID>> friendUserIdsMap) {
         return users.stream()
                 .map(user -> toDTO(
                         user,

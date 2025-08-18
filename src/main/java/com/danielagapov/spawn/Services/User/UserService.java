@@ -280,7 +280,7 @@ public class UserService implements IUserService {
                             user -> user,
                             user -> getFriendUserIdsByUserId(user.getId())
                     ));
-            return UserMapper.toDTOList(users, friendUserIdsMap, users.stream().collect(Collectors.toMap(u -> u, u -> List.of())));
+            return UserMapper.toDTOList(users, friendUserIdsMap);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;

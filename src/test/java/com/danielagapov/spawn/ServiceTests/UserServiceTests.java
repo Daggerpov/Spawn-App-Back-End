@@ -7,9 +7,7 @@ import com.danielagapov.spawn.DTOs.User.UserUpdateDTO;
 import com.danielagapov.spawn.DTOs.UserIdActivityTimeDTO;
 import com.danielagapov.spawn.Enums.ParticipationStatus;
 import com.danielagapov.spawn.Enums.UserStatus;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.Friendship;
@@ -40,7 +38,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
+
 import static org.mockito.Mockito.*;
 
 @Order(1)
@@ -185,6 +183,192 @@ public class UserServiceTests {
 
         // Then
         verify(friendshipRepository, times(1)).save(any(Friendship.class));
+    }
+
+    @Test
+    void saveFriendToUser_ShouldNotCreateDuplicateFriendship_WhenFriendshipAlreadyExists() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+        
+        when(friendshipRepository.existsByUserA_IdAndUserB_Id(any(), any())).thenReturn(true);
+
+        // When
+        userService.saveFriendToUser(userId, friendId);
+
+        // Then
+        verify(friendshipRepository, never()).save(any(Friendship.class));
+        verify(userService, never()).getUserEntityById(any());
+    }
+
+    @Test
+    void saveFriendToUser_ShouldNotCreateSelfFriendship_WhenUserIdsAreTheSame() {
+        // Given
+        UUID userId = UUID.randomUUID();
+
+        // When
+        userService.saveFriendToUser(userId, userId);
+
+        // Then
+        verify(friendshipRepository, never()).save(any(Friendship.class));
+        verify(friendshipRepository, never()).existsByUserA_IdAndUserB_Id(any(), any());
+    }
+
+    @Test
+    void saveFriendToUser_ShouldUseCanonicalOrdering_WhenCreatingFriendship() {
+        // Given
+        UUID userId1 = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID userId2 = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        User user1 = createUser(userId1, "user1", "user1@example.com");
+        User user2 = createUser(userId2, "user2", "user2@example.com");
+        
+        // userId1 < userId2, so canonical order should be userId1, userId2
+        when(friendshipRepository.existsByUserA_IdAndUserB_Id(userId1, userId2)).thenReturn(false);
+        doReturn(user1).when(userService).getUserEntityById(userId1);
+        doReturn(user2).when(userService).getUserEntityById(userId2);
+
+        // When - Call with reverse order
+        userService.saveFriendToUser(userId2, userId1);
+
+        // Then - Should still check and save in canonical order
+        verify(friendshipRepository).existsByUserA_IdAndUserB_Id(userId1, userId2);
+        verify(friendshipRepository).save(argThat(friendship -> 
+            friendship.getUserA().getId().equals(userId1) && 
+            friendship.getUserB().getId().equals(userId2)
+        ));
+    }
+
+    @Test
+    void getFriendUserIdsByUserId_ShouldReturnEmptyList_WhenUserHasNoFriends() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        when(friendshipRepository.findAllByUserIdBidirectional(userId)).thenReturn(List.of());
+
+        // When
+        List<UUID> result = userService.getFriendUserIdsByUserId(userId);
+
+        // Then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getFriendUserIdsByUserId_ShouldReturnCorrectFriendIds_WhenUserIsBothUserAAndUserB() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        UUID friendId1 = UUID.randomUUID();
+        UUID friendId2 = UUID.randomUUID();
+        
+        User user = createUser(userId, "user", "user@example.com");
+        User friend1 = createUser(friendId1, "friend1", "friend1@example.com");
+        User friend2 = createUser(friendId2, "friend2", "friend2@example.com");
+        
+        // Create friendships where user is sometimes userA, sometimes userB
+        Friendship friendship1 = new Friendship();
+        friendship1.setUserA(user);
+        friendship1.setUserB(friend1);
+        
+        Friendship friendship2 = new Friendship();
+        friendship2.setUserA(friend2);
+        friendship2.setUserB(user);
+        
+        when(friendshipRepository.findAllByUserIdBidirectional(userId))
+            .thenReturn(Arrays.asList(friendship1, friendship2));
+
+        // When
+        List<UUID> result = userService.getFriendUserIdsByUserId(userId);
+
+        // Then
+        assertEquals(2, result.size());
+        assertTrue(result.contains(friendId1));
+        assertTrue(result.contains(friendId2));
+    }
+
+    @Test
+    void isUserFriendOfUser_ShouldReturnFalse_WhenUsersAreNotFriends() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+        when(friendshipRepository.existsBidirectionally(userId, friendId)).thenReturn(false);
+
+        // When
+        boolean result = userService.isUserFriendOfUser(userId, friendId);
+
+        // Then
+        assertFalse(result);
+    }
+
+    @Test
+    void getFriendUsersByUserId_ShouldReturnFriendEntities_WhenFriendshipsExist() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        UUID friendId1 = UUID.randomUUID();
+        UUID friendId2 = UUID.randomUUID();
+        
+        User user = createUser(userId, "user", "user@example.com");
+        User friend1 = createUser(friendId1, "friend1", "friend1@example.com");
+        User friend2 = createUser(friendId2, "friend2", "friend2@example.com");
+        
+        Friendship friendship1 = new Friendship();
+        friendship1.setUserA(user);
+        friendship1.setUserB(friend1);
+        
+        Friendship friendship2 = new Friendship();
+        friendship2.setUserA(friend2);
+        friendship2.setUserB(user);
+        
+        when(friendshipRepository.findAllByUserIdBidirectional(userId))
+            .thenReturn(Arrays.asList(friendship1, friendship2));
+        
+        // Mock the repository call to find users by IDs
+        when(userRepository.findAllById(any(Iterable.class)))
+            .thenReturn(Arrays.asList(friend1, friend2));
+
+        // When
+        List<User> result = userService.getFriendUsersByUserId(userId);
+
+        // Then
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(u -> u.getId().equals(friendId1)));
+        assertTrue(result.stream().anyMatch(u -> u.getId().equals(friendId2)));
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldReturnCorrectCount_WhenMutualFriendsExist() {
+        // Given
+        UUID userId1 = UUID.randomUUID();
+        UUID userId2 = UUID.randomUUID();
+        UUID mutualFriendId1 = UUID.randomUUID();
+        UUID mutualFriendId2 = UUID.randomUUID();
+        UUID nonMutualFriendId = UUID.randomUUID();
+
+        // Mock friend lists
+        List<UUID> user1Friends = Arrays.asList(mutualFriendId1, mutualFriendId2, nonMutualFriendId);
+        List<UUID> user2Friends = Arrays.asList(mutualFriendId1, mutualFriendId2);
+
+        doReturn(user1Friends).when(userService).getFriendUserIdsByUserId(userId1);
+        doReturn(user2Friends).when(userService).getFriendUserIdsByUserId(userId2);
+
+        // When
+        int result = userService.getMutualFriendCount(userId1, userId2);
+
+        // Then
+        assertEquals(2, result);
+    }
+
+    @Test
+    void getMutualFriendCount_ShouldReturnZero_WhenNoMutualFriendsExist() {
+        // Given
+        UUID userId1 = UUID.randomUUID();
+        UUID userId2 = UUID.randomUUID();
+
+        doReturn(Arrays.asList(UUID.randomUUID())).when(userService).getFriendUserIdsByUserId(userId1);
+        doReturn(Arrays.asList(UUID.randomUUID())).when(userService).getFriendUserIdsByUserId(userId2);
+
+        // When
+        int result = userService.getMutualFriendCount(userId1, userId2);
+
+        // Then
+        assertEquals(0, result);
     }
 
     @Test
