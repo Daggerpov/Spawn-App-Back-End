@@ -108,7 +108,7 @@ class AuthServiceTests {
         testUser.setDateCreated(new Date());
 
         // Setup test UserDTO - uses constructor
-        testUserDTO = new UserDTO(userId, List.of(), testUsername, testProfilePicture, testName, testBio, List.of(), testEmail);
+        testUserDTO = new UserDTO(userId, List.of(), testUsername, testProfilePicture, testName, testBio, testEmail);
 
         // Setup test BaseUserDTO
         testBaseUserDTO = new BaseUserDTO(userId, testName, testEmail, testUsername, testBio, testProfilePicture);

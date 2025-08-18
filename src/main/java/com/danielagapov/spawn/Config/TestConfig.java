@@ -54,12 +54,11 @@ public class TestConfig {
             // For test, return a simple mock UserDTO
             return new UserDTO(
                     userId,
-                    null,
+                    java.util.List.of(),
                     "testuser",
                     file == null ? MOCK_DEFAULT_PFP : putObject(file),
                     "Test User",
                     "Test Bio",
-                    null,
                     "test@example.com"
             );
         }

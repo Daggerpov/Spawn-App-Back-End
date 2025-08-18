@@ -839,9 +839,7 @@ public class CacheService implements ICacheService {
                 cacheManager.getCache("ActivitiesByOwnerId").evict(userId);
             }
             
-            if (cacheManager.getCache("filteredFeedActivities") != null) {
-                cacheManager.getCache("filteredFeedActivities").clear(); // Clear all entries as keys are complex
-            }
+            // filteredFeedActivities cache removed in friendship refactor
             
             if (cacheManager.getCache("ActivitiesInvitedTo") != null) {
                 cacheManager.getCache("ActivitiesInvitedTo").evict(userId);

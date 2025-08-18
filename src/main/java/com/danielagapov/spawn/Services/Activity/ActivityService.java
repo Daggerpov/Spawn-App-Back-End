@@ -2,7 +2,6 @@ package com.danielagapov.spawn.Services.Activity;
 
 import com.danielagapov.spawn.DTOs.Activity.*;
 import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
@@ -31,7 +30,6 @@ import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +54,6 @@ public class ActivityService implements IActivityService {
     private final ILocationRepository locationRepository;
     private final IActivityUserRepository activityUserRepository;
     private final IUserRepository userRepository;
-    private final IFriendTagService friendTagService;
     private final IUserService userService;
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
@@ -67,7 +64,7 @@ public class ActivityService implements IActivityService {
     @Lazy // avoid circular dependency problems with ChatMessageService
     public ActivityService(IActivityRepository repository, IActivityTypeRepository activityTypeRepository,
                         ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
-                        IUserRepository userRepository, IFriendTagService friendTagService, IUserService userService, 
+                        IUserRepository userRepository, IUserService userService, 
                         IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, 
                         ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
@@ -75,7 +72,6 @@ public class ActivityService implements IActivityService {
         this.locationRepository = locationRepository;
         this.activityUserRepository = activityUserRepository;
         this.userRepository = userRepository;
-        this.friendTagService = friendTagService;
         this.userService = userService;
         this.chatMessageService = chatMessageService;
         this.logger = logger;
@@ -162,47 +158,13 @@ public class ActivityService implements IActivityService {
     }
 
     @Override
-    @Cacheable(value = "ActivitiesByFriendTagId", key = "#tagId")
-    public List<ActivityDTO> getActivitiesByFriendTagId(UUID tagId) {
-        try {
-            // Step 1: Retrieve the FriendTagDTO and its associated friend user IDs
-            FriendTagDTO friendTag = friendTagService.getFriendTagById(tagId);
-            List<UUID> friendIds = friendTag.getFriendUserIds();
-
-            // Step 2: Retrieve Activities created by any of the friends
-            // Step 3: Filter Activities based on whether their owner is in the list of friend
-            // IDs
-            List<Activity> filteredActivities = repository.findByCreatorIdIn(friendIds);
-
-            // Step 3: Map filtered Activities to detailed DTOs
-            return filteredActivities.stream()
-                    .map(Activity -> ActivityMapper.toDTO(
-                            Activity,
-                            Activity.getCreator().getId(),
-                            userService.getParticipantUserIdsByActivityId(Activity.getId()),
-                            userService.getInvitedUserIdsByActivityId(Activity.getId()),
-                            chatMessageService.getChatMessageIdsByActivityId(Activity.getId())))
-                    .toList();
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new RuntimeException("Error retrieving Activities by friend tag ID", e);
-        } catch (BaseNotFoundException e) {
-            logger.error(e.getMessage());
-            throw e; // Rethrow if it's a custom not-found exception
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     @Caching(evict = {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
             @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
             @CacheEvict(value = "feedActivities", allEntries = true),
-            @CacheEvict(value = "filteredFeedActivities", allEntries = true),
+            
             @CacheEvict(value = "userStatsById", key = "#result.creatorUserId")
     })
     public AbstractActivityDTO saveActivity(AbstractActivityDTO Activity) {
@@ -259,7 +221,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
-            @CacheEvict(value = "filteredFeedActivities", allEntries = true),
+            
             @CacheEvict(value = "userStatsById", key = "#result.creatorUser.id")
     })
     public AbstractActivityDTO createActivity(ActivityDTO activityDTO) {
@@ -349,7 +311,6 @@ public class ActivityService implements IActivityService {
                     new ArrayList<>(), // participantUsers - empty for new activity
                     invitedUserDTOs,
                     new ArrayList<>(), // chatMessages - empty for new activity
-                    null, // activityFriendTagColorHexCodeForRequestingUser - not needed for creation response
                     null, // participationStatus - not applicable for creator
                     true, // isSelfOwned - true since this is the creator
                     activity.getCreatedAt()
@@ -385,7 +346,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
-            @CacheEvict(value = "filteredFeedActivities", allEntries = true)
+            
     })
     public FullFeedActivityDTO replaceActivity(ActivityDTO newActivity, UUID id) {
         return repository.findById(id).map(activity -> {
@@ -469,8 +430,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityInviteById", key = "#id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
             @CacheEvict(value = "ActivitiesByOwnerId", allEntries = true),
-            @CacheEvict(value = "feedActivities", allEntries = true),
-            @CacheEvict(value = "filteredFeedActivities", allEntries = true)
+            @CacheEvict(value = "feedActivities", allEntries = true)
     })
     public boolean deleteActivityById(UUID id) {
         if (!repository.existsById(id)) {
@@ -522,7 +482,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
-            @CacheEvict(value = "filteredFeedActivities", key = "#userId")
+            
     })
     public boolean inviteUser(UUID ActivityId, UUID userId) {
         ActivityUsersId compositeId = new ActivityUsersId(ActivityId, userId);
@@ -562,7 +522,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
-            @CacheEvict(value = "filteredFeedActivities", key = "#userId"),
+            
             @CacheEvict(value = "userStatsById", key = "#userId")
     })
     public FullFeedActivityDTO toggleParticipation(UUID ActivityId, UUID userId) {
@@ -608,21 +568,6 @@ public class ActivityService implements IActivityService {
         return getActivityDTOs(ActivityUsers.stream()
                 .map(ActivityUser::getActivity)
                 .toList());
-    }
-
-    @Override
-    @Cacheable(value = "ActivitiesInvitedToByFriendTagId", key = "#friendTagId.toString() + ':' + #requestingUserId")
-    public List<ActivityDTO> getActivitiesInvitedToByFriendTagId(UUID friendTagId, UUID requestingUserId) {
-        try {
-            List<Activity> Activities = repository.getActivitiesInvitedToWithFriendTagId(friendTagId, requestingUserId);
-            return getActivityDTOs(Activities);
-        } catch (DataAccessException e) {
-            logger.error(e.getMessage());
-            throw new BaseNotFoundException(EntityType.FriendTag, friendTagId);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
     }
 
     @Override
@@ -718,22 +663,6 @@ public class ActivityService implements IActivityService {
     }
 
     @Override
-    @Cacheable(value = "filteredFeedActivities", key = "#friendTagFilterId")
-    public List<FullFeedActivityDTO> getFilteredFeedActivitiesByFriendTagId(UUID friendTagFilterId) {
-        try {
-            UUID requestingUserId = friendTagService.getFriendTagById(friendTagFilterId).getOwnerUserId();
-            List<FullFeedActivityDTO> ActivitiesCreated = convertActivitiesToFullFeedSelfOwnedActivities(getActivitiesByOwnerId(requestingUserId), requestingUserId);
-            List<FullFeedActivityDTO> ActivitiesByFriendTagFilter = convertActivitiesToFullFeedActivities(getActivitiesInvitedToByFriendTagId(friendTagFilterId, requestingUserId), requestingUserId);
-
-            // Remove expired Activities and sort
-            return makeFeed(ActivitiesCreated, ActivitiesByFriendTagFilter);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public FullFeedActivityDTO getFullActivityByActivity(ActivityDTO Activity, UUID requestingUserId, Set<UUID> visitedActivities) {
         try {
             if (visitedActivities.contains(Activity.getId())) {
@@ -760,7 +689,6 @@ public class ActivityService implements IActivityService {
                     userService.getParticipantsByActivityId(Activity.getId()),
                     userService.getInvitedByActivityId(Activity.getId()),
                     chatMessageService.getFullChatMessagesByActivityId(Activity.getId()),
-                    requestingUserId != null ? getFriendTagColorHexCodeForRequestingUser(Activity, requestingUserId) : null,
                     requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
                     Activity.getCreatorUserId().equals(requestingUserId),
                     Activity.getCreatedAt()
@@ -768,18 +696,6 @@ public class ActivityService implements IActivityService {
         } catch (BaseNotFoundException e) {
             return null;
         }
-    }
-
-    @Override
-    public String getFriendTagColorHexCodeForRequestingUser(ActivityDTO ActivityDTO, UUID requestingUserId) {
-        // get Activity creator from ActivityDTO
-
-        // use creator to get the friend tag that relates the requesting user to see
-        // which friend tag they've placed them in
-        return Optional.ofNullable(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, ActivityDTO.getCreatorUserId()))
-                .flatMap(optional -> optional)  // This will flatten the Optional<Optional<FriendTagDTO>> to Optional<FriendTagDTO>
-                .map(FriendTagDTO::getColorHexCode)
-                .orElse("#8693FF"); // Default color if no tag exists or if result is null
     }
 
     @Override
@@ -805,7 +721,7 @@ public class ActivityService implements IActivityService {
             }
 
             // Apply universal accent color
-            fullFeedActivity.setActivityFriendTagColorHexCodeForRequestingUser("#8693FF");
+            // No tag color in new friend-based system
 
             fullActivities.add(fullFeedActivity);
         }
@@ -861,7 +777,6 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#activityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
-            @CacheEvict(value = "filteredFeedActivities", key = "#userId"),
             @CacheEvict(value = "userStatsById", key = "#userId")
     })
     public FullFeedActivityDTO autoJoinUserToActivity(UUID activityId, UUID userId) {
