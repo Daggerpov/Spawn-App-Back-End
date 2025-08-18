@@ -13,6 +13,30 @@ public interface IFriendshipRepository extends JpaRepository<Friendship, UUID> {
     List<Friendship> findByUserA_Id(UUID userAId);
     List<Friendship> findByUserB_Id(UUID userBId);
     void deleteByUserA_IdAndUserB_Id(UUID userAId, UUID userBId);
+
+    // Bidirectional variants (order-agnostic)
+    boolean existsByUserA_IdAndUserB_IdOrUserA_IdAndUserB_Id(UUID userAId, UUID userBId, UUID userBId2, UUID userAId2);
+    List<Friendship> findByUserA_IdOrUserB_Id(UUID userId1, UUID userId2);
+    void deleteByUserA_IdAndUserB_IdOrUserA_IdAndUserB_Id(UUID userAId, UUID userBId, UUID userBId2, UUID userAId2);
+
+    // Convenience helpers
+    default boolean existsBidirectionally(UUID userId1, UUID userId2) {
+        UUID a = userId1;
+        UUID b = userId2;
+        if (a.compareTo(b) > 0) { UUID t = a; a = b; b = t; }
+        return existsByUserA_IdAndUserB_Id(a, b);
+    }
+
+    default void deleteBidirectionally(UUID userId1, UUID userId2) {
+        UUID a = userId1;
+        UUID b = userId2;
+        if (a.compareTo(b) > 0) { UUID t = a; a = b; b = t; }
+        deleteByUserA_IdAndUserB_Id(a, b);
+    }
+
+    default List<Friendship> findAllByUserIdBidirectional(UUID userId) {
+        return findByUserA_IdOrUserB_Id(userId, userId);
+    }
 }
 
 
