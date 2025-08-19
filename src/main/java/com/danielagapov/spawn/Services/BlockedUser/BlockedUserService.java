@@ -188,16 +188,11 @@ public class BlockedUserService implements IBlockedUserService {
     @Cacheable(value = "blockedUserIds", key = "#blockerId")
     public List<UUID> getBlockedUserIds(UUID blockerId) {
         try {
-            User blocker = userService.getUserEntityById(blockerId);
-            logger.info("Getting blocked user IDs for blocker: " + LoggingUtils.formatUserInfo(blocker));
-
             List<UUID> blockedUserIds = repository.findAllByBlocker_Id(blockerId).stream()
                     .map(BlockedUser::getBlocked)
                     .map(User::getId)
                     .collect(Collectors.toList());
 
-            logger.info("Found " + blockedUserIds.size() + " blocked user IDs for blocker: " +
-                    LoggingUtils.formatUserInfo(blocker));
             return blockedUserIds;
         } catch (Exception e) {
             logger.error("Error retrieving blocked user IDs for blocker " + LoggingUtils.formatUserIdInfo(blockerId) +
@@ -317,6 +312,24 @@ public class BlockedUserService implements IBlockedUserService {
                     }
                 } catch (Exception e) {
                     // If getSenderUser() fails, fall through to other methods
+                }
+            }
+            
+            // Special handling for FetchSentFriendRequestDTO - try getReceiverUser() first
+            if (user.getClass().getSimpleName().equals("FetchSentFriendRequestDTO")) {
+                try {
+                    java.lang.reflect.Method getReceiverUserMethod = user.getClass().getMethod("getReceiverUser");
+                    Object receiverUserObj = getReceiverUserMethod.invoke(user);
+                    if (receiverUserObj != null) {
+                        // Try to get ID from the receiver user object
+                        java.lang.reflect.Method getIdMethod = receiverUserObj.getClass().getMethod("getId");
+                        Object result = getIdMethod.invoke(receiverUserObj);
+                        if (result instanceof UUID) {
+                            return (UUID) result;
+                        }
+                    }
+                } catch (Exception e) {
+                    // If getReceiverUser() fails, fall through to other methods
                 }
             }
             
