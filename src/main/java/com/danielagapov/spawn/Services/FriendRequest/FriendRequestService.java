@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.FriendRequest;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
 import com.danielagapov.spawn.Events.FriendRequestAcceptedNotificationEvent;
 import com.danielagapov.spawn.Events.FriendRequestNotificationEvent;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
@@ -385,7 +386,7 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     @Cacheable(value = "sentFetchFriendRequests", key = "#userId")
-    public List<FetchFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
+    public List<FetchSentFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
         try {
             User user = userService.getUserEntityById(userId);
             logger.info("Getting sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
@@ -422,10 +423,9 @@ public class FriendRequestService implements IFriendRequestService {
             
             // Note: Blocked user filtering is now handled at the controller level
 
-            List<FetchFriendRequestDTO> result = validFriendRequests.stream()
+            List<FetchSentFriendRequestDTO> result = validFriendRequests.stream()
                     .map(fr -> {
-                        FetchFriendRequestDTO dto = FetchFriendRequestMapper.toDTOForSentRequest(fr,
-                                userService.getMutualFriendCount(userId, fr.getReceiver().getId()));
+                        FetchSentFriendRequestDTO dto = FetchFriendRequestMapper.toSentDTO(fr);
                         logger.info("Debug: Created sent DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId());
                         return dto;
                     })

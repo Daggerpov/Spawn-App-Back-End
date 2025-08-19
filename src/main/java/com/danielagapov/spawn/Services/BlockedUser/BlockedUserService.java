@@ -315,6 +315,24 @@ public class BlockedUserService implements IBlockedUserService {
                 }
             }
             
+            // Special handling for FetchSentFriendRequestDTO - try getReceiverUser() first
+            if (user.getClass().getSimpleName().equals("FetchSentFriendRequestDTO")) {
+                try {
+                    java.lang.reflect.Method getReceiverUserMethod = user.getClass().getMethod("getReceiverUser");
+                    Object receiverUserObj = getReceiverUserMethod.invoke(user);
+                    if (receiverUserObj != null) {
+                        // Try to get ID from the receiver user object
+                        java.lang.reflect.Method getIdMethod = receiverUserObj.getClass().getMethod("getId");
+                        Object result = getIdMethod.invoke(receiverUserObj);
+                        if (result instanceof UUID) {
+                            return (UUID) result;
+                        }
+                    }
+                } catch (Exception e) {
+                    // If getReceiverUser() fails, fall through to other methods
+                }
+            }
+            
             // Try getId() method first (for most DTOs)
             java.lang.reflect.Method getIdMethod = user.getClass().getMethod("getId");
             Object result = getIdMethod.invoke(user);

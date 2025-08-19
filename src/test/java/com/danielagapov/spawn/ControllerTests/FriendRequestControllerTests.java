@@ -3,6 +3,7 @@ package com.danielagapov.spawn.ControllerTests;
 import com.danielagapov.spawn.Controllers.FriendRequestController;
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FriendRequestAction;
@@ -63,7 +64,9 @@ class FriendRequestControllerTests {
     private UUID friendRequestId;
     private CreateFriendRequestDTO createFriendRequestDTO;
     private FetchFriendRequestDTO fetchFriendRequestDTO;
+    private FetchSentFriendRequestDTO fetchSentFriendRequestDTO;
     private BaseUserDTO senderUserDTO;
+    private BaseUserDTO receiverUserDTO;
 
     @BeforeEach
     void setUp() {
@@ -80,10 +83,13 @@ class FriendRequestControllerTests {
             senderId, "Sender User", "sender@example.com", "sender_user", "Sender bio", "sender_pic.jpg"
         );
         
-        // receiverUserDTO not used in tests but kept for potential future use
+        receiverUserDTO = new BaseUserDTO(
+            receiverId, "Receiver User", "receiver@example.com", "receiver_user", "Receiver bio", "receiver_pic.jpg"
+        );
 
         createFriendRequestDTO = new CreateFriendRequestDTO(friendRequestId, senderId, receiverId);
         fetchFriendRequestDTO = new FetchFriendRequestDTO(friendRequestId, senderUserDTO, 5);
+        fetchSentFriendRequestDTO = new FetchSentFriendRequestDTO(friendRequestId, receiverUserDTO);
     }
 
     // MARK: - GET Incoming Friend Requests Tests
@@ -183,8 +189,8 @@ class FriendRequestControllerTests {
     @Test
     void getSentFriendRequestsByUserId_ShouldReturnRequests_WhenRequestsExist() throws Exception {
         // Arrange
-        List<FetchFriendRequestDTO> sentRequests = List.of(fetchFriendRequestDTO);
-        List<FetchFriendRequestDTO> filteredRequests = List.of(fetchFriendRequestDTO);
+        List<FetchSentFriendRequestDTO> sentRequests = List.of(fetchSentFriendRequestDTO);
+        List<FetchSentFriendRequestDTO> filteredRequests = List.of(fetchSentFriendRequestDTO);
         
         when(friendRequestService.getSentFetchFriendRequestsByUserId(senderId))
             .thenReturn(sentRequests);

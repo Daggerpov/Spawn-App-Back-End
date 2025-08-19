@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
@@ -552,7 +553,7 @@ public class CacheService implements ICacheService {
             if (needsUpdate) {
                 // Include updated data if possible to save an extra API call
                 try {
-                    List<FetchFriendRequestDTO> sentFriendRequests =
+                    List<FetchSentFriendRequestDTO> sentFriendRequests =
                             friendRequestService.getSentFetchFriendRequestsByUserId(user.getId());
                     byte[] requestsData = objectMapper.writeValueAsBytes(sentFriendRequests);
 
