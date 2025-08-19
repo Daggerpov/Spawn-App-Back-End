@@ -91,11 +91,4 @@ public interface IAuthService {
      * @return the updated user DTO
      */
     BaseUserDTO acceptTermsOfService(UUID userId);
-
-    /**
-     * Cancels onboarding for a user with status < ACTIVE by deleting their account
-     * This is called when the user chooses to not resume an existing onboarding session on the client
-     * @param userId id of user to delete
-     */
-    void cancelOnboarding(UUID userId);
 }

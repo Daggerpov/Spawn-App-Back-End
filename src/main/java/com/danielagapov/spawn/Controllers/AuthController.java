@@ -398,24 +398,6 @@ public class AuthController {
         }
     }
 
-    // full path: /api/v1/auth/onboarding-cancel
-    @PostMapping("onboarding-cancel/{userId}")
-    public ResponseEntity<?> onboardingCancel(@PathVariable UUID userId) {
-        try {
-            authService.cancelOnboarding(userId);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            logger.warn("Attempt to delete active user: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("Cannot delete active user"));
-        } catch (BaseNotFoundException e) {
-            logger.error("User not found for onboarding cancellation: " + userId + ", entity type: " + e.entityType);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("User not found"));
-        } catch (Exception e) {
-            logger.error("Error cancelling onboarding for user: " + userId + ": " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Failed to accept Terms of Service"));
-        }
-    }
-
     /* ------------------------------ HELPERS ------------------------------ */
 
     @Deprecated(since = "For testing purposes")

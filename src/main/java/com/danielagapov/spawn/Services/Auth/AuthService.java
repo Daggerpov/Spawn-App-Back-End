@@ -637,17 +637,6 @@ public class AuthService implements IAuthService {
         }
     }
 
-    @Override
-    public void cancelOnboarding(UUID userId) {
-        User user = userService.getUserEntityById(userId);
-        if (user.getStatus() == UserStatus.ACTIVE) {
-            throw new IllegalStateException("Cannot cancel onboarding for ACTIVE user");
-        } else {
-            logger.info("Cancelling onboarding for user with status: " + user.getStatus());
-            userService.deleteUserById(userId);
-        }
-    }
-
     /**
      * Validates user data before setting status to ACTIVE
      * Uses Optional-based methods for safe null handling
