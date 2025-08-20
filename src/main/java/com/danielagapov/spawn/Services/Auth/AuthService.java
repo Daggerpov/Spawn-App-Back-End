@@ -69,7 +69,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public BaseUserDTO loginUser(String usernameOrEmail, String password) {
+    public AuthResponseDTO loginUser(String usernameOrEmail, String password) {
         String username;
         final String errorMsg = "Incorrect username, email, or password";
 
@@ -100,7 +100,7 @@ public class AuthService implements IAuthService {
                 user = userService.getUserEntityByUsername(authenticatedUsername);
             }
 
-            return UserMapper.toDTO(user);
+            return UserMapper.toAuthResponseDTO(user);
         }
         throw new BadCredentialsException(errorMsg);
     }
@@ -486,7 +486,7 @@ public class AuthService implements IAuthService {
         }
         
         // Check if user already exists
-        if (userService.existsByEmail(email)) {
+        if (userService.existsByEmailAndStatus(email, UserStatus.ACTIVE)) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
         
@@ -541,7 +541,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public BaseUserDTO checkEmailVerificationCode(String email, String code) {
+    public AuthResponseDTO checkEmailVerificationCode(String email, String code) {
         logger.info("Verifying email and creating user for: " + email);
 
         if (email == null || code == null) {
@@ -549,7 +549,7 @@ public class AuthService implements IAuthService {
         }
         
         // Check if user already exists
-        if (userService.existsByEmail(email)) {
+        if (userService.existsByEmailAndStatus(email, UserStatus.ACTIVE)) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
 
@@ -578,21 +578,28 @@ public class AuthService implements IAuthService {
             throw new EmailVerificationException("Incorrect verification code");
         }
         
-        // Code is valid, create the user
-        User newUser = new User();
-        newUser.setId(UUID.randomUUID());
-        newUser.setEmail(email);
-        newUser.setUsername(email);
-        newUser.setName(email);
-        newUser.setPhoneNumber(email);
-        newUser.setStatus(UserStatus.EMAIL_VERIFIED);
-        newUser = userService.createAndSaveUser(newUser);
-        
+        // Code is valid
+        User user;
+        // If this is a new user, create an account for them
+        if (!userService.existsByEmail(email)) {
+            user = new User();
+            user.setId(UUID.randomUUID());
+            user.setEmail(email);
+            user.setUsername(email);
+            user.setName(email);
+            user.setPhoneNumber(email);
+            user.setStatus(UserStatus.EMAIL_VERIFIED);
+            user = userService.createAndSaveUser(user);
+            logger.info("User created successfully after email verification: " + LoggingUtils.formatUserInfo(user));
+        } else { // Otherwise return their existing account still in onboarding
+            user = userService.getUserByEmail(email);
+            logger.info("Re-verified existing user");
+        }
+
         // Clean up verification record
         emailVerificationRepository.delete(verification);
-        
-        logger.info("User created successfully after email verification: " + LoggingUtils.formatUserInfo(newUser));
-        return UserMapper.toDTO(newUser);
+
+        return UserMapper.toAuthResponseDTO(user, false);
     }
 
     @Override

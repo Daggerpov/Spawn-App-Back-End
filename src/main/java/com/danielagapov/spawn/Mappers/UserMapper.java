@@ -31,7 +31,7 @@ public class UserMapper {
 
     public static AuthResponseDTO toAuthResponseDTO(User user, boolean isOAuthUser) {
         BaseUserDTO baseUserDTO = toDTO(user);
-        return new AuthResponseDTO(baseUserDTO, user.getStatus());
+        return new AuthResponseDTO(baseUserDTO, user.getStatus(), isOAuthUser);
     }
 
     public static List<BaseUserDTO> toDTOList(List<User> users) {

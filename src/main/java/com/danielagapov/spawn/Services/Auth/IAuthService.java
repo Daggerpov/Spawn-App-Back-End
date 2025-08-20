@@ -14,7 +14,7 @@ public interface IAuthService {
      */
     UserDTO registerUser(AuthUserDTO authUserDTO);
 
-    BaseUserDTO loginUser(String usernameOrEmail, String password);
+    AuthResponseDTO loginUser(String usernameOrEmail, String password);
 
     boolean verifyEmail(String token);
     
@@ -42,7 +42,7 @@ public interface IAuthService {
      * @param code the verification code to check
      * @return the created user DTO if verification is successful
      */
-    BaseUserDTO checkEmailVerificationCode(String email, String code);
+    AuthResponseDTO checkEmailVerificationCode(String email, String code);
 
     /**
      * Registers a new user via OAuth (Google or Apple)

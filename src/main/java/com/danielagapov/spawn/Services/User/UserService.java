@@ -13,23 +13,19 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-// Removed FriendTagMapper usage due to friendship refactor
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.Friendship;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendshipRepository;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserIdExternalIdMapRepository;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
- 
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.PhoneNumberMatchingUtil;
-import com.danielagapov.spawn.Util.PhoneNumberValidator;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -442,6 +438,11 @@ public class UserService implements IUserService {
     @Override
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
+    }
+
+    @Override
+    public boolean existsByEmailAndStatus(String email, UserStatus status) {
+        return repository.existsByEmailAndStatus(email, status);
     }
 
     /**

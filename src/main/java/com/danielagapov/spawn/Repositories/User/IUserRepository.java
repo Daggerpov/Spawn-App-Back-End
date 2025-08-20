@@ -2,10 +2,8 @@ package com.danielagapov.spawn.Repositories.User;
 
 import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Models.User.User;
-import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -56,6 +54,8 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
+
+    boolean existsByEmailAndStatus(String email, UserStatus status);
 
     @Query(value = "SELECT MAX(u.last_updated) FROM user u " +
             "JOIN friendship f ON (u.id = f.user_a_id OR u.id = f.user_b_id) " +

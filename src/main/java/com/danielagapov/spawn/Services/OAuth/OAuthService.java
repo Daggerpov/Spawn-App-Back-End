@@ -194,7 +194,7 @@ public class OAuthService implements IOAuthService {
             User user = getMapping(externalUserId).getUser();
             
             // Return user regardless of status - client will handle appropriate onboarding
-            AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user);
+            AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user, true);
             logger.info("Returning user with ID: " + authResponseDTO.getUser().getId() + ", username: " + authResponseDTO.getUser().getUsername() + ", status: " + user.getStatus());
             return Optional.of(authResponseDTO);
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id
