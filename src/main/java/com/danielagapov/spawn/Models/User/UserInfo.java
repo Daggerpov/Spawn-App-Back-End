@@ -26,7 +26,7 @@ public class UserInfo implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String role = status == UserStatus.ACTIVE ? "ACTIVE" : "ONBOARDING";
+        String role = status == UserStatus.ACTIVE ? "ROLE_ACTIVE" : "ROLE_ONBOARDING";
 
         return List.of(new SimpleGrantedAuthority(role));
     }
