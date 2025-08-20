@@ -27,8 +27,7 @@ public class UserInfoService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
 
-        // Return UserInfo with the correct password from the user entity
-        return new UserInfo(user.getUsername(), user.getPassword());
+        return new UserInfo(user.getUsername(), user.getPassword(), user.getStatus());
     }
 
     /**
@@ -40,6 +39,6 @@ public class UserInfoService implements UserDetailsService {
 
         // Return UserInfo using the user's username (or email if username is null) and password
         String usernameForAuth = user.getOptionalUsername().orElse(user.getEmail());
-        return new UserInfo(usernameForAuth, user.getPassword());
+        return new UserInfo(usernameForAuth, user.getPassword(), user.getStatus());
     }
 }

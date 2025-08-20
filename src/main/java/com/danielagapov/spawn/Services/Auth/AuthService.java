@@ -36,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -281,10 +280,8 @@ public class AuthService implements IAuthService {
         Optional<AuthResponseDTO> existingUser = oauthService.getUserIfExistsbyExternalId(externalId, email);
         if (existingUser.isPresent()) {
             AuthResponseDTO authResponse = existingUser.get();
-            if (authResponse.getStatus() == null || authResponse.getStatus() == UserStatus.ACTIVE) {
-                logger.info("ACTIVE user attempting to register - returning existing user instead of error: " + authResponse.getUser().getEmail());
-                return authResponse;
-            }
+            logger.info(authResponse.getStatus() + " user attempting to register - returning existing user: " + authResponse.getUser().getEmail());
+            return authResponse;
         }
         
         // Create verified user immediately for OAuth
