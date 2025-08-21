@@ -156,6 +156,15 @@ public interface IUserService {
     void saveFriendToUser(UUID userId, UUID friendId);
 
     /**
+     * Removes a bidirectional friendship between two users.
+     *
+     * @param userId the unique identifier of the first user
+     * @param friendId the unique identifier of the second user
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if either user doesn't exist
+     */
+    void removeFriendshipBetweenUsers(UUID userId, UUID friendId);
+
+    /**
      * Retrieves a limited number of recommended friends for a user.
      *
      * @param userId the unique identifier of the user requesting recommendations

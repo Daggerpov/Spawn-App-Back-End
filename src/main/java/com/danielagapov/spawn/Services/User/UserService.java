@@ -328,6 +328,37 @@ public class UserService implements IUserService {
         }
     }
 
+    // Removes friend bidirectionally
+    @Caching(evict = {
+            @CacheEvict(value = "friendsByUserId", key = "#userId"),
+            @CacheEvict(value = "friendsByUserId", key = "#friendId"),
+            @CacheEvict(value = "recommendedFriends", key = "#userId"),
+            @CacheEvict(value = "recommendedFriends", key = "#friendId")
+    })
+    @Override
+    public void removeFriendshipBetweenUsers(UUID userId, UUID friendId) {
+        try {
+            if (userId.equals(friendId)) {
+                logger.info("Attempted to remove self-friendship. Skipping.");
+                return;
+            }
+
+            // Check if friendship exists first
+            if (!friendshipRepository.existsBidirectionally(userId, friendId)) {
+                logger.warn("No friendship exists between users " + userId + " and " + friendId + ". Skipping removal.");
+                return;
+            }
+
+            // Delete bidirectionally
+            friendshipRepository.deleteBidirectionally(userId, friendId);
+            logger.info("Successfully removed friendship between users " + userId + " and " + friendId);
+
+        } catch (Exception e) {
+            logger.error("Error removing friendship between users " + userId + " and " + friendId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
     // returns top x (specified by limit) friends with most mutuals with user (with `userId`) as
     // `RecommendedFriendUserDTO`s, to include the `mutualFriendCount`
     @Override

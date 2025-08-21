@@ -386,6 +386,59 @@ public class UserServiceTests {
     }
 
     @Test
+    void removeFriendshipBetweenUsers_ShouldRemoveFriendship_WhenFriendshipExists() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+        when(friendshipRepository.existsBidirectionally(userId, friendId)).thenReturn(true);
+
+        // When
+        userService.removeFriendshipBetweenUsers(userId, friendId);
+
+        // Then
+        verify(friendshipRepository, times(1)).deleteBidirectionally(userId, friendId);
+    }
+
+    @Test
+    void removeFriendshipBetweenUsers_ShouldNotRemoveFriendship_WhenFriendshipDoesNotExist() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+        when(friendshipRepository.existsBidirectionally(userId, friendId)).thenReturn(false);
+
+        // When
+        userService.removeFriendshipBetweenUsers(userId, friendId);
+
+        // Then
+        verify(friendshipRepository, never()).deleteBidirectionally(any(), any());
+    }
+
+    @Test
+    void removeFriendshipBetweenUsers_ShouldNotRemoveFriendship_WhenUserIdsAreTheSame() {
+        // Given
+        UUID userId = UUID.randomUUID();
+
+        // When
+        userService.removeFriendshipBetweenUsers(userId, userId);
+
+        // Then
+        verify(friendshipRepository, never()).existsBidirectionally(any(), any());
+        verify(friendshipRepository, never()).deleteBidirectionally(any(), any());
+    }
+
+    @Test
+    void removeFriendshipBetweenUsers_ShouldThrowException_WhenRepositoryThrowsException() {
+        // Given
+        UUID userId = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+        when(friendshipRepository.existsBidirectionally(userId, friendId)).thenReturn(true);
+        doThrow(new DataAccessException("Database error") {}).when(friendshipRepository).deleteBidirectionally(userId, friendId);
+
+        // When & Then
+        assertThrows(DataAccessException.class, () -> userService.removeFriendshipBetweenUsers(userId, friendId));
+    }
+
+    @Test
     void updateUser_ShouldReturnUpdatedUser_WhenValidInput() {
         // Given
         UUID userId = UUID.randomUUID();

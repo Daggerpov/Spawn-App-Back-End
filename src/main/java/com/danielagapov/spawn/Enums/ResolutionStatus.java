@@ -6,5 +6,7 @@ public enum ResolutionStatus {
     FALSE,
     BAN,
     SUSPENSION,
-    WARN
+    WARN,
+    IN_PROGRESS,
+    RESOLVED
 }

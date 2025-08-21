@@ -60,6 +60,30 @@ public class UserController {
         }
     }
 
+    // full path: /api/v1/users/friends/{userId}/{friendId}
+    @DeleteMapping("friends/{userId}/{friendId}")
+    public ResponseEntity<Void> removeFriendship(@PathVariable UUID userId, @PathVariable UUID friendId) {
+        if (userId == null || friendId == null) {
+            logger.error("Invalid parameters: userId or friendId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        if (userId.equals(friendId)) {
+            logger.error("Invalid parameters: userId and friendId cannot be the same");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            userService.removeFriendshipBetweenUsers(userId, friendId);
+            logger.info("Successfully removed friendship between users: " + LoggingUtils.formatUserIdInfo(userId) + " and " + LoggingUtils.formatUserIdInfo(friendId));
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for friendship removal: " + LoggingUtils.formatUserIdInfo(userId) + " or " + LoggingUtils.formatUserIdInfo(friendId) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error removing friendship between users: " + LoggingUtils.formatUserIdInfo(userId) + " and " + LoggingUtils.formatUserIdInfo(friendId) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // full path: /api/v1/users/{id}
     @GetMapping("{id}")
     public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {

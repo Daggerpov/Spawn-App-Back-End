@@ -405,4 +405,156 @@ class UserControllerTests {
         // Assert - Verify no sensitive information is logged (user ID is anonymized)
         verify(logger, never()).error(contains(userId.toString()));
     }
+
+    // MARK: - DELETE Remove Friendship Tests
+
+    @Test
+    void removeFriendship_ShouldReturnNoContent_WhenFriendshipRemovedSuccessfully() throws Exception {
+        // Arrange
+        doNothing().when(userService).removeFriendshipBetweenUsers(userId, friendId1);
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, friendId1))
+                .andExpect(status().isNoContent());
+
+        verify(userService).removeFriendshipBetweenUsers(userId, friendId1);
+        verify(logger).info(contains("Successfully removed friendship between users"));
+    }
+
+    @Test
+    void removeFriendship_ShouldReturnBadRequest_WhenUserIdIsNull() throws Exception {
+        // Act & Assert - Spring automatically handles UUID conversion
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", "invalid-uuid", friendId1))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void removeFriendship_ShouldReturnBadRequest_WhenFriendIdIsNull() throws Exception {
+        // Act & Assert
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, "invalid-uuid"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void removeFriendship_ShouldReturnNotFound_WhenUserNotFound() throws Exception {
+        // Arrange
+        BaseNotFoundException exception = new BaseNotFoundException(EntityType.User);
+        doThrow(exception).when(userService).removeFriendshipBetweenUsers(userId, friendId1);
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, friendId1))
+                .andExpect(status().isNotFound());
+
+        verify(logger).error(contains("User not found for friendship removal"));
+    }
+
+    @Test
+    void removeFriendship_ShouldReturnInternalServerError_WhenServiceThrowsException() throws Exception {
+        // Arrange
+        doThrow(new RuntimeException("Database error")).when(userService).removeFriendshipBetweenUsers(userId, friendId1);
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, friendId1))
+                .andExpect(status().isInternalServerError());
+
+        verify(logger).error(contains("Error removing friendship between users"));
+    }
+
+    @Test
+    void removeFriendship_DirectCall_ShouldReturnNoContent_WhenServiceSucceeds() {
+        // Arrange
+        doNothing().when(userService).removeFriendshipBetweenUsers(userId, friendId1);
+
+        // Act
+        ResponseEntity<Void> response = userController.removeFriendship(userId, friendId1);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNull(response.getBody());
+        verify(userService).removeFriendshipBetweenUsers(userId, friendId1);
+        verify(logger).info(contains("Successfully removed friendship between users"));
+    }
+
+    @Test
+    void removeFriendship_DirectCall_ShouldReturnBadRequest_WhenUserIdIsNull() {
+        // Act
+        ResponseEntity<Void> response = userController.removeFriendship(null, friendId1);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(logger).error("Invalid parameters: userId or friendId is null");
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void removeFriendship_DirectCall_ShouldReturnBadRequest_WhenFriendIdIsNull() {
+        // Act
+        ResponseEntity<Void> response = userController.removeFriendship(userId, null);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(logger).error("Invalid parameters: userId or friendId is null");
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void removeFriendship_DirectCall_ShouldReturnBadRequest_WhenUserIdsAreTheSame() {
+        // Act
+        ResponseEntity<Void> response = userController.removeFriendship(userId, userId);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(logger).error("Invalid parameters: userId and friendId cannot be the same");
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void removeFriendship_DirectCall_ShouldReturnNotFound_WhenUserNotFound() {
+        // Arrange
+        BaseNotFoundException exception = new BaseNotFoundException(EntityType.User);
+        doThrow(exception).when(userService).removeFriendshipBetweenUsers(userId, friendId1);
+
+        // Act
+        ResponseEntity<Void> response = userController.removeFriendship(userId, friendId1);
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        verify(logger).error(contains("User not found for friendship removal"));
+    }
+
+    @Test
+    void removeFriendship_DirectCall_ShouldReturnInternalServerError_WhenServiceFails() {
+        // Arrange
+        doThrow(new RuntimeException("Database error")).when(userService).removeFriendshipBetweenUsers(userId, friendId1);
+
+        // Act
+        ResponseEntity<Void> response = userController.removeFriendship(userId, friendId1);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        verify(logger).error(contains("Error removing friendship between users"));
+    }
+
+    @Test
+    void removeFriendship_ShouldHandleConcurrentRequests_WhenMultipleRequestsSimultaneously() {
+        // Arrange
+        doNothing().when(userService).removeFriendshipBetweenUsers(userId, friendId1);
+
+        // Act - Make multiple concurrent calls
+        ResponseEntity<Void> response1 = userController.removeFriendship(userId, friendId1);
+        ResponseEntity<Void> response2 = userController.removeFriendship(userId, friendId1);
+        ResponseEntity<Void> response3 = userController.removeFriendship(userId, friendId1);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response1.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response2.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response3.getStatusCode());
+        
+        // Verify service was called for each request
+        verify(userService, times(3)).removeFriendshipBetweenUsers(userId, friendId1);
+    }
 }
