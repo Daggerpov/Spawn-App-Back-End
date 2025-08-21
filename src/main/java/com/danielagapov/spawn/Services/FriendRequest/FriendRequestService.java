@@ -176,7 +176,7 @@ public class FriendRequestService implements IFriendRequestService {
             List<FetchFriendRequestDTO> result = validFriendRequests.stream()
                     .map(fr -> {
                         FetchFriendRequestDTO dto = FetchFriendRequestMapper.toDTO(fr,
-                                userService.getMutualFriendCount(id, fr.getSender().getId()));
+                        userService.getMutualFriendCount(id, fr.getSender().getId()));
                         logger.info("Debug: Created DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId());
                         return dto;
                     })

@@ -202,6 +202,23 @@ public class ChatMessageService implements IChatMessageService {
             throw e;
         }
     }
+    
+    @Override
+    public List<Object[]> getChatMessageIdsByActivityIds(List<UUID> activityIds) {
+        try {
+            if (activityIds.isEmpty()) {
+                return List.of();
+            }
+            // Use the batch query from repository
+            return chatMessageRepository.findChatMessageIdsByActivityIds(activityIds);
+        } catch (DataAccessException e) {
+            logger.error("Error fetching chat message IDs for activities: " + e.getMessage());
+            throw new BasesNotFoundException(EntityType.ChatMessage);
+        } catch (Exception e) {
+            logger.error("Error fetching chat message IDs for activities: " + e.getMessage());
+            throw e;
+        }
+    }
 
 
     @Override
