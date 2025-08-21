@@ -13,23 +13,19 @@ import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-// Removed FriendTagMapper usage due to friendship refactor
 import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Models.Friendship;
 import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendshipRepository;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Repositories.User.IUserIdExternalIdMapRepository;
+import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
- 
 import com.danielagapov.spawn.Services.S3.IS3Service;
 import com.danielagapov.spawn.Services.UserSearch.IUserSearchService;
 import com.danielagapov.spawn.Util.LoggingUtils;
 import com.danielagapov.spawn.Util.PhoneNumberMatchingUtil;
-import com.danielagapov.spawn.Util.PhoneNumberValidator;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,7 +49,7 @@ public class UserService implements IUserService {
     private final IUserRepository repository;
     private final IActivityUserRepository activityUserRepository;
     private final IFriendshipRepository friendshipRepository;
- 
+
     private final IS3Service s3Service;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
@@ -69,7 +65,7 @@ public class UserService implements IUserService {
     public UserService(IUserRepository repository,
                        IActivityUserRepository activityUserRepository,
                        IFriendshipRepository friendshipRepository,
-                       
+
                        IS3Service s3Service, ILogger logger,
                        IUserSearchService userSearchService,
                        CacheManager cacheManager,
@@ -215,7 +211,7 @@ public class UserService implements IUserService {
 
             // OAuth mappings will be automatically deleted by database cascade deletion
             // Removing explicit deletion to avoid race conditions during concurrent OAuth operations
-            
+
             repository.deleteById(id);
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
         } catch (Exception e) {
@@ -306,7 +302,9 @@ public class UserService implements IUserService {
             UUID aId = userId;
             UUID bId = friendId;
             if (aId.compareTo(bId) > 0) {
-                UUID tmp = aId; aId = bId; bId = tmp;
+                UUID tmp = aId;
+                aId = bId;
+                bId = tmp;
             }
 
             // If already friends, no-op
@@ -354,7 +352,7 @@ public class UserService implements IUserService {
             List<BaseUserDTO> participants = activityUsers.stream()
                     .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
                     .collect(Collectors.toList());
-            
+
             // Filter out admin user from activity participants
             return filterOutAdminFromBaseUserDTOs(participants);
         } catch (Exception e) {
@@ -371,7 +369,7 @@ public class UserService implements IUserService {
             List<BaseUserDTO> invitedUsers = activityUsers.stream()
                     .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
                     .collect(Collectors.toList());
-            
+
             // Filter out admin user from activity invitees
             return filterOutAdminFromBaseUserDTOs(invitedUsers);
         } catch (Exception e) {
@@ -407,9 +405,6 @@ public class UserService implements IUserService {
             throw new ApplicationException("Error retrieving invited user IDs for activityId " + activityId, e);
         }
     }
-
-
-
 
 
     @Override
@@ -503,12 +498,12 @@ public class UserService implements IUserService {
         try {
             // Get the friend IDs
             List<UUID> friendIds = getFriendUserIdsByUserId(requestingUserId);
-            
+
             // Fetch and return the user entities
             if (!friendIds.isEmpty()) {
                 return repository.findAllById(friendIds);
             }
-            
+
             return List.of();
         } catch (Exception e) {
             logger.error("Error retrieving friend users by user ID: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ": " + e.getMessage());
@@ -519,12 +514,14 @@ public class UserService implements IUserService {
     @Override
     public int getMutualFriendCount(UUID userId1, UUID userId2) {
         try {
-            // Use efficient database-level query instead of fetching and processing in memory
-            return uftRepository.getMutualFriendCount(userId1, userId2);
+            List<UUID> user1Friends = new ArrayList<>(getFriendUserIdsByUserId(userId1));
+            List<UUID> user2Friends = getFriendUserIdsByUserId(userId2);
+
+            // Create a mutable copy of user1Friends and retain only elements that are also in user2Friends
+            user1Friends.retainAll(user2Friends);
+            return user1Friends.size();
         } catch (Exception e) {
-            logger.error("Error calculating mutual friend count between users " + 
-                        LoggingUtils.formatUserIdInfo(userId1) + " and " + 
-                        LoggingUtils.formatUserIdInfo(userId2) + ": " + e.getMessage());
+            logger.error(e.getMessage());
             throw e;
         }
     }
@@ -534,12 +531,12 @@ public class UserService implements IUserService {
         try {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-            
+
             // Hide admin user from front-end
             if (isAdminUser(user)) {
                 throw new BaseNotFoundException(EntityType.User, id);
             }
-            
+
             return UserMapper.toDTO(user);
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -635,9 +632,9 @@ public class UserService implements IUserService {
         try {
             return friendshipRepository.existsBidirectionally(userId, potentialFriendId);
         } catch (Exception e) {
-            logger.error("Error checking if user is friend of user: " + 
-                         LoggingUtils.formatUserIdInfo(userId) + " and " + 
-                         LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
+            logger.error("Error checking if user is friend of user: " +
+                    LoggingUtils.formatUserIdInfo(userId) + " and " +
+                    LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
             throw e;
         }
     }
@@ -647,12 +644,12 @@ public class UserService implements IUserService {
         try {
             User user = getUserEntityById(userId);
             return new UserProfileInfoDTO(
-                user.getId(),
-                user.getName(),
-                user.getUsername(),
-                user.getBio(),
-                user.getProfilePictureUrlString(),
-                user.getDateCreated()
+                    user.getId(),
+                    user.getName(),
+                    user.getUsername(),
+                    user.getBio(),
+                    user.getProfilePictureUrlString(),
+                    user.getDateCreated()
             );
         } catch (Exception e) {
             logger.error("Error getting user profile info: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -682,63 +679,63 @@ public class UserService implements IUserService {
     public List<BaseUserDTO> findUsersByPhoneNumbers(List<String> phoneNumbers, UUID requestingUserId) {
         try {
             logger.info("Finding users by phone numbers for contact cross-reference. Phone numbers count: " + phoneNumbers.size() + ", requesting user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
-            
+
             // Debug: Log all incoming phone numbers
             logger.info("🔍 INCOMING PHONE NUMBERS:");
             for (int i = 0; i < phoneNumbers.size(); i++) {
                 logger.info("  [" + i + "] Original: '" + phoneNumbers.get(i) + "'");
             }
-            
+
             // Generate all possible search variants for flexible matching
             // This allows us to find matches even when numbers are stored in different formats
             List<String> searchVariants = PhoneNumberMatchingUtil.getSearchVariants(phoneNumbers);
-            
+
             logger.info("🔄 GENERATED " + searchVariants.size() + " SEARCH VARIANTS:");
             searchVariants.forEach(variant -> logger.info("  - '" + variant + "'"));
-            
+
             if (searchVariants.isEmpty()) {
                 logger.info("❌ No valid phone number variants to search for");
                 return Collections.emptyList();
             }
-            
+
             // Use database query with all variants instead of loading all users into memory
             List<User> matchingUsers = repository.findByPhoneNumberIn(searchVariants);
-            
+
             logger.info("📞 FOUND " + matchingUsers.size() + " USERS WITH MATCHING PHONE NUMBERS");
             matchingUsers.forEach(user -> {
                 String displayPhone = user.getOptionalPhoneNumber().orElse("(no phone)");
                 logger.info("  - User: " + user.getDisplayName() + " (" + user.getOptionalUsername().orElse("no username") + ") with phone: " + displayPhone);
             });
-            
+
             // Filter out the requesting user, admin users, and inactive users
             List<User> filteredUsers = matchingUsers.stream()
-                .distinct()
-                .filter(user -> {
-                    boolean keep = !user.getId().equals(requestingUserId) && 
-                                  !isAdminUser(user) && 
-                                  user.getStatus() == UserStatus.ACTIVE &&
-                                  user.getOptionalPhoneNumber().isPresent(); // Ensure phone number is actually present
-                    
-                    if (!keep) {
-                        String reason = user.getId().equals(requestingUserId) ? "requesting user" :
-                                       isAdminUser(user) ? "admin user" :
-                                       user.getStatus() != UserStatus.ACTIVE ? "inactive status: " + user.getStatus() :
-                                       !user.getOptionalPhoneNumber().isPresent() ? "no valid phone number" : "unknown";
-                        logger.info("🚫 FILTERED OUT USER: " + user.getDisplayName() + " (reason: " + reason + ")");
-                    }
-                    return keep;
-                })
-                .collect(Collectors.toList());
-            
+                    .distinct()
+                    .filter(user -> {
+                        boolean keep = !user.getId().equals(requestingUserId) &&
+                                !isAdminUser(user) &&
+                                user.getStatus() == UserStatus.ACTIVE &&
+                                user.getOptionalPhoneNumber().isPresent(); // Ensure phone number is actually present
+
+                        if (!keep) {
+                            String reason = user.getId().equals(requestingUserId) ? "requesting user" :
+                                    isAdminUser(user) ? "admin user" :
+                                            user.getStatus() != UserStatus.ACTIVE ? "inactive status: " + user.getStatus() :
+                                                    !user.getOptionalPhoneNumber().isPresent() ? "no valid phone number" : "unknown";
+                            logger.info("🚫 FILTERED OUT USER: " + user.getDisplayName() + " (reason: " + reason + ")");
+                        }
+                        return keep;
+                    })
+                    .collect(Collectors.toList());
+
             logger.info("✅ FINAL RESULT: Found " + filteredUsers.size() + " matching users for contact cross-reference");
             filteredUsers.forEach(user -> {
                 String displayPhone = user.getOptionalPhoneNumber().orElse("(no phone)");
                 logger.info("  - FINAL: " + user.getDisplayName() + " (" + user.getOptionalUsername().orElse("no username") + ") with phone: " + displayPhone);
             });
-            
+
             // Convert to DTOs
             return UserMapper.toDTOList(filteredUsers);
-            
+
         } catch (Exception e) {
             logger.error("Error finding users by phone numbers for user: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ": " + e.getMessage());
             throw e;

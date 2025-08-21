@@ -1,7 +1,6 @@
 package com.danielagapov.spawn.Repositories;
 
 import com.danielagapov.spawn.Models.ChatMessage;
-import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,9 +14,6 @@ public interface IChatMessageRepository extends JpaRepository<ChatMessage, UUID>
     
     @Query("SELECT cm FROM ChatMessage cm WHERE cm.activity.id = :activityId ORDER BY cm.timestamp DESC")
     List<ChatMessage> getChatMessagesByActivityIdOrderByTimestampDesc(@Param("activityId") UUID activityId);
-    
-    @Query("SELECT cm FROM ChatMessage cm WHERE cm.activity.id = :activityId ORDER BY cm.timestamp DESC")
-    List<ChatMessage> getChatMessagesByActivityIdOrderByTimestampDesc(@Param("activityId") UUID activityId, Limit limit);
     
     /**
      * Batch query to get chat message IDs for multiple activities at once.
