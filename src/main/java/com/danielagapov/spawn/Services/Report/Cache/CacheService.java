@@ -5,6 +5,7 @@ import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ProfileActivityDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserStatsDTO;
@@ -552,7 +553,7 @@ public class CacheService implements ICacheService {
             if (needsUpdate) {
                 // Include updated data if possible to save an extra API call
                 try {
-                    List<FetchFriendRequestDTO> sentFriendRequests =
+                    List<FetchSentFriendRequestDTO> sentFriendRequests =
                             friendRequestService.getSentFetchFriendRequestsByUserId(user.getId());
                     byte[] requestsData = objectMapper.writeValueAsBytes(sentFriendRequests);
 
@@ -839,9 +840,7 @@ public class CacheService implements ICacheService {
                 cacheManager.getCache("ActivitiesByOwnerId").evict(userId);
             }
             
-            if (cacheManager.getCache("filteredFeedActivities") != null) {
-                cacheManager.getCache("filteredFeedActivities").clear(); // Clear all entries as keys are complex
-            }
+            // filteredFeedActivities cache removed in friendship refactor
             
             if (cacheManager.getCache("ActivitiesInvitedTo") != null) {
                 cacheManager.getCache("ActivitiesInvitedTo").evict(userId);

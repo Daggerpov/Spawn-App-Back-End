@@ -92,7 +92,6 @@ public class S3Service implements IS3Service {
                     file == null ? DEFAULT_PFP : putObject(file),
                     user.getName(),
                     user.getBio(),
-                    user.getFriendTagIds(),
                     user.getEmail()
             );
         } catch (Exception e) {

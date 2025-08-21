@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityInviteDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
-import com.danielagapov.spawn.DTOs.FriendTag.FriendTagDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 
@@ -27,7 +26,7 @@ import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Activity.ActivityService;
-import com.danielagapov.spawn.Services.FriendTag.FriendTagService;
+ 
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,9 +77,6 @@ public class ActivityServiceTests {
 
     @Mock
     private IUserService userService;
-
-    @Mock
-    private FriendTagService friendTagService;
 
     @Mock
     private IChatMessageService chatMessageService;
@@ -269,9 +265,9 @@ public class ActivityServiceTests {
     @Test
     void createActivity_Successful() {
         UUID creatorId = UUID.randomUUID();
-        UUID friendTagId = UUID.randomUUID();
+        // Friend tag functionality removed - activities now invite friends directly
         UUID explicitInviteId = UUID.randomUUID();
-        UUID friendTagUserId = UUID.randomUUID();
+        // Friend tag functionality removed
 
         LocationDTO locationDTO = new LocationDTO(null, "Test Location", 0.0, 0.0);
         ActivityDTO creationDTO = new ActivityDTO(
@@ -350,9 +346,9 @@ public class ActivityServiceTests {
     }
 
     @Test
-    void createActivity_Successful_WithFriendTagInvites() {
+    void createActivity_Successful_WithFriendInvites() {
         UUID creatorId = UUID.randomUUID();
-        UUID friendTagId = UUID.randomUUID();
+        // Friend tag functionality removed - activities now invite friends directly
         UUID commonUserId = UUID.randomUUID();
 
         ActivityDTO creationDTO = new ActivityDTO(
@@ -591,17 +587,14 @@ public class ActivityServiceTests {
         ActivityDTO ActivityDTO = dummyActivityDTO(ActivityId, "Test Activity");
         UUID requestingUserId = UUID.randomUUID();
 
-        UserDTO creator = new UserDTO(ActivityDTO.getCreatorUserId(), List.of(), "testuser", "pic.jpg", "Test User", "bio", List.of(), "test@email.com");
+        UserDTO creator = new UserDTO(ActivityDTO.getCreatorUserId(), List.of(), "testuser", "pic.jpg", "Test User", "bio", "test@email.com");
         when(userService.getUserById(ActivityDTO.getCreatorUserId())).thenReturn(creator);
 
         when(userService.getParticipantsByActivityId(ActivityId)).thenReturn(List.of());
         when(userService.getInvitedByActivityId(ActivityId)).thenReturn(List.of());
         when(chatMessageService.getFullChatMessagesByActivityId(ActivityId)).thenReturn(List.of());
 
-        FriendTagDTO friendTag = mock(FriendTagDTO.class);
-        when(friendTag.getColorHexCode()).thenReturn("#FF0000");
-        when(friendTagService.getPertainingFriendTagBetweenUsers(requestingUserId, ActivityDTO.getCreatorUserId()))
-                .thenReturn(Optional.of(friendTag));
+        
 
         FullFeedActivityDTO result = ActivityService.getFullActivityByActivity(ActivityDTO, requestingUserId, new HashSet<>());
 

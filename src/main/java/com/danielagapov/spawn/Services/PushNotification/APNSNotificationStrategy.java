@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collection;
+
 import java.util.Map;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,8 +79,13 @@ public class APNSNotificationStrategy implements NotificationStrategy {
                 logger.error("APNS certificate validation failed. Notifications may not be delivered.");
             }
             
-            // Check for device tokens that need to be removed
-            checkForInvalidDeviceTokens();
+            // Check for device tokens that need to be removed (only in production to avoid dev warnings)
+            if (apnsProduction) {
+                logger.info("Checking for invalid device tokens in production mode");
+                checkForInvalidDeviceTokens();
+            } else {
+                logger.info("Skipping invalid device token check in development mode to avoid feedback service warnings");
+            }
             
         } catch (Exception e) {
             logger.error("Error initializing APNS service: " + e.getMessage());
@@ -88,24 +93,36 @@ public class APNSNotificationStrategy implements NotificationStrategy {
     }
 
     private boolean validateApnsConnection() {
+        // Skip feedback service validation in non-production environments to avoid warnings
+        if (!apnsProduction) {
+            logger.info("Skipping APNS feedback service validation in development mode");
+            return true; // Consider valid in development mode
+        }
+        
         try {
-            // Improved validation - attempt to access the feedback service
+            // Only attempt to access the feedback service in production
             apnsService.getInactiveDevices();
             return true;
         } catch (Exception e) {
-            logger.error("APNS connection validation failed: " + e.getMessage());
+            logger.error("APNS connection validation failed in production: " + e.getMessage());
             return false;
         }
     }
     
     private void checkForInvalidDeviceTokens() {
+        // Only run this in production to avoid feedback service connection warnings
+        if (!apnsProduction) {
+            logger.info("Skipping invalid device token check - not in production mode");
+            return;
+        }
+        
         try {
             // Get map of tokens and timestamps when they became invalid
             Map<String, Date> inactiveDevices;
             try {
                 inactiveDevices = apnsService.getInactiveDevices();
             } catch (Exception e) {
-                logger.warn("Could not get inactive devices: " + e.getMessage());
+                logger.warn("Could not get inactive devices in production: " + e.getMessage());
                 return;
             }
             

@@ -80,7 +80,7 @@ class ActivityTypeServiceTests {
         chillActivityType.setTitle("Chill");
         chillActivityType.setIcon("🛋️");
         chillActivityType.setCreator(testUser);
-        chillActivityType.setOrderNum(0);
+        chillActivityType.setOrderNum(1);
         chillActivityType.setAssociatedFriends(List.of());
         chillActivityType.setIsPinned(false);
         
@@ -89,7 +89,7 @@ class ActivityTypeServiceTests {
         foodActivityType.setTitle("Food");
         foodActivityType.setIcon("🍽️");
         foodActivityType.setCreator(testUser);
-        foodActivityType.setOrderNum(1);
+        foodActivityType.setOrderNum(2);
         foodActivityType.setAssociatedFriends(List.of());
         foodActivityType.setIsPinned(true); // This one is pinned
         
@@ -98,7 +98,7 @@ class ActivityTypeServiceTests {
         activeActivityType.setTitle("Active");
         activeActivityType.setIcon("🏃");
         activeActivityType.setCreator(testUser);
-        activeActivityType.setOrderNum(2);
+        activeActivityType.setOrderNum(3);
         activeActivityType.setAssociatedFriends(List.of());
         activeActivityType.setIsPinned(false);
         
@@ -108,7 +108,7 @@ class ActivityTypeServiceTests {
             "Chill",
             List.of(),
             "🛋️",
-            0,
+            1,
             userId,
             false
         );
@@ -118,7 +118,7 @@ class ActivityTypeServiceTests {
             "Food",
             List.of(),
             "🍽️",
-            1,
+            2,
             userId,
             true
         );
@@ -128,7 +128,7 @@ class ActivityTypeServiceTests {
             "Active",
             List.of(),
             "🏃",
-            2,
+            3,
             userId,
             false
         );
@@ -188,9 +188,9 @@ class ActivityTypeServiceTests {
             "Chill",
             List.of(),
             "🛋️",
-            0,
+            1, // Toggled to pinned
             userId,
-            true // Toggled to pinned
+            true
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -221,7 +221,7 @@ class ActivityTypeServiceTests {
             "Active",
             List.of(),
             "🏃",
-            0, // Moved to first position
+            1, // Moved to first position
             userId,
             false
         );
@@ -231,7 +231,7 @@ class ActivityTypeServiceTests {
             "Chill",
             List.of(),
             "🛋️",
-            1, // Moved to second position
+            2, // Moved to second position
             userId,
             false
         );
@@ -241,7 +241,7 @@ class ActivityTypeServiceTests {
             "Food",
             List.of(),
             "🍽️",
-            2, // Moved to third position
+            3, // Moved to third position
             userId,
             true
         );
@@ -277,7 +277,7 @@ class ActivityTypeServiceTests {
             "Study",
             List.of(),
             "✏️",
-            3, // Next order number
+            4, // Next order number
             userId,
             false
         );
@@ -292,7 +292,7 @@ class ActivityTypeServiceTests {
         newStudyActivityType.setTitle("Study");
         newStudyActivityType.setIcon("✏️");
         newStudyActivityType.setCreator(testUser);
-        newStudyActivityType.setOrderNum(3);
+        newStudyActivityType.setOrderNum(4);
         newStudyActivityType.setIsPinned(false);
 
         when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L);
@@ -343,15 +343,15 @@ class ActivityTypeServiceTests {
         UUID newStudyId = UUID.randomUUID();
         
         ActivityTypeDTO newStudyDTO = new ActivityTypeDTO(
-            newStudyId, "Study", List.of(), "✏️", 0, userId, false
+            newStudyId, "Study", List.of(), "✏️", 1, userId, false
         );
         
         ActivityTypeDTO modifiedChillDTO = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true // Pinned and reordered
+            activityTypeId1, "Chill", List.of(), "🛋️", 2, userId, true // Pinned and reordered
         );
         
         ActivityTypeDTO modifiedFoodDTO = new ActivityTypeDTO(
-            activityTypeId2, "Food & Drinks", List.of(), "🍽️", 2, userId, true // Title changed and reordered
+            activityTypeId2, "Food & Drinks", List.of(), "🍽️", 3, userId, true // Title changed and reordered
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -398,7 +398,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldThrowException_WhenUserNotFound() {
         // Arrange
         ActivityTypeDTO modifiedDTO = new ActivityTypeDTO(
-            activityTypeId1, "Modified", List.of(), "🛋️", 0, userId, false
+            activityTypeId1, "Modified", List.of(), "🛋️", 1, userId, false
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -446,7 +446,7 @@ class ActivityTypeServiceTests {
     }
     
     @Test
-    void setOrderNumber_ShouldSetZero_WhenUserHasNoActivityTypes() {
+    void setOrderNumber_ShouldSetOne_WhenUserHasNoActivityTypes() {
         // Arrange - New user with no activity types
         when(activityTypeRepository.findMaxOrderNumberByCreatorId(userId)).thenReturn(null);
 
@@ -457,7 +457,7 @@ class ActivityTypeServiceTests {
         activityTypeService.setOrderNumber(newActivityType);
 
         // Assert
-        assertEquals(0, newActivityType.getOrderNum()); // Should start at 0
+        assertEquals(1, newActivityType.getOrderNum()); // Should start at 1
         verify(activityTypeRepository, times(1)).findMaxOrderNumberByCreatorId(userId);
     }
 
@@ -466,12 +466,12 @@ class ActivityTypeServiceTests {
     @Test
     void batchUpdate_ShouldThrowValidationException_WhenTooManyPinnedActivityTypes() {
         // Arrange - User tries to pin 4 activity types (exceeds limit of 3)
-        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, true);
-        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 1, userId, true);
-        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 2, userId, true);
+        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true);
+        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true);
+        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, true);
         
         UUID newId = UUID.randomUUID();
-        ActivityTypeDTO pinned4 = new ActivityTypeDTO(newId, "Study", List.of(), "✏️", 3, userId, true);
+        ActivityTypeDTO pinned4 = new ActivityTypeDTO(newId, "Study", List.of(), "✏️", 4, userId, true);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(pinned1, pinned2, pinned3, pinned4),
@@ -493,9 +493,9 @@ class ActivityTypeServiceTests {
     @Test
     void batchUpdate_ShouldAllowMaximumPinnedActivityTypes_WhenExactlyThreePinned() {
         // Arrange - User has exactly 3 pinned activity types (should be allowed)
-        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, true);
-        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 1, userId, true);
-        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 2, userId, true);
+        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true);
+        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true);
+        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, true);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(pinned1, pinned2, pinned3),
@@ -519,8 +519,8 @@ class ActivityTypeServiceTests {
     
     @Test
     void batchUpdate_ShouldThrowValidationException_WhenOrderNumTooLow() {
-        // Arrange - User sets orderNum to -1 (invalid)
-        ActivityTypeDTO invalidOrderDTO = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", -1, userId, false);
+        // Arrange - User sets orderNum to 0 (invalid)
+        ActivityTypeDTO invalidOrderDTO = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(invalidOrderDTO),
@@ -535,15 +535,15 @@ class ActivityTypeServiceTests {
         ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
                 () -> activityTypeService.updateActivityTypes(userId, batchDTO));
 
-        assertTrue(exception.getMessage().contains("Invalid orderNum -1"));
-        assertTrue(exception.getMessage().contains("Must be in range [0, 2]"));
+        assertTrue(exception.getMessage().contains("Invalid orderNum 0"));
+        assertTrue(exception.getMessage().contains("Must be in range [1, 3]"));
         verify(activityTypeRepository, never()).saveAll(anyList());
     }
     
     @Test
     void batchUpdate_ShouldThrowValidationException_WhenOrderNumTooHigh() {
-        // Arrange - User sets orderNum to 3 when only 3 activity types exist (valid range is 0-2)
-        ActivityTypeDTO invalidOrderDTO = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 3, userId, false);
+        // Arrange - User sets orderNum to 5 when only 3 activity types exist (valid range is 1-3; 4 is allowed as append-to-end)
+        ActivityTypeDTO invalidOrderDTO = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 5, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(invalidOrderDTO),
@@ -558,16 +558,16 @@ class ActivityTypeServiceTests {
         ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
                 () -> activityTypeService.updateActivityTypes(userId, batchDTO));
 
-        assertTrue(exception.getMessage().contains("Invalid orderNum 3"));
-        assertTrue(exception.getMessage().contains("Must be in range [0, 2]"));
+        assertTrue(exception.getMessage().contains("Invalid orderNum 5"));
+        assertTrue(exception.getMessage().contains("Must be in range [1, 3]"));
         verify(activityTypeRepository, never()).saveAll(anyList());
     }
     
     @Test
     void batchUpdate_ShouldThrowValidationException_WhenDuplicateOrderNums() {
-        // Arrange - User sets duplicate orderNum values (both set to 1)
-        ActivityTypeDTO duplicate1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false);
-        ActivityTypeDTO duplicate2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 1, userId, false); // Same orderNum
+        // Arrange - User sets duplicate orderNum values (both set to 2)
+        ActivityTypeDTO duplicate1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 2, userId, false);
+        ActivityTypeDTO duplicate2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, false); // Same orderNum
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(duplicate1, duplicate2),
@@ -590,9 +590,9 @@ class ActivityTypeServiceTests {
     @Test
     void batchUpdate_ShouldAllowValidOrderNum_WhenInCorrectRange() {
         // Arrange - User sets valid orderNum values
-        ActivityTypeDTO validOrder1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false);
-        ActivityTypeDTO validOrder2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 1, userId, false);
-        ActivityTypeDTO validOrder3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 2, userId, false);
+        ActivityTypeDTO validOrder1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false);
+        ActivityTypeDTO validOrder2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, false);
+        ActivityTypeDTO validOrder3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(validOrder1, validOrder2, validOrder3),
@@ -624,8 +624,8 @@ class ActivityTypeServiceTests {
         UUID newId1 = UUID.randomUUID();
         UUID newId2 = UUID.randomUUID();
         
-        ActivityTypeDTO newPinned1 = new ActivityTypeDTO(newId1, "Study", List.of(), "✏️", 1, userId, true);
-        ActivityTypeDTO newPinned2 = new ActivityTypeDTO(newId2, "Sports", List.of(), "⚽", 3, userId, true);
+        ActivityTypeDTO newPinned1 = new ActivityTypeDTO(newId1, "Study", List.of(), "✏️", 2, userId, true);
+        ActivityTypeDTO newPinned2 = new ActivityTypeDTO(newId2, "Sports", List.of(), "⚽", 4, userId, true);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(newPinned1, newPinned2),
@@ -657,13 +657,13 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleMultiPhaseUpdate_WhenExistingActivityTypesReordered() {
         // Arrange - Simulate the exact reordering scenario that caused constraint violation
         ActivityTypeDTO reorderedChill = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false
         );
         ActivityTypeDTO reorderedFood = new ActivityTypeDTO(
-            activityTypeId2, "Food", List.of(), "🍽️", 1, userId, true
+            activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true
         );
         ActivityTypeDTO reorderedActive = new ActivityTypeDTO(
-            activityTypeId3, "Active", List.of(), "🏃", 2, userId, false
+            activityTypeId3, "Active", List.of(), "🏃", 3, userId, false
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -703,9 +703,9 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldSeparateNewAndExistingTypes_WhenMixedBatchUpdate() {
         // Arrange - Mix of new and existing activity types
         UUID newId = UUID.randomUUID();
-        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "Study", List.of(), "✏️", 3, userId, false);
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "Study", List.of(), "✏️", 1, userId, false);
         ActivityTypeDTO existingType = new ActivityTypeDTO(
-            activityTypeId1, "Chill Updated", List.of(), "🛋️", 0, userId, true
+            activityTypeId1, "Chill Updated", List.of(), "🛋️", 1, userId, true
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -743,7 +743,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleConstraintViolationGracefully_WhenDatabaseConstraintFails() {
         // Arrange - Simulate database constraint violation during two-phase update
         ActivityTypeDTO reorderedType = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -786,12 +786,12 @@ class ActivityTypeServiceTests {
             entity.setTitle("Type " + i);
             entity.setIcon("🎯");
             entity.setCreator(testUser);
-            entity.setOrderNum(i);
+            entity.setOrderNum(i + 1);
             entity.setIsPinned(false);
             manyActivityTypes.add(entity);
             
             // Create reordered DTO (reverse order)
-            ActivityTypeDTO dto = new ActivityTypeDTO(id, "Type " + i, List.of(), "🎯", 9-i, userId, false);
+            ActivityTypeDTO dto = new ActivityTypeDTO(id, "Type " + i, List.of(), "🎯", 10 - i, userId, false);
             manyActivityTypeDTOs.add(dto);
         }
         
@@ -824,7 +824,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandlePartialFailure_WhenPhase2Fails() {
         // Arrange - Simulate failure in phase 2 of multi-phase update
         ActivityTypeDTO reorderedType = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -855,10 +855,10 @@ class ActivityTypeServiceTests {
     @Test
     void batchUpdate_ShouldValidateOrderNumUniqueness_WhenConflictWithRemainingTypes() {
         // Arrange - Update only some activity types, but create orderNum conflict with remaining ones
-        // Existing: Chill(0), Food(1), Active(2)
-        // Update: only Chill to orderNum=1 (conflicts with Food)
+        // Existing: Chill(1), Food(2), Active(3)
+        // Update: only Chill to orderNum=2 (conflicts with Food)
         ActivityTypeDTO conflictingUpdate = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false // Conflicts with Food's orderNum
+            activityTypeId1, "Chill", List.of(), "🛋️", 2, userId, false // Conflicts with Food's orderNum
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -875,7 +875,7 @@ class ActivityTypeServiceTests {
         ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
                 () -> activityTypeService.updateActivityTypes(userId, batchDTO));
 
-        assertTrue(exception.getMessage().contains("orderNum 1 conflicts with existing activity type"));
+        assertTrue(exception.getMessage().contains("orderNum 2 conflicts with existing activity type"));
         verify(activityTypeRepository, never()).save(any(ActivityType.class));
         verify(activityTypeRepository, never()).saveAll(anyList());
     }
@@ -884,7 +884,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleEmptyExistingList_WhenUserHasNoActivityTypes() {
         // Arrange - User has no existing activity types, only creating new ones
         UUID newId = UUID.randomUUID();
-        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "First Type", List.of(), "🎯", 0, userId, false);
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "First Type", List.of(), "🎯", 1, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(newType),
@@ -915,7 +915,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleRepositoryFailure_WhenSaveAllFails() {
         // Arrange - Test failure in saveAll for new activity types
         UUID newId = UUID.randomUUID();
-        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "New Type", List.of(), "🎯", 0, userId, false);
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "New Type", List.of(), "🎯", 1, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
                 List.of(newType),
@@ -943,7 +943,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleConcurrentModification_WhenActivityTypeDeletedDuringUpdate() {
         // Arrange - Simulate activity type being deleted by another process during update
         ActivityTypeDTO updateType = new ActivityTypeDTO(
-            activityTypeId1, "Updated Chill", List.of(), "🛋️", 0, userId, false
+            activityTypeId1, "Updated Chill", List.of(), "🛋️", 1, userId, false
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -987,7 +987,7 @@ class ActivityTypeServiceTests {
                  new com.danielagapov.spawn.DTOs.User.BaseUserDTO(friend2Id, "Friend Two", "friend2@test.com", "friend2", "bio2", "pic2.jpg")
              ),
             "🛋️",
-            0,
+            1,
             userId,
             false
         );
@@ -1019,7 +1019,7 @@ class ActivityTypeServiceTests {
             "Chill",
             List.of(), // Empty friends list
             "🛋️",
-            0,
+            1,
             userId,
             false
         );
@@ -1053,7 +1053,7 @@ class ActivityTypeServiceTests {
             longTitle,
             List.of(),
             "🛋️",
-            0,
+            1,
             userId,
             false
         );
@@ -1087,7 +1087,7 @@ class ActivityTypeServiceTests {
             specialTitle,
             List.of(),
             "🎉",
-            0,
+            1,
             userId,
             false
         );
@@ -1119,7 +1119,7 @@ class ActivityTypeServiceTests {
             "Chill",
             List.of(),
             "🛋️",
-            0, // First position
+            1, // First position
             userId,
             true // Pin it to make it truly first
         );
@@ -1148,15 +1148,15 @@ class ActivityTypeServiceTests {
         // Arrange - Delete middle activity type creating order gap (0, 2 instead of 0, 1, 2)
         // This tests if the validation handles non-consecutive order numbers properly
         ActivityTypeDTO updatedChill = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
+            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false
         );
         ActivityTypeDTO updatedActive = new ActivityTypeDTO(
-            activityTypeId3, "Active", List.of(), "🏃", 1, userId, false // Moved from 2 to 1
+            activityTypeId3, "Active", List.of(), "🏃", 2, userId, false // Moved from 3 to 2
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
             List.of(updatedChill, updatedActive),
-            List.of(activityTypeId2) // Delete food (was at position 1)
+            List.of(activityTypeId2) // Delete food (was at position 2)
         );
 
         // Mock the initial state (3 activity types, 0 pinned)
@@ -1184,10 +1184,10 @@ class ActivityTypeServiceTests {
         UUID newId2 = UUID.randomUUID();
         
         ActivityTypeDTO duplicate1 = new ActivityTypeDTO(
-            newId1, "Study", List.of(), "📚", 0, userId, false
+            newId1, "Study", List.of(), "📚", 1, userId, false
         );
         ActivityTypeDTO duplicate2 = new ActivityTypeDTO(
-            newId2, "Study", List.of(), "✏️", 1, userId, false // Same title, different icon
+            newId2, "Study", List.of(), "✏️", 2, userId, false // Same title, different icon
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -1212,12 +1212,12 @@ class ActivityTypeServiceTests {
     @Test
     void batchUpdate_ShouldHandleBoundaryPinnedCount_WhenExactlyAtLimit() {
         // Arrange - Test exactly at the pinned limit boundary (3 pinned)
-        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, true);
-        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 1, userId, true);
-        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 2, userId, true);
+        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true);
+        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true);
+        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, true);
         
         UUID newId = UUID.randomUUID();
-        ActivityTypeDTO unpinned = new ActivityTypeDTO(newId, "Study", List.of(), "📚", 3, userId, false);
+        ActivityTypeDTO unpinned = new ActivityTypeDTO(newId, "Study", List.of(), "📚", 4, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
             List.of(pinned1, pinned2, pinned3, unpinned),
@@ -1246,7 +1246,7 @@ class ActivityTypeServiceTests {
             "Chill",
             List.of(),
             null, // Null icon
-            0,
+            1,
             userId,
             false
         );
@@ -1278,7 +1278,7 @@ class ActivityTypeServiceTests {
             "", // Empty title
             List.of(),
             "🛋️",
-            0,
+            1,
             userId,
             false
         );
@@ -1306,10 +1306,10 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleRapidFireUpdates_WhenUserMakesQuickChanges() {
         // Arrange - Simulate rapid consecutive updates (like user quickly toggling pins)
         ActivityTypeDTO quickUpdate1 = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, true // Pin
+            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true // Pin
         );
         ActivityTypeDTO quickUpdate2 = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false // Unpin
+            activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, false // Unpin
         );
         
         BatchActivityTypeUpdateDTO batchDTO1 = new BatchActivityTypeUpdateDTO(List.of(quickUpdate1), List.of());
@@ -1335,7 +1335,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleNegativeOrderNum_WhenDataCorrupted() {
         // Arrange - Test with negative order number (data corruption scenario)
         ActivityTypeDTO corruptedOrderDTO = new ActivityTypeDTO(
-            activityTypeId1, "Chill", List.of(), "🛋️", -5, userId, false
+            activityTypeId1, "Chill", List.of(), "🛋️", 0, userId, false
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -1351,7 +1351,7 @@ class ActivityTypeServiceTests {
         ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
                 () -> activityTypeService.updateActivityTypes(userId, batchDTO));
 
-        assertTrue(exception.getMessage().contains("Invalid orderNum -5"));
+        assertTrue(exception.getMessage().contains("Invalid orderNum 0"));
     }
 
     @Test
@@ -1395,7 +1395,7 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleRepositoryOptimisticLockingException_WhenConcurrentUpdate() {
         // Arrange - Simulate optimistic locking exception
         ActivityTypeDTO updateDTO = new ActivityTypeDTO(
-            activityTypeId1, "Updated Chill", List.of(), "🛋️", 0, userId, false
+            activityTypeId1, "Updated Chill", List.of(), "🛋️", 1, userId, false
         );
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
@@ -1422,8 +1422,8 @@ class ActivityTypeServiceTests {
     void batchUpdate_ShouldHandleTransactionRollback_WhenPartialUpdateFails() {
         // Arrange - Test transaction behavior when part of the update fails
         UUID newId = UUID.randomUUID();
-        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "New Type", List.of(), "🎯", 0, userId, false);
-        ActivityTypeDTO existingType = new ActivityTypeDTO(activityTypeId1, "Updated", List.of(), "🛋️", 1, userId, false);
+        ActivityTypeDTO newType = new ActivityTypeDTO(newId, "New Type", List.of(), "🎯", 1, userId, false);
+        ActivityTypeDTO existingType = new ActivityTypeDTO(activityTypeId1, "Updated", List.of(), "🛋️", 2, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
             List.of(newType, existingType),

@@ -17,7 +17,6 @@ import com.danielagapov.spawn.Repositories.*;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.ChatMessageService;
 import com.danielagapov.spawn.Services.Activity.IActivityService;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -55,9 +54,6 @@ public class ChatMessageServiceTests {
 
     @Mock
     private IActivityService ActivityService;
-
-    @Mock
-    private IFriendTagService ftService;
 
     @Mock
     private IUserRepository userRepository;
@@ -126,7 +122,6 @@ public class ChatMessageServiceTests {
                 "profile.jpg",
                 "John Doe",
                 "A bio",
-                List.of(),
                 "john.doe@example.com"
         );
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
@@ -423,9 +418,7 @@ public class ChatMessageServiceTests {
         List<ChatMessageLikes> likes = List.of(dummyLike);
         when(chatMessageLikesRepository.findByChatMessage(dummyChatMessage)).thenReturn(likes);
         List<UUID> friendIds = List.of(UUID.randomUUID());
-        List<UUID> friendTagIds = List.of(UUID.randomUUID());
         when(userService.getFriendUserIdsByUserId(dummyUser.getId())).thenReturn(friendIds);
-        when(ftService.getFriendTagIdsByOwnerUserId(dummyUser.getId())).thenReturn(friendTagIds);
         List<BaseUserDTO> result = chatMessageService.getChatMessageLikes(chatMessageId);
         assertNotNull(result);
         assertEquals(1, result.size());

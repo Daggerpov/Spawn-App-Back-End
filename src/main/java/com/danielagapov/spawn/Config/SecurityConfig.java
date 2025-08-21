@@ -1,21 +1,18 @@
 package com.danielagapov.spawn.Config;
 
-import com.danielagapov.spawn.Services.UserDetails.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -32,7 +29,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig {
-    private final UserInfoService userInfoService;
     private final JWTFilterConfig jwtFilterConfig;
     private final String[] whitelistedUrls = new String[] {
             "/api/v1/auth/refresh-token",
@@ -96,7 +92,6 @@ public class SecurityConfig {
                 // 'Stateless' session management means Spring will not create and store any session state on the server
                 // Each request is treated as 'new' and thus requires authentication (a JWT) to access secured endpoints
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilterConfig, UsernamePasswordAuthenticationFilter.class)
         ;
         return http.build();
@@ -118,21 +113,6 @@ public class SecurityConfig {
         return config.getAuthenticationManager(); // use default auth manager
     }
 
-    /**
-     * Configures the authentication provider for the application.
-     * <p>
-     * DaoAuthenticationProvider is used to authenticate users by retrieving user details
-     * from the database and validating their credentials.
-     *
-     * @return A configured DaoAuthenticationProvider instance.
-     */
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userInfoService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
 
     /**
      * Provides a password encoder bean.
@@ -147,16 +127,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Provides a UserDetailsService bean.
-     * <p>
-     * This service is responsible for loading user details from the database
-     * based on the username during authentication.
-     *
-     * @return An instance of UserDetailsService, implemented by UserInfoService.
-     */
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return userInfoService;
-    }
 }

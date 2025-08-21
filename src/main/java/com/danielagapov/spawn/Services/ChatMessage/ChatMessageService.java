@@ -26,7 +26,6 @@ import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.IChatMessageLikesRepository;
 import com.danielagapov.spawn.Repositories.IChatMessageRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
@@ -46,7 +45,6 @@ public class ChatMessageService implements IChatMessageService {
     private final IChatMessageRepository chatMessageRepository;
     private final IUserService userService;
     private final IActivityRepository ActivityRepository;
-    private final IFriendTagService ftService;
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
@@ -55,14 +53,13 @@ public class ChatMessageService implements IChatMessageService {
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IActivityRepository ActivityRepository, IChatMessageLikesRepository chatMessageLikesRepository,
-                              IFriendTagService ftService, IUserRepository userRepository, ILogger logger,
+                              IUserRepository userRepository, ILogger logger,
                               IActivityUserRepository activityUserRepository,
                               ApplicationEventPublisher eventPublisher) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
         this.ActivityRepository = ActivityRepository;
         this.chatMessageLikesRepository = chatMessageLikesRepository;
-        this.ftService = ftService;
         this.userRepository = userRepository;
         this.logger = logger;
         this.activityUserRepository = activityUserRepository;
@@ -121,8 +118,7 @@ public class ChatMessageService implements IChatMessageService {
     @Caching(evict = {
             @CacheEvict(value = "ActivityById", key = "#newChatMessageDTO.activityId"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "feedActivities", allEntries = true),
-            @CacheEvict(value = "filteredFeedActivities", allEntries = true)
+            @CacheEvict(value = "feedActivities", allEntries = true)
     })
     public FullActivityChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO) {
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
@@ -280,8 +276,7 @@ public class ChatMessageService implements IChatMessageService {
         return likes.stream()
                 .map(like -> {
                     List<UUID> friendsUserIds = userService.getFriendUserIdsByUserId(like.getUser().getId());
-                    List<UUID> friendTagIds = ftService.getFriendTagIdsByOwnerUserId(like.getUser().getId());
-                    return UserMapper.toDTO(like.getUser(), friendsUserIds, friendTagIds);
+                    return UserMapper.toDTO(like.getUser(), friendsUserIds);
                 })
                 .collect(Collectors.toList());
     }

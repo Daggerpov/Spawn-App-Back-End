@@ -16,9 +16,7 @@ import com.danielagapov.spawn.Mappers.UserMapper;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Models.User.UserIdExternalIdMap;
 import com.danielagapov.spawn.Repositories.User.IUserIdExternalIdMapRepository;
-import com.danielagapov.spawn.Services.OAuth.OAuthStrategy;
 import com.danielagapov.spawn.Services.User.IUserService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -28,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -187,7 +186,7 @@ public class OAuthService implements IOAuthService {
     public Optional<AuthResponseDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
         logger.info("Checking if user exists by external ID: " + externalUserId + " and email: " + email);
         boolean existsByExternalId = mappingExistsByExternalId(externalUserId);
-        boolean existsByEmail = userService.existsByEmail(email);
+        boolean existsByEmail = email != null && userService.existsByEmail(email);
         logger.info("User exists by externalId: " + existsByExternalId + ", exists by email: " + existsByEmail);
 
         if (existsByExternalId) { // A Spawn account exists with this external id
@@ -637,5 +636,10 @@ public class OAuthService implements IOAuthService {
         }
         
         return cleanupPerformed;
+    }
+
+    @Override
+    public boolean isOAuthUser(UUID userId) {
+        return externalIdMapRepository.existsByUserId(userId);
     }
 }

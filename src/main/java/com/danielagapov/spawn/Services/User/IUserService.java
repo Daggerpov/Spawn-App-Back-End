@@ -4,7 +4,6 @@ import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
-import com.danielagapov.spawn.Models.FriendTag;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 
@@ -144,39 +143,7 @@ public interface IUserService {
      */
     boolean isUserFriendOfUser(UUID userId, UUID potentialFriendId);
 
-    /**
-     * Retrieves a map of FriendTag entities to their owner user IDs.
-     * Used for efficient batch operations.
-     *
-     * @return Map with FriendTag as key and owner UUID as value
-     */
-    Map<FriendTag, UUID> getOwnerUserIdsMap();
-
-    /**
-     * Retrieves a map of FriendTag entities to their associated friend user IDs.
-     * Used for efficient batch operations.
-     *
-     * @return Map with FriendTag as key and List of friend UUIDs as value
-     */
-    Map<FriendTag, List<UUID>> getFriendUserIdsMap();
-
-    /**
-     * Retrieves all friends associated with a specific friend tag.
-     *
-     * @param friendTagId the unique identifier of the friend tag
-     * @return List of BaseUserDTO objects representing friends in the tag
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
-     */
-    List<BaseUserDTO> getFriendsByFriendTagId(UUID friendTagId);
-
-    /**
-     * Retrieves the user IDs of all friends associated with a specific friend tag.
-     *
-     * @param friendTagId the unique identifier of the friend tag
-     * @return List of UUID objects representing friend user IDs in the tag
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if friend tag doesn't exist
-     */
-    List<UUID> getFriendUserIdsByFriendTagId(UUID friendTagId);
+    // Friend-tag APIs removed; friendships now model relationships directly
 
     /**
      * Saves a bidirectional friendship between two users.
