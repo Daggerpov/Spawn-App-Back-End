@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Services.FriendRequest;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
 
 import java.time.Instant;
 import java.util.List;
@@ -79,14 +80,13 @@ public interface IFriendRequestService {
     List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId);
     
     /**
-     * Retrieves all friend requests sent by a specific user as FetchFriendRequestDTO objects.
-     * Includes mutual friend counts for each request.
+     * Retrieves all friend requests sent by a specific user as FetchSentFriendRequestDTO objects.
      * 
      * @param userId the unique identifier of the user who sent the friend requests
-     * @return List of FetchFriendRequestDTO objects representing sent friend requests
+     * @return List of FetchSentFriendRequestDTO objects representing sent friend requests
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
      */
-    List<FetchFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId);
+    List<FetchSentFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId);
     
     /**
      * Deletes any friend request that exists between two specific users.

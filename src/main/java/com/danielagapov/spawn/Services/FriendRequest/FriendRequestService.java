@@ -2,10 +2,9 @@ package com.danielagapov.spawn.Services.FriendRequest;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.Enums.EntityType;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
 import com.danielagapov.spawn.Events.FriendRequestAcceptedNotificationEvent;
 import com.danielagapov.spawn.Events.FriendRequestNotificationEvent;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Mappers.FetchFriendRequestMapper;
@@ -122,7 +121,7 @@ public class FriendRequestService implements IFriendRequestService {
             // Publish friend request notification Activity
             eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
 
-            // Return the saved friend request DTO with additional details (friends and friend tags)
+            // Return the saved friend request DTO
             return FriendRequestMapper.toDTO(friendRequest);
         } catch (DataAccessException e) {
             logger.error("Failed to save friend request from user " + LoggingUtils.formatUserIdInfo(friendRequestDTO.getSenderUserId()) +
@@ -143,11 +142,44 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Getting incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
+            
+            // Debug logging for friend request IDs
+            logger.info("Debug: Raw friend requests for user " + LoggingUtils.formatUserInfo(user) + ":");
+            for (FriendRequest fr : friendRequests) {
+                logger.info("  - Friend request: ID=" + fr.getId() + ", Sender=" + LoggingUtils.formatUserInfo(fr.getSender()));
+            }
+            
+            // Filter out any friend requests with null IDs to prevent JSON decoding errors
+            List<FriendRequest> validFriendRequests = friendRequests.stream()
+                    .filter(fr -> {
+                        if (fr.getId() == null) {
+                            logger.error("Critical: Friend request with null ID found for user: " + LoggingUtils.formatUserInfo(user) + 
+                                    ". Sender: " + (fr.getSender() != null ? LoggingUtils.formatUserInfo(fr.getSender()) : "null") +
+                                    ", Receiver: " + (fr.getReceiver() != null ? LoggingUtils.formatUserInfo(fr.getReceiver()) : "null") +
+                                    ". This indicates a data integrity issue that should be investigated.");
+                            return false;
+                        }
+                        return true;
+                    })
+                    .toList();
+            
+            // Log if any invalid friend requests were found
+            int invalidCount = friendRequests.size() - validFriendRequests.size();
+            if (invalidCount > 0) {
+                logger.error("CRITICAL DATA INTEGRITY ISSUE: Found " + invalidCount + " friend requests with null IDs for user: " + 
+                        LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response. " +
+                        "Database cleanup migration V13__Clean_Null_ID_Friend_Requests.sql should be run immediately.");
+            }
+            
             // Note: Blocked user filtering is now handled at the controller level
 
-            List<FetchFriendRequestDTO> result = friendRequests.stream()
-                    .map(fr -> FetchFriendRequestMapper.toDTO(fr,
-                            userService.getMutualFriendCount(id, fr.getSender().getId())))
+            List<FetchFriendRequestDTO> result = validFriendRequests.stream()
+                    .map(fr -> {
+                        FetchFriendRequestDTO dto = FetchFriendRequestMapper.toDTO(fr,
+                                userService.getMutualFriendCount(id, fr.getSender().getId()));
+                        logger.info("Debug: Created DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId());
+                        return dto;
+                    })
                     .toList();
 
             logger.info("Found " + result.size() + " incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
@@ -188,9 +220,22 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public void acceptFriendRequest(UUID id) {
         try {
-            FriendRequest fr = repository.findById(id).orElseThrow(() -> new BaseNotFoundException(EntityType.FriendRequest, id));
+            // Check if friend request exists first
+            FriendRequest fr = repository.findById(id).orElse(null);
+            if (fr == null) {
+                logger.info("Friend request with ID: " + id + " not found - may have been already processed or auto-accepted");
+                return; // Gracefully handle already processed requests
+            }
+            
             User sender = fr.getSender();
             User receiver = fr.getReceiver();
+
+            // Check if users are already friends to avoid duplicate processing
+            if (userService.isUserFriendOfUser(sender.getId(), receiver.getId())) {
+                logger.info("Users are already friends, deleting stale friend request with ID: " + id);
+                deleteFriendRequest(id);
+                return;
+            }
 
             logger.info("Accepting friend request with ID: " + id + " from sender: " +
                     LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));
@@ -212,11 +257,6 @@ public class FriendRequestService implements IFriendRequestService {
                 cacheManager.getCache("sentFetchFriendRequests").evict(sender.getId());
             }
 
-            // Evict other related caches
-            if (cacheManager.getCache("filteredFeedActivities") != null) {
-                cacheManager.getCache("filteredFeedActivities").evict(sender.getId());
-                cacheManager.getCache("filteredFeedActivities").evict(receiver.getId());
-            }
 
             if (cacheManager.getCache("friendsByUserId") != null) {
                 cacheManager.getCache("friendsByUserId").evict(sender.getId());
@@ -231,7 +271,7 @@ public class FriendRequestService implements IFriendRequestService {
 
             logger.info("Friend request accepted and deleted successfully");
         } catch (Exception e) {
-            logger.error("Error accepting friend request with ID: " + id + ": " + e.getMessage());
+            logger.warn("Error accepting friend request with ID: " + id + ": " + e.getMessage());
             throw e;
         }
     }
@@ -346,17 +386,49 @@ public class FriendRequestService implements IFriendRequestService {
 
     @Override
     @Cacheable(value = "sentFetchFriendRequests", key = "#userId")
-    public List<FetchFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
+    public List<FetchSentFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
         try {
             User user = userService.getUserEntityById(userId);
             logger.info("Getting sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
+            
+            // Debug logging for friend request IDs
+            logger.info("Debug: Raw sent friend requests for user " + LoggingUtils.formatUserInfo(user) + ":");
+            for (FriendRequest fr : friendRequests) {
+                logger.info("  - Friend request: ID=" + fr.getId() + ", Receiver=" + LoggingUtils.formatUserInfo(fr.getReceiver()));
+            }
+            
+            // Filter out any friend requests with null IDs to prevent JSON decoding errors
+            List<FriendRequest> validFriendRequests = friendRequests.stream()
+                    .filter(fr -> {
+                        if (fr.getId() == null) {
+                            logger.error("Critical: Friend request with null ID found for user: " + LoggingUtils.formatUserInfo(user) + 
+                                    ". Sender: " + (fr.getSender() != null ? LoggingUtils.formatUserInfo(fr.getSender()) : "null") +
+                                    ", Receiver: " + (fr.getReceiver() != null ? LoggingUtils.formatUserInfo(fr.getReceiver()) : "null") +
+                                    ". This indicates a data integrity issue that should be investigated.");
+                            return false;
+                        }
+                        return true;
+                    })
+                    .toList();
+            
+            // Log if any invalid friend requests were found
+            int invalidCount = friendRequests.size() - validFriendRequests.size();
+            if (invalidCount > 0) {
+                logger.error("CRITICAL DATA INTEGRITY ISSUE: Found " + invalidCount + " friend requests with null IDs for user: " + 
+                        LoggingUtils.formatUserInfo(user) + ". These will be excluded from the response. " +
+                        "Database cleanup migration V13__Clean_Null_ID_Friend_Requests.sql should be run immediately.");
+            }
+            
             // Note: Blocked user filtering is now handled at the controller level
 
-            List<FetchFriendRequestDTO> result = friendRequests.stream()
-                    .map(fr -> FetchFriendRequestMapper.toDTOForSentRequest(fr,
-                            userService.getMutualFriendCount(userId, fr.getReceiver().getId())))
+            List<FetchSentFriendRequestDTO> result = validFriendRequests.stream()
+                    .map(fr -> {
+                        FetchSentFriendRequestDTO dto = FetchFriendRequestMapper.toSentDTO(fr);
+                        logger.info("Debug: Created sent DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId());
+                        return dto;
+                    })
                     .toList();
 
             logger.info("Found " + result.size() + " sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));

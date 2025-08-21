@@ -20,14 +20,6 @@ public interface IActivityRepository extends JpaRepository<Activity, UUID> {
     
     // finds activities that have been created by any of the users in the list
     List<Activity> findByCreatorIdIn(List<UUID> creatorIds);
-
-    @Query("SELECT a FROM Activity a " +
-            "JOIN a.creator c " +
-            "JOIN UserFriendTag uft ON uft.friend.id = c.id " +  // Proper entity name
-            "JOIN ActivityUser au ON au.activity.id = a.id " +  // Get users invited to the activity
-            "WHERE uft.friendTag.id = :friendTagId " +
-            "AND au.user.id = :invitedUserId")
-    List<Activity> getActivitiesInvitedToWithFriendTagId(@Param("friendTagId") UUID friendTagId, @Param("invitedUserId") UUID invitedUserId);
     
     /**
      * Finds past activities created by the inviter where the requesting user was invited

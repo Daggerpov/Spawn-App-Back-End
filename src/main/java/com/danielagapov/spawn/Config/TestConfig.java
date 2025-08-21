@@ -2,6 +2,9 @@ package com.danielagapov.spawn.Config;
 
 import com.danielagapov.spawn.DTOs.User.UserDTO;
 import com.danielagapov.spawn.Services.S3.IS3Service;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -11,7 +14,51 @@ import java.util.UUID;
 
 @Configuration
 @Profile("test")
+@EnableCaching
 public class TestConfig {
+    
+    @Bean
+    @Primary
+    public CacheManager testCacheManager() {
+        return new ConcurrentMapCacheManager(
+            // User-related caches
+            "friendsByUserId",
+            "recommendedFriends",
+            "userInterests",
+            "userSocialMedia",
+            "userSocialMediaByUserId",
+            "userStats",
+            "userStatsById",
+            
+            // Friend request caches
+            "incomingFetchFriendRequests",
+            "sentFetchFriendRequests",
+            "friendRequests",
+            "friendRequestsByUserId",
+            
+            // Activity caches
+            "ActivityById",
+            "fullActivityById",
+            "ActivityInviteById",
+            "ActivitiesByOwnerId",
+            "feedActivities",
+            "ActivitiesInvitedTo",
+            "fullActivitiesInvitedTo",
+            
+            // Activity type caches
+            "activityTypes",
+            "activityTypesByUserId",
+            
+            // Location caches
+            "locations",
+            "locationById",
+            
+            // Blocked user caches
+            "blockedUsers",
+            "blockedUserIds",
+            "isBlocked"
+        );
+    }
     
     @Bean
     @Primary
@@ -54,12 +101,11 @@ public class TestConfig {
             // For test, return a simple mock UserDTO
             return new UserDTO(
                     userId,
-                    null,
+                    java.util.List.of(),
                     "testuser",
                     file == null ? MOCK_DEFAULT_PFP : putObject(file),
                     "Test User",
                     "Test Bio",
-                    null,
                     "test@example.com"
             );
         }

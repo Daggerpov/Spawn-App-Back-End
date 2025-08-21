@@ -20,7 +20,10 @@ public class FriendRequestMapper {
 
     public static FriendRequest toEntity(CreateFriendRequestDTO friendRequestDTO, User sender, User receiver) {
         FriendRequest friendRequest = new FriendRequest();
-        friendRequest.setId(friendRequestDTO.getId());
+        // Only set ID if it's not null (for updates). For new entities, let JPA auto-generate the ID
+        if (friendRequestDTO.getId() != null) {
+            friendRequest.setId(friendRequestDTO.getId());
+        }
         friendRequest.setSender(sender);
         friendRequest.setReceiver(receiver);
         friendRequest.setCreatedAt(Instant.now());

@@ -40,7 +40,7 @@ public interface IChatMessageService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if saving fails
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if referenced user or activity doesn't exist
      */
-    ChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO);
+    FullActivityChatMessageDTO createChatMessage(CreateChatMessageDTO newChatMessageDTO);
 
     /**
      * Saves a chat message to the database.

@@ -29,11 +29,16 @@ public class UserMapper {
         return new AuthResponseDTO(baseUserDTO, user.getStatus());
     }
 
+    public static AuthResponseDTO toAuthResponseDTO(User user, boolean isOAuthUser) {
+        BaseUserDTO baseUserDTO = toDTO(user);
+        return new AuthResponseDTO(baseUserDTO, user.getStatus());
+    }
+
     public static List<BaseUserDTO> toDTOList(List<User> users) {
         return users.stream().map(UserMapper::toDTO).toList();
     }
 
-    public static UserDTO toDTO(User user, List<UUID> friendUserIds, List<UUID> friendTagIds) {
+    public static UserDTO toDTO(User user, List<UUID> friendUserIds) {
 
         return new UserDTO(
                 user.getId(),
@@ -42,7 +47,6 @@ public class UserMapper {
                 user.getProfilePictureUrlString(),
                 user.getName(),
                 user.getBio(),
-                friendTagIds,
                 user.getEmail()
         );
     }
@@ -63,12 +67,11 @@ public class UserMapper {
         );
     }
 
-    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UUID>> friendUserIdsMap, Map<User, List<UUID>> friendTagIdsMap) {
+    public static List<UserDTO> toDTOList(List<User> users, Map<User, List<UUID>> friendUserIdsMap) {
         return users.stream()
                 .map(user -> toDTO(
                         user,
-                        friendUserIdsMap.getOrDefault(user, List.of()),
-                        friendTagIdsMap.getOrDefault(user, List.of())
+                        friendUserIdsMap.getOrDefault(user, List.of())
                 ))
                 .collect(Collectors.toList());
     }
@@ -104,7 +107,6 @@ public class UserMapper {
                 null,
                 userCreationDTO.getName(),
                 userCreationDTO.getBio(),
-                null,
                 userCreationDTO.getEmail()
         );
     }

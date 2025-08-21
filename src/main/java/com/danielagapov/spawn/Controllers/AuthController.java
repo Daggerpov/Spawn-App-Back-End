@@ -7,21 +7,17 @@ import com.danielagapov.spawn.DTOs.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
 import com.danielagapov.spawn.Enums.UserStatus;
-import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
-import com.danielagapov.spawn.Exceptions.AccountAlreadyExistsException;
+import com.danielagapov.spawn.Exceptions.*;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.EmailVerificationException;
-import com.danielagapov.spawn.Exceptions.FieldAlreadyExistsException;
-import com.danielagapov.spawn.Exceptions.IncorrectProviderException;
-import com.danielagapov.spawn.Exceptions.TokenExpiredException;
-import com.danielagapov.spawn.Exceptions.OAuthProviderUnavailableException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Exceptions.Token.BadTokenException;
 import com.danielagapov.spawn.Exceptions.Token.TokenNotFoundException;
+import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.Auth.IAuthService;
 import com.danielagapov.spawn.Services.Email.IEmailService;
 import com.danielagapov.spawn.Services.JWT.IJWTService;
 import com.danielagapov.spawn.Services.OAuth.IOAuthService;
+import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.ErrorResponse;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,8 +31,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.util.Optional;
 import java.util.UUID;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Services.User.IUserService;
 
 
 @RestController()
@@ -243,12 +237,37 @@ public class AuthController {
                 if (gracefulUser != null) {
                     User userEntity = userService.getUserEntityById(gracefulUser.getUser().getId());
                     HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
+                    logger.info("OAuth registration succeeded via graceful handling");
                     return ResponseEntity.ok().headers(headers).body(gracefulUser);
+                } else {
+                    logger.warn("Graceful handling returned null - attempting final fallback check");
+                    
+                    // Final fallback: try to sign in the user if they already exist
+                    try {
+                        Optional<AuthResponseDTO> signInUser = oauthService.signInUser(
+                            registration.getIdToken(), 
+                            registration.getEmail(), 
+                            registration.getProvider()
+                        );
+                        
+                        if (signInUser.isPresent()) {
+                            User userEntity = userService.getUserEntityById(signInUser.get().getUser().getId());
+                            HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
+                            logger.info("OAuth registration succeeded via final fallback sign-in");
+                            return ResponseEntity.ok().headers(headers).body(signInUser.get());
+                        }
+                    } catch (Exception fallbackEx) {
+                        logger.warn("Final fallback sign-in also failed: " + fallbackEx.getMessage());
+                    }
                 }
             } catch (Exception gracefulException) {
                 logger.error("Graceful handling also failed: " + gracefulException.getMessage());
             }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Registration failed"));
+            
+            // If all recovery attempts failed, return detailed error
+            logger.error("All OAuth registration attempts failed for email: " + registration.getEmail());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Registration failed. Please try again or contact support if the issue persists."));
         }
     }
 

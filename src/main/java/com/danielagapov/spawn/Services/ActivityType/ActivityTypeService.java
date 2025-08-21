@@ -48,43 +48,46 @@ public class ActivityTypeService implements IActivityTypeService {
     @Transactional
     @CacheEvict(value = "activityTypesByUserId", key = "#userId")
     public List<ActivityTypeDTO> updateActivityTypes(UUID userId, BatchActivityTypeUpdateDTO activityTypeDTOs) {
-        try {
-            if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
-                throw new IllegalArgumentException("No activity types to update or delete");
-            }
+        // Synchronize on userId to prevent race conditions for the same user
+        synchronized (("activity_type_update_" + userId.toString()).intern()) {
+            try {
+                if (activityTypeDTOs.getUpdatedActivityTypes().isEmpty() && activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                    throw new IllegalArgumentException("No activity types to update or delete");
+                }
 
-            // Validate if there are updates
-            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
-                validateActivityTypeUpdate(userId, activityTypeDTOs);
+                // Validate if there are updates
+                if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                    validateActivityTypeUpdate(userId, activityTypeDTOs);
+                }
+                
+                // Handle deletions first
+                if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
+                    logger.info("Deleting activity types with IDs: " + activityTypeDTOs.getDeletedActivityTypeIds());
+                    repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
+                }
+                
+                // Handle updates/creations
+                if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
+                    User creator = userService.getUserEntityById(userId);
+                    
+                    logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
+                    
+                    // Auto-assign order numbers for new activity types
+                    List<ActivityTypeDTO> processedDTOs = assignOrderNumbersForNewActivityTypes(userId, activityTypeDTOs.getUpdatedActivityTypes());
+                    
+                    // Convert DTOs to entities with proper user lookup for associated friends
+                    List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
+                    
+                    // Use multi-phase update to avoid constraint violations
+                    updateActivityTypesWithConstraintHandling(activityTypes, userId);
+                }
+                
+                // Return all activity types for the user after updates
+                return getActivityTypesByUserId(userId);
+            } catch (Exception e) {
+                logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
+                throw e;
             }
-            
-            // Handle deletions first
-            if (!activityTypeDTOs.getDeletedActivityTypeIds().isEmpty()) {
-                logger.info("Deleting activity types with IDs: " + activityTypeDTOs.getDeletedActivityTypeIds());
-                repository.deleteAllById(activityTypeDTOs.getDeletedActivityTypeIds());
-            }
-            
-            // Handle updates/creations
-            if (!activityTypeDTOs.getUpdatedActivityTypes().isEmpty()) {
-                User creator = userService.getUserEntityById(userId);
-                
-                logger.info("Saving updated or newly created activity types for user: " + creator.getUsername());
-                
-                // Auto-assign order numbers for new activity types
-                List<ActivityTypeDTO> processedDTOs = assignOrderNumbersForNewActivityTypes(userId, activityTypeDTOs.getUpdatedActivityTypes());
-                
-                // Convert DTOs to entities with proper user lookup for associated friends
-                List<ActivityType> activityTypes = convertDTOsToEntitiesWithFriendLookup(processedDTOs, creator);
-                
-                // Use multi-phase update to avoid constraint violations
-                updateActivityTypesWithConstraintHandling(activityTypes, userId);
-            }
-            
-            // Return all activity types for the user after updates
-            return getActivityTypesByUserId(userId);
-        } catch (Exception e) {
-            logger.error("Error batch updating activity types for user " + userId + ": " + e.getMessage());
-            throw e;
         }
     }
 
@@ -203,7 +206,7 @@ public class ActivityTypeService implements IActivityTypeService {
             
             // Get the current max order number for this user
             Integer maxOrder = repository.findMaxOrderNumberByCreatorId(user.getId());
-            int startingOrder = maxOrder != null ? maxOrder + 1 : 0;
+            int startingOrder = maxOrder != null ? maxOrder + 1 : 1; // 1-based indexing
             
             // Create default activity types with sequential order numbers
             List<ActivityType> defaultActivityTypes = new ArrayList<>();
@@ -237,7 +240,7 @@ public class ActivityTypeService implements IActivityTypeService {
     @Override
     public void setOrderNumber(ActivityType activityType) {
         Integer maxOrder = repository.findMaxOrderNumberByCreatorId(activityType.getCreator().getId());
-        activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 0);
+        activityType.setOrderNum(maxOrder != null ? maxOrder + 1 : 1); // 1-based indexing
     }
 
     /**
@@ -251,7 +254,7 @@ public class ActivityTypeService implements IActivityTypeService {
         
         // Get the current max order number
         Integer maxOrder = repository.findMaxOrderNumberByCreatorId(userId);
-        int nextOrderNum = maxOrder != null ? maxOrder + 1 : 0;
+        int nextOrderNum = maxOrder != null ? maxOrder + 1 : 1; // 1-based indexing
         
         List<ActivityTypeDTO> processedDTOs = new ArrayList<>();
         
@@ -282,7 +285,8 @@ public class ActivityTypeService implements IActivityTypeService {
      * Validates activity type updates for pinned count, orderNum range, and orderNum uniqueness
      */
     private void validateActivityTypeUpdate(UUID userId, BatchActivityTypeUpdateDTO batchDTO) {
-        // Get current state
+        // Get current state - ensure we have the most up-to-date data
+        repository.flush(); // Ensure any pending changes are persisted before validation
         long currentPinnedCount = repository.countByCreatorIdAndIsPinnedTrue(userId);
         long currentTotalCount = repository.countByCreatorId(userId);
         
@@ -290,20 +294,48 @@ public class ActivityTypeService implements IActivityTypeService {
         long deletedCount = batchDTO.getDeletedActivityTypeIds().size();
         long updatedCount = batchDTO.getUpdatedActivityTypes().size();
         
-        // Count how many of the deleted items are pinned
+        // Get existing activity types and categorize them
         List<ActivityType> existingActivityTypes = repository.findActivityTypesByCreatorId(userId);
         Set<UUID> deletedIds = Set.copyOf(batchDTO.getDeletedActivityTypeIds());
+        Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
+                .map(ActivityTypeDTO::getId)
+                .collect(Collectors.toSet());
+        
+        // Count currently pinned activity types that will be deleted
         long deletedPinnedCount = existingActivityTypes.stream()
                 .filter(at -> deletedIds.contains(at.getId()) && at.getIsPinned())
                 .count();
         
-        // Count how many updated items are pinned
+        // Count currently pinned activity types that will remain unchanged (not updated or deleted)
+        long unchangedPinnedCount = existingActivityTypes.stream()
+                .filter(at -> !deletedIds.contains(at.getId()) && !updatedIds.contains(at.getId()) && at.getIsPinned())
+                .count();
+        
+        // Count activity types in the update request that are marked as pinned
         long updatedPinnedCount = batchDTO.getUpdatedActivityTypes().stream()
                 .filter(dto -> dto.getIsPinned() != null && dto.getIsPinned())
                 .count();
         
-        // Calculate final pinned count
-        long finalPinnedCount = currentPinnedCount - deletedPinnedCount + updatedPinnedCount;
+        // Debug logging for request details
+        logger.info("=== VALIDATION DEBUG ===");
+        logger.info("Current state: " + currentPinnedCount + " pinned, " + currentTotalCount + " total");
+        logger.info("Request deletions: " + deletedCount + " (pinned deletions: " + deletedPinnedCount + ")");
+        logger.info("Request updates: " + updatedCount);
+        logger.info("Unchanged pinned activity types: " + unchangedPinnedCount);
+        
+        // Log each updated activity type's pinned status
+        for (ActivityTypeDTO dto : batchDTO.getUpdatedActivityTypes()) {
+            logger.info("Update request - ID: " + dto.getId() + ", Title: " + dto.getTitle() + 
+                       ", isPinned: " + dto.getIsPinned() + ", orderNum: " + dto.getOrderNum());
+        }
+        
+        logger.info("Updated items marked as pinned: " + updatedPinnedCount);
+        
+        // Calculate final pinned count correctly (unchanged + updated, no double counting)
+        long finalPinnedCount = unchangedPinnedCount + updatedPinnedCount;
+        
+        logger.info("Calculation: " + unchangedPinnedCount + " (unchanged) + " + updatedPinnedCount + " (updated) = " + finalPinnedCount);
+        logger.info("=== END VALIDATION DEBUG ===");
         
         // Calculate final total count (accounting for new vs existing updates)
         Set<UUID> existingIds = existingActivityTypes.stream()
@@ -313,6 +345,7 @@ public class ActivityTypeService implements IActivityTypeService {
                 .filter(dto -> !existingIds.contains(dto.getId()))
                 .count();
         long finalTotalCount = currentTotalCount - deletedCount + newActivityTypeCount;
+        boolean hasNewCreations = newActivityTypeCount > 0;
         
         // Validate pinned count
         if (finalPinnedCount > MAX_PINNED_ACTIVITY_TYPES) {
@@ -327,13 +360,12 @@ public class ActivityTypeService implements IActivityTypeService {
                 .filter(dto -> existingIds.contains(dto.getId()))
                 .toList();
         
-        // Validate orderNum range ONLY for existing activity types being updated
-        // New activity types will get auto-assigned order numbers, so skip validation for them
+        // Validate orderNum range ONLY for existing activity types being updated (1-based inclusive range)
         for (ActivityTypeDTO dto : existingActivityTypesToUpdate) {
-            if (dto.getOrderNum() < 0 || dto.getOrderNum() >= finalTotalCount) {
+            if (dto.getOrderNum() < 1 || dto.getOrderNum() > finalTotalCount) {
                 throw new ActivityTypeValidationException(
-                    String.format("Invalid orderNum %d for activity type '%s'. Must be in range [0, %d]", 
-                                  dto.getOrderNum(), dto.getTitle(), finalTotalCount - 1)
+                    String.format("Invalid orderNum %d for activity type '%s'. Must be in range [1, %d]", 
+                                  dto.getOrderNum(), dto.getTitle(), finalTotalCount)
                 );
             }
         }
@@ -351,9 +383,6 @@ public class ActivityTypeService implements IActivityTypeService {
         
         // Validate orderNum uniqueness against existing activity types that will remain
         // Get existing activity types that will remain after deletions/updates
-        Set<UUID> updatedIds = batchDTO.getUpdatedActivityTypes().stream()
-                .map(ActivityTypeDTO::getId)
-                .collect(Collectors.toSet());
         
         List<ActivityType> remainingExistingActivityTypes = existingActivityTypes.stream()
                 .filter(at -> !deletedIds.contains(at.getId()) && !updatedIds.contains(at.getId()))
@@ -374,7 +403,7 @@ public class ActivityTypeService implements IActivityTypeService {
         }
         
         logger.info("Activity type validation passed: " + finalPinnedCount + " pinned (max " + MAX_PINNED_ACTIVITY_TYPES + "), " +
-                    "orderNum range [0, " + (finalTotalCount - 1) + "], unique orderNums");
+                    "orderNum range [1, " + (finalTotalCount) + "], unique orderNums");
     }
 
     /**

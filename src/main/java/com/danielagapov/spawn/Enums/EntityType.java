@@ -5,7 +5,7 @@ public enum EntityType {
     ChatMessage("Chat Message"),
     Activity("Activity"),
     ActivityType("ActivityType"),
-    FriendTag("Friend Tag"),
+    
     User("User"),
     FriendRequest("Friend Request"),
     BetaAccessSignUp("Beta Access Sign Up"),

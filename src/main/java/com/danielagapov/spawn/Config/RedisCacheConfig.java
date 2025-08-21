@@ -39,17 +39,35 @@ public class RedisCacheConfig {
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
+                // User-related caches
+                .withCacheConfiguration("friendsByUserId", userDataConfig)
+                .withCacheConfiguration("recommendedFriends", userDataConfig)
                 .withCacheConfiguration("userInterests", userDataConfig)
                 .withCacheConfiguration("userSocialMedia", userDataConfig)
                 .withCacheConfiguration("userSocialMediaByUserId", userDataConfig)
+                
+                // Friend request caches
+                .withCacheConfiguration("incomingFetchFriendRequests", userDataConfig)
+                .withCacheConfiguration("sentFetchFriendRequests", userDataConfig)
                 .withCacheConfiguration("friendRequests", userDataConfig)
                 .withCacheConfiguration("friendRequestsByUserId", userDataConfig)
+                
+                // Activity type caches
                 .withCacheConfiguration("activityTypes", staticDataConfig)
                 .withCacheConfiguration("activityTypesByUserId", staticDataConfig)
+                
+                // Location caches
                 .withCacheConfiguration("locations", staticDataConfig)
                 .withCacheConfiguration("locationById", staticDataConfig)
+                
+                // Stats caches
                 .withCacheConfiguration("userStats", statsConfig)
                 .withCacheConfiguration("userStatsById", statsConfig)
+                
+                // Blocked user caches
+                .withCacheConfiguration("blockedUsers", userDataConfig)
+                .withCacheConfiguration("blockedUserIds", userDataConfig)
+                .withCacheConfiguration("isBlocked", userDataConfig)
                 .build();
     }
 

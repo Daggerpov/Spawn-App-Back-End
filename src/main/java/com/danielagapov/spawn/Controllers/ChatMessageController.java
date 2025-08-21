@@ -4,6 +4,7 @@ import com.danielagapov.spawn.DTOs.ChatMessage.AbstractChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.ChatMessageLikesDTO;
 import com.danielagapov.spawn.DTOs.ChatMessage.CreateChatMessageDTO;
+import com.danielagapov.spawn.DTOs.ChatMessage.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -34,9 +35,9 @@ public class ChatMessageController {
 
     // full path: /api/v1/chatMessages
     @PostMapping
-    public ResponseEntity<ChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {
+    public ResponseEntity<FullActivityChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {
         try {
-            ChatMessageDTO createdMessage = chatMessageService.createChatMessage(newChatMessage);
+            FullActivityChatMessageDTO createdMessage = chatMessageService.createChatMessage(newChatMessage);
             return new ResponseEntity<>(createdMessage, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error creating chat message: " + e.getMessage());

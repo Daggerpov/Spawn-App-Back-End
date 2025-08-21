@@ -19,8 +19,7 @@ import java.util.UUID;
  * receiver user can accept on their mobile client.
  * Once they've accepted the friend request, it's
  * deleted from this entity, and they're made into
- * friends by being added as each other's friends (
- * through the "Everyone" tag).
+ * friends through the Friendship model.
  */
 @Entity
 @Table(
@@ -33,7 +32,7 @@ import java.util.UUID;
 @Setter
 public class FriendRequest implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
 
     @ManyToOne

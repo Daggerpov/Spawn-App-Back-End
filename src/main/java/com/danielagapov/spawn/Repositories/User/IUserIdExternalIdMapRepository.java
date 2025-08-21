@@ -19,4 +19,6 @@ public interface IUserIdExternalIdMapRepository extends JpaRepository<UserIdExte
     @Transactional
     @Query("DELETE FROM UserIdExternalIdMap m WHERE m.user.id = :userId")
     void deleteAllByUserId(@Param("userId") UUID userId);
+
+    boolean existsByUserId(UUID userId);
 }

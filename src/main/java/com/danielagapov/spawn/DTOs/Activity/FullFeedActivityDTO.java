@@ -23,8 +23,7 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
     private List<BaseUserDTO> participantUsers;
     private List<BaseUserDTO> invitedUsers;
     private List<FullActivityChatMessageDTO> chatMessages;
-    /// useful for activity retrieval from a user's feed/map view on mobile:
-    private String activityFriendTagColorHexCodeForRequestingUser;
+    
     // ensures string formatting when serialized to JSON; for mobile (client)
     private @JsonFormat(shape = JsonFormat.Shape.STRING) ParticipationStatus participationStatus;
     @JsonProperty("isSelfOwned") // specifying JSON name,
@@ -44,7 +43,6 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             List<BaseUserDTO> participantUsers,
                             List<BaseUserDTO> invitedUsers,
                             List<FullActivityChatMessageDTO> chatMessages,
-                            String activityFriendTagColorHexCodeForRequestingUser,
                             ParticipationStatus participationStatus, 
                             boolean isSelfOwned,
                             Instant createdAt) {
@@ -55,7 +53,6 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
         this.participantUsers = participantUsers;
         this.invitedUsers = invitedUsers;
         this.chatMessages = chatMessages;
-        this.activityFriendTagColorHexCodeForRequestingUser = activityFriendTagColorHexCodeForRequestingUser;
         this.participationStatus = participationStatus;
         this.isSelfOwned = isSelfOwned;
     }

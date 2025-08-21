@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
 import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
+import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Enums.FriendRequestAction;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
@@ -71,8 +72,8 @@ public class FriendRequestController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            List<FetchFriendRequestDTO> friendRequests = friendRequestService.getSentFetchFriendRequestsByUserId(userId);
-            List<FetchFriendRequestDTO> filteredRequests = blockedUserService.filterOutBlockedUsers(friendRequests, userId);
+            List<FetchSentFriendRequestDTO> friendRequests = friendRequestService.getSentFetchFriendRequestsByUserId(userId);
+            List<FetchSentFriendRequestDTO> filteredRequests = blockedUserService.filterOutBlockedUsers(friendRequests, userId);
             return new ResponseEntity<>(filteredRequests, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found for sent friend requests: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -104,7 +105,7 @@ public class FriendRequestController {
 
     // returns ResponseEntity with void
     //  or not found entity type (friendRequestId)
-    // full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject/cancel}
+    // full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
     @PutMapping("{friendRequestId}")
     public ResponseEntity<?> friendRequestAction(@PathVariable UUID friendRequestId, @RequestParam FriendRequestAction friendRequestAction) {
         if (friendRequestId == null) {
@@ -121,9 +122,6 @@ public class FriendRequestController {
             } else if (friendRequestAction == FriendRequestAction.reject) {
                 friendRequestService.deleteFriendRequest(friendRequestId);
                 logger.info("Successfully rejected friend request: " + friendRequestId);
-            } else if (friendRequestAction == FriendRequestAction.cancel) {
-                friendRequestService.deleteFriendRequest(friendRequestId);
-                logger.info("Successfully canceled friend request: " + friendRequestId);
             } else {
                 // deal with null/invalid argument for `friendRequestAction`
                 logger.error("Invalid friend request action: " + friendRequestAction + " for request: " + friendRequestId);
@@ -137,6 +135,28 @@ public class FriendRequestController {
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error processing friend request action: " + friendRequestAction + " for request: " + friendRequestId + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/friend-requests/{friendRequestId}
+    // Allows clients to cancel/delete a friend request using HTTP DELETE semantics
+    @DeleteMapping("{friendRequestId}")
+    public ResponseEntity<?> deleteFriendRequest(@PathVariable UUID friendRequestId) {
+        if (friendRequestId == null) {
+            logger.error("Invalid parameter: friendRequestId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            friendRequestService.deleteFriendRequest(friendRequestId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            // If the request was already removed, treat as success to keep client idempotent
+            logger.warn("Friend request not found (may have been already deleted): " + friendRequestId + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error deleting friend request: " + friendRequestId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

@@ -11,7 +11,7 @@ import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.User.IBlockedUserRepository;
 import com.danielagapov.spawn.Services.BlockedUser.BlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
+import com.danielagapov.spawn.Repositories.IFriendshipRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,8 +29,8 @@ public class BlockedUserServiceTests {
     @Mock private IBlockedUserRepository blockedRepo;
     @Mock private IUserService userService;
     @Mock private IFriendRequestService friendRequestService;
+    @Mock private IFriendshipRepository friendshipRepository;
     @Mock private ILogger logger;
-    @Mock private IFriendTagService friendTagService;
     @Mock private CacheManager cacheManager;
 
     @InjectMocks private BlockedUserService blockedUserService;
@@ -70,7 +70,7 @@ public class BlockedUserServiceTests {
         when(blockedRepo.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId)).thenReturn(false);
         when(userService.getUserEntityById(blockerId)).thenReturn(blocker);
         when(userService.getUserEntityById(blockedId)).thenReturn(blocked);
-        when(friendTagService.getFriendTagsByOwnerId(any())).thenReturn(List.of()); // ✅ add this stub
+
 
         blockedUserService.blockUser(blockerId, blockedId, "Testing");
 
@@ -82,7 +82,7 @@ public class BlockedUserServiceTests {
         when(blockedRepo.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId)).thenReturn(false);
         when(userService.getUserEntityById(blockerId)).thenReturn(blocker);
         when(userService.getUserEntityById(blockedId)).thenReturn(blocked);
-        when(friendTagService.getFriendTagsByOwnerId(any())).thenReturn(List.of());
+
         doThrow(new DataAccessException("DB error") {}).when(blockedRepo).save(any());
 
         assertThrows(BaseSaveException.class, () ->

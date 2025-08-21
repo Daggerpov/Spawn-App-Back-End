@@ -35,7 +35,7 @@ public class LocationService implements ILocationService {
             return LocationMapper.toDTOList(repository.findAll());
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
-            throw new BasesNotFoundException(EntityType.FriendTag);
+            throw new BasesNotFoundException(EntityType.Location);
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;

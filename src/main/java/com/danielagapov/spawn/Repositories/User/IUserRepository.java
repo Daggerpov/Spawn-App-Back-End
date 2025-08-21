@@ -58,8 +58,7 @@ public interface IUserRepository extends JpaRepository<User, UUID> {
     boolean existsByPhoneNumber(String phoneNumber);
 
     @Query(value = "SELECT MAX(u.last_updated) FROM user u " +
-            "JOIN user_friend_tag uft ON u.id = uft.user_id " +
-            "JOIN friend_tag ft ON uft.friend_tag_id = ft.id " +
-            "WHERE ft.owner_id = :userId AND ft.is_everyone = true", nativeQuery = true)
+            "JOIN friendship f ON (u.id = f.user_a_id OR u.id = f.user_b_id) " +
+            "WHERE (f.user_a_id = :userId OR f.user_b_id = :userId) AND u.id != :userId", nativeQuery = true)
     Instant findLatestFriendProfileUpdate(@Param("userId") UUID userId);
 }
