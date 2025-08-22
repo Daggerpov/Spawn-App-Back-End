@@ -94,6 +94,7 @@ public class SecurityConfig {
                         authorize.requestMatchers(pattern).hasRole("ONBOARDING");
                     }
 
+                    authorize.requestMatchers("/api/v1/auth/quick-sign-in").hasAnyRole("ONBOARDING","ACTIVE");
                     authorize.requestMatchers("/api/v1/**").hasRole("ACTIVE");
                     authorize.anyRequest().authenticated(); // Comment this out if wanting to unsecure endpoints for development purposes
                 })
