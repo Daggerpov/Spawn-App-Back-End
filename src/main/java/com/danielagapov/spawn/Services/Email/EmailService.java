@@ -63,7 +63,7 @@ public class EmailService implements IEmailService {
     public void sendVerificationCodeEmail(String to, String verificationCode, String expiryTime) throws MessagingException {
         logger.info("Sending verification code email to " + to);
         final String content = buildVerificationCodeEmailBody(verificationCode, expiryTime);
-        final String subject = "Your Verification Code";
+        final String subject = "Your Verification Code: " + verificationCode;
         sendEmail(to, subject, content);
     }
 
