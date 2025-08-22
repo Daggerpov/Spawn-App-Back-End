@@ -79,4 +79,6 @@ public interface IOAuthService {
     boolean performDataConsistencyCleanup(String email, String externalUserId);
 
     boolean isOAuthUser(UUID userId);
+
+    OAuthProvider getOAuthProvider(UUID userId);
 }

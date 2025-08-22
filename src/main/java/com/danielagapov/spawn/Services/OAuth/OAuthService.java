@@ -642,4 +642,14 @@ public class OAuthService implements IOAuthService {
     public boolean isOAuthUser(UUID userId) {
         return externalIdMapRepository.existsByUserId(userId);
     }
+
+    @Override
+    public OAuthProvider getOAuthProvider(UUID userId) {
+        UserIdExternalIdMap mapping = externalIdMapRepository.findByUserId(userId);
+        if (mapping == null) {
+            throw new BaseNotFoundException(EntityType.ExternalIdMap);
+        } else {
+            return mapping.getProvider();
+        }
+    }
 }
