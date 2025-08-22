@@ -1,7 +1,10 @@
 package com.danielagapov.spawn.Models.User;
 
+import com.danielagapov.spawn.Enums.UserStatus;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -13,15 +16,19 @@ import java.util.List;
 public class UserInfo implements UserDetails {
     private final String username;
     private final String password;
+    private final UserStatus status;
 
-    public UserInfo(String username, String password) {
+    public UserInfo(String username, String password, UserStatus status) {
         this.username = username;
         this.password = password;
+        this.status = status;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        String role = status == UserStatus.ACTIVE ? "ROLE_ACTIVE" : "ROLE_ONBOARDING";
+
+        return List.of(new SimpleGrantedAuthority(role));
     }
 
     @Override

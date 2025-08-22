@@ -12,7 +12,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -45,6 +44,14 @@ public class SecurityConfig {
             "/api/v1/auth/accept-tos/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
             "/api/v1/auth/complete-contact-import/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
             "/api/v1/users/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/optional-details"
+    };
+
+    private static final String[] onboardingUrls = new String[] {
+            "/api/v1/auth/register/verification/check",
+            "/api/v1/auth/user/details",
+            "/api/v1/auth/accept-tos/**",
+            "/api/v1/auth/complete-contact-import/**",
+            "/api/v1/users/*/optional-details"
     };
 
     @Bean
@@ -82,7 +89,13 @@ public class SecurityConfig {
                     for (String pattern : whitelistedUrlPatterns) {
                         authorize.requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.POST, pattern)).permitAll();
                     }
-                    
+
+                    for (String pattern : onboardingUrls) {
+                        authorize.requestMatchers(pattern).hasRole("ONBOARDING");
+                    }
+
+                    authorize.requestMatchers("/api/v1/auth/quick-sign-in").hasAnyRole("ONBOARDING","ACTIVE");
+                    authorize.requestMatchers("/api/v1/**").hasRole("ACTIVE");
                     authorize.anyRequest().authenticated(); // Comment this out if wanting to unsecure endpoints for development purposes
                 })
                 // When authenticating a request fails, status code 401 (unauthorized) is returned

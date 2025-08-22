@@ -21,4 +21,7 @@ public interface IUserIdExternalIdMapRepository extends JpaRepository<UserIdExte
     void deleteAllByUserId(@Param("userId") UUID userId);
 
     boolean existsByUserId(UUID userId);
+
+    UserIdExternalIdMap findByUserId(UUID userId);
+
 }

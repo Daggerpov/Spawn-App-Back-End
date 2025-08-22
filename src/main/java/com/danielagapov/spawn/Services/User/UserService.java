@@ -439,6 +439,11 @@ public class UserService implements IUserService {
         return repository.existsByEmail(email);
     }
 
+    @Override
+    public boolean existsByEmailAndStatus(String email, UserStatus status) {
+        return repository.existsByEmailAndStatus(email, status);
+    }
+
     /**
      * @param requestingUserId the user who's requesting this from the mobile app,
      *                         from either the activity creation view or friends view.

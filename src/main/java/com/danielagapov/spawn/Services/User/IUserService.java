@@ -4,12 +4,12 @@ import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.DTOs.User.Profile.UserProfileInfoDTO;
+import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Util.SearchedUserResult;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -215,6 +215,14 @@ public interface IUserService {
      * @return true if a user exists with the given email, false otherwise
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Checks if a user exists with the given email address and status.
+     *
+     * @param email the email address to check
+     * @return true if a user exists with the given email, false otherwise
+     */
+    boolean existsByEmailAndStatus(String email, UserStatus status);
 
     /**
      * Checks if a user exists with the given username.

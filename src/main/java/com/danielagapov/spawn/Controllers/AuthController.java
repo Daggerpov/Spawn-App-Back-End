@@ -6,7 +6,6 @@ import com.danielagapov.spawn.DTOs.OAuthRegistrationDTO;
 import com.danielagapov.spawn.DTOs.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.DTOs.User.*;
 import com.danielagapov.spawn.Enums.OAuthProvider;
-import com.danielagapov.spawn.Enums.UserStatus;
 import com.danielagapov.spawn.Exceptions.*;
 import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.Exceptions.Logger.ILogger;
@@ -59,8 +58,7 @@ public class AuthController {
             @RequestParam(value = "email", required = false) String email)
     {
         try {
-            Optional<AuthResponseDTO> optionalDTO;
-            optionalDTO = oauthService.signInUser(idToken, email, provider);
+            Optional<AuthResponseDTO> optionalDTO = oauthService.signInUser(idToken, email, provider);
             
             if (optionalDTO.isPresent()) {
                 AuthResponseDTO authResponseDTO = optionalDTO.get();
@@ -170,11 +168,11 @@ public class AuthController {
 
     // full path: /api/v1/auth/login
     @PostMapping("login")
-    public ResponseEntity<BaseUserDTO> login(@RequestBody LoginDTO loginDTO) {
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginDTO loginDTO) {
         try {
-            BaseUserDTO existingUserDTO = authService.loginUser(loginDTO.getUsernameOrEmail(), loginDTO.getPassword());
-            HttpHeaders headers = authService.makeHeadersForTokens(existingUserDTO.getUsername());
-            return ResponseEntity.ok().headers(headers).body(existingUserDTO);
+            AuthResponseDTO authResponseDTO = authService.loginUser(loginDTO.getUsernameOrEmail(), loginDTO.getPassword());
+            HttpHeaders headers = authService.makeHeadersForTokens(authResponseDTO.getUser().getUsername());
+            return ResponseEntity.ok().headers(headers).body(authResponseDTO);
         } catch (BadCredentialsException e) {
             logger.warn("Login failed - bad credentials for user: " + loginDTO.getUsernameOrEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -290,12 +288,10 @@ public class AuthController {
     @PostMapping("register/verification/check")
     public ResponseEntity<?> verifyEmailAndCreateUser(@RequestBody CheckEmailVerificationRequestDTO request) {
         try {
-            BaseUserDTO user = authService.checkEmailVerificationCode(request.getEmail(), request.getVerificationCode());
-            AuthResponseDTO authResponse = new AuthResponseDTO(user, UserStatus.EMAIL_VERIFIED);
+            AuthResponseDTO authResponseDTO = authService.checkEmailVerificationCode(request.getEmail(), request.getVerificationCode());
             // Use User object for token generation to handle users with null usernames
-            User userEntity = userService.getUserEntityById(user.getId());
-            HttpHeaders headers = authService.makeHeadersForTokens(userEntity);
-            return ResponseEntity.ok().headers(headers).body(authResponse);
+            HttpHeaders headers = authService.makeHeadersForTokens(authResponseDTO.getUser().getUsername());
+            return ResponseEntity.ok().headers(headers).body(authResponseDTO);
         } catch (EmailVerificationException e) {
             logger.warn("Email verification failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(e.getMessage()));

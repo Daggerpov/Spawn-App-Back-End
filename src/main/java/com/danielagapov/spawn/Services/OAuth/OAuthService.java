@@ -194,7 +194,7 @@ public class OAuthService implements IOAuthService {
             User user = getMapping(externalUserId).getUser();
             
             // Return user regardless of status - client will handle appropriate onboarding
-            AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user);
+            AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user, true);
             logger.info("Returning user with ID: " + authResponseDTO.getUser().getId() + ", username: " + authResponseDTO.getUser().getUsername() + ", status: " + user.getStatus());
             return Optional.of(authResponseDTO);
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id
@@ -641,5 +641,15 @@ public class OAuthService implements IOAuthService {
     @Override
     public boolean isOAuthUser(UUID userId) {
         return externalIdMapRepository.existsByUserId(userId);
+    }
+
+    @Override
+    public OAuthProvider getOAuthProvider(UUID userId) {
+        UserIdExternalIdMap mapping = externalIdMapRepository.findByUserId(userId);
+        if (mapping == null) {
+            throw new BaseNotFoundException(EntityType.ExternalIdMap);
+        } else {
+            return mapping.getProvider();
+        }
     }
 }

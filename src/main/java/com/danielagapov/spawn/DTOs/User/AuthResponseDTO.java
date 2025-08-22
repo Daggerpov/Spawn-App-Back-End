@@ -21,4 +21,10 @@ public class AuthResponseDTO implements Serializable {
         this.user = user;
         this.status = status;
     }
+
+    public AuthResponseDTO(BaseUserDTO user, UserStatus status, boolean isOAuthUser) {
+        this.user = user;
+        this.status = status;
+        this.isOAuthUser = isOAuthUser;
+    }
 } 
