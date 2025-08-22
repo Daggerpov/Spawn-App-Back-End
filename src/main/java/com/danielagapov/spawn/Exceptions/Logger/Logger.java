@@ -1,10 +1,17 @@
 package com.danielagapov.spawn.Exceptions.Logger;
 
+import com.danielagapov.spawn.Services.ErrorLog.IErrorLogService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
 public class Logger implements ILogger {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Logger.class);
+    
+    @Autowired
+    @Lazy // Avoid circular dependency
+    private IErrorLogService errorLogService;
 
     public void info(String message) {
         logger.info(formatMessageWithCallerInfo(message));
@@ -15,7 +22,45 @@ public class Logger implements ILogger {
     }
 
     public void error(String message) {
-        logger.error(formatMessageWithCallerInfo(message));
+        String formattedMessage = formatMessageWithCallerInfo(message);
+        logger.error(formattedMessage);
+        
+        // Create a synthetic exception for error logging
+        RuntimeException syntheticException = new RuntimeException(message);
+        
+        // Extract user context from thread local or other sources if available
+        String userContext = extractUserContext();
+        
+        // Log to error logging system asynchronously
+        try {
+            if (errorLogService != null) {
+                errorLogService.logError(message, syntheticException, userContext);
+            }
+        } catch (Exception e) {
+            // Don't let error logging break the main application
+            logger.warn("Failed to log error to error logging system: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Enhanced error method that accepts a throwable
+     */
+    public void error(String message, Throwable throwable) {
+        String formattedMessage = formatMessageWithCallerInfo(message);
+        logger.error(formattedMessage, throwable);
+        
+        // Extract user context
+        String userContext = extractUserContext();
+        
+        // Log to error logging system asynchronously
+        try {
+            if (errorLogService != null) {
+                errorLogService.logError(message, throwable, userContext);
+            }
+        } catch (Exception e) {
+            // Don't let error logging break the main application
+            logger.warn("Failed to log error to error logging system: " + e.getMessage());
+        }
     }
     
     /**
@@ -36,5 +81,20 @@ public class Logger implements ILogger {
 
         // Format the message with caller information: [FileName:LineNumber] MethodName - Message
         return String.format("[%s:%d] %s - %s", fileName, lineNumber, methodName, message);
+    }
+    
+    /**
+     * Extract user context information if available
+     * This could include current user ID, request details, etc.
+     */
+    private String extractUserContext() {
+        try {
+            // TODO: Implement user context extraction from SecurityContext, ThreadLocal, etc.
+            // For now, return basic thread information
+            Thread currentThread = Thread.currentThread();
+            return String.format("Thread: %s", currentThread.getName());
+        } catch (Exception e) {
+            return "Context unavailable";
+        }
     }
 }
