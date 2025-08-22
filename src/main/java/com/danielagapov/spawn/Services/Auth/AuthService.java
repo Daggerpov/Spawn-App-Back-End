@@ -487,7 +487,7 @@ public class AuthService implements IAuthService {
         
         // Check if user already exists
         User user = userService.getUserByEmail(email);
-        if (user != null && user.getStatus() != UserStatus.ACTIVE) {
+        if (user != null && user.getStatus() == UserStatus.ACTIVE) {
             throw new EmailAlreadyExistsException("Email already exists");
         }
         if (user != null && oauthService.isOAuthUser(user.getId())) {
