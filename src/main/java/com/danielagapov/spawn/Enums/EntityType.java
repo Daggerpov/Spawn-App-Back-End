@@ -18,7 +18,8 @@ public enum EntityType {
     // Unrelated to Base Entities
     ExternalIdMap("External Id Map"),
     ReportedContent("Reported Content"),
-    FeedbackSubmission("Feedback Submission");
+    FeedbackSubmission("Feedback Submission"),
+    ErrorLog("Error Log");
 
     private final String description;
 
