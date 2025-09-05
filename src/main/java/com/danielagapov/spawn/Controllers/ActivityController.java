@@ -2,6 +2,7 @@ package com.danielagapov.spawn.Controllers;
 
 import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityPartialUpdateDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ActivityFullException;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController()
@@ -111,6 +113,32 @@ public class ActivityController {
             }
         } catch (Exception e) {
             logger.error("Error replacing activity: " + id + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/activities/{id}/partial
+    @PatchMapping("{id}/partial")
+    public ResponseEntity<?> partialUpdateActivity(@RequestBody ActivityPartialUpdateDTO updates, @PathVariable UUID id) {
+        if (id == null) {
+            logger.error("Invalid parameter: activity ID is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            return new ResponseEntity<>(activityService.partialUpdateActivity(updates, id), HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            if (e.entityType == EntityType.Activity) {
+                logger.error("Activity not found for partial update: " + id + ": " + e.getMessage());
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            } else {
+                logger.error("Entity not found for partial activity update: " + e.getMessage());
+                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+            }
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid update data for activity: " + id + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            logger.error("Error partially updating activity: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

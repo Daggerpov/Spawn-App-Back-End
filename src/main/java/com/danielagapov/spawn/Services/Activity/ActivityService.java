@@ -30,6 +30,7 @@ import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import com.danielagapov.spawn.Services.Activity.ActivityExpirationService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,7 @@ public class ActivityService implements IActivityService {
     private final ILogger logger;
     private final ILocationService locationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ActivityExpirationService expirationService;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
@@ -66,7 +68,7 @@ public class ActivityService implements IActivityService {
                         ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
                         IUserRepository userRepository, IUserService userService, 
                         IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, 
-                        ApplicationEventPublisher eventPublisher) {
+                        ApplicationEventPublisher eventPublisher, ActivityExpirationService expirationService) {
         this.repository = repository;
         this.activityTypeRepository = activityTypeRepository;
         this.locationRepository = locationRepository;
@@ -77,6 +79,7 @@ public class ActivityService implements IActivityService {
         this.logger = logger;
         this.locationService = locationService;
         this.eventPublisher = eventPublisher;
+        this.expirationService = expirationService;
     }
 
     @Override
@@ -410,7 +413,8 @@ public class ActivityService implements IActivityService {
                     new ArrayList<>(), // chatMessages - empty for new activity
                     null, // participationStatus - not applicable for creator
                     true, // isSelfOwned - true since this is the creator
-                    activity.getCreatedAt()
+                    activity.getCreatedAt(),
+                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime())
             );
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
@@ -499,7 +503,81 @@ public class ActivityService implements IActivityService {
         }).orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
     }
 
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "fullActivityById", allEntries = true),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
+            @CacheEvict(value = "feedActivities", allEntries = true),
+    })
+    public FullFeedActivityDTO partialUpdateActivity(Map<String, Object> updates, UUID id) {
+        return repository.findById(id).map(activity -> {
+            // Only update the fields that are provided in the updates map
+            updates.forEach((fieldName, value) -> {
+                switch (fieldName.toLowerCase()) {
+                    case "title":
+                        if (value instanceof String) {
+                            activity.setTitle((String) value);
+                        }
+                        break;
+                    case "icon":
+                        if (value instanceof String) {
+                            activity.setIcon((String) value);
+                        }
+                        break;
+                    case "note":
+                        if (value instanceof String) {
+                            activity.setNote((String) value);
+                        }
+                        break;
+                    case "participantlimit":
+                        if (value instanceof Integer) {
+                            activity.setParticipantLimit((Integer) value);
+                        }
+                        break;
+                    case "starttime":
+                        if (value instanceof String) {
+                            try {
+                                OffsetDateTime startTime = OffsetDateTime.parse((String) value);
+                                activity.setStartTime(startTime);
+                            } catch (Exception e) {
+                                logger.warn("Invalid startTime format in partial update: " + value);
+                            }
+                        }
+                        break;
+                    case "endtime":
+                        if (value instanceof String) {
+                            try {
+                                OffsetDateTime endTime = OffsetDateTime.parse((String) value);
+                                activity.setEndTime(endTime);
+                            } catch (Exception e) {
+                                logger.warn("Invalid endTime format in partial update: " + value);
+                            }
+                        }
+                        break;
+                    default:
+                        // Ignore unknown fields to prevent errors
+                        logger.warn("Unknown field in partial update: " + fieldName);
+                        break;
+                }
+            });
 
+            // Update the lastUpdated timestamp
+            activity.setLastUpdated(Instant.now());
+
+            // Save updated activity
+            Activity savedActivity = repository.save(activity);
+
+            // Publish update event
+            eventPublisher.publishEvent(
+                new ActivityUpdateNotificationEvent(savedActivity.getCreator(), savedActivity, activityUserRepository)
+            );
+
+            // Get the creator's user ID for the full activity fetch
+            UUID creatorUserId = savedActivity.getCreator().getId();
+            return getFullActivityById(savedActivity.getId(), creatorUserId);
+        }).orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
+    }
 
     private List<UUID> getParticipatingUserIdsByActivityId(UUID ActivityId) {
         try {
@@ -723,30 +801,19 @@ public class ActivityService implements IActivityService {
 
     /**
      * Removes expired Activities from the provided list, and returns it modified.
-     * An Activity is considered expired if its end time is set and is before the current time.
+     * Uses the centralized ActivityExpirationService for consistent expiration logic.
      *
      * @param Activities the list of Activities to filter
      * @return the modified list
      */
     private List<FullFeedActivityDTO> removeExpiredActivities(List<FullFeedActivityDTO> Activities) {
-        // Use UTC for consistent timezone comparison across server and client timezones
-        OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
-
         if (Activities == null) {
             return Collections.emptyList();
         }
 
         return Activities.stream()
                 .filter(Objects::nonNull)
-                .filter(Activity -> {
-                    if (Activity.getEndTime() == null) {
-                        return true; // Keep activities with no end time
-                    }
-                    
-                    // Convert both times to UTC for proper comparison
-                    OffsetDateTime activityEndTimeUtc = Activity.getEndTime().withOffsetSameInstant(java.time.ZoneOffset.UTC);
-                    return !activityEndTimeUtc.isBefore(now);
-                })
+                .filter(activity -> !expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime()))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -788,7 +855,8 @@ public class ActivityService implements IActivityService {
                     chatMessageService.getFullChatMessagesByActivityId(Activity.getId()),
                     requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
                     Activity.getCreatorUserId().equals(requestingUserId),
-                    Activity.getCreatedAt()
+                    Activity.getCreatedAt(),
+                    expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime())
             );
         } catch (BaseNotFoundException e) {
             return null;

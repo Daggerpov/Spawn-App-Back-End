@@ -1,10 +1,9 @@
 package com.danielagapov.spawn.Services;
 
 import com.danielagapov.spawn.Enums.ShareLinkType;
-import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.ShareLink;
-import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Repositories.ShareLinkRepository;
+import com.danielagapov.spawn.Services.Activity.ActivityExpirationService;
 import com.danielagapov.spawn.Util.ShareCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +25,7 @@ public class ShareLinkService {
     
     private final ShareLinkRepository shareLinkRepository;
     private final ShareCodeGenerator shareCodeGenerator;
+    private final ActivityExpirationService expirationService;
     
     private static final int MAX_GENERATION_RETRIES = 10;
     
@@ -39,7 +38,11 @@ public class ShareLinkService {
      */
     @Transactional
     public String generateActivityShareLink(UUID activityId, java.time.OffsetDateTime startTime, java.time.OffsetDateTime endTime) {
-        return generateShareLink(activityId, ShareLinkType.ACTIVITY, calculateActivityExpiration(startTime, endTime));
+        Instant shareExpiration = null;
+        if (expirationService.calculateShareLinkExpiration(startTime, endTime) != null) {
+            shareExpiration = expirationService.calculateShareLinkExpiration(startTime, endTime).toInstant();
+        }
+        return generateShareLink(activityId, ShareLinkType.ACTIVITY, shareExpiration);
     }
     
     /**
@@ -121,22 +124,4 @@ public class ShareLinkService {
         return deletedCount;
     }
     
-    /**
-     * Calculate when an activity share link should expire
-     * @param startTime The activity start time
-     * @param endTime The activity end time
-     * @return Expiration time (activity end time + 1 day, or start time + 2 days if no end time)
-     */
-    private Instant calculateActivityExpiration(java.time.OffsetDateTime startTime, java.time.OffsetDateTime endTime) {
-        if (endTime != null) {
-            // Link expires 1 day after activity ends
-            return endTime.toInstant().plus(1, ChronoUnit.DAYS);
-        } else if (startTime != null) {
-            // Link expires 2 days after activity starts if no end time
-            return startTime.toInstant().plus(2, ChronoUnit.DAYS);
-        } else {
-            // Default to 2 days from now if no times are set
-            return Instant.now().plus(2, ChronoUnit.DAYS);
-        }
-    }
 } 

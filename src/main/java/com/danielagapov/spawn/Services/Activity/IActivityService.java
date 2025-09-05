@@ -7,6 +7,7 @@ import com.danielagapov.spawn.Enums.ParticipationStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -69,6 +70,17 @@ public interface IActivityService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if updating fails
      */
     FullFeedActivityDTO replaceActivity(ActivityDTO activity, UUID activityId);
+
+    /**
+     * Partially updates specific fields of an existing activity.
+     * 
+     * @param updates a map containing field names and their new values to update
+     * @param activityId the unique identifier of the activity to update
+     * @return the updated FullFeedActivityDTO
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
+     * @throws IllegalArgumentException if invalid field names or values are provided
+     */
+    FullFeedActivityDTO partialUpdateActivity(Map<String, Object> updates, UUID activityId);
 
     /**
      * Deletes an activity by its unique identifier.
