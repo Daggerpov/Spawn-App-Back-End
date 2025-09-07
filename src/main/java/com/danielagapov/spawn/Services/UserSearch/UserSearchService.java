@@ -579,9 +579,21 @@ public class UserSearchService implements IUserSearchService {
     public List<BaseUserDTO> searchByQuery(String searchQuery, UUID requestingUserId) {
         List<User> users = searchUsersByQuery(searchQuery);
         
-        // Filter out the requesting user and other excluded users if requestingUserId is provided
+        // For general user search, only exclude self and admin users, not friends or friend requests
         if (requestingUserId != null) {
-            Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
+            Set<UUID> excludedUserIds = new HashSet<>();
+            excludedUserIds.add(requestingUserId); // Exclude self
+            
+            // Exclude admin user from being shown to front-end users
+            try {
+                Optional<User> adminUser = userRepository.findByUsername(adminUsername);
+                if (adminUser.isPresent()) {
+                    excludedUserIds.add(adminUser.get().getId());
+                }
+            } catch (Exception e) {
+                logger.warn("Could not find admin user to exclude: " + e.getMessage());
+            }
+            
             users = users.stream()
                     .filter(user -> !excludedUserIds.contains(user.getId()) && user.getStatus() == UserStatus.ACTIVE)
                     .collect(Collectors.toList());
