@@ -7,7 +7,6 @@ import com.danielagapov.spawn.Enums.ParticipationStatus;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -60,6 +59,16 @@ public interface IActivityService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if referenced entities don't exist
      */
     AbstractActivityDTO createActivity(ActivityDTO activityDTO);
+    
+    /**
+     * Creates a new activity from DTO and handles invitations, with friend suggestions.
+     * 
+     * @param activityDTO the DTO containing activity creation data
+     * @return the created FullFeedActivityDTO
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if creation fails
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if referenced entities don't exist
+     */
+    FullFeedActivityDTO createActivityWithSuggestions(ActivityDTO activityDTO);
 
     /**
      * Updates an existing activity or creates a new one if it doesn't exist.
@@ -74,13 +83,13 @@ public interface IActivityService {
     /**
      * Partially updates specific fields of an existing activity.
      * 
-     * @param updates a map containing field names and their new values to update
+     * @param updates the DTO containing field names and their new values to update
      * @param activityId the unique identifier of the activity to update
      * @return the updated FullFeedActivityDTO
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
      * @throws IllegalArgumentException if invalid field names or values are provided
      */
-    FullFeedActivityDTO partialUpdateActivity(Map<String, Object> updates, UUID activityId);
+    FullFeedActivityDTO partialUpdateActivity(ActivityPartialUpdateDTO updates, UUID activityId);
 
     /**
      * Deletes an activity by its unique identifier.

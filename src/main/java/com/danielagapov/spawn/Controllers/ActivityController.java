@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.Controllers;
 
-import com.danielagapov.spawn.DTOs.Activity.AbstractActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityPartialUpdateDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
@@ -16,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController()
@@ -73,16 +71,16 @@ public class ActivityController {
 
     // full path: /api/v1/activities
     @PostMapping
-    public ResponseEntity<AbstractActivityDTO> createActivity(@RequestBody ActivityDTO activityDTO) {
+    public ResponseEntity<FullFeedActivityDTO> createActivity(@RequestBody ActivityDTO activityDTO) {
         try {
-            AbstractActivityDTO createdActivity = activityService.createActivity(activityDTO);
-            return new ResponseEntity<>(createdActivity, HttpStatus.CREATED);
+            FullFeedActivityDTO response = activityService.createActivityWithSuggestions(activityDTO);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid request for activity creation: " + e.getMessage());
-            return new ResponseEntity<AbstractActivityDTO>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<FullFeedActivityDTO>(HttpStatus.BAD_REQUEST);
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during activity creation: " + e.getMessage());
-            return new ResponseEntity<AbstractActivityDTO>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<FullFeedActivityDTO>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error creating activity: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -129,10 +127,10 @@ public class ActivityController {
         } catch (BaseNotFoundException e) {
             if (e.entityType == EntityType.Activity) {
                 logger.error("Activity not found for partial update: " + id + ": " + e.getMessage());
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Activity not found", HttpStatus.NOT_FOUND);
             } else {
                 logger.error("Entity not found for partial activity update: " + e.getMessage());
-                return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+                return new ResponseEntity<>("Entity not found: " + e.getMessage(), HttpStatus.NOT_FOUND);
             }
         } catch (IllegalArgumentException e) {
             logger.error("Invalid update data for activity: " + id + ": " + e.getMessage());

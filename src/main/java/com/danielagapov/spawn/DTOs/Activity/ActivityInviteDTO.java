@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.DTOs.Activity;
 
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,8 +35,9 @@ public class ActivityInviteDTO extends AbstractActivityDTO {
     UUID creatorUserId,
     List<UUID> participantUserIds,
     List<UUID> invitedUserIds,
-    Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
+    Instant createdAt,
+    boolean isExpired) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired);
         this.locationId = locationId;
         this.activityTypeId = activityTypeId;
         this.creatorUserId = creatorUserId;

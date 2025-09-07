@@ -33,8 +33,9 @@ public class ActivityDTO extends AbstractActivityDTO {
     List<UUID> participantUserIds,
     List<UUID> invitedUserIds,
     List<UUID> chatMessageIds,
-    Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
+    Instant createdAt,
+    boolean isExpired) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired);
         this.location = location;
         this.activityTypeId = activityTypeId;
         this.creatorUserId = creatorUserId;

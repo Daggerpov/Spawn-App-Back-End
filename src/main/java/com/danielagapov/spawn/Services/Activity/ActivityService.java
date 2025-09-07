@@ -31,6 +31,7 @@ import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Activity.ActivityExpirationService;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +62,7 @@ public class ActivityService implements IActivityService {
     private final ILocationService locationService;
     private final ApplicationEventPublisher eventPublisher;
     private final ActivityExpirationService expirationService;
+    private final IActivityTypeService activityTypeService;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
@@ -68,7 +70,8 @@ public class ActivityService implements IActivityService {
                         ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
                         IUserRepository userRepository, IUserService userService, 
                         IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, 
-                        ApplicationEventPublisher eventPublisher, ActivityExpirationService expirationService) {
+                        ApplicationEventPublisher eventPublisher, ActivityExpirationService expirationService,
+                        IActivityTypeService activityTypeService) {
         this.repository = repository;
         this.activityTypeRepository = activityTypeRepository;
         this.locationRepository = locationRepository;
@@ -80,6 +83,7 @@ public class ActivityService implements IActivityService {
         this.locationService = locationService;
         this.eventPublisher = eventPublisher;
         this.expirationService = expirationService;
+        this.activityTypeService = activityTypeService;
     }
 
     @Override
@@ -122,7 +126,8 @@ public class ActivityService implements IActivityService {
                     activity.getCreator().getId(),
                     participantsByActivity.getOrDefault(activity.getId(), List.of()),
                     invitedByActivity.getOrDefault(activity.getId(), List.of()),
-                    chatMessagesByActivity.getOrDefault(activity.getId(), List.of())
+                    chatMessagesByActivity.getOrDefault(activity.getId(), List.of()),
+                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt())
                 );
                 
                 FullFeedActivityDTO fullActivity = getFullActivityByActivity(activityDTO, requestingUserId, visitedActivities);
@@ -213,7 +218,8 @@ public class ActivityService implements IActivityService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(id);
 
-        return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+        return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds, 
+                expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt()));
     }
 
     @Override
@@ -253,7 +259,8 @@ public class ActivityService implements IActivityService {
                 activity.getCreator().getId(),
                 participatingUserIds,
                 invitedUserIds,
-                activity.getCreatedAt()
+                activity.getCreatedAt(),
+                false // isExpired - assuming false for now, could be calculated based on endTime
         );
     }
 
@@ -302,7 +309,8 @@ public class ActivityService implements IActivityService {
                     ActivityEntity.getCreator().getId(), // creatorUserId
                     userService.getParticipantUserIdsByActivityId(ActivityEntity.getId()), // participantUserIds
                     userService.getInvitedUserIdsByActivityId(ActivityEntity.getId()), // invitedUserIds
-                    chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId()) // chatMessageIds
+                    chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId()), // chatMessageIds
+                    expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt()) // isExpired
             );
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
@@ -423,6 +431,34 @@ public class ActivityService implements IActivityService {
     }
 
     @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "ActivityById", key = "#result.activity.id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#result.activity.id"),
+            @CacheEvict(value = "fullActivityById", allEntries = true),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.activity.creatorUser.id"),
+            @CacheEvict(value = "feedActivities", allEntries = true),
+            
+            @CacheEvict(value = "userStatsById", key = "#result.activity.creatorUser.id")
+    })
+    public FullFeedActivityDTO createActivityWithSuggestions(ActivityDTO activityDTO) {
+        try {
+            // Create the activity using the existing method
+            AbstractActivityDTO createdActivity = createActivity(activityDTO);
+            
+            // Cast to FullFeedActivityDTO (which is what createActivity returns)
+            FullFeedActivityDTO fullActivity = (FullFeedActivityDTO) createdActivity;
+            
+            // Return the activity directly (friend suggestions feature was removed)
+            return fullActivity;
+            
+        } catch (Exception e) {
+            logger.error("Error creating Activity with suggestions: " + e.getMessage());
+            throw new ApplicationException("Failed to create Activity with suggestions", e);
+        }
+    }
+
+    @Override
     @Cacheable(value = "ActivitiesByOwnerId", key = "#creatorUserId")
     public List<ActivityDTO> getActivitiesByOwnerId(UUID creatorUserId) {
         List<Activity> Activities = repository.findByCreatorId(creatorUserId);
@@ -436,7 +472,8 @@ public class ActivityService implements IActivityService {
                         Activity.getCreator().getId(),
                         userService.getParticipantUserIdsByActivityId(Activity.getId()),
                         userService.getInvitedUserIdsByActivityId(Activity.getId()),
-                        chatMessageService.getChatMessageIdsByActivityId(Activity.getId())))
+                        chatMessageService.getChatMessageIdsByActivityId(Activity.getId()),
+                        expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt())))
                 .toList();
     }
 
@@ -510,57 +547,42 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
     })
-    public FullFeedActivityDTO partialUpdateActivity(Map<String, Object> updates, UUID id) {
+    public FullFeedActivityDTO partialUpdateActivity(ActivityPartialUpdateDTO updates, UUID id) {
         return repository.findById(id).map(activity -> {
-            // Only update the fields that are provided in the updates map
-            updates.forEach((fieldName, value) -> {
-                switch (fieldName.toLowerCase()) {
-                    case "title":
-                        if (value instanceof String) {
-                            activity.setTitle((String) value);
-                        }
-                        break;
-                    case "icon":
-                        if (value instanceof String) {
-                            activity.setIcon((String) value);
-                        }
-                        break;
-                    case "note":
-                        if (value instanceof String) {
-                            activity.setNote((String) value);
-                        }
-                        break;
-                    case "participantlimit":
-                        if (value instanceof Integer) {
-                            activity.setParticipantLimit((Integer) value);
-                        }
-                        break;
-                    case "starttime":
-                        if (value instanceof String) {
-                            try {
-                                OffsetDateTime startTime = OffsetDateTime.parse((String) value);
-                                activity.setStartTime(startTime);
-                            } catch (Exception e) {
-                                logger.warn("Invalid startTime format in partial update: " + value);
-                            }
-                        }
-                        break;
-                    case "endtime":
-                        if (value instanceof String) {
-                            try {
-                                OffsetDateTime endTime = OffsetDateTime.parse((String) value);
-                                activity.setEndTime(endTime);
-                            } catch (Exception e) {
-                                logger.warn("Invalid endTime format in partial update: " + value);
-                            }
-                        }
-                        break;
-                    default:
-                        // Ignore unknown fields to prevent errors
-                        logger.warn("Unknown field in partial update: " + fieldName);
-                        break;
+            // Only update the fields that are provided in the updates DTO
+            if (updates.getTitle() != null) {
+                activity.setTitle(updates.getTitle());
+            }
+            
+            if (updates.getIcon() != null) {
+                activity.setIcon(updates.getIcon());
+            }
+            
+            if (updates.getNote() != null) {
+                activity.setNote(updates.getNote());
+            }
+            
+            if (updates.getParticipantLimit() != null) {
+                activity.setParticipantLimit(updates.getParticipantLimit());
+            }
+            
+            if (updates.getStartTime() != null) {
+                try {
+                    OffsetDateTime startTime = OffsetDateTime.parse(updates.getStartTime());
+                    activity.setStartTime(startTime);
+                } catch (Exception e) {
+                    logger.warn("Invalid startTime format in partial update: " + updates.getStartTime());
                 }
-            });
+            }
+            
+            if (updates.getEndTime() != null) {
+                try {
+                    OffsetDateTime endTime = OffsetDateTime.parse(updates.getEndTime());
+                    activity.setEndTime(endTime);
+                } catch (Exception e) {
+                    logger.warn("Invalid endTime format in partial update: " + updates.getEndTime());
+                }
+            }
 
             // Update the lastUpdated timestamp
             activity.setLastUpdated(Instant.now());
@@ -596,7 +618,8 @@ public class ActivityService implements IActivityService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(ActivityEntity.getId());
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId());
 
-        return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+        return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds,
+                expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt()));
     }
 
     @Override

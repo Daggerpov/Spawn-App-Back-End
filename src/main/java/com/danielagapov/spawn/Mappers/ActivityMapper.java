@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class ActivityMapper {
 
     // Convert entity to DTO
-    public static ActivityDTO toDTO(Activity entity, UUID creatorUserId, List<UUID> participantUserIds, List<UUID> invitedUserIds, List<UUID> chatMessageIds) {
+    public static ActivityDTO toDTO(Activity entity, UUID creatorUserId, List<UUID> participantUserIds, List<UUID> invitedUserIds, List<UUID> chatMessageIds, boolean isExpired) {
         return new ActivityDTO(
                 entity.getId(),
                 entity.getTitle(),
@@ -30,7 +30,8 @@ public class ActivityMapper {
                 participantUserIds,
                 invitedUserIds,
                 chatMessageIds,
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                isExpired
         );
     }
 
@@ -60,7 +61,8 @@ public class ActivityMapper {
             Map<UUID, UUID> creatorUserIdMap, // Map of Activity ID to creatorUserId UserDTO
             Map<UUID, List<UUID>> participantUserIdsMap, // Map of Activity ID to participantUserIds
             Map<UUID, List<UUID>> invitedUserIdsMap, // Map of Activity ID to invitedUserIds users
-            Map<UUID, List<UUID>> chatMessageIdsMap // Map of Activity ID to chat messages
+            Map<UUID, List<UUID>> chatMessageIdsMap, // Map of Activity ID to chat messages
+            Map<UUID, Boolean> isExpiredMap // Map of Activity ID to expiration status
     ) {
         return entities.stream()
                 .map(entity -> toDTO(
@@ -68,7 +70,8 @@ public class ActivityMapper {
                         creatorUserIdMap.get(entity.getId()), // Fetch the creatorUserId UserDTO
                         participantUserIdsMap.getOrDefault(entity.getId(), List.of()), // Fetch participantUserIds or default empty
                         invitedUserIdsMap.getOrDefault(entity.getId(), List.of()), // Fetch invitedUserIds users or default empty
-                        chatMessageIdsMap.getOrDefault(entity.getId(), List.of()) // Fetch chat messages or default empty
+                        chatMessageIdsMap.getOrDefault(entity.getId(), List.of()), // Fetch chat messages or default empty
+                        isExpiredMap.getOrDefault(entity.getId(), false) // Fetch expiration status or default to false
                 ))
                 .collect(Collectors.toList());
     }

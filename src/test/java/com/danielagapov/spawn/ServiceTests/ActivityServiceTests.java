@@ -26,7 +26,7 @@ import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
 import com.danielagapov.spawn.Services.Activity.ActivityService;
- 
+import com.danielagapov.spawn.Services.Activity.ActivityExpirationService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,12 +84,19 @@ public class ActivityServiceTests {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private ActivityExpirationService activityExpirationService;
+
     @InjectMocks
     private ActivityService ActivityService;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
+        
+        // Setup default mock behavior for ActivityExpirationService
+        when(activityExpirationService.isActivityExpired(any(OffsetDateTime.class), any(OffsetDateTime.class), any(Instant.class)))
+                .thenReturn(false); // Default to not expired
     }
 
     // --- Helper methods ---
@@ -117,7 +124,8 @@ public class ActivityServiceTests {
                 List.of(),
                 List.of(),
                 List.of(),
-                Instant.now()
+                Instant.now(),
+                false // isExpired
         );
     }
 
@@ -201,7 +209,7 @@ public class ActivityServiceTests {
         LocationDTO locationDTO = new LocationDTO(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), locationDTO, null, "Bring your own snacks!", "icon", null, UUID.randomUUID(),
-                List.of(), List.of(), List.of(), Instant.now());
+                List.of(), List.of(), List.of(), Instant.now(), false);
         User creator = new User(
                 UUID.randomUUID(),
                 "username",
@@ -226,7 +234,7 @@ public class ActivityServiceTests {
         LocationDTO locationDTO = new LocationDTO(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), locationDTO, null, "Bring your own snacks!", "icon", null, UUID.randomUUID(),
-                List.of(), List.of(), List.of(), Instant.now());
+                List.of(), List.of(), List.of(), Instant.now(), false);
 
         when(locationService.save(any(Location.class))).thenReturn(location);
         when(ActivityRepository.save(any(Activity.class))).thenThrow(new DataAccessException("Database error") {
@@ -284,7 +292,8 @@ public class ActivityServiceTests {
                 List.of(), // participantUserIds
                 List.of(explicitInviteId), // invitedUserIds
                 List.of(), // chatMessageIds
-                null // createdAt
+                Instant.now(), // createdAt
+                false // isExpired
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -333,7 +342,8 @@ public class ActivityServiceTests {
                 List.of(), // participantUserIds
                 List.of(), // invitedUserIds
                 List.of(), // chatMessageIds
-                null // createdAt
+                Instant.now(), // createdAt
+                false // isExpired
         );
 
         when(locationService.save(any(Location.class))).thenThrow(new RuntimeException("Location creation failed"));
@@ -365,7 +375,8 @@ public class ActivityServiceTests {
                 List.of(), // participantUserIds
                 List.of(commonUserId), // invitedUserIds
                 List.of(), // chatMessageIds
-                null // createdAt
+                Instant.now(), // createdAt
+                false // isExpired
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -462,7 +473,8 @@ public class ActivityServiceTests {
                 List.of(), // participantUserIds
                 List.of(invitedUserId), // invitedUserIds
                 List.of(), // chatMessageIds
-                null // createdAt
+                Instant.now(), // createdAt
+                false // isExpired
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -511,7 +523,8 @@ public class ActivityServiceTests {
                 List.of(), // participantUserIds
                 List.of(invitedUserId1, invitedUserId2), // invitedUserIds
                 List.of(), // chatMessageIds
-                null // createdAt
+                Instant.now(), // createdAt
+                false // isExpired
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -621,7 +634,8 @@ public class ActivityServiceTests {
                 List.of(),
                 List.of(),
                 List.of(),
-                Instant.now()
+                Instant.now(),
+                false // isExpired
         );
         UUID requestingUserId = UUID.randomUUID();
 
