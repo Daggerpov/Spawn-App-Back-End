@@ -34,13 +34,14 @@ public class ShareLinkService {
      * @param activityId The activity ID to create a share link for
      * @param startTime The activity start time
      * @param endTime The activity end time
+     * @param createdAt The activity creation time
      * @return The generated share code
      */
     @Transactional
-    public String generateActivityShareLink(UUID activityId, java.time.OffsetDateTime startTime, java.time.OffsetDateTime endTime) {
+    public String generateActivityShareLink(UUID activityId, java.time.OffsetDateTime startTime, java.time.OffsetDateTime endTime, Instant createdAt) {
         Instant shareExpiration = null;
-        if (expirationService.calculateShareLinkExpiration(startTime, endTime) != null) {
-            shareExpiration = expirationService.calculateShareLinkExpiration(startTime, endTime).toInstant();
+        if (expirationService.calculateShareLinkExpiration(startTime, endTime, createdAt) != null) {
+            shareExpiration = expirationService.calculateShareLinkExpiration(startTime, endTime, createdAt).toInstant();
         }
         return generateShareLink(activityId, ShareLinkType.ACTIVITY, shareExpiration);
     }

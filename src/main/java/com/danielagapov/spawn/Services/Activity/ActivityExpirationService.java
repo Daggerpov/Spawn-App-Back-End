@@ -2,6 +2,8 @@ package com.danielagapov.spawn.Services.Activity;
 
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -14,19 +16,20 @@ import java.time.ZoneOffset;
 public class ActivityExpirationService {
 
     /**
-     * Determines if an activity is expired based on its end time and start time.
+     * Determines if an activity is expired based on its end time and creation time.
      * This is the authoritative method for activity expiration across the entire application.
      * 
-     * Expiration Rules:
+     * Expiration Rules (per original specification):
      * 1. Activities with endTime: expired if endTime < current time (UTC)
-     * 2. Indefinite activities (no endTime): expired if startTime + 24 hours < current time (UTC)
-     * 3. Activities with no startTime or endTime: never expire
+     * 2. Activities without endTime: expire at the end of the day they were created (UTC)
+     * 3. Activities with no creation time: never expire
      * 
      * @param startTime The activity start time (can be null)
      * @param endTime The activity end time (can be null)
+     * @param createdAt The activity creation time (can be null)
      * @return true if the activity is expired, false otherwise
      */
-    public boolean isActivityExpired(OffsetDateTime startTime, OffsetDateTime endTime) {
+    public boolean isActivityExpired(OffsetDateTime startTime, OffsetDateTime endTime, Instant createdAt) {
         // Use UTC for consistent timezone comparison across server and client timezones
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         
@@ -37,15 +40,16 @@ public class ActivityExpirationService {
             return endTimeUtc.isBefore(now);
         }
         
-        // Indefinite activities (no end time) - expire 24 hours after start time
-        if (startTime != null) {
-            // Convert startTime to UTC and add 24 hours
-            OffsetDateTime startTimeUtc = startTime.withOffsetSameInstant(ZoneOffset.UTC);
-            OffsetDateTime indefiniteExpirationTime = startTimeUtc.plusHours(24);
-            return indefiniteExpirationTime.isBefore(now);
+        // Activities without end time expire at the end of the day they were created
+        if (createdAt != null) {
+            // Get the date the activity was created (in UTC)
+            LocalDate createdDate = createdAt.atOffset(ZoneOffset.UTC).toLocalDate();
+            // Calculate end of that day (23:59:59.999 UTC)
+            OffsetDateTime endOfCreationDay = createdDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+            return now.isAfter(endOfCreationDay) || now.isEqual(endOfCreationDay);
         }
         
-        // Activities with no start or end time never expire
+        // Activities with no creation time never expire (shouldn't happen in practice)
         return false;
     }
 
@@ -55,21 +59,24 @@ public class ActivityExpirationService {
      * 
      * @param startTime The activity start time (can be null)
      * @param endTime The activity end time (can be null)
+     * @param createdAt The activity creation time (can be null)
      * @return The expiration time in UTC, or null if the activity never expires
      */
-    public OffsetDateTime calculateActivityExpiration(OffsetDateTime startTime, OffsetDateTime endTime) {
+    public OffsetDateTime calculateActivityExpiration(OffsetDateTime startTime, OffsetDateTime endTime, Instant createdAt) {
         // Activities with explicit end time expire at their end time
         if (endTime != null) {
             return endTime.withOffsetSameInstant(ZoneOffset.UTC);
         }
         
-        // Indefinite activities expire 24 hours after start time
-        if (startTime != null) {
-            OffsetDateTime startTimeUtc = startTime.withOffsetSameInstant(ZoneOffset.UTC);
-            return startTimeUtc.plusHours(24);
+        // Activities without end time expire at the end of the day they were created
+        if (createdAt != null) {
+            // Get the date the activity was created (in UTC)
+            LocalDate createdDate = createdAt.atOffset(ZoneOffset.UTC).toLocalDate();
+            // Return end of that day (start of next day)
+            return createdDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
         }
         
-        // Activities with no start or end time never expire
+        // Activities with no creation time never expire
         return null;
     }
 
@@ -79,10 +86,11 @@ public class ActivityExpirationService {
      * 
      * @param startTime The activity start time (can be null)
      * @param endTime The activity end time (can be null)
+     * @param createdAt The activity creation time (can be null)
      * @return The share link expiration time, or null if it should never expire
      */
-    public OffsetDateTime calculateShareLinkExpiration(OffsetDateTime startTime, OffsetDateTime endTime) {
-        OffsetDateTime activityExpiration = calculateActivityExpiration(startTime, endTime);
+    public OffsetDateTime calculateShareLinkExpiration(OffsetDateTime startTime, OffsetDateTime endTime, Instant createdAt) {
+        OffsetDateTime activityExpiration = calculateActivityExpiration(startTime, endTime, createdAt);
         
         if (activityExpiration != null) {
             // Share link expires 1 day after activity expires

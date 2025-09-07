@@ -414,7 +414,7 @@ public class ActivityService implements IActivityService {
                     null, // participationStatus - not applicable for creator
                     true, // isSelfOwned - true since this is the creator
                     activity.getCreatedAt(),
-                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime())
+                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt())
             );
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
@@ -813,7 +813,7 @@ public class ActivityService implements IActivityService {
 
         return Activities.stream()
                 .filter(Objects::nonNull)
-                .filter(activity -> !expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime()))
+                .filter(activity -> !expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt()))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -856,7 +856,7 @@ public class ActivityService implements IActivityService {
                     requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
                     Activity.getCreatorUserId().equals(requestingUserId),
                     Activity.getCreatedAt(),
-                    expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime())
+                    expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt())
             );
         } catch (BaseNotFoundException e) {
             return null;
