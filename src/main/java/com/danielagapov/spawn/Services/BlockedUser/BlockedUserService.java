@@ -17,6 +17,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,6 +43,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = {
             "blockedUsers",
             "blockedUserIds",
@@ -94,6 +96,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = {
             "blockedUsers",
             "blockedUserIds",
@@ -202,6 +205,7 @@ public class BlockedUserService implements IBlockedUserService {
     }
 
     @Override
+    @Transactional
     public void removeFriendshipBetweenUsers(UUID userAId, UUID userBId) {
         try {
             User userA = userService.getUserEntityById(userAId);
