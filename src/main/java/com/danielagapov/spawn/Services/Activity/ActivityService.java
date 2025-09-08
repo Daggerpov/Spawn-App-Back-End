@@ -269,10 +269,10 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
             @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
             
-            @CacheEvict(value = "userStatsById", key = "#result.creatorUserId")
+            @CacheEvict(value = "userStatsById", key = "#result.creatorUser.id")
     })
     public AbstractActivityDTO saveActivity(AbstractActivityDTO Activity) {
         try {
@@ -433,13 +433,13 @@ public class ActivityService implements IActivityService {
     @Override
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "ActivityById", key = "#result.activity.id"),
-            @CacheEvict(value = "ActivityInviteById", key = "#result.activity.id"),
+            @CacheEvict(value = "ActivityById", key = "#result.id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.activity.creatorUser.id"),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
             
-            @CacheEvict(value = "userStatsById", key = "#result.activity.creatorUser.id")
+            @CacheEvict(value = "userStatsById", key = "#result.creatorUser.id")
     })
     public FullFeedActivityDTO createActivityWithSuggestions(ActivityDTO activityDTO) {
         try {

@@ -46,7 +46,7 @@ public class ActivityExpirationService {
             LocalDate createdDate = createdAt.atOffset(ZoneOffset.UTC).toLocalDate();
             // Calculate end of that day (23:59:59.999 UTC)
             OffsetDateTime endOfCreationDay = createdDate.plusDays(1).atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
-            return now.isAfter(endOfCreationDay) || now.isEqual(endOfCreationDay);
+            return now.isAfter(endOfCreationDay);
         }
         
         // Activities with no creation time never expire (shouldn't happen in practice)
