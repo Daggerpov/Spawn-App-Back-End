@@ -36,8 +36,9 @@ public class ActivityInviteDTO extends AbstractActivityDTO {
     List<UUID> participantUserIds,
     List<UUID> invitedUserIds,
     Instant createdAt,
-    boolean isExpired) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired);
+    boolean isExpired,
+    String clientTimezone) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired, clientTimezone);
         this.locationId = locationId;
         this.activityTypeId = activityTypeId;
         this.creatorUserId = creatorUserId;

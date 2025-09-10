@@ -127,7 +127,7 @@ public class ActivityService implements IActivityService {
                     participantsByActivity.getOrDefault(activity.getId(), List.of()),
                     invitedByActivity.getOrDefault(activity.getId(), List.of()),
                     chatMessagesByActivity.getOrDefault(activity.getId(), List.of()),
-                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt())
+                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone())
                 );
                 
                 FullFeedActivityDTO fullActivity = getFullActivityByActivity(activityDTO, requestingUserId, visitedActivities);
@@ -219,7 +219,7 @@ public class ActivityService implements IActivityService {
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(id);
 
         return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds, 
-                expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt()));
+                expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone()));
     }
 
     @Override
@@ -260,7 +260,8 @@ public class ActivityService implements IActivityService {
                 participatingUserIds,
                 invitedUserIds,
                 activity.getCreatedAt(),
-                false // isExpired - assuming false for now, could be calculated based on endTime
+                expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone()),
+                activity.getClientTimezone()
         );
     }
 
@@ -310,7 +311,7 @@ public class ActivityService implements IActivityService {
                     userService.getParticipantUserIdsByActivityId(ActivityEntity.getId()), // participantUserIds
                     userService.getInvitedUserIdsByActivityId(ActivityEntity.getId()), // invitedUserIds
                     chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId()), // chatMessageIds
-                    expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt()) // isExpired
+                    expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()) // isExpired
             );
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
@@ -360,6 +361,7 @@ public class ActivityService implements IActivityService {
             activity.setLocation(location);
             activity.setCreator(creator);
             activity.setActivityType(activityType);
+            activity.setClientTimezone(activityDTO.getClientTimezone());
 
             activity = repository.save(activity);
 
@@ -422,7 +424,8 @@ public class ActivityService implements IActivityService {
                     null, // participationStatus - not applicable for creator
                     true, // isSelfOwned - true since this is the creator
                     activity.getCreatedAt(),
-                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt())
+                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone()),
+                    activity.getClientTimezone()
             );
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
@@ -473,7 +476,7 @@ public class ActivityService implements IActivityService {
                         userService.getParticipantUserIdsByActivityId(Activity.getId()),
                         userService.getInvitedUserIdsByActivityId(Activity.getId()),
                         chatMessageService.getChatMessageIdsByActivityId(Activity.getId()),
-                        expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt())))
+                        expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone())))
                 .toList();
     }
 
@@ -619,7 +622,7 @@ public class ActivityService implements IActivityService {
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId());
 
         return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds,
-                expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt()));
+                expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()));
     }
 
     @Override
@@ -836,7 +839,7 @@ public class ActivityService implements IActivityService {
 
         return Activities.stream()
                 .filter(Objects::nonNull)
-                .filter(activity -> !expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt()))
+                .filter(activity -> !expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone()))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -879,7 +882,8 @@ public class ActivityService implements IActivityService {
                     requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
                     Activity.getCreatorUserId().equals(requestingUserId),
                     Activity.getCreatedAt(),
-                    expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt())
+                    expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone()),
+                    Activity.getClientTimezone()
             );
         } catch (BaseNotFoundException e) {
             return null;

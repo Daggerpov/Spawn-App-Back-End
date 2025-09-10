@@ -36,8 +36,9 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
     List<BaseUserDTO> invitedUsers,
     List<UUID> chatMessageIds,
     Instant createdAt,
-    boolean isExpired) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired);
+    boolean isExpired,
+    String clientTimezone) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired, clientTimezone);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
@@ -71,7 +72,8 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
             fullFeedActivityDTO.getInvitedUsers(),
             chatMessageIds,
             fullFeedActivityDTO.getCreatedAt(),
-            fullFeedActivityDTO.isExpired()
+            fullFeedActivityDTO.isExpired(),
+            fullFeedActivityDTO.getClientTimezone()
         );
     }
 } 

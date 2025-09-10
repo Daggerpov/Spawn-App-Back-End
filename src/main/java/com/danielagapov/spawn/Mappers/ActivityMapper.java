@@ -31,7 +31,8 @@ public class ActivityMapper {
                 invitedUserIds,
                 chatMessageIds,
                 entity.getCreatedAt(),
-                isExpired
+                isExpired,
+                entity.getClientTimezone()
         );
     }
 
@@ -45,7 +46,8 @@ public class ActivityMapper {
                 location, // Assign the full Location entity
                 dto.getNote(),
                 creator,
-                dto.getIcon()
+                dto.getIcon(),
+                dto.getClientTimezone()
         );
         activity.setActivityType(activityType); // Set the ActivityType entity
         activity.setParticipantLimit(dto.getParticipantLimit()); // Set the participant limit

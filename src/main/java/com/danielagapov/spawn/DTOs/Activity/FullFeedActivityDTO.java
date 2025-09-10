@@ -46,8 +46,9 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             ParticipationStatus participationStatus, 
                             boolean isSelfOwned,
                             Instant createdAt,
-                            boolean isExpired) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired);
+                            boolean isExpired,
+                            String clientTimezone) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired, clientTimezone);
         this.location = location;
         this.activityTypeId = activityTypeId;
         this.creatorUser = creatorUser;

@@ -19,6 +19,7 @@ public class ActivityDTO extends AbstractActivityDTO {
     List<UUID> participantUserIds;
     List<UUID> invitedUserIds;
     List<UUID> chatMessageIds;
+    String clientTimezone; // Timezone of the client creating the activity (e.g., "America/New_York")
     
     public ActivityDTO(UUID id,
     String title,
@@ -34,13 +35,15 @@ public class ActivityDTO extends AbstractActivityDTO {
     List<UUID> invitedUserIds,
     List<UUID> chatMessageIds,
     Instant createdAt,
-    boolean isExpired) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired);
+    boolean isExpired,
+    String clientTimezone) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired, clientTimezone);
         this.location = location;
         this.activityTypeId = activityTypeId;
         this.creatorUserId = creatorUserId;
         this.participantUserIds = participantUserIds;
         this.invitedUserIds = invitedUserIds;
         this.chatMessageIds = chatMessageIds;
+        this.clientTimezone = clientTimezone;
     }
 }

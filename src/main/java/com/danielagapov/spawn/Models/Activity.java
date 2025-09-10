@@ -66,6 +66,9 @@ public class Activity implements Serializable {
     @Column(name = "last_updated")
     private Instant lastUpdated;
     
+    @Column(name = "client_timezone")
+    private String clientTimezone; // Timezone of the client creating the activity (e.g., "America/New_York")
+    
     @PrePersist
     public void prePersist() {
         if (this.createdAt == null) {
@@ -92,5 +95,19 @@ public class Activity implements Serializable {
         this.createdAt = Instant.now();
         this.lastUpdated = Instant.now();
         this.icon = icon;
+    }
+    
+    public Activity(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, Location location, String note, User creator, String icon, String clientTimezone) {
+        this.id = id;
+        this.title = title;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.location = location;
+        this.note = note;
+        this.creator = creator;
+        this.createdAt = Instant.now();
+        this.lastUpdated = Instant.now();
+        this.icon = icon;
+        this.clientTimezone = clientTimezone;
     }
 }

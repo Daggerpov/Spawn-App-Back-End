@@ -125,7 +125,8 @@ public class ActivityServiceTests {
                 List.of(),
                 List.of(),
                 Instant.now(),
-                false // isExpired
+                false, // isExpired
+                "America/New_York" // clientTimezone
         );
     }
 
@@ -209,7 +210,7 @@ public class ActivityServiceTests {
         LocationDTO locationDTO = new LocationDTO(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), locationDTO, null, "Bring your own snacks!", "icon", null, UUID.randomUUID(),
-                List.of(), List.of(), List.of(), Instant.now(), false);
+                List.of(), List.of(), List.of(), Instant.now(), false, "America/New_York");
         User creator = new User(
                 UUID.randomUUID(),
                 "username",
@@ -234,7 +235,7 @@ public class ActivityServiceTests {
         LocationDTO locationDTO = new LocationDTO(locationId, "Park", 40.7128, -74.0060);
         ActivityDTO ActivityDTO = new ActivityDTO(UUID.randomUUID(), "Birthday Party", OffsetDateTime.now(),
                 OffsetDateTime.now().plusHours(2), locationDTO, null, "Bring your own snacks!", "icon", null, UUID.randomUUID(),
-                List.of(), List.of(), List.of(), Instant.now(), false);
+                List.of(), List.of(), List.of(), Instant.now(), false, "America/New_York");
 
         when(locationService.save(any(Location.class))).thenReturn(location);
         when(ActivityRepository.save(any(Activity.class))).thenThrow(new DataAccessException("Database error") {
@@ -293,7 +294,8 @@ public class ActivityServiceTests {
                 List.of(explicitInviteId), // invitedUserIds
                 List.of(), // chatMessageIds
                 Instant.now(), // createdAt
-                false // isExpired
+                false, // isExpired
+                "America/New_York" // clientTimezone
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -343,7 +345,8 @@ public class ActivityServiceTests {
                 List.of(), // invitedUserIds
                 List.of(), // chatMessageIds
                 Instant.now(), // createdAt
-                false // isExpired
+                false, // isExpired
+                "America/New_York" // clientTimezone
         );
 
         when(locationService.save(any(Location.class))).thenThrow(new RuntimeException("Location creation failed"));
@@ -376,7 +379,8 @@ public class ActivityServiceTests {
                 List.of(commonUserId), // invitedUserIds
                 List.of(), // chatMessageIds
                 Instant.now(), // createdAt
-                false // isExpired
+                false, // isExpired
+                "America/New_York" // clientTimezone
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -474,7 +478,8 @@ public class ActivityServiceTests {
                 List.of(invitedUserId), // invitedUserIds
                 List.of(), // chatMessageIds
                 Instant.now(), // createdAt
-                false // isExpired
+                false, // isExpired
+                "America/New_York" // clientTimezone
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -524,7 +529,8 @@ public class ActivityServiceTests {
                 List.of(invitedUserId1, invitedUserId2), // invitedUserIds
                 List.of(), // chatMessageIds
                 Instant.now(), // createdAt
-                false // isExpired
+                false, // isExpired
+                "America/New_York" // clientTimezone
         );
 
         Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
@@ -635,7 +641,8 @@ public class ActivityServiceTests {
                 List.of(),
                 List.of(),
                 Instant.now(),
-                false // isExpired
+                false, // isExpired
+                "America/New_York" // clientTimezone
         );
         UUID requestingUserId = UUID.randomUUID();
 

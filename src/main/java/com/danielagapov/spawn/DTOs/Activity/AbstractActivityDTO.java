@@ -37,10 +37,16 @@ public abstract class AbstractActivityDTO implements Serializable {
      */
     @JsonProperty("isExpired")
     boolean isExpired;
+    
+    /**
+     * Timezone of the client creating the activity (e.g., "America/New_York").
+     * Used for timezone-aware expiration of activities without explicit end times.
+     */
+    String clientTimezone;
 
-    // Custom constructor with all fields including isExpired
+    // Custom constructor with all fields including isExpired and clientTimezone
     public AbstractActivityDTO(UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, 
-                              String note, String icon, Integer participantLimit, Instant createdAt, boolean isExpired) {
+                              String note, String icon, Integer participantLimit, Instant createdAt, boolean isExpired, String clientTimezone) {
         this.id = id;
         this.title = title;
         this.startTime = startTime;
@@ -50,5 +56,6 @@ public abstract class AbstractActivityDTO implements Serializable {
         this.participantLimit = participantLimit;
         this.createdAt = createdAt;
         this.isExpired = isExpired;
+        this.clientTimezone = clientTimezone;
     }
 }
