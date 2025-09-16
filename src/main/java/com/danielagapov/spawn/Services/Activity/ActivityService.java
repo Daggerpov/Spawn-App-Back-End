@@ -350,6 +350,14 @@ public class ActivityService implements IActivityService {
                     ? activityTypeRepository.findById(activityDTO.getActivityTypeId()).orElse(null)
                     : null;
 
+            // Validate that end time is not in the past
+            if (activityDTO.getEndTime() != null) {
+                OffsetDateTime now = OffsetDateTime.now();
+                if (activityDTO.getEndTime().isBefore(now)) {
+                    throw new IllegalArgumentException("Activity end time cannot be in the past");
+                }
+            }
+
             // Create Activity entity from ActivityDTO
             Activity activity = new Activity();
             activity.setTitle(activityDTO.getTitle());
@@ -581,7 +589,15 @@ public class ActivityService implements IActivityService {
             if (updates.getEndTime() != null) {
                 try {
                     OffsetDateTime endTime = OffsetDateTime.parse(updates.getEndTime());
+                    // Validate that end time is not in the past
+                    OffsetDateTime now = OffsetDateTime.now();
+                    if (endTime.isBefore(now)) {
+                        throw new IllegalArgumentException("Activity end time cannot be in the past");
+                    }
                     activity.setEndTime(endTime);
+                } catch (IllegalArgumentException e) {
+                    // Re-throw validation exceptions
+                    throw e;
                 } catch (Exception e) {
                     logger.warn("Invalid endTime format in partial update: " + updates.getEndTime());
                 }
