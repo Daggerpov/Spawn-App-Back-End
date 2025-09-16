@@ -226,7 +226,7 @@ class ActivityTypeIntegrationTests {
             type.setIcon("🎯");
             type.setCreator(testUser);
             type.setOrderNum(i);
-            type.setIsPinned(i <= 3); // First 3 are pinned
+            type.setIsPinned(i <= 4); // First 4 are pinned
             manyActivityTypes.add(type);
             
             // Create corresponding DTO

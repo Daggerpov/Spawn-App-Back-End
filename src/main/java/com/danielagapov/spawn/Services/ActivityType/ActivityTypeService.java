@@ -36,7 +36,7 @@ public class ActivityTypeService implements IActivityTypeService {
     private IUserService userService;
 
     // Constants for validation
-    private static final int MAX_PINNED_ACTIVITY_TYPES = 3;
+    private static final int MAX_PINNED_ACTIVITY_TYPES = 4;
 
     @Override
     @Transactional(readOnly = true)
