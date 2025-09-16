@@ -25,7 +25,7 @@ public class ActivityParticipationNotificationEvent extends NotificationEvent {
             setTitle("New Activity Participant");
             setMessage(participant.getUsername() + " is now participating in your activity: " + activity.getTitle());
         } else {
-            setTitle("Activity Participation Revoked");
+            setTitle("Someone Left");
             setMessage(participant.getUsername() + " is no longer participating in your activity: " + activity.getTitle());
         }
 

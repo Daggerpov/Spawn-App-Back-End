@@ -159,6 +159,15 @@ public interface IActivityService {
     List<FullFeedActivityDTO> getFullActivitiesInvitedTo(UUID id);
 
     /**
+     * Retrieves all activities that a user is participating in as full feed activities.
+     * 
+     * @param id the unique identifier of the user
+     * @return List of FullFeedActivityDTO objects with complete activity information
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    List<FullFeedActivityDTO> getFullActivitiesParticipatingIn(UUID id);
+
+    /**
      * Converts an ActivityDTO to FullFeedActivityDTO with complete information for a requesting user.
      * 
      * @param activity the ActivityDTO to convert

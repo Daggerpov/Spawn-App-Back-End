@@ -681,6 +681,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityInviteById", key = "#ActivityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivitiesParticipatingIn", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
             
@@ -721,6 +722,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityInviteById", key = "#ActivityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivitiesParticipatingIn", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
             
@@ -782,10 +784,21 @@ public class ActivityService implements IActivityService {
                 id);
     }
 
+    @Override
+    @Cacheable(value = "fullActivitiesParticipatingIn", key = "#id")
+    public List<FullFeedActivityDTO> getFullActivitiesParticipatingIn(UUID id) {
+        List<ActivityUser> ActivityUsers = activityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.participating);
+        return convertActivitiesToFullFeedActivities(
+                getActivityDTOs(ActivityUsers.stream()
+                        .map(ActivityUser::getActivity)
+                        .toList()),
+                id);
+    }
+
     /**
      * @param requestingUserId this is the user whose feed is being loaded
      * @return This method returns the feed Activities for a user, with their created ones
-     * first in the `universalAccentColor`, followed by Activities they're invited to
+     * first in the `universalAccentColor`, followed by Activities they're invited to and participating in
      */
     @Override
     @Cacheable(value = "feedActivities", key = "#requestingUserId")
@@ -798,8 +811,9 @@ public class ActivityService implements IActivityService {
             );
 
             List<FullFeedActivityDTO> ActivitiesInvitedTo = getFullActivitiesInvitedTo(requestingUserId);
+            List<FullFeedActivityDTO> ActivitiesParticipatingIn = getFullActivitiesParticipatingIn(requestingUserId);
 
-            return makeFeed(ActivitiesCreated, ActivitiesInvitedTo);
+            return makeFeed(ActivitiesCreated, ActivitiesInvitedTo, ActivitiesParticipatingIn);
         } catch (Exception e) {
             logger.error("Error fetching feed Activities for user: " + requestingUserId + " - " + e.getMessage());
             throw e;
@@ -808,20 +822,23 @@ public class ActivityService implements IActivityService {
 
     /**
      * Helper function to remove expired Activities, sort by time, and combine the Activities created by a user,
-     * and the Activities they are invited to
+     * the Activities they are invited to, and the Activities they are participating in
      */
-    private List<FullFeedActivityDTO> makeFeed(List<FullFeedActivityDTO> ActivitiesCreated, List<FullFeedActivityDTO> ActivitiesInvitedTo) {
+    private List<FullFeedActivityDTO> makeFeed(List<FullFeedActivityDTO> ActivitiesCreated, List<FullFeedActivityDTO> ActivitiesInvitedTo, List<FullFeedActivityDTO> ActivitiesParticipatingIn) {
         // Remove expired Activities
         ActivitiesCreated = removeExpiredActivities(ActivitiesCreated);
         ActivitiesInvitedTo = removeExpiredActivities(ActivitiesInvitedTo);
+        ActivitiesParticipatingIn = removeExpiredActivities(ActivitiesParticipatingIn);
 
         // Sort Activities
         sortActivitiesByStartTime(ActivitiesCreated);
         sortActivitiesByStartTime(ActivitiesInvitedTo);
+        sortActivitiesByStartTime(ActivitiesParticipatingIn);
 
-        // Combine the two lists into one.
+        // Combine the three lists into one.
         List<FullFeedActivityDTO> combinedActivities = new ArrayList<>(ActivitiesCreated);
         combinedActivities.addAll(ActivitiesInvitedTo);
+        combinedActivities.addAll(ActivitiesParticipatingIn);
         return combinedActivities;
     }
 
@@ -967,6 +984,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityInviteById", key = "#activityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivitiesParticipatingIn", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#activityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
             @CacheEvict(value = "userStatsById", key = "#userId")
