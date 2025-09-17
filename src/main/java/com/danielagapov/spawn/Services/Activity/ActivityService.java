@@ -350,12 +350,15 @@ public class ActivityService implements IActivityService {
                     ? activityTypeRepository.findById(activityDTO.getActivityTypeId()).orElse(null)
                     : null;
 
-            // Validate that end time is not in the past
-            if (activityDTO.getEndTime() != null) {
-                OffsetDateTime now = OffsetDateTime.now();
-                if (activityDTO.getEndTime().isBefore(now)) {
-                    throw new IllegalArgumentException("Activity end time cannot be in the past");
-                }
+            // Validate that start time and end time are not in the past
+            OffsetDateTime now = OffsetDateTime.now();
+            
+            if (activityDTO.getStartTime() != null && activityDTO.getStartTime().isBefore(now)) {
+                throw new IllegalArgumentException("Activity start time cannot be in the past");
+            }
+            
+            if (activityDTO.getEndTime() != null && activityDTO.getEndTime().isBefore(now)) {
+                throw new IllegalArgumentException("Activity end time cannot be in the past");
             }
 
             // Create Activity entity from ActivityDTO
@@ -580,7 +583,15 @@ public class ActivityService implements IActivityService {
             if (updates.getStartTime() != null) {
                 try {
                     OffsetDateTime startTime = OffsetDateTime.parse(updates.getStartTime());
+                    // Validate that start time is not in the past
+                    OffsetDateTime now = OffsetDateTime.now();
+                    if (startTime.isBefore(now)) {
+                        throw new IllegalArgumentException("Activity start time cannot be in the past");
+                    }
                     activity.setStartTime(startTime);
+                } catch (IllegalArgumentException e) {
+                    // Re-throw validation exceptions
+                    throw e;
                 } catch (Exception e) {
                     logger.warn("Invalid startTime format in partial update: " + updates.getStartTime());
                 }

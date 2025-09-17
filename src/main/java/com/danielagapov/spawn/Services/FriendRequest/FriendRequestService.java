@@ -177,7 +177,15 @@ public class FriendRequestService implements IFriendRequestService {
                     .map(fr -> {
                         FetchFriendRequestDTO dto = FetchFriendRequestMapper.toDTO(fr,
                         userService.getMutualFriendCount(id, fr.getSender().getId()));
-                        logger.info("Debug: Created DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId());
+                        logger.info("Debug: Created DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId() + 
+                                  ". DTO senderUser ID=" + (dto.getSenderUser() != null ? dto.getSenderUser().getId() : "null"));
+                        
+                        // Additional validation to ensure we're returning the correct DTO structure
+                        if (dto.getSenderUser() == null) {
+                            logger.error("CRITICAL: FetchFriendRequestDTO has null senderUser for friend request ID=" + fr.getId() + 
+                                       ". This will cause JSON decoding errors on the client.");
+                        }
+                        
                         return dto;
                     })
                     .toList();

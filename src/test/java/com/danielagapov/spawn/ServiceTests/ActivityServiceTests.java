@@ -2,6 +2,7 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.DTOs.Activity.ActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.ActivityInviteDTO;
+import com.danielagapov.spawn.DTOs.Activity.ActivityPartialUpdateDTO;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
@@ -325,6 +326,79 @@ public class ActivityServiceTests {
 
         // Don't verify the Activity publisher - the service uses it correctly based on the logs
         // and the verification isn't working well in tests
+    }
+
+    @Test
+    void createActivity_Fails_WhenStartTimeIsInThePast() {
+        UUID creatorId = UUID.randomUUID();
+        LocationDTO locationDTO = new LocationDTO(null, "Test Location", 0.0, 0.0);
+        
+        // Create ActivityDTO with start time in the past
+        ActivityDTO creationDTO = new ActivityDTO(
+                null,
+                "Test Activity",
+                OffsetDateTime.now().minusHours(1), // start time 1 hour ago (in the past)
+                OffsetDateTime.now().plusHours(1), // end time 1 hour from now (valid)
+                locationDTO,
+                null,
+                "Test note",
+                "icon",
+                null,
+                creatorId,
+                List.of(),
+                List.of(),
+                List.of(),
+                Instant.now(),
+                false,
+                "America/New_York"
+        );
+
+        Location location = new Location(UUID.randomUUID(), "Test Location", 0.0, 0.0);
+        when(locationService.save(any(Location.class))).thenReturn(location);
+
+        User creator = new User();
+        creator.setId(creatorId);
+        when(userRepository.findById(creatorId)).thenReturn(Optional.of(creator));
+
+        // Expect ApplicationException when start time is in the past (wraps IllegalArgumentException)
+        ApplicationException exception = assertThrows(ApplicationException.class, 
+                () -> ActivityService.createActivity(creationDTO));
+        
+        assertEquals("Failed to create Activity", exception.getMessage());
+        assertTrue(exception.getCause() instanceof IllegalArgumentException);
+        assertEquals("Activity start time cannot be in the past", exception.getCause().getMessage());
+        
+        // Verify that the activity was not saved
+        verify(ActivityRepository, never()).save(any(Activity.class));
+    }
+
+    @Test
+    void partialUpdateActivity_Fails_WhenStartTimeIsInThePast() {
+        UUID activityId = UUID.randomUUID();
+        Activity existingActivity = new Activity();
+        existingActivity.setId(activityId);
+        existingActivity.setTitle("Existing Activity");
+        existingActivity.setStartTime(OffsetDateTime.now().plusHours(1));
+        existingActivity.setEndTime(OffsetDateTime.now().plusHours(3));
+        
+        User creator = new User();
+        creator.setId(UUID.randomUUID());
+        existingActivity.setCreator(creator);
+        
+        when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(existingActivity));
+        
+        // Create partial update with past start time
+        ActivityPartialUpdateDTO updates = new ActivityPartialUpdateDTO();
+        updates.setStartTime(OffsetDateTime.now().minusHours(1).toString()); // 1 hour ago
+        
+        // Expect IllegalArgumentException when trying to update start time to past
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, 
+                () -> ActivityService.partialUpdateActivity(updates, activityId));
+        
+        assertEquals("Activity start time cannot be in the past", exception.getMessage());
+        
+        // Verify that the activity was not saved
+        verify(ActivityRepository, never()).save(any(Activity.class));
     }
 
     @Test
