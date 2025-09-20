@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.ActivityType;
 
 import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeFriendSuggestionDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.Models.ActivityType;
 import com.danielagapov.spawn.Models.User.User;
@@ -36,4 +37,20 @@ public interface IActivityTypeService {
      * @param activityType The activity type to set order for
      */
     void setOrderNumber(ActivityType activityType);
+    
+    /**
+     * Get friend suggestions for an activity type
+     * @param activityTypeId The activity type ID
+     * @param userId The user ID who owns the activity type
+     * @return Friend suggestion data or null if no suggestions
+     */
+    ActivityTypeFriendSuggestionDTO getFriendSuggestionsForActivityType(UUID activityTypeId, UUID userId);
+    
+    /**
+     * Automatically add all user's friends to an activity type if it has no associated friends
+     * @param activityTypeId The activity type ID
+     * @param userId The user ID who owns the activity type
+     * @return true if friends were added, false otherwise
+     */
+    boolean autoAddFriendsToActivityType(UUID activityTypeId, UUID userId);
 } 

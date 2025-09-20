@@ -136,7 +136,11 @@ public class UserSearchService implements IUserSearchService {
                 // First search with fuzzy search query
                 List<User> users = searchUsersByQuery(searchQuery);
                 Set<UUID> seen = users.stream().map(User::getId).collect(Collectors.toSet());
-                recommendedFriends = users.stream().map(user -> FriendUserMapper.toDTO(user, 0)).collect(Collectors.toList());
+                recommendedFriends = users.stream().map(user -> {
+                    UserRelationshipType relationshipStatus = determineRelationshipStatus(requestingUserId, user.getId());
+                    UUID pendingFriendRequestId = getPendingFriendRequestId(requestingUserId, user.getId(), relationshipStatus);
+                    return FriendUserMapper.toDTO(user, 0, 0, relationshipStatus, pendingFriendRequestId);
+                }).collect(Collectors.toList());
 
                 if (recommendedFriends.size() < recommendedFriendLimit) {
                     // Get recommended mutual friends and filter with fuzzy search
@@ -306,8 +310,12 @@ public class UserSearchService implements IUserSearchService {
                     // Calculate shared activities count for this potential friend
                     int sharedActivitiesCount = getSharedActivitiesCount(userId, potentialFriendId);
                     
+                    // Determine relationship status and pending friend request ID
+                    UserRelationshipType relationshipStatus = determineRelationshipStatus(userId, potentialFriendId);
+                    UUID pendingFriendRequestId = getPendingFriendRequestId(userId, potentialFriendId, relationshipStatus);
+                    
                     User user = userService.getUserEntityById(potentialFriendId);
-                    return FriendUserMapper.toDTO(user, mutualFriendCount, sharedActivitiesCount);
+                    return FriendUserMapper.toDTO(user, mutualFriendCount, sharedActivitiesCount, relationshipStatus, pendingFriendRequestId);
                 })
                 .sorted((friend1, friend2) -> {
                     // Calculate composite scores for sorting
@@ -332,7 +340,11 @@ public class UserSearchService implements IUserSearchService {
 
             // Check if the potential friend is already excluded
             if (!excludedUserIds.contains(potentialFriendId)) {
-                recommendedFriends.add(FriendUserMapper.toDTO(userService.getUserEntityById(potentialFriendId), 0));
+                // Determine relationship status and pending friend request ID
+                UserRelationshipType relationshipStatus = determineRelationshipStatus(userId, potentialFriendId);
+                UUID pendingFriendRequestId = getPendingFriendRequestId(userId, potentialFriendId, relationshipStatus);
+                
+                recommendedFriends.add(FriendUserMapper.toDTO(userService.getUserEntityById(potentialFriendId), 0, 0, relationshipStatus, pendingFriendRequestId));
                 // Add to excluded list to prActivity duplicates
                 excludedUserIds.add(potentialFriendId);
             }
@@ -579,9 +591,21 @@ public class UserSearchService implements IUserSearchService {
     public List<BaseUserDTO> searchByQuery(String searchQuery, UUID requestingUserId) {
         List<User> users = searchUsersByQuery(searchQuery);
         
-        // Filter out the requesting user and other excluded users if requestingUserId is provided
+        // For general user search, only exclude self and admin users, not friends or friend requests
         if (requestingUserId != null) {
-            Set<UUID> excludedUserIds = getExcludedUserIds(requestingUserId);
+            Set<UUID> excludedUserIds = new HashSet<>();
+            excludedUserIds.add(requestingUserId); // Exclude self
+            
+            // Exclude admin user from being shown to front-end users
+            try {
+                Optional<User> adminUser = userRepository.findByUsername(adminUsername);
+                if (adminUser.isPresent()) {
+                    excludedUserIds.add(adminUser.get().getId());
+                }
+            } catch (Exception e) {
+                logger.warn("Could not find admin user to exclude: " + e.getMessage());
+            }
+            
             users = users.stream()
                     .filter(user -> !excludedUserIds.contains(user.getId()) && user.getStatus() == UserStatus.ACTIVE)
                     .collect(Collectors.toList());
@@ -620,6 +644,82 @@ public class UserSearchService implements IUserSearchService {
         return searchResults.stream()
                 .map(FuzzySearchService.SearchResult::getItem)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Determines the relationship status between the requesting user and a potential friend.
+     * 
+     * @param requestingUserId The ID of the user requesting recommendations
+     * @param potentialFriendId The ID of the potential friend
+     * @return UserRelationshipType representing the current relationship status
+     */
+    private UserRelationshipType determineRelationshipStatus(UUID requestingUserId, UUID potentialFriendId) {
+        try {
+            // Check if they are already friends
+            if (userService.isUserFriendOfUser(requestingUserId, potentialFriendId)) {
+                return UserRelationshipType.FRIEND;
+            }
+            
+            // Check for outgoing friend request (requesting user sent to potential friend)
+            List<CreateFriendRequestDTO> outgoingRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+            boolean hasOutgoingRequest = outgoingRequests.stream()
+                    .anyMatch(request -> request.getReceiverUserId().equals(potentialFriendId));
+            
+            if (hasOutgoingRequest) {
+                return UserRelationshipType.OUTGOING_FRIEND_REQUEST;
+            }
+            
+            // Check for incoming friend request (potential friend sent to requesting user)
+            List<CreateFriendRequestDTO> incomingRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(requestingUserId);
+            boolean hasIncomingRequest = incomingRequests.stream()
+                    .anyMatch(request -> request.getSenderUserId().equals(potentialFriendId));
+            
+            if (hasIncomingRequest) {
+                return UserRelationshipType.INCOMING_FRIEND_REQUEST;
+            }
+            
+            // Default to recommended friend if no existing relationship
+            return UserRelationshipType.RECOMMENDED_FRIEND;
+            
+        } catch (Exception e) {
+            logger.error("Error determining relationship status between users " + requestingUserId + " and " + potentialFriendId + ": " + e.getMessage());
+            return UserRelationshipType.RECOMMENDED_FRIEND;
+        }
+    }
+    
+    /**
+     * Gets the pending friend request ID if there is one between the users.
+     * 
+     * @param requestingUserId The ID of the user requesting recommendations
+     * @param potentialFriendId The ID of the potential friend
+     * @param relationshipStatus The current relationship status
+     * @return UUID of the pending friend request, or null if none exists
+     */
+    private UUID getPendingFriendRequestId(UUID requestingUserId, UUID potentialFriendId, UserRelationshipType relationshipStatus) {
+        try {
+            if (relationshipStatus == UserRelationshipType.OUTGOING_FRIEND_REQUEST) {
+                // Find the outgoing request ID
+                List<CreateFriendRequestDTO> outgoingRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+                return outgoingRequests.stream()
+                        .filter(request -> request.getReceiverUserId().equals(potentialFriendId))
+                        .map(CreateFriendRequestDTO::getId)
+                        .findFirst()
+                        .orElse(null);
+            } else if (relationshipStatus == UserRelationshipType.INCOMING_FRIEND_REQUEST) {
+                // Find the incoming request ID
+                List<CreateFriendRequestDTO> incomingRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(requestingUserId);
+                return incomingRequests.stream()
+                        .filter(request -> request.getSenderUserId().equals(potentialFriendId))
+                        .map(CreateFriendRequestDTO::getId)
+                        .findFirst()
+                        .orElse(null);
+            }
+            
+            return null;
+        } catch (Exception e) {
+            logger.error("Error getting pending friend request ID between users " + requestingUserId + " and " + potentialFriendId + ": " + e.getMessage());
+            return null;
+        }
     }
 
 }

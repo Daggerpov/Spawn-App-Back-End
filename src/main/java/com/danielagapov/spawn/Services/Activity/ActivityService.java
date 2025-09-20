@@ -30,6 +30,8 @@ import com.danielagapov.spawn.Repositories.IActivityUserRepository;
 import com.danielagapov.spawn.Repositories.ILocationRepository;
 import com.danielagapov.spawn.Repositories.User.IUserRepository;
 import com.danielagapov.spawn.Services.ChatMessage.IChatMessageService;
+import com.danielagapov.spawn.Services.Activity.ActivityExpirationService;
+import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
 import com.danielagapov.spawn.Services.Location.ILocationService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +61,8 @@ public class ActivityService implements IActivityService {
     private final ILogger logger;
     private final ILocationService locationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ActivityExpirationService expirationService;
+    private final IActivityTypeService activityTypeService;
 
     @Autowired
     @Lazy // avoid circular dependency problems with ChatMessageService
@@ -66,7 +70,8 @@ public class ActivityService implements IActivityService {
                         ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
                         IUserRepository userRepository, IUserService userService, 
                         IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, 
-                        ApplicationEventPublisher eventPublisher) {
+                        ApplicationEventPublisher eventPublisher, ActivityExpirationService expirationService,
+                        IActivityTypeService activityTypeService) {
         this.repository = repository;
         this.activityTypeRepository = activityTypeRepository;
         this.locationRepository = locationRepository;
@@ -77,6 +82,8 @@ public class ActivityService implements IActivityService {
         this.logger = logger;
         this.locationService = locationService;
         this.eventPublisher = eventPublisher;
+        this.expirationService = expirationService;
+        this.activityTypeService = activityTypeService;
     }
 
     @Override
@@ -119,7 +126,8 @@ public class ActivityService implements IActivityService {
                     activity.getCreator().getId(),
                     participantsByActivity.getOrDefault(activity.getId(), List.of()),
                     invitedByActivity.getOrDefault(activity.getId(), List.of()),
-                    chatMessagesByActivity.getOrDefault(activity.getId(), List.of())
+                    chatMessagesByActivity.getOrDefault(activity.getId(), List.of()),
+                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone())
                 );
                 
                 FullFeedActivityDTO fullActivity = getFullActivityByActivity(activityDTO, requestingUserId, visitedActivities);
@@ -210,7 +218,8 @@ public class ActivityService implements IActivityService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(id);
 
-        return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+        return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds, 
+                expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone()));
     }
 
     @Override
@@ -250,7 +259,9 @@ public class ActivityService implements IActivityService {
                 activity.getCreator().getId(),
                 participatingUserIds,
                 invitedUserIds,
-                activity.getCreatedAt()
+                activity.getCreatedAt(),
+                expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone()),
+                activity.getClientTimezone()
         );
     }
 
@@ -259,10 +270,10 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityById", key = "#result.id"),
             @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
             @CacheEvict(value = "fullActivityById", allEntries = true),
-            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUserId"),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
             @CacheEvict(value = "feedActivities", allEntries = true),
             
-            @CacheEvict(value = "userStatsById", key = "#result.creatorUserId")
+            @CacheEvict(value = "userStatsById", key = "#result.creatorUser.id")
     })
     public AbstractActivityDTO saveActivity(AbstractActivityDTO Activity) {
         try {
@@ -299,7 +310,8 @@ public class ActivityService implements IActivityService {
                     ActivityEntity.getCreator().getId(), // creatorUserId
                     userService.getParticipantUserIdsByActivityId(ActivityEntity.getId()), // participantUserIds
                     userService.getInvitedUserIdsByActivityId(ActivityEntity.getId()), // invitedUserIds
-                    chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId()) // chatMessageIds
+                    chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId()), // chatMessageIds
+                    expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()) // isExpired
             );
         } catch (DataAccessException e) {
             logger.error(e.getMessage());
@@ -338,6 +350,17 @@ public class ActivityService implements IActivityService {
                     ? activityTypeRepository.findById(activityDTO.getActivityTypeId()).orElse(null)
                     : null;
 
+            // Validate that start time and end time are not in the past
+            OffsetDateTime now = OffsetDateTime.now();
+            
+            if (activityDTO.getStartTime() != null && activityDTO.getStartTime().isBefore(now)) {
+                throw new IllegalArgumentException("Activity start time cannot be in the past");
+            }
+            
+            if (activityDTO.getEndTime() != null && activityDTO.getEndTime().isBefore(now)) {
+                throw new IllegalArgumentException("Activity end time cannot be in the past");
+            }
+
             // Create Activity entity from ActivityDTO
             Activity activity = new Activity();
             activity.setTitle(activityDTO.getTitle());
@@ -349,6 +372,7 @@ public class ActivityService implements IActivityService {
             activity.setLocation(location);
             activity.setCreator(creator);
             activity.setActivityType(activityType);
+            activity.setClientTimezone(activityDTO.getClientTimezone());
 
             activity = repository.save(activity);
 
@@ -410,11 +434,41 @@ public class ActivityService implements IActivityService {
                     new ArrayList<>(), // chatMessages - empty for new activity
                     null, // participationStatus - not applicable for creator
                     true, // isSelfOwned - true since this is the creator
-                    activity.getCreatedAt()
+                    activity.getCreatedAt(),
+                    expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone()),
+                    activity.getClientTimezone()
             );
         } catch (Exception e) {
             logger.error("Error creating Activity: " + e.getMessage());
             throw new ApplicationException("Failed to create Activity", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "ActivityById", key = "#result.id"),
+            @CacheEvict(value = "ActivityInviteById", key = "#result.id"),
+            @CacheEvict(value = "fullActivityById", allEntries = true),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
+            @CacheEvict(value = "feedActivities", allEntries = true),
+            
+            @CacheEvict(value = "userStatsById", key = "#result.creatorUser.id")
+    })
+    public FullFeedActivityDTO createActivityWithSuggestions(ActivityDTO activityDTO) {
+        try {
+            // Create the activity using the existing method
+            AbstractActivityDTO createdActivity = createActivity(activityDTO);
+            
+            // Cast to FullFeedActivityDTO (which is what createActivity returns)
+            FullFeedActivityDTO fullActivity = (FullFeedActivityDTO) createdActivity;
+            
+            // Return the activity directly (friend suggestions feature was removed)
+            return fullActivity;
+            
+        } catch (Exception e) {
+            logger.error("Error creating Activity with suggestions: " + e.getMessage());
+            throw new ApplicationException("Failed to create Activity with suggestions", e);
         }
     }
 
@@ -432,7 +486,8 @@ public class ActivityService implements IActivityService {
                         Activity.getCreator().getId(),
                         userService.getParticipantUserIdsByActivityId(Activity.getId()),
                         userService.getInvitedUserIdsByActivityId(Activity.getId()),
-                        chatMessageService.getChatMessageIdsByActivityId(Activity.getId())))
+                        chatMessageService.getChatMessageIdsByActivityId(Activity.getId()),
+                        expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone())))
                 .toList();
     }
 
@@ -499,7 +554,82 @@ public class ActivityService implements IActivityService {
         }).orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
     }
 
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "fullActivityById", allEntries = true),
+            @CacheEvict(value = "ActivitiesByOwnerId", key = "#result.creatorUser.id"),
+            @CacheEvict(value = "feedActivities", allEntries = true),
+    })
+    public FullFeedActivityDTO partialUpdateActivity(ActivityPartialUpdateDTO updates, UUID id) {
+        return repository.findById(id).map(activity -> {
+            // Only update the fields that are provided in the updates DTO
+            if (updates.getTitle() != null) {
+                activity.setTitle(updates.getTitle());
+            }
+            
+            if (updates.getIcon() != null) {
+                activity.setIcon(updates.getIcon());
+            }
+            
+            if (updates.getNote() != null) {
+                activity.setNote(updates.getNote());
+            }
+            
+            if (updates.getParticipantLimit() != null) {
+                activity.setParticipantLimit(updates.getParticipantLimit());
+            }
+            
+            if (updates.getStartTime() != null) {
+                try {
+                    OffsetDateTime startTime = OffsetDateTime.parse(updates.getStartTime());
+                    // Validate that start time is not in the past
+                    OffsetDateTime now = OffsetDateTime.now();
+                    if (startTime.isBefore(now)) {
+                        throw new IllegalArgumentException("Activity start time cannot be in the past");
+                    }
+                    activity.setStartTime(startTime);
+                } catch (IllegalArgumentException e) {
+                    // Re-throw validation exceptions
+                    throw e;
+                } catch (Exception e) {
+                    logger.warn("Invalid startTime format in partial update: " + updates.getStartTime());
+                }
+            }
+            
+            if (updates.getEndTime() != null) {
+                try {
+                    OffsetDateTime endTime = OffsetDateTime.parse(updates.getEndTime());
+                    // Validate that end time is not in the past
+                    OffsetDateTime now = OffsetDateTime.now();
+                    if (endTime.isBefore(now)) {
+                        throw new IllegalArgumentException("Activity end time cannot be in the past");
+                    }
+                    activity.setEndTime(endTime);
+                } catch (IllegalArgumentException e) {
+                    // Re-throw validation exceptions
+                    throw e;
+                } catch (Exception e) {
+                    logger.warn("Invalid endTime format in partial update: " + updates.getEndTime());
+                }
+            }
 
+            // Update the lastUpdated timestamp
+            activity.setLastUpdated(Instant.now());
+
+            // Save updated activity
+            Activity savedActivity = repository.save(activity);
+
+            // Publish update event
+            eventPublisher.publishEvent(
+                new ActivityUpdateNotificationEvent(savedActivity.getCreator(), savedActivity, activityUserRepository)
+            );
+
+            // Get the creator's user ID for the full activity fetch
+            UUID creatorUserId = savedActivity.getCreator().getId();
+            return getFullActivityById(savedActivity.getId(), creatorUserId);
+        }).orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
+    }
 
     private List<UUID> getParticipatingUserIdsByActivityId(UUID ActivityId) {
         try {
@@ -518,7 +648,8 @@ public class ActivityService implements IActivityService {
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(ActivityEntity.getId());
         List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId());
 
-        return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds);
+        return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds,
+                expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()));
     }
 
     @Override
@@ -577,6 +708,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityInviteById", key = "#ActivityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivitiesParticipatingIn", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
             
@@ -617,6 +749,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityInviteById", key = "#ActivityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivitiesParticipatingIn", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#ActivityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
             
@@ -678,10 +811,21 @@ public class ActivityService implements IActivityService {
                 id);
     }
 
+    @Override
+    @Cacheable(value = "fullActivitiesParticipatingIn", key = "#id")
+    public List<FullFeedActivityDTO> getFullActivitiesParticipatingIn(UUID id) {
+        List<ActivityUser> ActivityUsers = activityUserRepository.findByUser_IdAndStatus(id, ParticipationStatus.participating);
+        return convertActivitiesToFullFeedActivities(
+                getActivityDTOs(ActivityUsers.stream()
+                        .map(ActivityUser::getActivity)
+                        .toList()),
+                id);
+    }
+
     /**
      * @param requestingUserId this is the user whose feed is being loaded
      * @return This method returns the feed Activities for a user, with their created ones
-     * first in the `universalAccentColor`, followed by Activities they're invited to
+     * first in the `universalAccentColor`, followed by Activities they're invited to and participating in
      */
     @Override
     @Cacheable(value = "feedActivities", key = "#requestingUserId")
@@ -694,8 +838,9 @@ public class ActivityService implements IActivityService {
             );
 
             List<FullFeedActivityDTO> ActivitiesInvitedTo = getFullActivitiesInvitedTo(requestingUserId);
+            List<FullFeedActivityDTO> ActivitiesParticipatingIn = getFullActivitiesParticipatingIn(requestingUserId);
 
-            return makeFeed(ActivitiesCreated, ActivitiesInvitedTo);
+            return makeFeed(ActivitiesCreated, ActivitiesInvitedTo, ActivitiesParticipatingIn);
         } catch (Exception e) {
             logger.error("Error fetching feed Activities for user: " + requestingUserId + " - " + e.getMessage());
             throw e;
@@ -704,49 +849,41 @@ public class ActivityService implements IActivityService {
 
     /**
      * Helper function to remove expired Activities, sort by time, and combine the Activities created by a user,
-     * and the Activities they are invited to
+     * the Activities they are invited to, and the Activities they are participating in
      */
-    private List<FullFeedActivityDTO> makeFeed(List<FullFeedActivityDTO> ActivitiesCreated, List<FullFeedActivityDTO> ActivitiesInvitedTo) {
+    private List<FullFeedActivityDTO> makeFeed(List<FullFeedActivityDTO> ActivitiesCreated, List<FullFeedActivityDTO> ActivitiesInvitedTo, List<FullFeedActivityDTO> ActivitiesParticipatingIn) {
         // Remove expired Activities
         ActivitiesCreated = removeExpiredActivities(ActivitiesCreated);
         ActivitiesInvitedTo = removeExpiredActivities(ActivitiesInvitedTo);
+        ActivitiesParticipatingIn = removeExpiredActivities(ActivitiesParticipatingIn);
 
         // Sort Activities
         sortActivitiesByStartTime(ActivitiesCreated);
         sortActivitiesByStartTime(ActivitiesInvitedTo);
+        sortActivitiesByStartTime(ActivitiesParticipatingIn);
 
-        // Combine the two lists into one.
+        // Combine the three lists into one.
         List<FullFeedActivityDTO> combinedActivities = new ArrayList<>(ActivitiesCreated);
         combinedActivities.addAll(ActivitiesInvitedTo);
+        combinedActivities.addAll(ActivitiesParticipatingIn);
         return combinedActivities;
     }
 
     /**
      * Removes expired Activities from the provided list, and returns it modified.
-     * An Activity is considered expired if its end time is set and is before the current time.
+     * Uses the centralized ActivityExpirationService for consistent expiration logic.
      *
      * @param Activities the list of Activities to filter
      * @return the modified list
      */
     private List<FullFeedActivityDTO> removeExpiredActivities(List<FullFeedActivityDTO> Activities) {
-        // Use UTC for consistent timezone comparison across server and client timezones
-        OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
-
         if (Activities == null) {
             return Collections.emptyList();
         }
 
         return Activities.stream()
                 .filter(Objects::nonNull)
-                .filter(Activity -> {
-                    if (Activity.getEndTime() == null) {
-                        return true; // Keep activities with no end time
-                    }
-                    
-                    // Convert both times to UTC for proper comparison
-                    OffsetDateTime activityEndTimeUtc = Activity.getEndTime().withOffsetSameInstant(java.time.ZoneOffset.UTC);
-                    return !activityEndTimeUtc.isBefore(now);
-                })
+                .filter(activity -> !expirationService.isActivityExpired(activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt(), activity.getClientTimezone()))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -788,7 +925,9 @@ public class ActivityService implements IActivityService {
                     chatMessageService.getFullChatMessagesByActivityId(Activity.getId()),
                     requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
                     Activity.getCreatorUserId().equals(requestingUserId),
-                    Activity.getCreatedAt()
+                    Activity.getCreatedAt(),
+                    expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone()),
+                    Activity.getClientTimezone()
             );
         } catch (BaseNotFoundException e) {
             return null;
@@ -872,6 +1011,7 @@ public class ActivityService implements IActivityService {
             @CacheEvict(value = "ActivityInviteById", key = "#activityId"),
             @CacheEvict(value = "ActivitiesInvitedTo", key = "#userId"),
             @CacheEvict(value = "fullActivitiesInvitedTo", key = "#userId"),
+            @CacheEvict(value = "fullActivitiesParticipatingIn", key = "#userId"),
             @CacheEvict(value = "fullActivityById", key = "#activityId.toString() + ':' + #userId.toString()"),
             @CacheEvict(value = "feedActivities", key = "#userId"),
             @CacheEvict(value = "userStatsById", key = "#userId")

@@ -45,8 +45,10 @@ public class FullFeedActivityDTO extends AbstractActivityDTO {
                             List<FullActivityChatMessageDTO> chatMessages,
                             ParticipationStatus participationStatus, 
                             boolean isSelfOwned,
-                            Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
+                            Instant createdAt,
+                            boolean isExpired,
+                            String clientTimezone) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired, clientTimezone);
         this.location = location;
         this.activityTypeId = activityTypeId;
         this.creatorUser = creatorUser;

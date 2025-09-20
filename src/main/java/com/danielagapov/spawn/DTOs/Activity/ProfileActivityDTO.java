@@ -1,8 +1,6 @@
 package com.danielagapov.spawn.DTOs.Activity;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Enums.ParticipationStatus;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -37,8 +35,10 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
     List<BaseUserDTO> participantUsers,
     List<BaseUserDTO> invitedUsers,
     List<UUID> chatMessageIds,
-    Instant createdAt) {
-        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt);
+    Instant createdAt,
+    boolean isExpired,
+    String clientTimezone) {
+        super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired, clientTimezone);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
@@ -71,7 +71,9 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
             fullFeedActivityDTO.getParticipantUsers(),
             fullFeedActivityDTO.getInvitedUsers(),
             chatMessageIds,
-            fullFeedActivityDTO.getCreatedAt()
+            fullFeedActivityDTO.getCreatedAt(),
+            fullFeedActivityDTO.isExpired(),
+            fullFeedActivityDTO.getClientTimezone()
         );
     }
 } 

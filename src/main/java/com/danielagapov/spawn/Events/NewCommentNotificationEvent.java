@@ -54,7 +54,7 @@ public class NewCommentNotificationEvent extends NotificationEvent {
             
             // Creator gets special message
             if (getTargetUserIds().indexOf(creatorId) == 0) {
-                setTitle("New Comment on Your Activity");
+                setTitle("New Comment");
                 setMessage(sender.getUsername() + " commented on " + activity.getTitle() + ": " + messageDTO.getContent());
             }
         }

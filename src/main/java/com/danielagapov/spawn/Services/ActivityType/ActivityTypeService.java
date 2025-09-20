@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.Services.ActivityType;
 
 import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
+import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeFriendSuggestionDTO;
 import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.Enums.EntityType;
 import com.danielagapov.spawn.Exceptions.ActivityTypeValidationException;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 
 @Service
 @AllArgsConstructor
@@ -34,7 +36,7 @@ public class ActivityTypeService implements IActivityTypeService {
     private IUserService userService;
 
     // Constants for validation
-    private static final int MAX_PINNED_ACTIVITY_TYPES = 3;
+    private static final int MAX_PINNED_ACTIVITY_TYPES = 4;
 
     @Override
     @Transactional(readOnly = true)
@@ -444,5 +446,94 @@ public class ActivityTypeService implements IActivityTypeService {
                 dto.getIcon(),
                 dto.getIsPinned() != null ? dto.getIsPinned() : false
         );
+    }
+    
+    @Override
+    public ActivityTypeFriendSuggestionDTO getFriendSuggestionsForActivityType(UUID activityTypeId, UUID userId) {
+        try {
+            // Get the activity type
+            ActivityType activityType = repository.findById(activityTypeId).orElse(null);
+            if (activityType == null || !activityType.getCreator().getId().equals(userId)) {
+                return null;
+            }
+            
+            // Check if activity type has no associated friends
+            if (activityType.getAssociatedFriends() != null && !activityType.getAssociatedFriends().isEmpty()) {
+                return null; // Activity type already has friends, no suggestion needed
+            }
+            
+            // Get user's friends
+            List<? extends AbstractUserDTO> userFriends = userService.getFullFriendUsersByUserId(userId);
+            if (userFriends == null || userFriends.isEmpty()) {
+                return null; // User has no friends to suggest
+            }
+            
+            // Convert to BaseUserDTO list
+            List<BaseUserDTO> suggestedFriends = userFriends.stream()
+                    .map(friend -> (BaseUserDTO) friend)
+                    .collect(Collectors.toList());
+            
+            return new ActivityTypeFriendSuggestionDTO(
+                    activityTypeId,
+                    activityType.getTitle(),
+                    suggestedFriends
+            );
+            
+        } catch (Exception e) {
+            logger.error("Error getting friend suggestions for activity type " + activityTypeId + ": " + e.getMessage());
+            return null;
+        }
+    }
+    
+    @Override
+    @Transactional
+    @CacheEvict(value = "activityTypesByUserId", key = "#userId")
+    public boolean autoAddFriendsToActivityType(UUID activityTypeId, UUID userId) {
+        try {
+            // Get the activity type
+            ActivityType activityType = repository.findById(activityTypeId).orElse(null);
+            if (activityType == null || !activityType.getCreator().getId().equals(userId)) {
+                return false;
+            }
+            
+            // Check if activity type already has associated friends
+            if (activityType.getAssociatedFriends() != null && !activityType.getAssociatedFriends().isEmpty()) {
+                return false; // Activity type already has friends, no need to add
+            }
+            
+            // Get user's friends
+            List<? extends AbstractUserDTO> userFriends = userService.getFullFriendUsersByUserId(userId);
+            if (userFriends == null || userFriends.isEmpty()) {
+                return false; // User has no friends to add
+            }
+            
+            // Convert friend DTOs to User entities
+            List<User> friendEntities = new ArrayList<>();
+            for (AbstractUserDTO friendDTO : userFriends) {
+                try {
+                    User friend = userService.getUserEntityById(friendDTO.getId());
+                    friendEntities.add(friend);
+                } catch (Exception e) {
+                    logger.warn("Skipping friend with ID " + friendDTO.getId() + " as user not found: " + e.getMessage());
+                }
+            }
+            
+            if (friendEntities.isEmpty()) {
+                return false;
+            }
+            
+            // Add friends to activity type
+            activityType.setAssociatedFriends(friendEntities);
+            repository.save(activityType);
+            
+            logger.info("Automatically added " + friendEntities.size() + " friends to activity type '" + 
+                       activityType.getTitle() + "' for user " + userId);
+            
+            return true;
+            
+        } catch (Exception e) {
+            logger.error("Error auto-adding friends to activity type " + activityTypeId + ": " + e.getMessage());
+            return false;
+        }
     }
 }

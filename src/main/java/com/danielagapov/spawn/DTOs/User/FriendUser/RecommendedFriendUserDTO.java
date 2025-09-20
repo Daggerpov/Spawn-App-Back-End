@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.DTOs.User.FriendUser;
 
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
+import com.danielagapov.spawn.Enums.UserRelationshipType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,15 +12,24 @@ import java.util.UUID;
 public class RecommendedFriendUserDTO extends BaseUserDTO {
     int mutualFriendCount;
     int sharedActivitiesCount;
+    UserRelationshipType relationshipStatus;
+    UUID pendingFriendRequestId;
 
-    public RecommendedFriendUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture, int mutualFriendCount, int sharedActivitiesCount) {
+    public RecommendedFriendUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture, int mutualFriendCount, int sharedActivitiesCount, UserRelationshipType relationshipStatus, UUID pendingFriendRequestId) {
         super(id, name, email, username, bio, profilePicture);
         this.mutualFriendCount = mutualFriendCount;
         this.sharedActivitiesCount = sharedActivitiesCount;
+        this.relationshipStatus = relationshipStatus;
+        this.pendingFriendRequestId = pendingFriendRequestId;
+    }
+    
+    // Constructor without relationship status for backward compatibility
+    public RecommendedFriendUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture, int mutualFriendCount, int sharedActivitiesCount) {
+        this(id, name, email, username, bio, profilePicture, mutualFriendCount, sharedActivitiesCount, UserRelationshipType.RECOMMENDED_FRIEND, null);
     }
     
     // Legacy constructor for backward compatibility
     public RecommendedFriendUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture, int mutualFriendCount) {
-        this(id, name, email, username, bio, profilePicture, mutualFriendCount, 0);
+        this(id, name, email, username, bio, profilePicture, mutualFriendCount, 0, UserRelationshipType.RECOMMENDED_FRIEND, null);
     }
 }

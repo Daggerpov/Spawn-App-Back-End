@@ -406,12 +406,12 @@ class ActivityTypePerformanceTests {
     }
 
     /**
-     * Creates a batch of activity types with a controlled number of pinned items (max 3)
+     * Creates a batch of activity types with a controlled number of pinned items (max 4)
      * Use this when testing pinned functionality specifically
      */
     private List<ActivityTypeDTO> createActivityTypeBatchWithPinnedLimit(int count, int pinnedCount) {
-        if (pinnedCount > 3) {
-            throw new IllegalArgumentException("Cannot create more than 3 pinned activity types");
+        if (pinnedCount > 4) {
+            throw new IllegalArgumentException("Cannot create more than 4 pinned activity types");
         }
         return IntStream.range(0, count)
                 .mapToObj(i -> new ActivityTypeDTO(

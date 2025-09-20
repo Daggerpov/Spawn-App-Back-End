@@ -3,9 +3,7 @@ package com.danielagapov.spawn.Controllers;
 import com.danielagapov.spawn.DTOs.Activity.FullFeedActivityDTO;
 import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
 import com.danielagapov.spawn.Enums.ShareLinkType;
-import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.ShareLink;
-import com.danielagapov.spawn.Models.User.User;
 import com.danielagapov.spawn.Services.Activity.ActivityService;
 import com.danielagapov.spawn.Services.ShareLinkService;
 import com.danielagapov.spawn.Services.User.UserService;
@@ -47,7 +45,7 @@ public class ShareLinkController {
                 return ResponseEntity.notFound().build();
             }
             
-            String shareCode = shareLinkService.generateActivityShareLink(activityId, activity.getStartTime(), activity.getEndTime());
+            String shareCode = shareLinkService.generateActivityShareLink(activityId, activity.getStartTime(), activity.getEndTime(), activity.getCreatedAt());
             
             Map<String, String> response = new HashMap<>();
             response.put("shareCode", shareCode);

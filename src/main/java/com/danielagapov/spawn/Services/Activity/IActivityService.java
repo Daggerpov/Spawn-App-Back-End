@@ -59,6 +59,16 @@ public interface IActivityService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if referenced entities don't exist
      */
     AbstractActivityDTO createActivity(ActivityDTO activityDTO);
+    
+    /**
+     * Creates a new activity from DTO and handles invitations, with friend suggestions.
+     * 
+     * @param activityDTO the DTO containing activity creation data
+     * @return the created FullFeedActivityDTO
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if creation fails
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if referenced entities don't exist
+     */
+    FullFeedActivityDTO createActivityWithSuggestions(ActivityDTO activityDTO);
 
     /**
      * Updates an existing activity or creates a new one if it doesn't exist.
@@ -69,6 +79,17 @@ public interface IActivityService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseSaveException if updating fails
      */
     FullFeedActivityDTO replaceActivity(ActivityDTO activity, UUID activityId);
+
+    /**
+     * Partially updates specific fields of an existing activity.
+     * 
+     * @param updates the DTO containing field names and their new values to update
+     * @param activityId the unique identifier of the activity to update
+     * @return the updated FullFeedActivityDTO
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
+     * @throws IllegalArgumentException if invalid field names or values are provided
+     */
+    FullFeedActivityDTO partialUpdateActivity(ActivityPartialUpdateDTO updates, UUID activityId);
 
     /**
      * Deletes an activity by its unique identifier.
@@ -136,6 +157,15 @@ public interface IActivityService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
      */
     List<FullFeedActivityDTO> getFullActivitiesInvitedTo(UUID id);
+
+    /**
+     * Retrieves all activities that a user is participating in as full feed activities.
+     * 
+     * @param id the unique identifier of the user
+     * @return List of FullFeedActivityDTO objects with complete activity information
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    List<FullFeedActivityDTO> getFullActivitiesParticipatingIn(UUID id);
 
     /**
      * Converts an ActivityDTO to FullFeedActivityDTO with complete information for a requesting user.
