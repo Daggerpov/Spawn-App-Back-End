@@ -20,7 +20,8 @@ public class UserMapper {
                 user.getEmail(),
                 user.getUsername(),
                 user.getBio(),
-                user.getProfilePictureUrlString()
+                user.getProfilePictureUrlString(),
+                user.getHasCompletedOnboarding()
         );
     }
 
@@ -47,7 +48,8 @@ public class UserMapper {
                 user.getProfilePictureUrlString(),
                 user.getName(),
                 user.getBio(),
-                user.getEmail()
+                user.getEmail(),
+                user.getHasCompletedOnboarding()
         );
     }
 
@@ -89,7 +91,8 @@ public class UserMapper {
                 user.getEmail(),
                 user.getUsername(),
                 user.getBio(),
-                user.getProfilePicture()
+                user.getProfilePicture(),
+                user.getHasCompletedOnboarding()
         );
     }
 
