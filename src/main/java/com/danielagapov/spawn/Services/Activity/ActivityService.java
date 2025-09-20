@@ -376,6 +376,12 @@ public class ActivityService implements IActivityService {
 
             activity = repository.save(activity);
 
+            // Check if this is the user's first activity and mark onboarding as completed
+            if (!creator.getHasCompletedOnboarding()) {
+                creator.markOnboardingCompleted();
+                userRepository.save(creator);
+            }
+
             // Handle invited friends
             List<UUID> invitedIds = activityDTO.getInvitedUserIds();
                 

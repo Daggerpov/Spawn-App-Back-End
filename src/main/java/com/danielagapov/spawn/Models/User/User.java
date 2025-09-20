@@ -62,6 +62,9 @@ public class User implements Serializable {
     @Column(nullable = false)
     private UserStatus status;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean hasCompletedOnboarding = false;
+
     @PrePersist
     public void prePersist() {
         if (this.lastUpdated == null) {
@@ -85,6 +88,7 @@ public class User implements Serializable {
         this.bio = bio;
         this.email = email;
         this.lastUpdated = Instant.now();
+        this.hasCompletedOnboarding = false;
     }
 
     // Optional-based helper methods for safe access to nullable fields
@@ -173,5 +177,12 @@ public class User implements Serializable {
             .or(() -> getOptionalUsername())
             .or(() -> getOptionalEmail().map(email -> email.split("@")[0]))
             .orElse("User");
+    }
+    
+    /**
+     * Marks the user as having completed onboarding (typically when they create their first activity)
+     */
+    public void markOnboardingCompleted() {
+        this.hasCompletedOnboarding = true;
     }
 }
