@@ -146,7 +146,7 @@ public class ShareLinkController {
             }
             
             // Convert UserDTO to BaseUserDTO
-            BaseUserDTO baseUser = new BaseUserDTO(user.getId(), user.getName(), user.getEmail(), user.getUsername(), user.getBio(), user.getProfilePicture());
+            BaseUserDTO baseUser = new BaseUserDTO(user.getId(), user.getName(), user.getEmail(), user.getUsername(), user.getBio(), user.getProfilePicture(), user.getHasCompletedOnboarding());
             
             return ResponseEntity.ok(baseUser);
         } catch (Exception e) {

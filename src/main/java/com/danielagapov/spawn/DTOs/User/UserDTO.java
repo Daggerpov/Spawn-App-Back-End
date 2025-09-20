@@ -1,5 +1,7 @@
 package com.danielagapov.spawn.DTOs.User;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +18,16 @@ public class UserDTO extends BaseUserDTO {
         this.friendUserIds = friendUserIds;
     }
 
-    public UserDTO(UUID id, List<UUID> friendUserIds, String username, String picture, String name, String bio, String email, Boolean hasCompletedOnboarding) {
+    @JsonCreator
+    public UserDTO(
+            @JsonProperty("id") UUID id, 
+            @JsonProperty("friendUserIds") List<UUID> friendUserIds, 
+            @JsonProperty("username") String username, 
+            @JsonProperty("profilePicture") String picture, 
+            @JsonProperty("name") String name, 
+            @JsonProperty("bio") String bio, 
+            @JsonProperty("email") String email, 
+            @JsonProperty("hasCompletedOnboarding") Boolean hasCompletedOnboarding) {
         super(id, name, email, username, bio, picture, hasCompletedOnboarding);
         this.friendUserIds = friendUserIds;
     }

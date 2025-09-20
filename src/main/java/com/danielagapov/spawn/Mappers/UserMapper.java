@@ -110,7 +110,8 @@ public class UserMapper {
                 null,
                 userCreationDTO.getName(),
                 userCreationDTO.getBio(),
-                userCreationDTO.getEmail()
+                userCreationDTO.getEmail(),
+                false // Default value for new users
         );
     }
 
