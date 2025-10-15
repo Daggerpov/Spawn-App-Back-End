@@ -52,7 +52,6 @@ public class CacheController {
             categoryCount = request.getTimestamps().size();
         }
         
-        logger.info("Validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + " with " + categoryCount + " categories");
         try {
             // Add null checks to prevent NullPointerException
             // This can happen when the mobile client sends an empty request body
@@ -63,7 +62,6 @@ public class CacheController {
             }
             
             Map<String, CacheValidationResponseDTO> response = cacheService.validateCache(userId, timestamps);
-            logger.info("Cache validation completed successfully for user: " + LoggingUtils.formatUserIdInfo(userId));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error validating cache for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
@@ -82,7 +80,6 @@ public class CacheController {
         logger.info("Clearing all calendar caches");
         try {
             calendarService.clearAllCalendarCaches();
-            logger.info("Successfully cleared all calendar caches");
             return ResponseEntity.ok("All calendar caches cleared successfully");
         } catch (Exception e) {
             logger.error("Error clearing calendar caches: " + e.getMessage());
