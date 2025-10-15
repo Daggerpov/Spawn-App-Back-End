@@ -38,20 +38,6 @@ import java.util.UUID;
 @Service
 public class CacheService implements ICacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
-    // Define cache categories
-    private static final String FRIENDS_CACHE = "friends";
-    private static final String EVENTS_CACHE = "events";
-    private static final String ACTIVITY_TYPES_CACHE = "activityTypes";
-    private static final String PROFILE_PICTURE_CACHE = "profilePicture";
-    private static final String OTHER_PROFILES_CACHE = "otherProfiles";
-    private static final String RECOMMENDED_FRIENDS_CACHE = "recommendedFriends";
-    private static final String FRIEND_REQUESTS_CACHE = "friendRequests";
-    private static final String SENT_FRIEND_REQUESTS_CACHE = "sentFriendRequests";
-    private static final String RECENTLY_SPAWNED_CACHE = "recentlySpawned";
-    private static final String PROFILE_STATS_CACHE = "profileStats";
-    private static final String PROFILE_INTERESTS_CACHE = "profileInterests";
-    private static final String PROFILE_SOCIAL_MEDIA_CACHE = "profileSocialMedia";
-    private static final String PROFILE_EVENTS_CACHE = "profileEvents";
     private final IUserRepository userRepository;
     private final IUserService userService;
     private final IActivityService ActivityService;
@@ -115,85 +101,85 @@ public class CacheService implements ICacheService {
         if (clientCacheTimestamps == null) {
             logger.warn("Client cache timestamps is null for user: {}", userId);
             // Return response with all caches marked as needing refresh
-            response.put(FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(EVENTS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(ACTIVITY_TYPES_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(PROFILE_PICTURE_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(OTHER_PROFILES_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(RECOMMENDED_FRIENDS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(FRIEND_REQUESTS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(SENT_FRIEND_REQUESTS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(RECENTLY_SPAWNED_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(PROFILE_STATS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(PROFILE_INTERESTS_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(PROFILE_SOCIAL_MEDIA_CACHE, new CacheValidationResponseDTO(true, null));
-            response.put(PROFILE_EVENTS_CACHE, new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.FRIENDS.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.EVENTS.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.ACTIVITY_TYPES.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.PROFILE_PICTURE.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.OTHER_PROFILES.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.RECOMMENDED_FRIENDS.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.FRIEND_REQUESTS.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.SENT_FRIEND_REQUESTS.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.RECENTLY_SPAWNED.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.PROFILE_STATS.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.PROFILE_INTERESTS.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.PROFILE_SOCIAL_MEDIA.getKey(), new CacheValidationResponseDTO(true, null));
+            response.put(CacheType.PROFILE_EVENTS.getKey(), new CacheValidationResponseDTO(true, null));
             return response;
         }
 
         // Validate friends cache
-        if (clientCacheTimestamps.containsKey(FRIENDS_CACHE)) {
-            response.put(FRIENDS_CACHE, validateFriendsCache(user, clientCacheTimestamps.get(FRIENDS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.FRIENDS.getKey())) {
+            response.put(CacheType.FRIENDS.getKey(), validateFriendsCache(user, clientCacheTimestamps.get(CacheType.FRIENDS.getKey())));
         }
 
         // Validate events cache
-        if (clientCacheTimestamps.containsKey(EVENTS_CACHE)) {
-            response.put(EVENTS_CACHE, validateEventsCache(user, clientCacheTimestamps.get(EVENTS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.EVENTS.getKey())) {
+            response.put(CacheType.EVENTS.getKey(), validateEventsCache(user, clientCacheTimestamps.get(CacheType.EVENTS.getKey())));
         }
 
         // Validate activity types cache
-        if (clientCacheTimestamps.containsKey(ACTIVITY_TYPES_CACHE)) {
-            response.put(ACTIVITY_TYPES_CACHE, validateActivityTypesCache(user, clientCacheTimestamps.get(ACTIVITY_TYPES_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.ACTIVITY_TYPES.getKey())) {
+            response.put(CacheType.ACTIVITY_TYPES.getKey(), validateActivityTypesCache(user, clientCacheTimestamps.get(CacheType.ACTIVITY_TYPES.getKey())));
         }
 
         // Validate profile picture cache
-        if (clientCacheTimestamps.containsKey(PROFILE_PICTURE_CACHE)) {
-            response.put(PROFILE_PICTURE_CACHE, validateProfilePictureCache(user, clientCacheTimestamps.get(PROFILE_PICTURE_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.PROFILE_PICTURE.getKey())) {
+            response.put(CacheType.PROFILE_PICTURE.getKey(), validateProfilePictureCache(user, clientCacheTimestamps.get(CacheType.PROFILE_PICTURE.getKey())));
         }
 
         // Validate other profiles cache
-        if (clientCacheTimestamps.containsKey(OTHER_PROFILES_CACHE)) {
-            response.put(OTHER_PROFILES_CACHE, validateOtherProfilesCache(user, clientCacheTimestamps.get(OTHER_PROFILES_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.OTHER_PROFILES.getKey())) {
+            response.put(CacheType.OTHER_PROFILES.getKey(), validateOtherProfilesCache(user, clientCacheTimestamps.get(CacheType.OTHER_PROFILES.getKey())));
         }
 
         // Validate recommended friends cache
-        if (clientCacheTimestamps.containsKey(RECOMMENDED_FRIENDS_CACHE)) {
-            response.put(RECOMMENDED_FRIENDS_CACHE, validateRecommendedFriendsCache(user, clientCacheTimestamps.get(RECOMMENDED_FRIENDS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.RECOMMENDED_FRIENDS.getKey())) {
+            response.put(CacheType.RECOMMENDED_FRIENDS.getKey(), validateRecommendedFriendsCache(user, clientCacheTimestamps.get(CacheType.RECOMMENDED_FRIENDS.getKey())));
         }
 
         // Validate friend requests cache
-        if (clientCacheTimestamps.containsKey(FRIEND_REQUESTS_CACHE)) {
-            response.put(FRIEND_REQUESTS_CACHE, validateFriendRequestsCache(user, clientCacheTimestamps.get(FRIEND_REQUESTS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.FRIEND_REQUESTS.getKey())) {
+            response.put(CacheType.FRIEND_REQUESTS.getKey(), validateFriendRequestsCache(user, clientCacheTimestamps.get(CacheType.FRIEND_REQUESTS.getKey())));
         }
 
         // Validate sent friend requests cache
-        if (clientCacheTimestamps.containsKey(SENT_FRIEND_REQUESTS_CACHE)) {
-            response.put(SENT_FRIEND_REQUESTS_CACHE, validateSentFriendRequestsCache(user, clientCacheTimestamps.get(SENT_FRIEND_REQUESTS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.SENT_FRIEND_REQUESTS.getKey())) {
+            response.put(CacheType.SENT_FRIEND_REQUESTS.getKey(), validateSentFriendRequestsCache(user, clientCacheTimestamps.get(CacheType.SENT_FRIEND_REQUESTS.getKey())));
         }
 
         // Validate recently-spawned cache
-        if (clientCacheTimestamps.containsKey(RECENTLY_SPAWNED_CACHE)) {
-            response.put(RECENTLY_SPAWNED_CACHE, validateRecentlySpawnedCache(user, clientCacheTimestamps.get(RECENTLY_SPAWNED_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.RECENTLY_SPAWNED.getKey())) {
+            response.put(CacheType.RECENTLY_SPAWNED.getKey(), validateRecentlySpawnedCache(user, clientCacheTimestamps.get(CacheType.RECENTLY_SPAWNED.getKey())));
         }
 
         // Validate profile stats cache
-        if (clientCacheTimestamps.containsKey(PROFILE_STATS_CACHE)) {
-            response.put(PROFILE_STATS_CACHE, validateProfileStatsCache(user, clientCacheTimestamps.get(PROFILE_STATS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.PROFILE_STATS.getKey())) {
+            response.put(CacheType.PROFILE_STATS.getKey(), validateProfileStatsCache(user, clientCacheTimestamps.get(CacheType.PROFILE_STATS.getKey())));
         }
 
         // Validate profile interests cache
-        if (clientCacheTimestamps.containsKey(PROFILE_INTERESTS_CACHE)) {
-            response.put(PROFILE_INTERESTS_CACHE, validateProfileInterestsCache(user, clientCacheTimestamps.get(PROFILE_INTERESTS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.PROFILE_INTERESTS.getKey())) {
+            response.put(CacheType.PROFILE_INTERESTS.getKey(), validateProfileInterestsCache(user, clientCacheTimestamps.get(CacheType.PROFILE_INTERESTS.getKey())));
         }
 
         // Validate profile social media cache
-        if (clientCacheTimestamps.containsKey(PROFILE_SOCIAL_MEDIA_CACHE)) {
-            response.put(PROFILE_SOCIAL_MEDIA_CACHE, validateProfileSocialMediaCache(user, clientCacheTimestamps.get(PROFILE_SOCIAL_MEDIA_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.PROFILE_SOCIAL_MEDIA.getKey())) {
+            response.put(CacheType.PROFILE_SOCIAL_MEDIA.getKey(), validateProfileSocialMediaCache(user, clientCacheTimestamps.get(CacheType.PROFILE_SOCIAL_MEDIA.getKey())));
         }
 
         // Validate profile events cache
-        if (clientCacheTimestamps.containsKey(PROFILE_EVENTS_CACHE)) {
-            response.put(PROFILE_EVENTS_CACHE, validateProfileEventsCache(user, clientCacheTimestamps.get(PROFILE_EVENTS_CACHE)));
+        if (clientCacheTimestamps.containsKey(CacheType.PROFILE_EVENTS.getKey())) {
+            response.put(CacheType.PROFILE_EVENTS.getKey(), validateProfileEventsCache(user, clientCacheTimestamps.get(CacheType.PROFILE_EVENTS.getKey())));
         }
 
         return response;
@@ -214,7 +200,7 @@ public class CacheService implements ICacheService {
     private CacheValidationResponseDTO validateCacheWithTimestamp(
             User user,
             String clientTimestamp,
-            String cacheType,
+            CacheType cacheType,
             TimestampSupplier timestampSupplier,
             DataSupplier dataSupplier) {
         try {
@@ -228,7 +214,7 @@ public class CacheService implements ICacheService {
 
             return new CacheValidationResponseDTO(false, null);
         } catch (Exception e) {
-            logger.error("Error validating {} cache for user {}: {}", cacheType, user.getId(), e.getMessage());
+            logger.error("Error validating {} cache for user {}: {}", cacheType.getDisplayName(), user.getId(), e.getMessage());
             return new CacheValidationResponseDTO(true, null);
         }
     }
@@ -247,7 +233,7 @@ public class CacheService implements ICacheService {
     private CacheValidationResponseDTO validateCacheWithNullableTimestamp(
             User user,
             String clientTimestamp,
-            String cacheType,
+            CacheType cacheType,
             TimestampSupplier timestampSupplier,
             DataSupplier dataSupplier) {
         try {
@@ -267,7 +253,7 @@ public class CacheService implements ICacheService {
 
             return new CacheValidationResponseDTO(false, null);
         } catch (Exception e) {
-            logger.error("Error validating {} cache for user {}: {}", cacheType, user.getId(), e.getMessage());
+            logger.error("Error validating {} cache for user {}: {}", cacheType.getDisplayName(), user.getId(), e.getMessage());
             return new CacheValidationResponseDTO(true, null);
         }
     }
@@ -284,7 +270,7 @@ public class CacheService implements ICacheService {
     private CacheValidationResponseDTO validateCacheWithUserLastUpdated(
             User user,
             String clientTimestamp,
-            String cacheType,
+            CacheType cacheType,
             DataSupplier dataSupplier) {
         try {
             ZonedDateTime clientTime = ZonedDateTime.parse(clientTimestamp, DateTimeFormatter.ISO_DATE_TIME);
@@ -302,7 +288,7 @@ public class CacheService implements ICacheService {
             // If lastUpdated is null, conservatively return fresh data
             return serializeAndCreateResponse(user, cacheType, dataSupplier);
         } catch (Exception e) {
-            logger.error("Error validating {} cache for user {}: {}", cacheType, user.getId(), e.getMessage());
+            logger.error("Error validating {} cache for user {}: {}", cacheType.getDisplayName(), user.getId(), e.getMessage());
             return new CacheValidationResponseDTO(true, null);
         }
     }
@@ -318,7 +304,7 @@ public class CacheService implements ICacheService {
      */
     private CacheValidationResponseDTO serializeAndCreateResponse(
             User user,
-            String cacheType,
+            CacheType cacheType,
             DataSupplier dataSupplier) {
         try {
             Object data = dataSupplier.get();
@@ -329,25 +315,12 @@ public class CacheService implements ICacheService {
                 return new CacheValidationResponseDTO(true, serializedData);
             }
         } catch (Exception e) {
-            logger.error("Failed to serialize {} data for user {}", cacheType, user.getId(), e);
+            logger.error("Failed to serialize {} data for user {}", cacheType.getDisplayName(), user.getId(), e);
         }
 
         // If serialization failed or data too large, just tell client to refresh
         return new CacheValidationResponseDTO(true, null);
     }
-
-    // Functional interfaces for suppliers
-    @FunctionalInterface
-    private interface TimestampSupplier {
-        Instant get();
-    }
-
-    @FunctionalInterface
-    private interface DataSupplier {
-        Object get();
-    }
-
-    // ========== Individual Cache Validation Methods ==========
 
     /**
      * Validates the user's friends cache by checking if any friends have been added, removed,
@@ -357,7 +330,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithTimestamp(
                 user,
                 clientTimestamp,
-                "friends",
+                CacheType.FRIENDS,
                 () -> getLatestFriendActivity(user.getId()),
                 () -> userService.getFullFriendUsersByUserId(user.getId())
         );
@@ -371,11 +344,13 @@ public class CacheService implements ICacheService {
         return validateCacheWithTimestamp(
                 user,
                 clientTimestamp,
-                "activities",
+                CacheType.EVENTS,
                 () -> getLatestActivityActivity(user.getId()),
                 () -> ActivityService.getFeedActivities(user.getId())
         );
     }
+
+    // ========== Individual Cache Validation Methods ==========
 
     /**
      * Validates the user's activity types cache by checking if any activity types have been
@@ -385,7 +360,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithTimestamp(
                 user,
                 clientTimestamp,
-                "activity types",
+                CacheType.ACTIVITY_TYPES,
                 () -> getLatestActivityTypeUpdate(user.getId()),
                 () -> activityTypeService.getActivityTypesByUserId(user.getId())
         );
@@ -398,7 +373,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithUserLastUpdated(
                 user,
                 clientTimestamp,
-                "profile picture",
+                CacheType.PROFILE_PICTURE,
                 () -> user.getProfilePictureUrlString()
         );
     }
@@ -410,7 +385,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithTimestamp(
                 user,
                 clientTimestamp,
-                "other profiles",
+                CacheType.OTHER_PROFILES,
                 () -> getLatestFriendProfileUpdate(user.getId()),
                 () -> {
                     // Get friend user IDs
@@ -439,7 +414,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithTimestamp(
                 user,
                 clientTimestamp,
-                "recommended friends",
+                CacheType.RECOMMENDED_FRIENDS,
                 () -> getLatestFriendActivity(user.getId()),
                 () -> userService.getLimitedRecommendedFriendsForUserId(user.getId())
         );
@@ -452,7 +427,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithNullableTimestamp(
                 user,
                 clientTimestamp,
-                "friend requests",
+                CacheType.FRIEND_REQUESTS,
                 () -> friendRequestService.getLatestFriendRequestTimestamp(user.getId()),
                 () -> friendRequestService.getIncomingFetchFriendRequestsByUserId(user.getId())
         );
@@ -465,7 +440,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithNullableTimestamp(
                 user,
                 clientTimestamp,
-                "sent friend requests",
+                CacheType.SENT_FRIEND_REQUESTS,
                 () -> friendRequestService.getLatestFriendRequestTimestamp(user.getId()),
                 () -> friendRequestService.getSentFetchFriendRequestsByUserId(user.getId())
         );
@@ -478,7 +453,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithUserLastUpdated(
                 user,
                 clientTimestamp,
-                "profile stats",
+                CacheType.PROFILE_STATS,
                 () -> userStatsService.getUserStats(user.getId())
         );
     }
@@ -490,7 +465,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithUserLastUpdated(
                 user,
                 clientTimestamp,
-                "profile interests",
+                CacheType.PROFILE_INTERESTS,
                 () -> userInterestService.getUserInterests(user.getId())
         );
     }
@@ -502,7 +477,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithUserLastUpdated(
                 user,
                 clientTimestamp,
-                "profile social media",
+                CacheType.PROFILE_SOCIAL_MEDIA,
                 () -> userSocialMediaService.getUserSocialMedia(user.getId())
         );
     }
@@ -514,7 +489,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithTimestamp(
                 user,
                 clientTimestamp,
-                "profile activities",
+                CacheType.PROFILE_EVENTS,
                 () -> getLatestActivityActivity(user.getId()),
                 () -> ActivityService.getProfileActivities(user.getId(), user.getId())
         );
@@ -524,7 +499,7 @@ public class CacheService implements ICacheService {
         return validateCacheWithTimestamp(
                 user,
                 clientTimestamp,
-                "recently spawned",
+                CacheType.RECENTLY_SPAWNED,
                 () -> getLatestFriendActivity(user.getId()),
                 () -> userService.getRecentlySpawnedWithUsers(user.getId())
         );
@@ -617,30 +592,30 @@ public class CacheService implements ICacheService {
     private void clearActivityRelatedCaches(UUID userId) {
         try {
             logger.info("Clearing activity-related caches for user: {}", userId);
-            
+
             // Clear activity caches
             if (cacheManager.getCache("feedActivities") != null) {
                 cacheManager.getCache("feedActivities").evict(userId);
             }
-            
+
             if (cacheManager.getCache("fullActivityById") != null) {
                 cacheManager.getCache("fullActivityById").clear(); // Clear all entries as keys contain user IDs
             }
-            
+
             if (cacheManager.getCache("ActivitiesByOwnerId") != null) {
                 cacheManager.getCache("ActivitiesByOwnerId").evict(userId);
             }
-            
+
             // filteredFeedActivities cache removed in friendship refactor
-            
+
             if (cacheManager.getCache("ActivitiesInvitedTo") != null) {
                 cacheManager.getCache("ActivitiesInvitedTo").evict(userId);
             }
-            
+
             if (cacheManager.getCache("fullActivitiesInvitedTo") != null) {
                 cacheManager.getCache("fullActivitiesInvitedTo").evict(userId);
             }
-            
+
             logger.info("Successfully cleared activity-related caches for user: {}", userId);
         } catch (Exception e) {
             logger.error("Error clearing activity-related caches for user {}: {}", userId, e.getMessage());
@@ -677,7 +652,7 @@ public class CacheService implements ICacheService {
         try {
             // Get all activity types for the user
             List<ActivityTypeDTO> activityTypes = activityTypeService.getActivityTypesByUserId(userId);
-            
+
             if (activityTypes == null || activityTypes.isEmpty()) {
                 // If no activity types, return epoch so cache is always valid
                 return Instant.EPOCH;
@@ -686,15 +661,26 @@ public class CacheService implements ICacheService {
             // For now, we'll assume any activity type operation requires a refresh
             // In a more sophisticated implementation, you might track lastModified timestamps
             // on ActivityType entities and check those here
-            
+
             // As a simple implementation, we'll return the current time minus 1 hour
             // This means activity types cache will be refreshed at most once per hour
             return Instant.now().minusSeconds(3600);
-            
+
         } catch (Exception e) {
             logger.error("Error getting latest activity type update for user {}: {}", userId, e.getMessage());
             // On error, return current time to force refresh
             return Instant.now();
         }
+    }
+
+    // Functional interfaces for suppliers
+    @FunctionalInterface
+    private interface TimestampSupplier {
+        Instant get();
+    }
+
+    @FunctionalInterface
+    private interface DataSupplier {
+        Object get();
     }
 } 
