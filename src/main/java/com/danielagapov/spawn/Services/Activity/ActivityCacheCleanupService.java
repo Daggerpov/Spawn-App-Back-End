@@ -24,11 +24,11 @@ public class ActivityCacheCleanupService {
      * Periodically evicts all activity-related caches to ensure fresh expiration data.
      * Runs every 15 minutes to prevent serving stale activities that have expired.
      * 
-     * Note: This is a preventive measure in addition to the 30-minute TTL.
+     * Note: This is a preventive measure in addition to the 5-minute TTL.
      * Activities can expire at any time, so we proactively clear caches to ensure
      * the isExpired field is recalculated based on current time.
      */
-    @Scheduled(fixedRate = 900000) // 15 minutes = 900,000 milliseconds
+    @Scheduled(fixedRate = 300000) // 5 minutes = 600,000 milliseconds
     public void cleanupExpiredActivityCaches() {
         try {
             logger.info("🧹 Starting scheduled activity cache cleanup");
