@@ -298,8 +298,6 @@ public class CalendarService implements ICalendarService {
                 cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE).clear();
                 logger.info("Cleared CALENDAR_ACTIVITIES_CACHE for all users");
             }
-            
-            logger.info("Successfully cleared all calendar caches");
         } catch (Exception e) {
             logger.error("Error clearing all calendar caches: " + e.getMessage() + 
                          ", Stack trace: " + Arrays.toString(e.getStackTrace()));

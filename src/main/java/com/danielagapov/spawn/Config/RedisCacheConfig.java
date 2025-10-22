@@ -4,7 +4,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.cache.interceptor.SimpleCacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -36,6 +35,11 @@ public class RedisCacheConfig {
         
         RedisCacheConfiguration statsConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15)); // Stats change frequently
+        
+        // Activity caches with shorter TTL to prevent stale expiration status
+        // Activities can expire naturally over time, so we use a shorter cache duration
+        RedisCacheConfiguration activityConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(5)); // 5 minutes to ensure fresh expiration data
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
@@ -64,15 +68,23 @@ public class RedisCacheConfig {
                 .withCacheConfiguration("userStats", statsConfig)
                 .withCacheConfiguration("userStatsById", statsConfig)
                 
+                // Activity caches - shorter TTL to prevent stale expiration status
+                .withCacheConfiguration("ActivityById", activityConfig)
+                .withCacheConfiguration("fullActivityById", activityConfig)
+                .withCacheConfiguration("ActivityInviteById", activityConfig)
+                .withCacheConfiguration("ActivitiesByOwnerId", activityConfig)
+                .withCacheConfiguration("feedActivities", activityConfig)
+                .withCacheConfiguration("ActivitiesInvitedTo", activityConfig)
+                .withCacheConfiguration("fullActivitiesInvitedTo", activityConfig)
+                .withCacheConfiguration("fullActivitiesParticipatingIn", activityConfig)
+                .withCacheConfiguration("calendarActivities", activityConfig)
+                .withCacheConfiguration("allCalendarActivities", activityConfig)
+                .withCacheConfiguration("filteredCalendarActivities", activityConfig)
+                
                 // Blocked user caches
                 .withCacheConfiguration("blockedUsers", userDataConfig)
                 .withCacheConfiguration("blockedUserIds", userDataConfig)
                 .withCacheConfiguration("isBlocked", userDataConfig)
                 .build();
-    }
-
-    @Bean
-    public SimpleCacheErrorHandler errorHandler() {
-        return new SimpleCacheErrorHandler();
     }
 }
