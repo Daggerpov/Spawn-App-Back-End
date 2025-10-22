@@ -1,0 +1,244 @@
+// Spawn App - Entity Relationship Diagram
+// Generated: October 22, 2025
+// Complete database schema for all entities
+
+Table User {
+    id UUID [pk]
+    username String [unique, null]
+    profilePictureUrl String
+    phoneNumber String [unique, null]
+    name String [null]
+    bio String
+    email String [unique, null]
+    password String
+    dateCreated Date
+    lastUpdated Instant
+    status UserStatus [not null]
+    hasCompletedOnboarding Boolean [not null, default: false]
+    
+    indexes {
+        name [name: "idx_name"]
+    }
+}
+
+Table Activity {
+    id UUID [pk]
+    title String
+    startTime OffsetDateTime
+    endTime OffsetDateTime
+    icon String
+    colorHexCode String
+    activityTypeId UUID [ref: > ActivityType.id, null]
+    locationId UUID [ref: > Location.id, not null]
+    note String
+    participantLimit Integer [null]
+    creatorId UUID [ref: > User.id, not null]
+    createdAt Instant
+    lastUpdated Instant
+    clientTimezone String
+}
+
+Table ActivityType {
+    id UUID [pk]
+    title String
+    creatorId UUID [ref: > User.id, not null]
+    orderNum Integer
+    icon String [default: "⭐"]
+    isPinned Boolean [not null, default: false]
+    
+    indexes {
+        (creatorId, orderNum) [unique, name: "UK_activity_type_creator_order"]
+    }
+}
+
+// Many-to-Many junction table: ActivityType <-> User (associatedFriends)
+Table ActivityType_AssociatedFriends {
+    activityTypeId UUID [ref: > ActivityType.id]
+    userId UUID [ref: > User.id]
+    
+    indexes {
+        (activityTypeId, userId) [pk]
+    }
+}
+
+Table Location {
+    id UUID [pk]
+    name String
+    latitude Double
+    longitude Double
+}
+
+// Junction table for Activities and Users (Many-to-Many)
+Table ActivityUser {
+    activityId UUID [ref: > Activity.id, not null]
+    userId UUID [ref: > User.id, not null]
+    status ParticipationStatus [not null]
+    
+    indexes {
+        (activityId, userId) [pk]
+    }
+}
+
+Table ChatMessage {
+    id UUID [pk]
+    content String [null]
+    timestamp Instant
+    userId UUID [ref: > User.id, not null]
+    activityId UUID [ref: > Activity.id, not null]
+}
+
+// Junction table for ChatMessage Likes (Many-to-Many)
+Table ChatMessageLikes {
+    chatMessageId UUID [ref: > ChatMessage.id, not null]
+    userId UUID [ref: > User.id, not null]
+    
+    indexes {
+        (chatMessageId, userId) [pk]
+    }
+}
+
+Table Friendship {
+    id UUID [pk]
+    userAId UUID [ref: > User.id, not null]
+    userBId UUID [ref: > User.id, not null]
+    createdAt Instant [not null]
+    
+    indexes {
+        (userAId, userBId) [unique]
+        userAId [name: "idx_user_a_id"]
+        userBId [name: "idx_user_b_id"]
+    }
+}
+
+Table FriendRequest {
+    id UUID [pk]
+    senderId UUID [ref: > User.id, not null]
+    receiverId UUID [ref: > User.id, not null]
+    createdAt Instant [not null]
+    
+    indexes {
+        (senderId, receiverId) [unique]
+    }
+}
+
+Table NotificationPreferences {
+    id Long [pk]
+    userId UUID [ref: - User.id, unique, not null]
+    friendRequestsEnabled Boolean [not null, default: true]
+    activityInvitesEnabled Boolean [not null, default: true]
+    activityUpdatesEnabled Boolean [not null, default: true]
+    chatMessagesEnabled Boolean [not null, default: true]
+}
+
+Table DeviceToken {
+    id UUID [pk]
+    token String [unique, not null]
+    deviceType DeviceType
+    userId UUID [ref: > User.id, not null]
+}
+
+Table ShareLink {
+    id UUID [pk]
+    shareCode String [unique, not null]
+    type ShareLinkType [not null]
+    targetId UUID [not null]
+    createdAt Instant [not null]
+    expiresAt Instant
+    
+    indexes {
+        shareCode [unique, name: "idx_share_code"]
+        (targetId, type) [name: "idx_target_id_type"]
+        expiresAt [name: "idx_expires_at"]
+    }
+}
+
+Table BlockedUser {
+    id UUID [pk]
+    blockerId UUID [ref: > User.id, not null]
+    blockedId UUID [ref: > User.id, not null]
+    reason String [null]
+    
+    indexes {
+        (blockerId, blockedId) [unique]
+    }
+}
+
+Table EmailVerification {
+    id UUID [pk]
+    sendAttempts Integer [default: 0]
+    lastSendAttemptAt Instant
+    nextSendAttemptAt Instant
+    checkAttempts Integer [default: 0]
+    lastCheckAttemptAt Instant
+    nextCheckAttemptAt Instant
+    verificationCode String [unique, not null]
+    email String [unique]
+    codeExpiresAt Instant
+    userId UUID [ref: - User.id]
+}
+
+Table ReportedContent {
+    id UUID [pk]
+    reporterId UUID [ref: > User.id, null]
+    contentId UUID [not null]
+    contentType EntityType [not null]
+    timeReported OffsetDateTime [not null]
+    resolution ResolutionStatus [not null]
+    reportType ReportType [not null]
+    description String
+    contentOwnerId UUID [ref: > User.id, not null]
+}
+
+Table UserIdExternalIdMap {
+    id String [pk, note: "External provider ID"]
+    userId UUID [ref: - User.id, not null]
+    provider OAuthProvider
+}
+
+Table FeedbackSubmission {
+    id UUID [pk]
+    type FeedbackType
+    fromUserId UUID [ref: > User.id, null]
+    fromUserEmail String
+    submittedAt OffsetDateTime
+    status FeedbackStatus [default: "PENDING"]
+    resolutionComment Text
+    message Text
+    imageUrl String
+}
+
+Table BetaAccessSignUp {
+    id UUID [pk]
+    email String [unique, not null]
+    signedUpAt OffsetDateTime
+    hasSubscribedToNewsletter Boolean
+    hasBeenEmailed Boolean [default: false]
+}
+
+Table UserInterest {
+    id UUID [pk]
+    userId UUID [ref: > User.id, not null]
+    interest String [not null]
+    createdAt Instant
+}
+
+Table UserSocialMedia {
+    id UUID [pk]
+    userId UUID [ref: - User.id, unique, not null]
+    whatsappNumber String
+    instagramUsername String
+    lastUpdated Instant
+}
+
+// Enums Documentation
+// UserStatus: EMAIL_VERIFIED, USERNAME_AND_PHONE_NUMBER, NAME_AND_PHOTO, CONTACT_IMPORT, ACTIVE
+// ParticipationStatus: INVITED, PARTICIPATING, DECLINED
+// DeviceType: IOS, ANDROID
+// ShareLinkType: ACTIVITY, PROFILE
+// EntityType: USER, ACTIVITY, CHAT_MESSAGE
+// ResolutionStatus: PENDING, UNDER_REVIEW, RESOLVED, DISMISSED
+// ReportType: SPAM, HARASSMENT, BULLYING, HATE_SPEECH, NUDITY, VIOLENCE, OTHER
+// FeedbackType: BUG, FEATURE_REQUEST, GENERAL
+// FeedbackStatus: PENDING, UNDER_REVIEW, RESOLVED, DISMISSED
+// OAuthProvider: GOOGLE, APPLE
+
