@@ -38,7 +38,6 @@ public class SecurityConfig {
             "/api/v1/auth/login",
             "/api/v1/users/contacts/cross-reference"
     };
-
     // Additional regex patterns for whitelisted URLs
     private final String[] whitelistedUrlPatterns = new String[] {
             "/api/v1/auth/accept-tos/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
@@ -61,7 +60,7 @@ public class SecurityConfig {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.setAllowedOrigins(List.of(
                             "https://getspawn.com",
-                            "https://admin.getspawn.com",
+                            "https://getspawn.com/admin",
                             "http://localhost:3000",
                             "http://localhost:8080",
                             "http://localhost:4200",
