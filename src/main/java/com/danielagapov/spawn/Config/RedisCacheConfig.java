@@ -36,13 +36,14 @@ public class RedisCacheConfig {
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
         // Configure polymorphic type handling for proper deserialization
+        // Use OBJECT_AND_NON_CONCRETE instead of NON_FINAL to avoid issues with collections
         BasicPolymorphicTypeValidator validator = BasicPolymorphicTypeValidator.builder()
                 .allowIfBaseType(Object.class)
                 .build();
         
         objectMapper.activateDefaultTyping(
                 validator,
-                ObjectMapper.DefaultTyping.NON_FINAL,
+                ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE,
                 JsonTypeInfo.As.PROPERTY
         );
         

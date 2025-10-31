@@ -11,6 +11,8 @@ import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Services.UserInterest.IUserInterestService;
 import com.danielagapov.spawn.Services.UserSocialMedia.IUserSocialMediaService;
 import com.danielagapov.spawn.Services.UserStats.IUserStatsService;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -667,7 +669,26 @@ public class CacheService implements ICacheService {
             return Instant.now().minusSeconds(3600);
 
         } catch (Exception e) {
-            logger.error("Error getting latest activity type update for user {}: {}", userId, e.getMessage());
+            // Check if this is a JSON deserialization error from corrupted cache
+            if (isJsonDeserializationError(e)) {
+                logger.warn("Cache corruption detected for activity types for user {}. Clearing cache and retrying...", userId);
+                try {
+                    // Evict the corrupted cache entry
+                    evictCache("activityTypesByUserId", userId);
+                    // Retry the operation
+                    List<ActivityTypeDTO> activityTypes = activityTypeService.getActivityTypesByUserId(userId);
+                    logger.info("Successfully recovered from cache corruption for activity types for user: {}", userId);
+                    
+                    if (activityTypes == null || activityTypes.isEmpty()) {
+                        return Instant.EPOCH;
+                    }
+                    return Instant.now().minusSeconds(3600);
+                } catch (Exception retryE) {
+                    logger.error("Failed to recover from cache corruption for activity types for user {}: {}", userId, retryE.getMessage());
+                }
+            } else {
+                logger.error("Error getting latest activity type update for user {}: {}", userId, e.getMessage());
+            }
             // On error, return current time to force refresh
             return Instant.now();
         }
@@ -682,5 +703,40 @@ public class CacheService implements ICacheService {
     @FunctionalInterface
     private interface DataSupplier {
         Object get();
+    }
+
+    /**
+     * Checks if an exception is a JSON deserialization error, typically caused by
+     * corrupted cache data from the old serialization format.
+     */
+    private boolean isJsonDeserializationError(Exception e) {
+        Throwable cause = e;
+        while (cause != null) {
+            if (cause instanceof JsonParseException || cause instanceof JsonMappingException) {
+                return true;
+            }
+            // Also check for the specific error message patterns
+            if (cause.getMessage() != null && 
+                (cause.getMessage().contains("Could not read JSON") ||
+                 cause.getMessage().contains("Unexpected token"))) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
+    /**
+     * Evicts a corrupted cache entry for a given cache name and user ID.
+     */
+    private void evictCache(String cacheName, Object key) {
+        try {
+            if (cacheManager.getCache(cacheName) != null) {
+                cacheManager.getCache(cacheName).evict(key);
+                logger.info("Evicted corrupted cache entry from '{}' for key: {}", cacheName, key);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to evict cache entry from '{}': {}", cacheName, e.getMessage());
+        }
     }
 } 

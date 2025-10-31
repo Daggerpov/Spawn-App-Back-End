@@ -188,20 +188,28 @@ public class AuthService implements IAuthService {
         }
         
         // Clean and validate phone number before storing
-        String cleanedPhoneNumber = PhoneNumberValidator.cleanPhoneNumber(dto.getPhoneNumber());
-        if (cleanedPhoneNumber == null || cleanedPhoneNumber.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invalid phone number format");
-        }
-        
-        // Check if the cleaned phone number already exists (excluding placeholder values)
         String currentPhone = user.getOptionalPhoneNumber().orElse("");
-        if (!cleanedPhoneNumber.equals(currentPhone)) {
-            if (userService.existsByPhoneNumber(cleanedPhoneNumber)) {
-                throw new PhoneNumberAlreadyExistsException("Phone number already exists");
+        
+        // Only validate and update if the phone number is actually being changed
+        // This prevents errors when client sends corrupted cached data that matches current value
+        if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().equals(currentPhone)) {
+            String cleanedPhoneNumber = PhoneNumberValidator.cleanPhoneNumber(dto.getPhoneNumber());
+            if (cleanedPhoneNumber == null || cleanedPhoneNumber.trim().isEmpty()) {
+                logger.warn("Invalid phone number format for user " + LoggingUtils.formatUserIdInfo(user.getId()) + 
+                           ". Received: '" + dto.getPhoneNumber() + "', cleaned result: " + 
+                           (cleanedPhoneNumber == null ? "null" : "'" + cleanedPhoneNumber + "'"));
+                throw new IllegalArgumentException("Invalid phone number format: " + dto.getPhoneNumber());
             }
-            user.setPhoneNumber(cleanedPhoneNumber);
-            logger.info("Updated phone number for user: " + LoggingUtils.formatUserIdInfo(user.getId()) + 
-                       " from '" + currentPhone + "' to '" + cleanedPhoneNumber + "'");
+            
+            // Check if the cleaned phone number already exists
+            if (!cleanedPhoneNumber.equals(currentPhone)) {
+                if (userService.existsByPhoneNumber(cleanedPhoneNumber)) {
+                    throw new PhoneNumberAlreadyExistsException("Phone number already exists");
+                }
+                user.setPhoneNumber(cleanedPhoneNumber);
+                logger.info("Updated phone number for user: " + LoggingUtils.formatUserIdInfo(user.getId()) + 
+                           " from '" + currentPhone + "' to '" + cleanedPhoneNumber + "'");
+            }
         }
         
         // Update password if provided
