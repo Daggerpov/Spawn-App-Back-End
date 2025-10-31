@@ -21,6 +21,17 @@ Contains SQL scripts and documentation for database issue resolution:
 ### `/docs/guides/`
 General setup and operational guides (linked from main README)
 
+### `/docs/` (Root Level Documentation)
+Performance optimization and system-level documentation:
+- `RAM_OPTIMIZATION_README.md` - **Main entry point** for RAM optimization documentation
+- `RAM_OPTIMIZATION_STRATEGIES.md` - Comprehensive RAM reduction strategies (all phases)
+- `QUICK_START_RAM_OPTIMIZATION.md` - Step-by-step implementation guide (Phase 1)
+- `RAM_OPTIMIZATION_IMPACT_SUMMARY.md` - Expected impact and metrics analysis
+- `PERFORMANCE_OPTIMIZATION_SUMMARY.md` - General performance improvements
+- `MOBILE_CACHE_IMPLEMENTATION.md` - Mobile caching strategy
+- `AUTH_FLOW_FIXES_SUMMARY.md` - Authentication flow improvements
+- `FRIENDSHIP_REFACTOR_PLAN.md` - Friendship system refactoring
+
 ## Scripts Organization
 
 ### `/scripts/database-migrations/`
@@ -45,6 +56,12 @@ Scripts and documentation for fixing database constraints:
 Tools for validating code and database integrity:
 - JPQL validation tools
 - Syntax checking scripts
+
+### `/scripts/` (Root Level Scripts)
+System monitoring and optimization tools:
+- `monitor-ram.sh` - Real-time RAM usage monitoring with CSV logging
+- `analyze-ram-logs.sh` - Analyze and compare RAM monitoring logs
+- `start-production.sh` - Production startup script with JVM optimizations (to be created)
 
 ## Best Practices
 
