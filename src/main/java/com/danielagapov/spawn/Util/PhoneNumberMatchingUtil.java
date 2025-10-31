@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * about country codes. This replaces the unreliable approach of forcing +1 on all numbers.
  */
 @Component
-public class PhoneNumberMatchingUtil {
+public final class PhoneNumberMatchingUtil {
 
     private static final Pattern DIGITS_ONLY_PATTERN = Pattern.compile("[^0-9]");
     private static final Pattern PHONE_VALIDATION_PATTERN = Pattern.compile("^\\+?[1-9]\\d{7,14}$");

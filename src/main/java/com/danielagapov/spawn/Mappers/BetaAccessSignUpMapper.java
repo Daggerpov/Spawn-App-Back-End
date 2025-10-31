@@ -6,7 +6,7 @@ import com.danielagapov.spawn.Models.BetaAccessSignUp;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BetaAccessSignUpMapper {
+public final class BetaAccessSignUpMapper {
 
     public static BetaAccessSignUpDTO toDTO(BetaAccessSignUp entity) {
         return new BetaAccessSignUpDTO(

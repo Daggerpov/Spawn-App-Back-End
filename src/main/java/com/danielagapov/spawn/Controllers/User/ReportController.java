@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("api/v1/reports")
-public class ReportController {
+public final class ReportController {
     private final IReportContentService reportService;
     private final ILogger logger;
 

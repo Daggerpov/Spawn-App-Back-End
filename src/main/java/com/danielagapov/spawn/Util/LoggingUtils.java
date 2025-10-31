@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * Utility methods for consistent logging across the application
  */
-public class LoggingUtils {
+public final class LoggingUtils {
 
     /**
      * Format user information for logging, including ID, first name, last name, and username

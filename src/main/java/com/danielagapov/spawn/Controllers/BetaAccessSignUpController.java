@@ -14,7 +14,7 @@ import java.util.Map;
 
 @RestController()
 @RequestMapping("api/v1/betaAccessSignUp")
-public class BetaAccessSignUpController {
+public final class BetaAccessSignUpController {
     private final IBetaAccessSignUpService service;
     private final ILogger logger;
 

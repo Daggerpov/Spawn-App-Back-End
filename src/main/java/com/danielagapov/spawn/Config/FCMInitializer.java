@@ -5,6 +5,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.ByteArrayInputStream;
@@ -59,6 +60,23 @@ public class FCMInitializer {
             logger.info("Firebase application initialized");
         } catch (IOException e) {
             logger.error("Error initializing Firebase: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Cleanup method to properly delete Firebase app and release resources.
+     * This prevents memory leaks by ensuring Firebase resources are properly released.
+     */
+    @PreDestroy
+    public void cleanup() {
+        try {
+            if (!FirebaseApp.getApps().isEmpty()) {
+                logger.info("Shutting down Firebase application");
+                FirebaseApp.getInstance().delete();
+                logger.info("Firebase application successfully shut down");
+            }
+        } catch (Exception e) {
+            logger.error("Error shutting down Firebase: " + e.getMessage());
         }
     }
 }

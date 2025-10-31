@@ -10,7 +10,7 @@ import java.util.Map;
  * This is a placeholder implementation that can be expanded when Android support is needed
  */
 @Service
-public class FCMNotificationStrategy implements NotificationStrategy {
+public final class FCMNotificationStrategy implements NotificationStrategy {
 
     @Override
     public void sendNotificationToDevice(String deviceToken, String title, String message, Map<String, String> data) {

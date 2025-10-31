@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class ActivityMapper {
+public final class ActivityMapper {
 
     // Convert entity to DTO
     public static ActivityDTO toDTO(Activity entity, UUID creatorUserId, List<UUID> participantUserIds, List<UUID> invitedUserIds, List<UUID> chatMessageIds, boolean isExpired) {

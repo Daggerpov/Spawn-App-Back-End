@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/stats")
-public class UserStatsController {
+public final class UserStatsController {
 
     private final IUserStatsService userStatsService;
     private final ILogger logger;

@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @RestController()
 @RequestMapping("api/v1/activities")
-public class ActivityController {
+public final class ActivityController {
     private final IActivityService activityService;
     private final ILogger logger;
 
