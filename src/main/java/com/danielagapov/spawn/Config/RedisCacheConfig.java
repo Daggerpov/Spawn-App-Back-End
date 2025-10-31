@@ -1,5 +1,10 @@
 package com.danielagapov.spawn.Config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
@@ -25,8 +30,24 @@ public class RedisCacheConfig {
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         // RAM OPTIMIZATION: Use JSON serialization instead of JDK (saves ~60 MB, 40% reduction)
+        // Configure ObjectMapper with proper UTF-8 support for emojis and special characters
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        
+        // Configure polymorphic type handling for proper deserialization
+        BasicPolymorphicTypeValidator validator = BasicPolymorphicTypeValidator.builder()
+                .allowIfBaseType(Object.class)
+                .build();
+        
+        objectMapper.activateDefaultTyping(
+                validator,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+        
         GenericJackson2JsonRedisSerializer serializer = 
-            new GenericJackson2JsonRedisSerializer();
+            new GenericJackson2JsonRedisSerializer(objectMapper);
         
         // Set default TTL of 100 minutes with JSON serialization
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
