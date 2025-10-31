@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
-public final class UserStatsService implements IUserStatsService {
+public class UserStatsService implements IUserStatsService {
 
     private final IActivityRepository activityRepository;
     private final IActivityUserRepository activityUserRepository;

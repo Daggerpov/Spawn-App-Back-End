@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 
 
 @Service
-public final class UserService implements IUserService {
+public class UserService implements IUserService {
     private final IUserRepository repository;
     private final IActivityUserRepository activityUserRepository;
     private final IFriendshipRepository friendshipRepository;

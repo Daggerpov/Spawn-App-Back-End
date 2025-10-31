@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public final class LocationService implements ILocationService {
+public class LocationService implements ILocationService {
     private final ILocationRepository repository;
     private final ILogger logger;
 

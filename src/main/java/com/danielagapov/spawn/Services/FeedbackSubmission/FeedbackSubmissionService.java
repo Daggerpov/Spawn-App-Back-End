@@ -24,7 +24,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public final class FeedbackSubmissionService implements IFeedbackSubmissionService {
+public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
     private final IFeedbackSubmissionRepository repository;
     private final ILogger logger;

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
  * have naturally expired over time.
  */
 @Service
-public final class ActivityCacheCleanupService {
+public class ActivityCacheCleanupService {
     
     private static final Logger logger = LoggerFactory.getLogger(ActivityCacheCleanupService.class);
     

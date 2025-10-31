@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public final class ShareLinkCleanupService {
+public class ShareLinkCleanupService {
     
     private final ShareLinkService shareLinkService;
     private final IActivityRepository activityRepository;

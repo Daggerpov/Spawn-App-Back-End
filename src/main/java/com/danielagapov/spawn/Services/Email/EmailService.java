@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
-public final class EmailService implements IEmailService {
+public class EmailService implements IEmailService {
     private static final String BASE_URL;
 
     static {

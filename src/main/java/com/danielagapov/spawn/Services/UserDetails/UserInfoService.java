@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
  * for authenticating requests
  */
 @Service
-public final class UserInfoService implements UserDetailsService {
+public class UserInfoService implements UserDetailsService {
     private final IUserRepository repository;
 
     public UserInfoService(IUserRepository repository) {

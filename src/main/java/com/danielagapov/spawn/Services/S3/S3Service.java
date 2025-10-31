@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @Service
 @Profile("!test") // Don't load this service in test profile
-public final class S3Service implements IS3Service {
+public class S3Service implements IS3Service {
     private static final String BUCKET = "spawn-pfp-store";
     private static final String CDN_BASE;
     private static final String DEFAULT_PFP;

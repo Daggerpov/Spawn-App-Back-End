@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public final class UserSocialMediaService implements IUserSocialMediaService {
+public class UserSocialMediaService implements IUserSocialMediaService {
 
     private final IUserSocialMediaRepository userSocialMediaRepository;
     private final IUserRepository userRepository;

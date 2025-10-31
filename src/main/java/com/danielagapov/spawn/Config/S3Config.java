@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 @Profile("!test") // Don't load this configuration in test profile
-public final class S3Config {
+public class S3Config {
 
     @Bean
     public S3Client s3Client() {

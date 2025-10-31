@@ -25,7 +25,7 @@ import static com.danielagapov.spawn.Enums.ResolutionStatus.PENDING;
 
 @Service
 @AllArgsConstructor
-public final class ReportContentService implements IReportContentService {
+public class ReportContentService implements IReportContentService {
     private final IReportedContentRepository repository;
     private final IUserService userService;
     private final IActivityService ActivityService;

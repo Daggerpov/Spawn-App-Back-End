@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public final class UserInterestService implements IUserInterestService {
+public class UserInterestService implements IUserInterestService {
 
     private final UserInterestRepository userInterestRepository;
     private final IUserRepository userRepository;

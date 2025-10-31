@@ -15,7 +15,7 @@ import java.util.UUID;
 @Configuration
 @Profile("test")
 @EnableCaching
-public final class TestConfig {
+public class TestConfig {
     
     @Bean
     @Primary

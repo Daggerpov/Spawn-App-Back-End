@@ -21,7 +21,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public final class ShareLinkService {
+public class ShareLinkService {
     
     private final ShareLinkRepository shareLinkRepository;
     private final ShareCodeGenerator shareCodeGenerator;

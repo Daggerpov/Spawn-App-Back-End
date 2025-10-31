@@ -30,7 +30,7 @@ import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
 
 @Service
 @AllArgsConstructor
-public final class ActivityTypeService implements IActivityTypeService {
+public class ActivityTypeService implements IActivityTypeService {
     private IActivityTypeRepository repository;
     private ILogger logger;
     private IUserService userService;
