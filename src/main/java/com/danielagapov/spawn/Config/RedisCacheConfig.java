@@ -20,7 +20,7 @@ import java.time.Duration;
 @ConditionalOnClass(RedisConnectionFactory.class)
 @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = false)
 @Profile("!test") // Don't load this configuration in test profile
-public final class RedisCacheConfig {
+public class RedisCacheConfig {
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
