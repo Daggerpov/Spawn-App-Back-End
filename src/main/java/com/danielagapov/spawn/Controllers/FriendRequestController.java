@@ -11,9 +11,6 @@ import com.danielagapov.spawn.Exceptions.Logger.ILogger;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Util.LoggingUtils;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,13 +26,11 @@ public final class FriendRequestController {
     private final IFriendRequestService friendRequestService;
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
-    private final CacheManager cacheManager;
 
-    public FriendRequestController(IFriendRequestService friendRequestService, IBlockedUserService blockedUserService, ILogger logger, CacheManager cacheManager) {
+    public FriendRequestController(IFriendRequestService friendRequestService, IBlockedUserService blockedUserService, ILogger logger) {
         this.friendRequestService = friendRequestService;
         this.blockedUserService = blockedUserService;
         this.logger = logger;
-        this.cacheManager = cacheManager;
     }
 
     // returns ResponseEntity with list of FetchFriendRequestDTO (can be empty)
@@ -62,28 +57,6 @@ public final class FriendRequestController {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
-            // Check if this is a JSON deserialization error from corrupted cache
-            if (isJsonDeserializationError(e)) {
-                logger.warn("Cache corruption detected for incoming friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ". Clearing cache and retrying...");
-                try {
-                    // Evict the corrupted cache entry
-                    evictCache("incomingFetchFriendRequests", userId);
-                    // Retry the operation
-                    List<FetchFriendRequestDTO> friendRequests = friendRequestService.getIncomingFetchFriendRequestsByUserId(userId);
-                    List<FetchFriendRequestDTO> filteredRequests = blockedUserService.filterOutBlockedUsers(friendRequests, userId);
-                    logger.info("Successfully recovered from cache corruption for incoming friend requests for user: " + LoggingUtils.formatUserIdInfo(userId));
-                    return new ResponseEntity<>(filteredRequests, HttpStatus.OK);
-                } catch (BasesNotFoundException retryE) {
-                    if (retryE.entityType == EntityType.FriendRequest) {
-                        return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-                    }
-                    logger.error("Failed to recover from cache corruption for incoming friend requests: " + retryE.getMessage());
-                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-                } catch (Exception retryE) {
-                    logger.error("Failed to recover from cache corruption for incoming friend requests: " + retryE.getMessage());
-                    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-            }
             logger.error("Error getting incoming friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -113,28 +86,6 @@ public final class FriendRequestController {
                 return new ResponseEntity<>(new ArrayList<>(), HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
-            // Check if this is a JSON deserialization error from corrupted cache
-            if (isJsonDeserializationError(e)) {
-                logger.warn("Cache corruption detected for sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ". Clearing cache and retrying...");
-                try {
-                    // Evict the corrupted cache entry
-                    evictCache("sentFetchFriendRequests", userId);
-                    // Retry the operation
-                    List<FetchSentFriendRequestDTO> friendRequests = friendRequestService.getSentFetchFriendRequestsByUserId(userId);
-                    List<FetchSentFriendRequestDTO> filteredRequests = blockedUserService.filterOutBlockedUsers(friendRequests, userId);
-                    logger.info("Successfully recovered from cache corruption for sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId));
-                    return new ResponseEntity<>(filteredRequests, HttpStatus.OK);
-                } catch (BasesNotFoundException retryE) {
-                    if (retryE.entityType == EntityType.FriendRequest) {
-                        return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
-                    }
-                    logger.error("Failed to recover from cache corruption for sent friend requests: " + retryE.getMessage());
-                    return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
-                } catch (Exception retryE) {
-                    logger.error("Failed to recover from cache corruption for sent friend requests: " + retryE.getMessage());
-                    return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-            }
             logger.error("Error getting sent friend requests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(new ArrayList<>(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -207,41 +158,6 @@ public final class FriendRequestController {
         } catch (Exception e) {
             logger.error("Error deleting friend request: " + friendRequestId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Checks if an exception is a JSON deserialization error, typically caused by
-     * corrupted cache data from the old serialization format.
-     */
-    private boolean isJsonDeserializationError(Exception e) {
-        Throwable cause = e;
-        while (cause != null) {
-            if (cause instanceof JsonParseException || cause instanceof JsonMappingException) {
-                return true;
-            }
-            // Also check for the specific error message patterns
-            if (cause.getMessage() != null && 
-                (cause.getMessage().contains("Could not read JSON") ||
-                 cause.getMessage().contains("Unexpected token"))) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-        return false;
-    }
-
-    /**
-     * Evicts a corrupted cache entry for a given cache name and user ID.
-     */
-    private void evictCache(String cacheName, UUID userId) {
-        try {
-            if (cacheManager.getCache(cacheName) != null) {
-                cacheManager.getCache(cacheName).evict(userId);
-                logger.info("Evicted corrupted cache entry from '" + cacheName + "' for user: " + LoggingUtils.formatUserIdInfo(userId));
-            }
-        } catch (Exception e) {
-            logger.error("Failed to evict cache entry from '" + cacheName + "': " + e.getMessage());
         }
     }
 }

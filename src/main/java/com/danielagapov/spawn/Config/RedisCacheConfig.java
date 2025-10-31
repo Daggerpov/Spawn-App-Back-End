@@ -1,14 +1,21 @@
 package com.danielagapov.spawn.Config;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -25,7 +32,9 @@ import java.time.Duration;
 @ConditionalOnClass(RedisConnectionFactory.class)
 @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = false)
 @Profile("!test") // Don't load this configuration in test profile
-public class RedisCacheConfig {
+public class RedisCacheConfig implements CachingConfigurer {
+    
+    private static final Logger logger = LoggerFactory.getLogger(RedisCacheConfig.class);
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
@@ -130,5 +139,80 @@ public class RedisCacheConfig {
                 .withCacheConfiguration("blockedUserIds", userDataConfig)
                 .withCacheConfiguration("isBlocked", userDataConfig)
                 .build();
+    }
+
+    /**
+     * Global cache error handler that automatically evicts corrupted cache entries
+     * when JSON deserialization fails (typically from old JDK serialization format).
+     * This prevents domain-specific error handling in controllers and services.
+     */
+    @Bean
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new CacheErrorHandler() {
+            @Override
+            public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+                // Check if this is a JSON deserialization error
+                if (isJsonDeserializationError(exception)) {
+                    logger.warn("Cache corruption detected in '{}' for key '{}'. Evicting and allowing retry...", 
+                               cache.getName(), key);
+                    try {
+                        cache.evict(key);
+                        logger.info("Successfully evicted corrupted cache entry from '{}' for key: {}", 
+                                   cache.getName(), key);
+                    } catch (Exception e) {
+                        logger.error("Failed to evict corrupted cache entry from '{}': {}", 
+                                    cache.getName(), e.getMessage());
+                    }
+                } else {
+                    // For non-deserialization errors, log but don't break the application
+                    logger.error("Cache GET error in '{}' for key '{}': {}", 
+                                cache.getName(), key, exception.getMessage());
+                }
+                // Don't rethrow - allow application to continue by fetching from database
+            }
+
+            @Override
+            public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
+                logger.error("Cache PUT error in '{}' for key '{}': {}", 
+                            cache.getName(), key, exception.getMessage());
+                // Don't rethrow - allow application to continue without caching
+            }
+
+            @Override
+            public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
+                logger.error("Cache EVICT error in '{}' for key '{}': {}", 
+                            cache.getName(), key, exception.getMessage());
+                // Don't rethrow - not critical if eviction fails
+            }
+
+            @Override
+            public void handleCacheClearError(RuntimeException exception, Cache cache) {
+                logger.error("Cache CLEAR error in '{}': {}", 
+                            cache.getName(), exception.getMessage());
+                // Don't rethrow - not critical if clear fails
+            }
+        };
+    }
+
+    /**
+     * Checks if an exception is a JSON deserialization error, typically caused by
+     * corrupted cache data from the old JDK serialization format.
+     */
+    private boolean isJsonDeserializationError(RuntimeException exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof JsonParseException || cause instanceof JsonMappingException) {
+                return true;
+            }
+            // Also check for the specific error message patterns from logs
+            if (cause.getMessage() != null && 
+                (cause.getMessage().contains("Could not read JSON") ||
+                 cause.getMessage().contains("Unexpected token"))) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }
