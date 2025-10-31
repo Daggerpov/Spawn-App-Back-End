@@ -6,7 +6,7 @@ import com.danielagapov.spawn.Models.User.User;
 
 import java.util.UUID;
 
-public class FriendUserMapper {
+public final class FriendUserMapper {
 
     public static RecommendedFriendUserDTO toDTO(User user, int mutualCount) {
         return new RecommendedFriendUserDTO(

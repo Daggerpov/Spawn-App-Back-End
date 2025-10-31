@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class ChatMessageMapper {
+public final class ChatMessageMapper {
 
     public static ChatMessageDTO toDTO(ChatMessage entity, List<UUID> likedByUserIds) {
         return new ChatMessageDTO(

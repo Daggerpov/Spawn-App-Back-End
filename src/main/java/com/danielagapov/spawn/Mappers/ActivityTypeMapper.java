@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-public class ActivityTypeMapper {
+public final class ActivityTypeMapper {
 
     public static ActivityType toEntity(ActivityTypeDTO dto, User creator) {
         return new ActivityType(

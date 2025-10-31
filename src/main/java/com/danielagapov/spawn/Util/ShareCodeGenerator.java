@@ -10,7 +10,7 @@ import java.util.List;
  * Uses curated lists of adjectives and nouns to create memorable, human-readable codes.
  */
 @Component
-public class ShareCodeGenerator {
+public final class ShareCodeGenerator {
     
     private static final SecureRandom random = new SecureRandom();
     

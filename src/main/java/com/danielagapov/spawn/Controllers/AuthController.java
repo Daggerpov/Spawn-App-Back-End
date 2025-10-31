@@ -35,7 +35,7 @@ import java.util.UUID;
 @RestController()
 @RequestMapping("api/v1/auth")
 @AllArgsConstructor
-public class AuthController {
+public final class AuthController {
     private final IOAuthService oauthService;
     private final IJWTService jwtService;
     private final ILogger logger;

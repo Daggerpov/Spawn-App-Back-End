@@ -6,7 +6,7 @@ import com.danielagapov.spawn.Models.ChatMessageLikes;
 import com.danielagapov.spawn.Models.CompositeKeys.ChatMessageLikesId;
 import com.danielagapov.spawn.Models.User.User;
 
-public class ChatMessageLikesMapper {
+public final class ChatMessageLikesMapper {
 
     // Convert entity to DTO
     public static ChatMessageLikesDTO toDTO(ChatMessageLikes chatMessageLikes) {

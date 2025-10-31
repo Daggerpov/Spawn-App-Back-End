@@ -14,7 +14,7 @@ import java.util.UUID;
  * Clears calendar cache when activities are created, updated, or deleted.
  */
 @Component
-public class CalendarEventHandler {
+public final class CalendarEventHandler {
 
     private final ICalendarService calendarService;
     private final ILogger logger;

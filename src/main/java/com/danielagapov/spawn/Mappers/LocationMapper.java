@@ -6,7 +6,7 @@ import com.danielagapov.spawn.Models.Location;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class LocationMapper {
+public final class LocationMapper {
 
     public static LocationDTO toDTO(Location entity) {
         return new LocationDTO(

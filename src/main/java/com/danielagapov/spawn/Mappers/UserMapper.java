@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class UserMapper {
+public final class UserMapper {
 
     public static BaseUserDTO toDTO(User user) {
         return new BaseUserDTO(

@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 /**
  * Utility class for generating verification codes
  */
-public class VerificationCodeGenerator {
+public final class VerificationCodeGenerator {
     
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String DIGITS = "0123456789";

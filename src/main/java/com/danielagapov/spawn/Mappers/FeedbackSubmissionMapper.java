@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class FeedbackSubmissionMapper {
+public final class FeedbackSubmissionMapper {
 
     public static FetchFeedbackSubmissionDTO toDTO(FeedbackSubmission entity) {
         User user = entity.getFromUser();

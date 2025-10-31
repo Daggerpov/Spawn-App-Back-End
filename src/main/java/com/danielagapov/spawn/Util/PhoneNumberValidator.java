@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 @Component
-public class PhoneNumberValidator {
+public final class PhoneNumberValidator {
 
     private static final String PHONE_REGEX = "^\\+?[1-9]\\d{1,14}$";
     private static final Pattern PHONE_PATTERN = Pattern.compile(PHONE_REGEX);

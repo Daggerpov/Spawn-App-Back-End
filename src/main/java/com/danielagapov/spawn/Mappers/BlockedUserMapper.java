@@ -4,7 +4,7 @@ import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
 import com.danielagapov.spawn.Models.User.BlockedUser;
 import com.danielagapov.spawn.Models.User.User;
 
-public class BlockedUserMapper {
+public final class BlockedUserMapper {
 
     public static BlockedUser toEntity(BlockedUserDTO dto, User blocker, User blocked) {
         BlockedUser entity = new BlockedUser();
