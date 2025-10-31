@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class UserSearchService implements IUserSearchService {
+public final class UserSearchService implements IUserSearchService {
     /*
      * RECOMMENDED FRIENDS ALGORITHM CONFIGURATION
      * 

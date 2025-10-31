@@ -41,7 +41,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class ChatMessageService implements IChatMessageService {
+public final class ChatMessageService implements IChatMessageService {
     private final IChatMessageRepository chatMessageRepository;
     private final IUserService userService;
     private final IActivityRepository ActivityRepository;

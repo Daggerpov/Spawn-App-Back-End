@@ -50,7 +50,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class ActivityService implements IActivityService {
+public final class ActivityService implements IActivityService {
     private final IActivityRepository repository;
     private final IActivityTypeRepository activityTypeRepository;
     private final ILocationRepository locationRepository;

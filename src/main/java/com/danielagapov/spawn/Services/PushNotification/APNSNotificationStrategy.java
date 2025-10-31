@@ -6,6 +6,7 @@ import com.notnoop.apns.APNS;
 import com.notnoop.apns.ApnsNotification;
 import com.notnoop.apns.ApnsService;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ import java.util.HashMap;
  * Implementation of NotificationStrategy for Apple Push Notification Service
  */
 @Service
-public class APNSNotificationStrategy implements NotificationStrategy {
+public final class APNSNotificationStrategy implements NotificationStrategy {
 
     @Value("${apns.certificate.path}")
     private String apnsCertificate;
@@ -240,5 +241,22 @@ public class APNSNotificationStrategy implements NotificationStrategy {
     @Override
     public DeviceType getDeviceType() {
         return DeviceType.IOS;
+    }
+    
+    /**
+     * Cleanup method to properly close APNS service and release resources.
+     * This prevents memory leaks by ensuring connections are properly closed.
+     */
+    @PreDestroy
+    public void cleanup() {
+        if (apnsService != null) {
+            try {
+                logger.info("Shutting down APNS service and closing connections");
+                apnsService.stop();
+                logger.info("APNS service successfully shut down");
+            } catch (Exception e) {
+                logger.error("Error shutting down APNS service: " + e.getMessage());
+            }
+        }
     }
 } 

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.ExecutionException;
 
 @Service
-public class FCMService {
+public final class FCMService {
     private final ILogger logger;
     @Value("${apns.bundle.id}")
     private String appBundleId;

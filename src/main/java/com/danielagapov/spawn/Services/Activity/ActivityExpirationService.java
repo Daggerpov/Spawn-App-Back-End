@@ -14,7 +14,7 @@ import java.time.ZoneOffset;
  * across the application (feed display, share links, etc.).
  */
 @Service
-public class ActivityExpirationService {
+public final class ActivityExpirationService {
 
     /**
      * Determines if an activity is expired based on its end time and creation time.

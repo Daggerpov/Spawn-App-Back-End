@@ -41,7 +41,7 @@ import java.util.UUID;
 
 @Service
 @AllArgsConstructor
-public class AuthService implements IAuthService {
+public final class AuthService implements IAuthService {
     private final IUserService userService;
     private final IJWTService jwtService;
     private final IEmailService emailService;

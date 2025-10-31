@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import java.util.Arrays;
 
 @Service
-public class BetaAccessSignUpService implements IBetaAccessSignUpService {
+public final class BetaAccessSignUpService implements IBetaAccessSignUpService {
     private final IBetaAccessSignUpRepository repository;
     private final ILogger logger;
     private final IEmailService emailService;

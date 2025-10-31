@@ -27,7 +27,7 @@ import java.util.UUID;
  * Service for handling notifications to users across different device types
  */
 @Service
-public class NotificationService {
+public final class NotificationService {
 
     private final IDeviceTokenRepository deviceTokenRepository;
     private final INotificationPreferencesRepository preferencesRepository;

@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class FriendRequestService implements IFriendRequestService {
+public final class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
     private final IUserService userService;
     private final IBlockedUserService blockedUserService;

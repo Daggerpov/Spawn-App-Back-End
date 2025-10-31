@@ -36,7 +36,7 @@ import java.util.UUID;
  * The service will always invalidate any notification cache to prevent stale notifications.
  */
 @Service
-public class CacheService implements ICacheService {
+public final class CacheService implements ICacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
     private final IUserRepository userRepository;
     private final IUserService userService;

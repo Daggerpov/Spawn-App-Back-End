@@ -22,7 +22,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class AppleOAuthStrategy implements OAuthStrategy {
+public final class AppleOAuthStrategy implements OAuthStrategy {
     private final ILogger logger;
 
     private final JwkProvider appleJwkProvider;

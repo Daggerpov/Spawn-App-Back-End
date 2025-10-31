@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 
 @Service
-public class OAuthService implements IOAuthService {
+public final class OAuthService implements IOAuthService {
     private final IUserService userService;
     private final IUserIdExternalIdMapRepository externalIdMapRepository;
     private final Map<OAuthProvider, OAuthStrategy> oauthProviders;

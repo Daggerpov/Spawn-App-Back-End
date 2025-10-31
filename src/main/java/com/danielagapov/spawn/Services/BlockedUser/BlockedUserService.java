@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
-public class BlockedUserService implements IBlockedUserService {
+public final class BlockedUserService implements IBlockedUserService {
 
     private final IBlockedUserRepository repository;
     private final IUserService userService;

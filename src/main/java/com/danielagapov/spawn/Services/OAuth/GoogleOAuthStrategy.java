@@ -21,7 +21,7 @@ import java.security.GeneralSecurityException;
 import java.util.Collections;
 
 @Service
-public class GoogleOAuthStrategy implements OAuthStrategy {
+public final class GoogleOAuthStrategy implements OAuthStrategy {
     private final ILogger logger;
     private GoogleIdTokenVerifier verifier;
 
@@ -33,7 +33,7 @@ public class GoogleOAuthStrategy implements OAuthStrategy {
     @Lazy
     public GoogleOAuthStrategy(ILogger logger) {
         this.logger = logger;
-        this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
+        // Don't initialize verifier here - will be initialized in @PostConstruct with proper client ID
     }
 
     @Override
