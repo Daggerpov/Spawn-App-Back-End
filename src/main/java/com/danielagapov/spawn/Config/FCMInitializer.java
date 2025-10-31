@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.util.Base64;
 
 @Configuration
-public final class FCMInitializer {
+public class FCMInitializer {
     private final ILogger logger;
 
     public FCMInitializer(ILogger logger) {
