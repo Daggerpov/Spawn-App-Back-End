@@ -16,7 +16,8 @@ import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
-import org.springframework.cache.CacheManager;
+import com.danielagapov.spawn.Utils.Cache.CacheEvictionHelper;
+import com.danielagapov.spawn.Utils.Cache.CacheNames;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -36,25 +37,25 @@ public class FriendRequestService implements IFriendRequestService {
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final ApplicationEventPublisher eventPublisher;
-    private final CacheManager cacheManager;
+    private final CacheEvictionHelper cacheEvictionHelper;
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
             IUserService userService,
             IBlockedUserService blockedUserService, ILogger logger,
-            ApplicationEventPublisher eventPublisher, CacheManager cacheManager) {
+            ApplicationEventPublisher eventPublisher, CacheEvictionHelper cacheEvictionHelper) {
         this.repository = repository;
         this.userService = userService;
         this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.eventPublisher = eventPublisher;
-        this.cacheManager = cacheManager;
+        this.cacheEvictionHelper = cacheEvictionHelper;
     }
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "incomingFetchFriendRequests", key = "#friendRequestDTO.receiverUserId"),
-            @CacheEvict(value = "sentFetchFriendRequests", key = "#friendRequestDTO.senderUserId")
+            @CacheEvict(value = CacheNames.INCOMING_FRIEND_REQUESTS, key = "#friendRequestDTO.receiverUserId"),
+            @CacheEvict(value = CacheNames.SENT_FRIEND_REQUESTS, key = "#friendRequestDTO.senderUserId")
     })
     public CreateFriendRequestDTO saveFriendRequest(CreateFriendRequestDTO friendRequestDTO) {
         try {
@@ -94,12 +95,9 @@ public class FriendRequestService implements IFriendRequestService {
                 );
                 
                 // Evict friend request caches for both users since mutual requests were resolved
-                if (cacheManager.getCache("incomingFetchFriendRequests") != null) {
-                    cacheManager.getCache("incomingFetchFriendRequests").evict(senderId);
-                }
-                if (cacheManager.getCache("sentFetchFriendRequests") != null) {
-                    cacheManager.getCache("sentFetchFriendRequests").evict(senderId);
-                }
+                cacheEvictionHelper.evictCaches(senderId, 
+                    CacheNames.INCOMING_FRIEND_REQUESTS, 
+                    CacheNames.SENT_FRIEND_REQUESTS);
                 
                 // Return the DTO for the reverse request that was accepted
                 return FriendRequestMapper.toDTO(reverseRequest);
@@ -113,10 +111,7 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Friend request saved successfully");
 
             // Evict recommended friends cache for both users since their recommendation status has changed
-            if (cacheManager.getCache("recommendedFriends") != null) {
-                cacheManager.getCache("recommendedFriends").evict(senderId);
-                cacheManager.getCache("recommendedFriends").evict(receiverId);
-            }
+            cacheEvictionHelper.evictCacheForUsers(CacheNames.RECOMMENDED_FRIENDS, senderId, receiverId);
 
             // Publish friend request notification Activity
             eventPublisher.publishEvent(new FriendRequestNotificationEvent(sender, receiverId));
@@ -258,24 +253,14 @@ public class FriendRequestService implements IFriendRequestService {
             deleteFriendRequest(id);
 
             // Evict friend request caches for both users
-            if (cacheManager.getCache("incomingFetchFriendRequests") != null) {
-                cacheManager.getCache("incomingFetchFriendRequests").evict(receiver.getId());
-            }
-            if (cacheManager.getCache("sentFetchFriendRequests") != null) {
-                cacheManager.getCache("sentFetchFriendRequests").evict(sender.getId());
-            }
+            cacheEvictionHelper.evictCache(CacheNames.INCOMING_FRIEND_REQUESTS, receiver.getId());
+            cacheEvictionHelper.evictCache(CacheNames.SENT_FRIEND_REQUESTS, sender.getId());
 
-
-            if (cacheManager.getCache("friendsByUserId") != null) {
-                cacheManager.getCache("friendsByUserId").evict(sender.getId());
-                cacheManager.getCache("friendsByUserId").evict(receiver.getId());
-            }
+            // Evict friends cache for both users
+            cacheEvictionHelper.evictCacheForUsers(CacheNames.FRIENDS_BY_USER_ID, sender.getId(), receiver.getId());
 
             // Evict recommended friends cache for both users since they're now friends
-            if (cacheManager.getCache("recommendedFriends") != null) {
-                cacheManager.getCache("recommendedFriends").evict(sender.getId());
-                cacheManager.getCache("recommendedFriends").evict(receiver.getId());
-            }
+            cacheEvictionHelper.evictCacheForUsers(CacheNames.RECOMMENDED_FRIENDS, sender.getId(), receiver.getId());
 
             logger.info("Friend request accepted and deleted successfully");
         } catch (Exception e) {
@@ -295,18 +280,11 @@ public class FriendRequestService implements IFriendRequestService {
                         LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));
                 
                 // Evict friend request caches for both users
-                if (cacheManager.getCache("incomingFetchFriendRequests") != null) {
-                    cacheManager.getCache("incomingFetchFriendRequests").evict(receiver.getId());
-                }
-                if (cacheManager.getCache("sentFetchFriendRequests") != null) {
-                    cacheManager.getCache("sentFetchFriendRequests").evict(sender.getId());
-                }
+                cacheEvictionHelper.evictCache(CacheNames.INCOMING_FRIEND_REQUESTS, receiver.getId());
+                cacheEvictionHelper.evictCache(CacheNames.SENT_FRIEND_REQUESTS, sender.getId());
                 
                 // Evict recommended friends cache for both users since their recommendation status has changed
-                if (cacheManager.getCache("recommendedFriends") != null) {
-                    cacheManager.getCache("recommendedFriends").evict(sender.getId());
-                    cacheManager.getCache("recommendedFriends").evict(receiver.getId());
-                }
+                cacheEvictionHelper.evictCacheForUsers(CacheNames.RECOMMENDED_FRIENDS, sender.getId(), receiver.getId());
                 
                 repository.deleteById(id);
                 logger.info("Friend request deleted successfully");
@@ -337,10 +315,7 @@ public class FriendRequestService implements IFriendRequestService {
             }
 
             // Evict recommended friends cache for both users since their recommendation status has changed
-            if (cacheManager.getCache("recommendedFriends") != null) {
-                cacheManager.getCache("recommendedFriends").evict(senderId);
-                cacheManager.getCache("recommendedFriends").evict(receiverId);
-            }
+            cacheEvictionHelper.evictCacheForUsers(CacheNames.RECOMMENDED_FRIENDS, senderId, receiverId);
 
             logger.info("Deleted " + requests.size() + " friend requests between users");
         } catch (Exception e) {

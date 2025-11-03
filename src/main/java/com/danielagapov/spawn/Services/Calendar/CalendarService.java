@@ -7,7 +7,8 @@ import com.danielagapov.spawn.Models.Activity;
 import com.danielagapov.spawn.Models.ActivityUser;
 import com.danielagapov.spawn.Repositories.IActivityRepository;
 import com.danielagapov.spawn.Repositories.IActivityUserRepository;
-import org.springframework.cache.CacheManager;
+import com.danielagapov.spawn.Utils.Cache.CacheEvictionHelper;
+import com.danielagapov.spawn.Utils.Cache.CacheNames;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -20,32 +21,28 @@ import java.util.*;
 public class CalendarService implements ICalendarService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    // Cache names
-    private static final String CALENDAR_ACTIVITIES_CACHE = "calendarActivities";
-    private static final String ALL_CALENDAR_ACTIVITIES_CACHE = "allCalendarActivities";
-    private static final String FILTERED_CALENDAR_ACTIVITIES_CACHE = "filteredCalendarActivities";
     private final ILogger logger;
     private final IActivityRepository ActivityRepository;
     private final IActivityUserRepository activityUserRepository;
-    private final CacheManager cacheManager;
+    private final CacheEvictionHelper cacheEvictionHelper;
 
     public CalendarService(
         ILogger logger, 
         IActivityRepository ActivityRepository, 
         IActivityUserRepository activityUserRepository,
-        CacheManager cacheManager
+        CacheEvictionHelper cacheEvictionHelper
     ) {
         this.logger = logger;
         this.ActivityRepository = ActivityRepository;
         this.activityUserRepository = activityUserRepository;
-        this.cacheManager = cacheManager;
+        this.cacheEvictionHelper = cacheEvictionHelper;
     }
 
     /**
      * Get calendar activities for a user based on optional month and year filters
      */
     @Override
-    @Cacheable(value = FILTERED_CALENDAR_ACTIVITIES_CACHE, key = "{#userId, #month, #year}")
+    @Cacheable(value = CacheNames.FILTERED_CALENDAR_ACTIVITIES, key = "{#userId, #month, #year}")
     public List<CalendarActivityDTO> getCalendarActivitiesWithFilters(UUID userId, Integer month, Integer year) {
         logger.info("Getting calendar activities with filters for user: " + userId + 
                    (month != null ? ", month: " + month : "") + 
@@ -80,7 +77,7 @@ public class CalendarService implements ICalendarService {
      * Get calendar activities for a specific user, month, and year
      */
     @Override
-    @Cacheable(value = CALENDAR_ACTIVITIES_CACHE, key = "{#userId, #month, #year}")
+    @Cacheable(value = CacheNames.CALENDAR_ACTIVITIES, key = "{#userId, #month, #year}")
     public List<CalendarActivityDTO> getCalendarActivitiesForUser(int month, int year, UUID userId) {
         logger.info("Getting calendar activities for user: " + userId + ", month: " + month + ", year: " + year);
         
@@ -107,7 +104,7 @@ public class CalendarService implements ICalendarService {
      * Get all calendar activities for a specific user
      */
     @Override
-    @Cacheable(value = ALL_CALENDAR_ACTIVITIES_CACHE, key = "#userId")
+    @Cacheable(value = CacheNames.ALL_CALENDAR_ACTIVITIES, key = "#userId")
     public List<CalendarActivityDTO> getAllCalendarActivitiesForUser(UUID userId) {
         logger.info("Getting all calendar activities for user: " + userId);
         
@@ -242,37 +239,17 @@ public class CalendarService implements ICalendarService {
      * or when a user's participation status changes.
      */
     public void clearCalendarCache(UUID userId) {
-        try {
-            logger.info("Clearing calendar cache for user: " + userId);
-            
-            // Clear the cache for all calendar activities
-            if (cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE) != null) {
-                cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE).evict(userId);
-                logger.info("Cleared ALL_CALENDAR_ACTIVITIES_CACHE for user: " + userId);
-            } else {
-                logger.warn("Cache " + ALL_CALENDAR_ACTIVITIES_CACHE + " not found when clearing for user: " + userId);
-            }
-            
-            // Clear the filtered calendar activities cache
-            if (cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE) != null) {
-                cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE).clear();
-                logger.info("Cleared FILTERED_CALENDAR_ACTIVITIES_CACHE for all users");
-            } else {
-                logger.warn("Cache " + FILTERED_CALENDAR_ACTIVITIES_CACHE + " not found when clearing");
-            }
-            
-            // Clear the specific month/year caches by evicting all entries
-            if (cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE) != null) {
-                cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE).clear();
-                logger.info("Cleared CALENDAR_ACTIVITIES_CACHE for all users");
-            } else {
-                logger.warn("Cache " + CALENDAR_ACTIVITIES_CACHE + " not found when clearing");
-            }
-        } catch (Exception e) {
-            logger.error("Error clearing calendar cache for user: " + userId + 
-                         ". Error: " + e.getMessage() + ", Stack trace: " + Arrays.toString(e.getStackTrace()));
-            throw e;
-        }
+        logger.info("Clearing calendar cache for user: " + userId);
+        
+        // Clear the cache for all calendar activities for the specific user
+        cacheEvictionHelper.evictCache(CacheNames.ALL_CALENDAR_ACTIVITIES, userId);
+        
+        // Clear the filtered and monthly calendar caches for all users
+        // (since one user's changes might affect other users' filtered views)
+        cacheEvictionHelper.clearCaches(
+            CacheNames.FILTERED_CALENDAR_ACTIVITIES,
+            CacheNames.CALENDAR_ACTIVITIES
+        );
     }
     
     /**
@@ -280,29 +257,8 @@ public class CalendarService implements ICalendarService {
      * This should be called after schema changes or major updates to ensure fresh data
      */
     public void clearAllCalendarCaches() {
-        try {
-            logger.info("Clearing ALL calendar caches for all users");
-            
-            // Clear all calendar activity caches
-            if (cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE) != null) {
-                cacheManager.getCache(ALL_CALENDAR_ACTIVITIES_CACHE).clear();
-                logger.info("Cleared ALL_CALENDAR_ACTIVITIES_CACHE for all users");
-            }
-            
-            if (cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE) != null) {
-                cacheManager.getCache(FILTERED_CALENDAR_ACTIVITIES_CACHE).clear();
-                logger.info("Cleared FILTERED_CALENDAR_ACTIVITIES_CACHE for all users");
-            }
-            
-            if (cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE) != null) {
-                cacheManager.getCache(CALENDAR_ACTIVITIES_CACHE).clear();
-                logger.info("Cleared CALENDAR_ACTIVITIES_CACHE for all users");
-            }
-        } catch (Exception e) {
-            logger.error("Error clearing all calendar caches: " + e.getMessage() + 
-                         ", Stack trace: " + Arrays.toString(e.getStackTrace()));
-            throw e;
-        }
+        logger.info("Clearing ALL calendar caches for all users");
+        cacheEvictionHelper.clearAllCalendarCaches();
     }
     
     /**
