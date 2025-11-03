@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.Config;
 
+import com.danielagapov.spawn.Utils.Cache.CacheNames;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -68,76 +69,58 @@ public class RedisCacheConfig implements CachingConfigurer {
                 .computePrefixWith(cacheName -> "spawn:" + cacheName + ":");
 
         // Configure different TTL values for different cache types
-        RedisCacheConfiguration userDataConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(30)) // User data changes more frequently
-                .serializeValuesWith(
-                    RedisSerializationContext.SerializationPair.fromSerializer(serializer))
-                .disableCachingNullValues();
-        
-        RedisCacheConfiguration staticDataConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(4)) // Static data like activity types, locations
-                .serializeValuesWith(
-                    RedisSerializationContext.SerializationPair.fromSerializer(serializer))
-                .disableCachingNullValues();
-        
-        RedisCacheConfiguration statsConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(15)) // Stats change frequently
-                .serializeValuesWith(
-                    RedisSerializationContext.SerializationPair.fromSerializer(serializer))
-                .disableCachingNullValues();
+        RedisCacheConfiguration userDataConfig = createCacheConfig(Duration.ofMinutes(30), serializer); // User data changes more frequently
+        RedisCacheConfiguration staticDataConfig = createCacheConfig(Duration.ofHours(4), serializer); // Static data like activity types, locations
+        RedisCacheConfiguration statsConfig = createCacheConfig(Duration.ofMinutes(15), serializer); // Stats change frequently
         
         // Activity caches with shorter TTL to prevent stale expiration status
         // Activities can expire naturally over time, so we use a shorter cache duration
-        RedisCacheConfiguration activityConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(5)) // 5 minutes to ensure fresh expiration data
-                .serializeValuesWith(
-                    RedisSerializationContext.SerializationPair.fromSerializer(serializer))
-                .disableCachingNullValues();
+        RedisCacheConfiguration activityConfig = createCacheConfig(Duration.ofMinutes(5), serializer); // 5 minutes to ensure fresh expiration data
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 // User-related caches
-                .withCacheConfiguration("friendsByUserId", userDataConfig)
-                .withCacheConfiguration("recommendedFriends", userDataConfig)
-                .withCacheConfiguration("userInterests", userDataConfig)
-                .withCacheConfiguration("userSocialMedia", userDataConfig)
-                .withCacheConfiguration("userSocialMediaByUserId", userDataConfig)
+                .withCacheConfiguration(CacheNames.FRIENDS_BY_USER_ID, userDataConfig)
+                .withCacheConfiguration(CacheNames.RECOMMENDED_FRIENDS, userDataConfig)
+                .withCacheConfiguration(CacheNames.USER_INTERESTS, userDataConfig)
+                .withCacheConfiguration(CacheNames.USER_SOCIAL_MEDIA, userDataConfig)
+                .withCacheConfiguration(CacheNames.USER_SOCIAL_MEDIA_BY_USER_ID, userDataConfig)
                 
                 // Friend request caches
-                .withCacheConfiguration("incomingFetchFriendRequests", userDataConfig)
-                .withCacheConfiguration("sentFetchFriendRequests", userDataConfig)
-                .withCacheConfiguration("friendRequests", userDataConfig)
-                .withCacheConfiguration("friendRequestsByUserId", userDataConfig)
+                .withCacheConfiguration(CacheNames.INCOMING_FRIEND_REQUESTS, userDataConfig)
+                .withCacheConfiguration(CacheNames.SENT_FRIEND_REQUESTS, userDataConfig)
+                .withCacheConfiguration(CacheNames.FRIEND_REQUESTS, userDataConfig)
+                .withCacheConfiguration(CacheNames.FRIEND_REQUESTS_BY_USER_ID, userDataConfig)
                 
                 // Activity type caches
-                .withCacheConfiguration("activityTypes", staticDataConfig)
-                .withCacheConfiguration("activityTypesByUserId", staticDataConfig)
+                .withCacheConfiguration(CacheNames.ACTIVITY_TYPES, staticDataConfig)
+                .withCacheConfiguration(CacheNames.ACTIVITY_TYPES_BY_USER_ID, staticDataConfig)
                 
                 // Location caches
-                .withCacheConfiguration("locations", staticDataConfig)
-                .withCacheConfiguration("locationById", staticDataConfig)
+                .withCacheConfiguration(CacheNames.LOCATIONS, staticDataConfig)
+                .withCacheConfiguration(CacheNames.LOCATION_BY_ID, staticDataConfig)
                 
                 // Stats caches
-                .withCacheConfiguration("userStats", statsConfig)
-                .withCacheConfiguration("userStatsById", statsConfig)
+                .withCacheConfiguration(CacheNames.USER_STATS, statsConfig)
+                .withCacheConfiguration(CacheNames.USER_STATS_BY_ID, statsConfig)
                 
                 // Activity caches - shorter TTL to prevent stale expiration status
-                .withCacheConfiguration("ActivityById", activityConfig)
-                .withCacheConfiguration("fullActivityById", activityConfig)
-                .withCacheConfiguration("ActivityInviteById", activityConfig)
-                .withCacheConfiguration("ActivitiesByOwnerId", activityConfig)
-                .withCacheConfiguration("feedActivities", activityConfig)
-                .withCacheConfiguration("ActivitiesInvitedTo", activityConfig)
-                .withCacheConfiguration("fullActivitiesInvitedTo", activityConfig)
-                .withCacheConfiguration("fullActivitiesParticipatingIn", activityConfig)
-                .withCacheConfiguration("calendarActivities", activityConfig)
-                .withCacheConfiguration("allCalendarActivities", activityConfig)
-                .withCacheConfiguration("filteredCalendarActivities", activityConfig)
+                .withCacheConfiguration(CacheNames.ACTIVITY_BY_ID, activityConfig)
+                .withCacheConfiguration(CacheNames.FULL_ACTIVITY_BY_ID, activityConfig)
+                .withCacheConfiguration(CacheNames.ACTIVITY_INVITE_BY_ID, activityConfig)
+                .withCacheConfiguration(CacheNames.ACTIVITIES_BY_OWNER_ID, activityConfig)
+                .withCacheConfiguration(CacheNames.FEED_ACTIVITIES, activityConfig)
+                .withCacheConfiguration(CacheNames.ACTIVITIES_INVITED_TO, activityConfig)
+                .withCacheConfiguration(CacheNames.FULL_ACTIVITIES_INVITED_TO, activityConfig)
+                .withCacheConfiguration(CacheNames.FULL_ACTIVITIES_PARTICIPATING_IN, activityConfig)
+                .withCacheConfiguration(CacheNames.CALENDAR_ACTIVITIES, activityConfig)
+                .withCacheConfiguration(CacheNames.ALL_CALENDAR_ACTIVITIES, activityConfig)
+                .withCacheConfiguration(CacheNames.FILTERED_CALENDAR_ACTIVITIES, activityConfig)
                 
                 // Blocked user caches
-                .withCacheConfiguration("blockedUsers", userDataConfig)
-                .withCacheConfiguration("blockedUserIds", userDataConfig)
-                .withCacheConfiguration("isBlocked", userDataConfig)
+                .withCacheConfiguration(CacheNames.BLOCKED_USERS, userDataConfig)
+                .withCacheConfiguration(CacheNames.BLOCKED_USER_IDS, userDataConfig)
+                .withCacheConfiguration(CacheNames.IS_BLOCKED, userDataConfig)
                 .build();
     }
 
@@ -214,5 +197,21 @@ public class RedisCacheConfig implements CachingConfigurer {
             cause = cause.getCause();
         }
         return false;
+    }
+    
+    /**
+     * Helper method to create cache configurations with consistent settings.
+     * This reduces code duplication for cache configurations that only differ in TTL.
+     * 
+     * @param ttl The time-to-live duration for the cache
+     * @param serializer The JSON serializer to use
+     * @return A configured RedisCacheConfiguration
+     */
+    private RedisCacheConfiguration createCacheConfig(Duration ttl, GenericJackson2JsonRedisSerializer serializer) {
+        return RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(ttl)
+                .serializeValuesWith(
+                    RedisSerializationContext.SerializationPair.fromSerializer(serializer))
+                .disableCachingNullValues();
     }
 }

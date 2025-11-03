@@ -13,10 +13,10 @@ import com.danielagapov.spawn.Services.BlockedUser.BlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
 import com.danielagapov.spawn.Repositories.IFriendshipRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Utils.Cache.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
 
 import java.util.*;
@@ -31,7 +31,7 @@ public class BlockedUserServiceTests {
     @Mock private IFriendRequestService friendRequestService;
     @Mock private IFriendshipRepository friendshipRepository;
     @Mock private ILogger logger;
-    @Mock private CacheManager cacheManager;
+    @Mock private CacheEvictionHelper cacheEvictionHelper;
 
     @InjectMocks private BlockedUserService blockedUserService;
 

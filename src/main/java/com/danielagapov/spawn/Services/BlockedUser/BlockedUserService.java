@@ -11,8 +11,8 @@ import com.danielagapov.spawn.Repositories.User.IBlockedUserRepository;
 import com.danielagapov.spawn.Repositories.IFriendshipRepository;
 import com.danielagapov.spawn.Services.User.IUserService;
 import com.danielagapov.spawn.Util.LoggingUtils;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
+import com.danielagapov.spawn.Utils.Cache.CacheEvictionHelper;
+import com.danielagapov.spawn.Utils.Cache.CacheNames;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
@@ -32,24 +32,24 @@ public class BlockedUserService implements IBlockedUserService {
     private final IUserService userService;
     private final IFriendshipRepository friendshipRepository;
     private final ILogger logger;
-    private final CacheManager cacheManager;
+    private final CacheEvictionHelper cacheEvictionHelper;
 
-    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendshipRepository friendshipRepository, ILogger logger, CacheManager cacheManager) {
+    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendshipRepository friendshipRepository, ILogger logger, CacheEvictionHelper cacheEvictionHelper) {
         this.repository = repository;
         this.userService = userService;
         this.friendshipRepository = friendshipRepository;
         this.logger = logger;
-        this.cacheManager = cacheManager;
+        this.cacheEvictionHelper = cacheEvictionHelper;
     }
 
     @Override
     @Transactional
     @CacheEvict(value = {
-            "blockedUsers",
-            "blockedUserIds",
-            "recommendedFriends",
-            "otherProfiles",
-            "friendsList"
+            CacheNames.BLOCKED_USERS,
+            CacheNames.BLOCKED_USER_IDS,
+            CacheNames.RECOMMENDED_FRIENDS,
+            CacheNames.OTHER_PROFILES,
+            CacheNames.FRIENDS_LIST
     }, key = "#blockerId")
     public void blockUser(UUID blockerId, UUID blockedId, String reason) {
         if (blockerId.equals(blockedId)) return;
@@ -229,28 +229,12 @@ public class BlockedUserService implements IBlockedUserService {
      * Helper method to evict relevant caches for the blocked user
      */
     private void evictBlockedUserCaches(UUID userId) {
-        try {
-            logger.info("Evicting caches for user ID: " + userId + " after being blocked/unblocked");
-
-            Cache recommendedFriendsCache = cacheManager.getCache("recommendedFriends");
-            if (recommendedFriendsCache != null) {
-                recommendedFriendsCache.evict(userId);
-            }
-
-            Cache otherProfilesCache = cacheManager.getCache("otherProfiles");
-            if (otherProfilesCache != null) {
-                otherProfilesCache.evict(userId);
-            }
-
-            Cache friendsListCache = cacheManager.getCache("friendsList");
-            if (friendsListCache != null) {
-                friendsListCache.evict(userId);
-            }
-
-        } catch (Exception e) {
-            logger.error("Error evicting caches for blocked user: " + e.getMessage());
-            // Don't throw here - this is a best-effort operation
-        }
+        logger.info("Evicting caches for user ID: " + userId + " after being blocked/unblocked");
+        cacheEvictionHelper.evictCaches(userId, 
+            CacheNames.RECOMMENDED_FRIENDS,
+            CacheNames.OTHER_PROFILES,
+            CacheNames.FRIENDS_LIST
+        );
     }
 
     @Override

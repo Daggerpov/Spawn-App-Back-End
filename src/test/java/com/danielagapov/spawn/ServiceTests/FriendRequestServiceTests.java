@@ -11,13 +11,12 @@ import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
 import com.danielagapov.spawn.Services.FriendRequest.FriendRequestService;
 import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.Utils.Cache.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 
@@ -47,10 +46,7 @@ class FriendRequestServiceTests {
     private ApplicationEventPublisher eventPublisher;
 
     @Mock
-    private CacheManager cacheManager;
-
-    @Mock
-    private Cache mockCache;
+    private CacheEvictionHelper cacheEvictionHelper;
 
     @InjectMocks
     private FriendRequestService friendRequestService;
@@ -294,10 +290,7 @@ class FriendRequestServiceTests {
         // Mock: Reverse request can be found by ID for acceptance
         when(repository.findById(reverseRequestId)).thenReturn(Optional.of(reverseRequest));
         
-        // Mock cache behavior for auto-acceptance
-        when(cacheManager.getCache("incomingFetchFriendRequests")).thenReturn(mockCache);
-        when(cacheManager.getCache("sentFetchFriendRequests")).thenReturn(mockCache);
-        when(cacheManager.getCache("friendsByUserId")).thenReturn(mockCache);
+        // Cache eviction is now handled by CacheEvictionHelper (mocked)
 
         // Act: User A tries to send request to User B (who already requested User A)
         CreateFriendRequestDTO result = friendRequestService.saveFriendRequest(friendRequestDTO);
@@ -320,8 +313,8 @@ class FriendRequestServiceTests {
         // Verify: No new request was saved since we auto-accepted existing one
         verify(repository, never()).save(any(FriendRequest.class));
 
-        // Verify: Cache evictions occurred
-        verify(mockCache, atLeast(3)).evict(any());
+        // Verify: Cache evictions occurred via helper
+        verify(cacheEvictionHelper, atLeast(1)).evictCaches(any(), any(), any());
     }
 
     @Test
@@ -335,8 +328,7 @@ class FriendRequestServiceTests {
             .thenReturn(List.of());
         when(repository.save(any(FriendRequest.class))).thenReturn(friendRequest);
         
-        // Mock cache behavior
-        when(cacheManager.getCache("recommendedFriends")).thenReturn(mockCache);
+        // Cache eviction is now handled by CacheEvictionHelper (mocked)
 
         // Act
         CreateFriendRequestDTO result = friendRequestService.saveFriendRequest(friendRequestDTO);
@@ -353,8 +345,8 @@ class FriendRequestServiceTests {
         // Verify: Friend request notification was published (not acceptance notification)
         verify(eventPublisher).publishEvent(any(Object.class));
 
-        // Verify: Recommended friends cache was evicted
-        verify(mockCache, times(2)).evict(any()); // For both sender and receiver
+        // Verify: Recommended friends cache was evicted via helper
+        verify(cacheEvictionHelper, times(1)).evictCacheForUsers(any(), any(), any()); // For both sender and receiver
     }
 
     @Test
@@ -432,15 +424,15 @@ class FriendRequestServiceTests {
         // Given
         UUID friendRequestId = friendRequest.getId();
         when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
-        when(cacheManager.getCache("incomingFetchFriendRequests")).thenReturn(mockCache);
-        when(cacheManager.getCache("sentFetchFriendRequests")).thenReturn(mockCache);
+        // Cache eviction is now handled by CacheEvictionHelper (mocked)
 
         // When
         friendRequestService.deleteFriendRequest(friendRequestId);
 
         // Then
         verify(repository, times(1)).deleteById(friendRequestId);
-        verify(mockCache, times(2)).evict(any()); // For both sender and receiver
+        verify(cacheEvictionHelper, times(2)).evictCache(any(), any()); // For incoming and sent requests
+        verify(cacheEvictionHelper, times(1)).evictCacheForUsers(any(), any(), any()); // For recommended friends
     }
 
     @Test
