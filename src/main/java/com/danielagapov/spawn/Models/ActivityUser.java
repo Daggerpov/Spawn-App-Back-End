@@ -22,7 +22,16 @@ import java.io.Serializable;
  * Once they've chosen to participate, their status is flipped to .participating.
  */
 @Entity
-@Table(name = "activity_user")
+@Table(
+        name = "activity_user",
+        indexes = {
+                @Index(name = "idx_activity_id", columnList = "activity_id"),
+                @Index(name = "idx_user_id", columnList = "user_id"),
+                @Index(name = "idx_status", columnList = "status"),
+                @Index(name = "idx_user_status", columnList = "user_id, status"),
+                @Index(name = "idx_activity_status", columnList = "activity_id, status")
+        }
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
