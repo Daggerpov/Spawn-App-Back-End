@@ -627,35 +627,66 @@ Each service is billed separately. See [Cost Analysis](#cost-analysis).
 
 **Cost Increase: 6.2x ($17 → $105)**
 
-### Optimized Microservices (Pragmatic Approach)
+### Selective Microservices (Recommended for Learning)
 
 **Strategy:**
-- Combine low-traffic services
-- Share databases (schemas instead of separate instances)
-- Start small, scale as needed
+- Extract only 3-4 core services (Auth, Activity, Chat, optionally User)
+- Keep remaining domains in modular monolith
+- Use MySQL for all services (familiar and reliable)
+- Minimal resources for Chat Service (512MB)
 
-| Service | RAM | DB Strategy | Cost/Month |
-|---------|-----|-------------|------------|
-| **Core Service** (User + Auth) | 1GB | Shared DB (2GB) | $7 + $10 = $17 |
-| **Activity Service** | 1GB | Same DB as Core | $7 |
-| **Social + Chat Service** | 1GB | Shared DB (1GB) | $7 + $7 = $14 |
-| **Media + Analytics Service** | 512MB | Same DB as Social | $5 |
-| **Notification Service** | 512MB | Same DB as Social | $5 |
+| Service | RAM | DB (MySQL) | Cost/Month |
+|---------|-----|------------|------------|
+| **Modular Monolith** (Social, Notification, Media, Analytics) | 1GB | Shared MySQL (2GB) | $7 + $10 = $17 |
+| **Auth Service** | 1GB | MySQL (1GB) | $7 + $7 = $14 |
+| **Activity Service** | 1.5GB | MySQL (2GB) | $10 + $10 = $20 |
+| **Chat Service** (WebSocket) | 512MB | MySQL (1GB) | $5 + $7 = $12 |
+| **User Service** (Optional) | 512MB | MySQL (1GB) | $5 + $7 = $12 |
 | **API Gateway** | 512MB | (none) | $5 |
 | **Redis (shared)** | 512MB | | $5 |
-| **Total** | | | **$58/month** |
+| **Total (without User Service)** | | | **$73/month** |
+| **Total (with User Service)** | | | **$85/month** |
 
-**Cost Increase: 3.4x ($17 → $58)**
+**Cost Increase: 4.3x ($17 → $73) or 5x ($17 → $85)**
 
-**Trade-off:** Less isolation, but still get deployment independence and some scalability benefits.
+**Learning Value:**
+- Hands-on microservices experience
+- WebSocket in distributed systems
+- Service orchestration patterns
+- API Gateway implementation
+- Inter-service communication
+- Distributed tracing and monitoring
+
+### Cassandra Option for Chat Service
+
+If chat message volume exceeds 100k messages/day:
+
+| Component | Change | Cost Impact |
+|-----------|--------|-------------|
+| Chat Service MySQL | Remove | -$7 |
+| Cassandra Cluster (managed) | Add (Astra DB free tier or self-hosted) | $0-25/month |
+| **Net Change** | | -$7 to +$18/month |
+
+**When to consider Cassandra:**
+- Message volume >100k messages/day
+- Need for time-series optimization
+- Horizontal scalability requirements
+- Learning opportunity for NoSQL in microservices
 
 ### 5-Year Total Cost of Ownership
 
 | Approach | Year 1 | Year 2-5 (scaled) | Total (5 years) |
 |----------|--------|-------------------|-----------------|
 | **Monolith** | $204 | $50/mo ($600/yr) | $2,604 |
-| **Optimized Microservices** | $696 | $120/mo ($1,440/yr) | $6,456 |
+| **Selective Microservices (Learning)** | $876 | $100/mo ($1,200/yr) | $5,676 |
 | **Full Microservices** | $1,260 | $200/mo ($2,400/yr) | $10,860 |
+
+**Selective Microservices Cost Justification:**
+- **Learning investment:** $3,072 extra over 5 years (~$600/year)
+- **Real-world experience:** Priceless for career growth
+- **Resume/portfolio value:** Practical microservices implementation
+- **Can scale down:** If learning goals met, can consolidate back to monolith
+- **Can scale up:** If traffic justifies, can extract more services
 
 **Additional Costs (Not in hosting):**
 - **Developer time:** +50% for microservices (slower development, more debugging)
@@ -986,103 +1017,166 @@ Rate each factor (0 = Low, 5 = High):
 
 ## Recommendation for Spawn App
 
-### 🎯 Recommended Approach: Modular Monolith
+### 🎯 Recommended Approach: **Selective Microservices for Learning & Key Services**
 
-**Reasons:**
+**Decision Rationale:**
 
-1. **Current scale doesn't justify complexity**
-   - Likely serving <1,000 concurrent users
-   - No evidence of performance bottlenecks
-   - Single database handles load fine
+1. **Learning Experience Priority**
+   - Valuable hands-on experience with microservices architecture
+   - Real-world understanding of distributed systems challenges
+   - Portfolio/resume enhancement with practical implementation
 
-2. **Team size is too small**
-   - 1-2 developers (based on git history)
-   - Coordination isn't a bottleneck
-   - Independent deployment not critical
+2. **Strategic Service Selection**
+   - Focus on **3-4 core services** instead of full 8-service architecture
+   - Prioritize high-traffic services: **Auth** and **Activities**
+   - Chat service can be minimal/scaled down but will use **WebSockets**
+   - Keep other domains in modular monolith for now
 
-3. **Cost increase is significant**
-   - 6x hosting cost ($17 → $105/month)
-   - Hidden costs: monitoring, ops time
-   - Opportunity cost: 3-6 months not building features
+3. **Database Strategy**
+   - **Stick with MySQL** as primary database (familiar, reliable)
+   - Consider **Cassandra or similar NoSQL** only for specific use cases (e.g., chat messages if scale demands)
+   - Avoid PostgreSQL unless specific features required
 
-4. **Active refactoring in progress**
-   - I see `dry-refactoring` branch
-   - Adding microservices complexity now is premature
-   - Better to solidify architecture first
+4. **Pragmatic Approach**
+   - Accept higher costs as investment in learning
+   - Plan for partial microservices, not full decomposition
+   - Can always scale back or expand based on experience
 
-### 📋 Action Plan
+### 📋 Action Plan: Selective Microservices Implementation
 
-#### Phase 1: Implement Modular Monolith (2-3 months)
+#### Phase 1: Prepare Core Infrastructure (3-4 weeks)
 
 **Goals:**
-- Clear module boundaries
-- Event-driven communication
-- Easy to extract later
+- Set up shared infrastructure (Redis, Message Queue)
+- Implement API Gateway
+- Prepare for service communication patterns
 
 **Steps:**
-1. **Restructure packages:**
-   ```
-   com.danielagapov.spawn/
-   ├── modules/
-   │   ├── user/
-   │   ├── activity/
-   │   ├── social/
-   │   ├── chat/
-   │   └── auth/
-   └── shared/
-   ```
+1. **Infrastructure Setup:**
+   - Provision shared Redis on Railway
+   - Set up API Gateway (Spring Cloud Gateway)
+   - Configure inter-service communication (Feign clients)
+   - Set up distributed tracing (Spring Cloud Sleuth)
 
-2. **Define module interfaces:**
-   ```java
-   // modules/user/application/IUserService.java
-   public interface IUserService {
-       UserDTO getUserById(UUID id);
-       UserDTO createUser(CreateUserDTO dto);
-       // ... only essential methods
-   }
-   ```
+2. **Database Strategy:**
+   - Keep MySQL as primary database
+   - Use separate MySQL databases per service (instead of PostgreSQL)
+   - Consider Cassandra only for Chat Service if message volume justifies it
 
-3. **Enforce boundaries with ArchUnit:**
-   ```java
-   @ArchTest
-   static final ArchRule modules_should_not_depend_on_each_other_directly =
-       noClasses().that().resideInAPackage("..modules.activity..")
-           .should().dependOnClassesThat().resideInAPackage("..modules.user..implementation..");
-   ```
+3. **Create shared libraries:**
+   - Common DTOs module
+   - Event schemas
+   - Client utilities (circuit breakers, retry logic)
 
-4. **Introduce domain events:**
-   ```java
-   eventPublisher.publishEvent(new UserCreatedEvent(userId));
-   ```
+#### Phase 2: Extract Priority Services (2-3 months)
 
-#### Phase 2: Monitor and Validate (3-6 months)
+**Priority 1: Auth Service** (Highest traffic expected)
+- OAuth integration (Google, Apple)
+- JWT generation/validation
+- Email verification
+- Separate MySQL database: `auth_db`
+- Deploy on Railway with 1GB RAM allocation
 
-**Metrics to track:**
-- Response time per module (identify bottlenecks)
-- Resource usage per module (identify scaling candidates)
-- Deployment frequency (is it a bottleneck?)
-- Error rate per module (identify fault isolation needs)
+**Priority 2: Activity Service** (Highest traffic expected)
+- Activity CRUD operations
+- Activity types and templates
+- Location management
+- Separate MySQL database: `activity_db`
+- Deploy on Railway with 1-2GB RAM allocation
 
-**Tools:**
-- Spring Boot Actuator (per-endpoint metrics)
-- Railway monitoring (CPU/RAM per module)
-- Custom logging (module boundaries)
+**Priority 3: Chat Service** (Scaled down, WebSocket-based)
+- **WebSocket implementation for real-time messaging**
+- REST API for message history
+- Minimal resource allocation (512MB)
+- Database options:
+  - MySQL for simplicity (start here)
+  - Consider Cassandra if message volume grows (>100k messages/day)
+- Focus on learning WebSocket patterns in microservices context
 
-#### Phase 3: Extract Services (Only If Needed)
+**Optional: User Service** (if time permits)
+- User profile management
+- User search (fuzzy matching)
+- Separate MySQL database: `user_db`
+- 512MB-1GB RAM
 
-**Triggers for extraction:**
+#### Phase 3: Keep in Modular Monolith (For Now)
 
-1. **Chat module using >1GB RAM consistently**
-   → Extract Chat Service
+**Services to NOT extract initially:**
+- Social Service (friendships, blocks) → Keep in monolith
+- Notification Service → Keep in monolith  
+- Media Service → Keep in monolith
+- Analytics Service → Keep in monolith
 
-2. **Notification module needs real-time WebSocket**
-   → Extract Notification Service
+These can be extracted later if needed, but for learning purposes, focus on the core 3-4 services.
 
-3. **Team grows to >5 developers**
-   → Extract services for team autonomy
+#### Phase 4: WebSocket Chat Implementation (concurrent with Phase 2)
 
-4. **Deployment frequency >5x/week**
-   → Extract frequently-changing services
+**Chat Service Architecture:**
+
+```java
+// WebSocket configuration for real-time chat
+@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        config.enableSimpleBroker("/topic", "/queue");
+        config.setApplicationDestinationPrefixes("/app");
+    }
+    
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws/chat")
+            .setAllowedOriginPatterns("*")
+            .withSockJS();
+    }
+}
+
+@Controller
+public class ChatWebSocketController {
+    
+    @MessageMapping("/chat/{activityId}/send")
+    @SendTo("/topic/activity/{activityId}")
+    public ChatMessageDTO sendMessage(
+            @DestinationVariable UUID activityId,
+            ChatMessageDTO message) {
+        // Validate and broadcast message
+        return chatService.sendMessage(activityId, message);
+    }
+}
+```
+
+**Benefits of WebSocket implementation:**
+- Real-time message delivery (no polling)
+- Lower latency for chat
+- Reduced server load compared to HTTP polling
+- Great learning experience for real-time systems
+
+**Database for Chat:**
+- Start with MySQL for consistency
+- Schema optimized for message retrieval:
+  ```sql
+  CREATE TABLE chat_messages (
+      id UUID PRIMARY KEY,
+      activity_id UUID NOT NULL,
+      sender_id UUID NOT NULL,
+      content TEXT NOT NULL,
+      timestamp TIMESTAMP NOT NULL,
+      INDEX idx_activity_timestamp (activity_id, timestamp DESC)
+  );
+  ```
+- If messages grow beyond 1M records, consider migrating to Cassandra:
+  ```cql
+  CREATE TABLE chat_messages (
+      activity_id uuid,
+      timestamp timestamp,
+      message_id uuid,
+      sender_id uuid,
+      content text,
+      PRIMARY KEY (activity_id, timestamp, message_id)
+  ) WITH CLUSTERING ORDER BY (timestamp DESC);
+  ```
 
 ### 🚫 When NOT to Migrate
 
@@ -1126,21 +1220,21 @@ Rate each factor (0 = Low, 5 = High):
 
 ## Summary Table
 
-| Aspect | Monolith | Modular Monolith | Microservices |
-|--------|----------|------------------|---------------|
-| **Cost** | $17/mo | $17-25/mo | $60-105/mo |
-| **Complexity** | Low | Low-Medium | High |
-| **Scalability** | Vertical only | Vertical only | Horizontal per service |
-| **Deployment** | Single | Single | Independent per service |
-| **Team Size** | 1-5 devs | 1-10 devs | 5+ devs (multiple teams) |
-| **Development Speed** | Fast | Fast | Slow (initially) |
-| **Performance** | Excellent | Excellent | Good (network overhead) |
-| **Fault Isolation** | None | Module-level | Service-level |
-| **Operational Overhead** | Low | Low | High |
-| **Migration Complexity** | N/A | Low | High |
-| **Best For** | Startups, MVPs | Growing apps, <10 devs | Large-scale, >10 devs |
+| Aspect | Monolith | Modular Monolith | Selective Microservices (3-4 services) | Full Microservices |
+|--------|----------|------------------|----------------------------------------|---------------------|
+| **Cost** | $17/mo | $17-25/mo | $73-85/mo | $105/mo |
+| **Complexity** | Low | Low-Medium | Medium | High |
+| **Scalability** | Vertical only | Vertical only | Hybrid (key services horizontal) | Horizontal per service |
+| **Deployment** | Single | Single | Mixed (3-4 independent + monolith) | Independent per service |
+| **Team Size** | 1-5 devs | 1-10 devs | 1-5 devs (learning) | 5+ devs (multiple teams) |
+| **Development Speed** | Fast | Fast | Medium | Slow (initially) |
+| **Performance** | Excellent | Excellent | Good (some network overhead) | Good (network overhead) |
+| **Fault Isolation** | None | Module-level | Service-level (partial) | Service-level (full) |
+| **Operational Overhead** | Low | Low | Medium | High |
+| **Learning Value** | Low | Medium | **High** | Very High (but overkill) |
+| **Best For** | Startups, MVPs | Growing apps, <10 devs | **Learning + selective scaling** | Large-scale, >10 devs |
 
-**For Spawn App: Modular Monolith is the sweet spot.**
+**For Spawn App: Selective Microservices for learning, with focus on Auth, Activity, and WebSocket Chat.**
 
 ---
 
@@ -1148,36 +1242,58 @@ Rate each factor (0 = Low, 5 = High):
 
 **TL;DR:**
 
-1. **Full microservices is overkill** for Spawn App's current scale
-2. **Modular monolith** gives you 80% of benefits with 20% of complexity
-3. **Railway costs** will increase 6x for full microservices
-4. **Team size** (1-2 devs) doesn't justify operational overhead
-5. **Migration path exists:** Modular monolith → gradual service extraction
+1. **Selective microservices** is the chosen approach for Spawn App
+2. **Focus on 3-4 core services:** Auth, Activity, Chat (WebSocket), optionally User
+3. **Keep remainder in modular monolith:** Social, Notification, Media, Analytics
+4. **MySQL for all services** (familiar, reliable) with optional Cassandra for Chat if volume justifies
+5. **WebSocket implementation** for Chat Service as learning opportunity
+6. **Cost increase accepted as learning investment:** 4-5x ($17 → $73-85/month)
+7. **Timeline:** 3-5 months for implementation
 
 **Recommended Next Steps:**
 
-1. ✅ Complete current refactoring (DRY, Mediator pattern)
-2. ✅ Restructure into modular monolith (2-3 months)
-3. ✅ Monitor metrics (6 months)
-4. ⏸️ Pause microservices consideration
-5. 🔄 Revisit when user base grows 10x or team grows to 5+ devs
+1. ✅ **Phase 1 (3-4 weeks):** Set up infrastructure (API Gateway, Redis, shared libraries)
+2. ✅ **Phase 2a (4-6 weeks):** Extract Auth Service (highest priority for traffic)
+3. ✅ **Phase 2b (4-6 weeks):** Extract Activity Service (highest priority for traffic)
+4. ✅ **Phase 2c (3-4 weeks):** Extract Chat Service with WebSocket implementation
+5. ⏸️ **Phase 2d (Optional, 3-4 weeks):** Extract User Service if time/interest permits
+6. ✅ **Phase 3 (Ongoing):** Monitor, optimize, learn from experience
+7. 🔄 **Phase 4 (6+ months):** Decide whether to expand, maintain, or consolidate
+
+**Key Learning Objectives:**
+
+- Microservices architecture patterns
+- Service orchestration and communication
+- API Gateway implementation and routing
+- WebSocket in distributed systems (Chat Service)
+- Distributed tracing and monitoring
+- Database strategy (MySQL per service, optional Cassandra)
+- Circuit breakers and resilience patterns
+- Independent deployment and versioning
+
+**Flexibility:**
+
+This approach allows you to:
+- **Scale back:** If costs become concerning or complexity too high, can consolidate services back into monolith
+- **Scale out:** If traffic grows, can extract more services from the monolith
+- **Experiment:** Can try different technologies (e.g., Cassandra for Chat) without full commitment
+- **Learn:** Gain practical microservices experience on real application
 
 **Final Thought:**
 
-> "Microservices are not a goal. They're a solution to a specific scaling problem. If you don't have that problem yet, focus on building features, not infrastructure." - Martin Fowler (paraphrased)
+> "The best way to learn microservices is to build them, but don't build more than you need. Start with a few key services, learn from the experience, then decide whether to expand or consolidate." - Adapted from practical experience
 
-For Spawn App, the best architecture is the one that lets you ship features fast, keep costs low, and maintain the system easily. That's a modular monolith.
+For Spawn App, selective microservices with Auth, Activity, and WebSocket Chat provides the learning value without the full operational burden of 8+ services. You get 80% of the learning with 40% of the complexity.
 
 ---
 
 **See Also:**
-- [MICROSERVICES_ARCHITECTURE.md](./MICROSERVICES_ARCHITECTURE.md) - Detailed microservices design
-- [MICROSERVICES_IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md) - Migration roadmap
-- [MODULAR_MONOLITH_GUIDE.md](./MODULAR_MONOLITH_GUIDE.md) - Implementation guide (to be created)
+- [MICROSERVICES_ARCHITECTURE.md](./MICROSERVICES_ARCHITECTURE.md) - Detailed microservices design (updated for selective approach)
+- [MICROSERVICES_IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md) - Step-by-step migration roadmap (updated for selective approach)
 
 ---
 
 **Document Maintainer:** Backend Team  
 **Last Updated:** November 9, 2025  
-**Version:** 1.0
+**Version:** 2.0 (Updated for Selective Microservices approach)
 

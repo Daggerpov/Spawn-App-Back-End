@@ -1,17 +1,20 @@
-# Spawn App - Microservices Implementation Plan for Railway
+# Spawn App - Selective Microservices Implementation Plan for Railway
 
 **Last Updated:** November 9, 2025
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Selective Microservices Approach](#selective-microservices-approach)
 - [Railway-Specific Considerations](#railway-specific-considerations)
 - [Phase 1: Preparation & Infrastructure](#phase-1-preparation--infrastructure)
-- [Phase 2: Extract First Microservice](#phase-2-extract-first-microservice)
-- [Phase 3: Extract Core Services](#phase-3-extract-core-services)
-- [Phase 4: API Gateway & Service Mesh](#phase-4-api-gateway--service-mesh)
-- [Phase 5: Data Migration & Optimization](#phase-5-data-migration--optimization)
-- [Phase 6: Production Cutover](#phase-6-production-cutover)
+- [Phase 2: Extract Core Services](#phase-2-extract-core-services)
+  - [2.1: Auth Service](#21-auth-service)
+  - [2.2: Activity Service](#22-activity-service)
+  - [2.3: Chat Service (WebSocket)](#23-chat-service-websocket)
+  - [2.4: User Service (Optional)](#24-user-service-optional)
+- [Phase 3: API Gateway & Service Mesh](#phase-3-api-gateway--service-mesh)
+- [Phase 4: Optimization & Monitoring](#phase-4-optimization--monitoring)
 - [Rollback Strategy](#rollback-strategy)
 - [Testing Strategy](#testing-strategy)
 - [Cost Implications](#cost-implications)
@@ -20,18 +23,80 @@
 
 ## Overview
 
-> **⚠️ Stop! Read This First:** Before implementing microservices, read [MICROSERVICES_DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) to determine if microservices is the right choice for Spawn App at its current stage. The guide includes:
-> - Comprehensive benefits vs drawbacks analysis
-> - Railway-specific cost implications (6x increase)
-> - Decision framework and scoring system
-> - Alternative: Modular monolith (recommended for current scale)
-> - **Current Recommendation: Start with modular monolith, not full microservices**
+> **Updated Approach:** This plan now reflects a **selective microservices strategy** focused on extracting 3-4 core services for learning purposes while keeping other domains in a modular monolith.
 
-This document provides a step-by-step implementation plan for migrating the Spawn App monolith to a microservices architecture, specifically tailored for Railway's infrastructure. **Use this only if you've decided microservices is necessary after reading the decision guide.**
+**Key Decisions:**
 
-**Timeline:** 3-6 months  
-**Approach:** Strangler Fig Pattern - Gradually replace monolith functionality  
-**Risk:** Low to Medium (incremental migration with rollback capability)
+1. ✅ **Extract for learning:** Auth, Activity, Chat (WebSocket), optionally User
+2. ✅ **Keep in monolith:** Social, Notification, Media, Analytics
+3. ✅ **Database:** MySQL for all services (familiar and reliable)
+4. ⚠️ **Optional:** Cassandra for Chat if message volume >100k/day
+5. ✅ **Focus:** WebSocket implementation for real-time chat
+
+**Timeline:** 3-5 months  
+**Approach:** Strangler Fig Pattern for selective services  
+**Risk:** Low to Medium (smaller scope = lower risk than full migration)
+
+---
+
+## Selective Microservices Approach
+
+### Services to Extract
+
+#### Priority 1: Auth Service (Weeks 1-6)
+**Why:** Highest anticipated traffic, clean domain boundaries, foundational for other services
+
+**Scope:**
+- OAuth (Google, Apple Sign-In)
+- JWT generation and validation
+- Email verification
+- User authentication flows
+
+**Database:** MySQL `auth_db`
+
+#### Priority 2: Activity Service (Weeks 7-12)
+**Why:** Highest anticipated traffic, core feature of the app
+
+**Scope:**
+- Activity CRUD operations
+- Activity types and templates
+- Location management
+- Activity participation
+
+**Database:** MySQL `activity_db`
+
+#### Priority 3: Chat Service (Weeks 13-16)
+**Why:** Learning opportunity for WebSockets, relatively isolated domain, can be scaled down
+
+**Scope:**
+- **WebSocket real-time messaging**
+- REST API for message history
+- Message reactions/likes
+- Lightweight implementation
+
+**Database:** MySQL `chat_db` (consider Cassandra if volume grows)
+
+#### Optional: User Service (Weeks 17-20)
+**Why:** Completes the core service extraction, enables full service independence
+
+**Scope:**
+- User profile management
+- User search (fuzzy matching)
+- User preferences
+- Profile pictures
+
+**Database:** MySQL `user_db`
+
+### Services to Keep in Monolith
+
+**Rationale:** Lower traffic, less complex, can be extracted later if needed
+
+1. **Social Service** - Friendships, friend requests, blocking
+2. **Notification Service** - Push notifications
+3. **Media Service** - File storage (S3 integration)
+4. **Analytics Service** - Reporting, feedback, share links
+
+These remain in the monolith with clear module boundaries for potential future extraction.
 
 ---
 
@@ -47,9 +112,11 @@ This document provides a step-by-step implementation plan for migrating the Spaw
 - Centralized configuration per service
 - Secrets management built-in
 
-✅ **Database Provisioning**
-- Easy PostgreSQL/MySQL provisioning per service
+✅ **MySQL Database Provisioning**
+- **Using MySQL instead of PostgreSQL** (familiar and reliable for Spawn App)
+- Easy MySQL provisioning per service
 - Built-in connection pooling
+- Shared instances possible with separate databases/schemas
 
 ✅ **Redis Support**
 - Railway supports Redis Add-on
@@ -72,7 +139,7 @@ This document provides a step-by-step implementation plan for migrating the Spaw
 
 ⚠️ **Cost Per Service**
 - Each service consumes resources independently
-- Need to optimize for cost (see [Cost Implications](#cost-implications))
+- Selective approach keeps costs manageable (~$73-85/month vs $105/month for full microservices)
 
 ---
 
@@ -257,56 +324,66 @@ public class EventSubscriber {
 
 ---
 
-## Phase 2: Extract First Microservice
+## Phase 2: Extract Core Services
 
-**Duration:** 2-3 weeks  
-**Goal:** Extract Analytics & Support Service (least coupled)
+**Duration:** 12-16 weeks  
+**Goal:** Extract Auth, Activity, Chat (WebSocket), and optionally User services
 
-**Why Start Here?**
-- Minimal dependencies on other services
-- Read-heavy, low write frequency
-- Isolated domain (reporting, feedback)
-- Low risk if something goes wrong
+---
 
-### 2.1 Create Analytics Service
+### 2.1: Auth Service
+
+**Duration:** 4-6 weeks  
+**Priority:** Highest (foundational for other services)
 
 **Database Setup on Railway:**
 
-1. **Provision Database**
-   - Railway Dashboard → Add PostgreSQL
-   - Name: `analytics-db`
-   - Link to `analytics-service`
+1. **Provision MySQL Database**
+   - Railway Dashboard → Add MySQL
+   - Name: `auth-db`
+   - Size: 1GB
+   - Link to `auth-service`
 
 2. **Migrate Tables**
 
 ```sql
--- Create these tables in analytics-db:
--- - reported_content
--- - feedback_submission
--- - beta_access_sign_up
--- - share_link
-```
+-- Create these tables in auth-db:
+CREATE DATABASE auth_db;
+USE auth_db;
 
-**Migration Script:**
+-- email_verification table
+CREATE TABLE email_verification (
+    id BINARY(16) PRIMARY KEY,
+    user_id BINARY(16) NOT NULL,
+    verification_code VARCHAR(255) NOT NULL,
+    expiry_time TIMESTAMP NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_verification_code (verification_code)
+);
 
-```sql
--- Run on monolith DB to extract data
-SELECT * INTO OUTFILE '/tmp/reported_content.csv' 
-FIELDS TERMINATED BY ',' ENCLOSED BY '"'
-FROM reported_content;
-
--- Import to analytics-db
-COPY reported_content FROM '/tmp/reported_content.csv' 
-DELIMITER ',' CSV HEADER;
+-- user_id_external_id_map (OAuth mappings)
+CREATE TABLE user_id_external_id_map (
+    id BINARY(16) PRIMARY KEY,
+    user_id BINARY(16) NOT NULL,
+    external_id VARCHAR(255) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_external_id_provider (external_id, provider),
+    INDEX idx_user_id (user_id)
+);
 ```
 
 **Tasks:**
-- [ ] Create `analytics-service` Spring Boot project
-- [ ] Copy entities: `ReportedContent`, `FeedbackSubmission`, `ShareLink`, `BetaAccessSignUp`
-- [ ] Copy repositories: `ReportedContentRepository`, etc.
-- [ ] Copy services: `ReportContentService`, `FeedbackSubmissionService`, `ShareLinkService`
-- [ ] Copy controllers: All analytics/feedback/share link endpoints
-- [ ] Update application.properties with Railway database URL
+- [ ] Create `auth-service` Spring Boot project
+- [ ] Copy entities: `EmailVerification`, `UserIdExternalIdMap`
+- [ ] Copy repositories: `EmailVerificationRepository`, `UserIdExternalIdMapRepository`
+- [ ] Copy services: `AuthenticationService`, `EmailVerificationService`, `OAuthService`
+- [ ] Copy controllers: `/api/auth/login`, `/api/auth/register`, `/api/auth/oauth/*`
+- [ ] Implement JWT generation and validation
+- [ ] Add Feign client for User Service (to create/validate users)
+- [ ] Configure application.properties with Railway MySQL URL
 - [ ] Deploy to Railway as new service
 
 **Railway Deployment:**
@@ -314,234 +391,427 @@ DELIMITER ',' CSV HEADER;
 ```bash
 # In Railway Dashboard:
 1. New Service → GitHub Repo
-2. Root Directory: services/analytics-service
-3. Build Command: cd services/analytics-service && mvn clean package
-4. Start Command: java -Xmx512m -jar target/analytics-service.jar
+2. Root Directory: services/auth-service
+3. Build Command: cd services/auth-service && mvn clean package
+4. Start Command: java -Xmx1024m -jar target/auth-service.jar
 5. Add Environment Variables:
-   - DATABASE_URL (from analytics-db)
+   - DATABASE_URL (from auth-db MySQL)
    - REDIS_URL (shared)
    - JWT_SECRET (shared)
+   - OAUTH_GOOGLE_CLIENT_ID
+   - OAUTH_GOOGLE_CLIENT_SECRET
+   - OAUTH_APPLE_CLIENT_ID
+   - OAUTH_APPLE_CLIENT_SECRET
 ```
 
-### 2.2 Update Monolith to Call Analytics Service
-
-**Add Feign Client in Monolith:**
+**Update Monolith:**
 
 ```java
-@FeignClient(name = "analytics-service", 
-             url = "${analytics.service.url}")
-public interface AnalyticsServiceClient {
-    @PostMapping("/api/reports")
-    ReportedContentDTO createReport(@RequestBody CreateReportDTO dto);
+@FeignClient(name = "auth-service", url = "${auth.service.url}")
+public interface AuthServiceClient {
+    @PostMapping("/api/auth/login")
+    AuthResponseDTO login(@RequestBody LoginRequestDTO dto);
     
-    @PostMapping("/api/feedback")
-    FeedbackSubmissionDTO submitFeedback(@RequestBody CreateFeedbackSubmissionDTO dto);
+    @PostMapping("/api/auth/register")
+    AuthResponseDTO register(@RequestBody RegisterRequestDTO dto);
+    
+    @PostMapping("/api/auth/validate")
+    UserDTO validateToken(@RequestHeader("Authorization") String token);
+}
+```
+
+---
+
+### 2.2: Activity Service
+
+**Duration:** 4-6 weeks  
+**Priority:** High (core feature, high traffic expected)
+
+**Database Setup on Railway:**
+
+1. **Provision MySQL Database**
+   - Railway Dashboard → Add MySQL
+   - Name: `activity-db`
+   - Size: 2GB
+   - Link to `activity-service`
+
+2. **Migrate Tables**
+
+```sql
+CREATE DATABASE activity_db;
+USE activity_db;
+
+-- activity table
+CREATE TABLE activity (
+    id BINARY(16) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    creator_id BINARY(16) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    location_id BINARY(16),
+    activity_type_id BINARY(16),
+    max_participants INT,
+    is_public BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_creator_id (creator_id),
+    INDEX idx_start_time (start_time),
+    INDEX idx_activity_type_id (activity_type_id)
+);
+
+-- activity_type table
+CREATE TABLE activity_type (
+    id BINARY(16) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    icon VARCHAR(255),
+    user_id BINARY(16) NOT NULL,
+    associated_friend_ids TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id)
+);
+
+-- activity_user (participation)
+CREATE TABLE activity_user (
+    id BINARY(16) PRIMARY KEY,
+    activity_id BINARY(16) NOT NULL,
+    user_id BINARY(16) NOT NULL,
+    status VARCHAR(50) DEFAULT 'INVITED',
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_activity_user (activity_id, user_id),
+    INDEX idx_user_id (user_id)
+);
+
+-- location table
+CREATE TABLE location (
+    id BINARY(16) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address TEXT,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_coordinates (latitude, longitude)
+);
+```
+
+**Tasks:**
+- [ ] Create `activity-service` Spring Boot project
+- [ ] Migrate activity entities: `Activity`, `ActivityType`, `ActivityUser`, `Location`
+- [ ] Migrate repositories
+- [ ] Migrate services: `ActivityService`, `ActivityTypeService`, `LocationService`
+- [ ] Create REST API endpoints:
+  - `POST /api/activities` (create)
+  - `GET /api/activities/{id}` (get by ID)
+  - `PUT /api/activities/{id}` (update)
+  - `DELETE /api/activities/{id}` (delete)
+  - `GET /api/activities/user/{userId}` (get user's activities)
+  - `POST /api/activities/{id}/invite` (invite users)
+- [ ] Add Feign clients for User Service and Social Service
+- [ ] Implement scheduled jobs for activity expiration
+- [ ] Deploy to Railway
+
+**Railway Deployment:**
+
+```bash
+# In Railway Dashboard:
+1. New Service → GitHub Repo
+2. Root Directory: services/activity-service
+3. Build Command: cd services/activity-service && mvn clean package
+4. Start Command: java -Xmx1536m -jar target/activity-service.jar
+5. Add Environment Variables:
+   - DATABASE_URL (from activity-db MySQL)
+   - REDIS_URL (shared)
+   - USER_SERVICE_URL
+   - SOCIAL_SERVICE_URL (still points to monolith)
+```
+
+---
+
+### 2.3: Chat Service (WebSocket)
+
+**Duration:** 3-4 weeks  
+**Priority:** Medium (learning opportunity, can be scaled down)
+
+**Database Setup on Railway:**
+
+1. **Provision MySQL Database (Start)**
+   - Railway Dashboard → Add MySQL
+   - Name: `chat-db`
+   - Size: 1GB
+   - Link to `chat-service`
+
+2. **Migrate Tables**
+
+```sql
+CREATE DATABASE chat_db;
+USE chat_db;
+
+-- chat_message table
+CREATE TABLE chat_message (
+    id BINARY(16) PRIMARY KEY,
+    activity_id BINARY(16) NOT NULL,
+    sender_id BINARY(16) NOT NULL,
+    content TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    edited_at TIMESTAMP NULL,
+    deleted_at TIMESTAMP NULL,
+    INDEX idx_activity_timestamp (activity_id, timestamp DESC),
+    INDEX idx_sender_id (sender_id)
+);
+
+-- chat_message_likes table
+CREATE TABLE chat_message_likes (
+    id BINARY(16) PRIMARY KEY,
+    message_id BINARY(16) NOT NULL,
+    user_id BINARY(16) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX idx_message_user (message_id, user_id)
+);
+```
+
+**WebSocket Implementation:**
+
+```java
+// WebSocket Configuration
+@Configuration
+@EnableWebSocketMessageBroker
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        // Enable simple broker for topic-based messaging
+        config.enableSimpleBroker("/topic", "/queue");
+        config.setApplicationDestinationPrefixes("/app");
+        
+        // Optional: Use external message broker (RabbitMQ) for production
+        // config.enableStompBrokerRelay("/topic", "/queue")
+        //     .setRelayHost("rabbitmq.railway.internal")
+        //     .setRelayPort(61613);
+    }
+    
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws/chat")
+            .setAllowedOriginPatterns("*")
+            .withSockJS();  // Fallback for browsers without WebSocket support
+    }
 }
 
-// In ReportContentService (monolith)
-@Service
-public class ReportContentService {
-    @Autowired
-    private AnalyticsServiceClient analyticsClient;
+// WebSocket Controller
+@Controller
+public class ChatWebSocketController {
     
-    public ReportedContentDTO reportContent(CreateReportDTO dto) {
-        // Delegate to analytics service
-        return analyticsClient.createReport(dto);
+    @Autowired
+    private ChatService chatService;
+    
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+    
+    @MessageMapping("/chat/{activityId}/send")
+    @SendTo("/topic/activity/{activityId}")
+    public ChatMessageDTO sendMessage(
+            @DestinationVariable UUID activityId,
+            ChatMessageDTO message,
+            Principal principal) {
+        
+        // Validate user is member of activity
+        UUID userId = UUID.fromString(principal.getName());
+        if (!chatService.isActivityMember(activityId, userId)) {
+            throw new UnauthorizedException("User not member of activity");
+        }
+        
+        // Save message to database
+        ChatMessage savedMessage = chatService.saveMessage(activityId, message);
+        
+        // Broadcast to all subscribers of this activity's topic
+        return ChatMessageDTO.from(savedMessage);
+    }
+    
+    @MessageMapping("/chat/{activityId}/typing")
+    @SendTo("/topic/activity/{activityId}/typing")
+    public TypingNotificationDTO typing(
+            @DestinationVariable UUID activityId,
+            TypingNotificationDTO notification) {
+        // Broadcast typing indicator (not saved to DB)
+        return notification;
+    }
+}
+
+// REST API for Message History
+@RestController
+@RequestMapping("/api/chat")
+public class ChatRestController {
+    
+    @Autowired
+    private ChatService chatService;
+    
+    @GetMapping("/activities/{activityId}/messages")
+    public Page<ChatMessageDTO> getMessages(
+            @PathVariable UUID activityId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return chatService.getMessages(activityId, page, size);
+    }
+    
+    @PostMapping("/messages/{messageId}/like")
+    public ChatMessageDTO likeMessage(
+            @PathVariable UUID messageId,
+            @RequestHeader("X-User-Id") UUID userId) {
+        return chatService.likeMessage(messageId, userId);
     }
 }
 ```
 
 **Tasks:**
-- [ ] Add Feign client for Analytics Service
-- [ ] Update controllers to proxy requests to Analytics Service
-- [ ] Test end-to-end flow
-- [ ] Monitor latency (should be <100ms for Railway internal calls)
+- [ ] Create `chat-service` Spring Boot project
+- [ ] Add WebSocket dependencies (spring-boot-starter-websocket)
+- [ ] Migrate chat entities: `ChatMessage`, `ChatMessageLikes`
+- [ ] Implement WebSocket configuration
+- [ ] Implement WebSocket controllers for real-time messaging
+- [ ] Implement REST API for message history
+- [ ] Add Feign client for Activity Service (validate membership)
+- [ ] Configure for minimal resource usage (512MB)
+- [ ] Deploy to Railway
 
-### 2.3 Validation & Cutover
+**Railway Deployment:**
 
-**Tasks:**
-- [ ] Run integration tests against Analytics Service
-- [ ] Compare responses from monolith vs. microservice
-- [ ] Load test Analytics Service
-- [ ] Monitor for 1 week in production
-- [ ] Remove analytics code from monolith (keep as fallback for 1 sprint)
+```bash
+# In Railway Dashboard:
+1. New Service → GitHub Repo
+2. Root Directory: services/chat-service
+3. Build Command: cd services/chat-service && mvn clean package
+4. Start Command: java -Xmx512m -jar target/chat-service.jar
+5. Add Environment Variables:
+   - DATABASE_URL (from chat-db MySQL)
+   - REDIS_URL (shared, for WebSocket session management)
+   - ACTIVITY_SERVICE_URL
+6. Enable WebSocket support (Railway handles this automatically)
+```
+
+**Client Connection Example (Mobile/Web):**
+
+```javascript
+// Using SockJS + Stomp
+const socket = new SockJS('https://chat-service.railway.app/ws/chat');
+const stompClient = Stomp.over(socket);
+
+stompClient.connect({}, function(frame) {
+    // Subscribe to activity's message topic
+    stompClient.subscribe('/topic/activity/' + activityId, function(message) {
+        const chatMessage = JSON.parse(message.body);
+        displayMessage(chatMessage);
+    });
+    
+    // Send message
+    stompClient.send('/app/chat/' + activityId + '/send', {}, 
+        JSON.stringify({ content: 'Hello!', senderId: userId }));
+});
+```
+
+**Optional: Cassandra Migration (If Message Volume >100k/day)**
+
+```cql
+-- Cassandra schema for high-volume chat
+CREATE KEYSPACE chat_db WITH replication = {
+    'class': 'SimpleStrategy',
+    'replication_factor': 3
+};
+
+USE chat_db;
+
+CREATE TABLE messages (
+    activity_id uuid,
+    timestamp timestamp,
+    message_id uuid,
+    sender_id uuid,
+    content text,
+    edited_at timestamp,
+    deleted_at timestamp,
+    PRIMARY KEY (activity_id, timestamp, message_id)
+) WITH CLUSTERING ORDER BY (timestamp DESC);
+
+CREATE TABLE message_likes (
+    message_id uuid,
+    user_id uuid,
+    created_at timestamp,
+    PRIMARY KEY (message_id, user_id)
+);
+```
 
 ---
 
-## Phase 3: Extract Core Services
+### 2.4: User Service (Optional)
 
-**Duration:** 8-12 weeks  
-**Goal:** Extract User, Activity, Social, Auth, Chat, Notification services
+**Duration:** 3-4 weeks  
+**Priority:** Optional (completes core service extraction)
 
-### 3.1 Extract Auth Service
+**Database Setup on Railway:**
 
-**Priority:** High (foundation for other services)
+1. **Provision MySQL Database**
+   - Railway Dashboard → Add MySQL
+   - Name: `user-db`
+   - Size: 1GB
+   - Link to `user-service`
 
-**Database:** `auth-db`
+2. **Migrate Tables**
 
-**Tables:**
-- `email_verification`
-- `user_id_external_id_map`
+```sql
+CREATE DATABASE user_db;
+USE user_db;
 
-**Dependencies:**
-- Calls User Service to create/validate users
+-- user table
+CREATE TABLE user (
+    id BINARY(16) PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone_number VARCHAR(20) UNIQUE,
+    password_hash VARCHAR(255),
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    INDEX idx_email (email),
+    INDEX idx_username (username),
+    INDEX idx_phone_number (phone_number)
+);
 
-**Tasks:**
-- [ ] Create `auth-service` Spring Boot project
-- [ ] Migrate JWT generation/validation logic
-- [ ] Migrate OAuth (Google, Apple) logic
-- [ ] Create endpoint: `POST /auth/login`
-- [ ] Create endpoint: `POST /auth/register`
-- [ ] Create endpoint: `POST /auth/oauth/google`
-- [ ] Create endpoint: `POST /auth/oauth/apple`
-- [ ] Create endpoint: `POST /auth/verify-email`
-- [ ] Deploy to Railway
-- [ ] Update monolith to use Auth Service
+-- user_info table
+CREATE TABLE user_info (
+    id BINARY(16) PRIMARY KEY,
+    user_id BINARY(16) NOT NULL UNIQUE,
+    full_name VARCHAR(255),
+    bio TEXT,
+    date_of_birth DATE,
+    profile_picture_url VARCHAR(500),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+);
 
-### 3.2 Extract User Service
+-- user_interest table
+CREATE TABLE user_interest (
+    id BINARY(16) PRIMARY KEY,
+    user_id BINARY(16) NOT NULL,
+    interest VARCHAR(255) NOT NULL,
+    UNIQUE INDEX idx_user_interest (user_id, interest)
+);
 
-**Priority:** High (most other services depend on it)
-
-**Database:** `user-db`
-
-**Tables:**
-- `user`
-- `user_info`
-- `user_interest`
-- `user_social_media`
-
-**Events Published:**
-- `user.created`
-- `user.updated`
-- `user.deleted`
+-- user_social_media table
+CREATE TABLE user_social_media (
+    id BINARY(16) PRIMARY KEY,
+    user_id BINARY(16) NOT NULL UNIQUE,
+    instagram_handle VARCHAR(255),
+    twitter_handle VARCHAR(255),
+    linkedin_profile VARCHAR(500),
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+);
+```
 
 **Tasks:**
 - [ ] Create `user-service` Spring Boot project
-- [ ] Migrate User entities and repositories
-- [ ] Create REST API for user CRUD
-- [ ] Create endpoint: `GET /users/{id}` (used by many services)
-- [ ] Create endpoint: `GET /users/search` (fuzzy search)
-- [ ] Create endpoint: `POST /users/contact-cross-reference`
-- [ ] Add event publishing for user changes
+- [ ] Migrate user entities: `User`, `UserInfo`, `UserInterest`, `UserSocialMedia`
+- [ ] Migrate repositories
+- [ ] Migrate services: `UserService`, `UserSearchService`
+- [ ] Implement fuzzy search (Jaro-Winkler)
+- [ ] Create REST API endpoints
 - [ ] Deploy to Railway
-- [ ] Update Auth Service to call User Service
-- [ ] Update monolith to proxy user requests
-
-### 3.3 Extract Social Service
-
-**Database:** `social-db`
-
-**Tables:**
-- `friendship`
-- `friend_request`
-- `blocked_user`
-
-**Events Published:**
-- `friend_request.sent`
-- `friend_request.accepted`
-- `user.blocked`
-
-**Tasks:**
-- [ ] Create `social-service` Spring Boot project
-- [ ] Migrate social entities
-- [ ] Create REST API for friendships/friend requests/blocks
-- [ ] Subscribe to `user.deleted` events (cascade delete friendships)
-- [ ] Publish events for friend requests
-- [ ] Deploy to Railway
-- [ ] Update monolith to proxy social requests
-
-### 3.4 Extract Activity Service
-
-**Database:** `activity-db`
-
-**Tables:**
-- `activity`
-- `activity_type`
-- `activity_user`
-- `location`
-
-**Events Published:**
-- `activity.created`
-- `activity.updated`
-- `activity.invite`
-
-**Dependencies:**
-- Calls User Service to validate creator
-- Calls Social Service for ActivityType associated friends
-
-**Tasks:**
-- [ ] Create `activity-service` Spring Boot project
-- [ ] Migrate activity entities
-- [ ] Create REST API for activities and activity types
-- [ ] Add scheduled jobs for activity expiration
-- [ ] Publish events for activity changes
-- [ ] Deploy to Railway
-- [ ] Update monolith to proxy activity requests
-
-### 3.5 Extract Chat Service
-
-**Database:** `chat-db`
-
-**Tables:**
-- `chat_message`
-- `chat_message_likes`
-
-**Events Published:**
-- `message.sent`
-
-**Dependencies:**
-- Calls Activity Service to validate activity membership
-
-**Tasks:**
-- [ ] Create `chat-service` Spring Boot project
-- [ ] Migrate chat entities
-- [ ] Create REST API for messages
-- [ ] Add WebSocket support for real-time chat
-- [ ] Publish events for new messages
-- [ ] Deploy to Railway
-- [ ] Update monolith to proxy chat requests
-
-### 3.6 Extract Notification Service
-
-**Database:** `notification-db`
-
-**Tables:**
-- `device_token`
-- `notification_preferences`
-
-**Events Subscribed:**
-- `friend_request.sent`
-- `friend_request.accepted`
-- `activity.invite`
-- `activity.updated`
-- `message.sent`
-
-**Dependencies:**
-- Calls FCM/APNS for push notifications
-
-**Tasks:**
-- [ ] Create `notification-service` Spring Boot project
-- [ ] Migrate notification entities
-- [ ] Create REST API for device tokens
-- [ ] Subscribe to all notification events
-- [ ] Implement notification strategies (FCM, APNS)
-- [ ] Deploy to Railway
-- [ ] Update monolith to use Notification Service
-
-### 3.7 Extract Media Service
-
-**Database:** `media-db` (minimal, just metadata)
-
-**Dependencies:**
-- S3 or Railway Volumes for storage
-
-**Tasks:**
-- [ ] Create `media-service` Spring Boot project
-- [ ] Migrate S3 integration
-- [ ] Create endpoints for upload/download
-- [ ] Generate pre-signed URLs
-- [ ] Deploy to Railway
-- [ ] Update User Service to call Media Service for profile pictures
 
 ---
 
@@ -1001,61 +1271,95 @@ Railway provides basic metrics. Add custom monitoring:
 
 | Resource | Cost |
 |----------|------|
-| 1 App Server (2GB RAM) | $10/month |
-| 1 PostgreSQL DB (2GB) | $10/month |
+| 1 App Server (1GB RAM) | $7/month |
+| 1 MySQL DB (2GB) | $10/month |
 | 1 Redis (512MB) | $5/month |
-| **Total** | **$25/month** |
+| **Total** | **$22/month** |
 
-### Microservices Architecture (Railway)
+### Selective Microservices Architecture (Railway)
+
+**Without User Service:**
 
 | Service | RAM | Cost/Month |
 |---------|-----|------------|
+| **Modular Monolith** (Social, Notification, Media, Analytics) | 1GB | $7 |
+| Auth Service | 1GB | $7 |
+| Activity Service | 1.5GB | $10 |
+| Chat Service (WebSocket) | 512MB | $5 |
 | API Gateway | 512MB | $5 |
-| User Service | 1GB | $7 |
-| Activity Service | 1GB | $7 |
-| Social Service | 512MB | $5 |
-| Auth Service | 512MB | $5 |
-| Chat Service | 1GB | $7 |
-| Notification Service | 512MB | $5 |
-| Media Service | 512MB | $5 |
-| Analytics Service | 512MB | $5 |
-| **Subtotal (Apps)** | | **$51** |
-| PostgreSQL (8 databases) | | $80 |
-| Redis (shared) | | $10 |
-| **Total** | | **$141/month** |
+| **Subtotal (Apps)** | | **$34** |
+| MySQL (auth-db, 1GB) | | $7 |
+| MySQL (activity-db, 2GB) | | $10 |
+| MySQL (chat-db, 1GB) | | $7 |
+| MySQL (monolith-db, 2GB) | | $10 |
+| Redis (shared, 512MB) | | $5 |
+| **Total** | | **$73/month** |
+
+**With User Service (Optional):**
+
+| Additional Service | RAM | Cost/Month |
+|-------------------|-----|------------|
+| User Service | 512MB | $5 |
+| MySQL (user-db, 1GB) | | $7 |
+| **Additional Cost** | | **$12** |
+| **New Total** | | **$85/month** |
+
+### Cost Increase Summary
+
+| Configuration | Monthly Cost | Increase from Monolith |
+|---------------|--------------|------------------------|
+| **Current Monolith** | $22 | Baseline |
+| **Selective (3 services)** | $73 | 3.3x |
+| **Selective (4 services)** | $85 | 3.9x |
+| **Full Microservices (8 services)** | $105+ | 4.8x |
 
 ### Cost Optimization Strategies
 
-1. **Combine Low-Traffic Services**
-   - Merge Analytics + Media into one service
-   - Saves ~$10/month
+1. **MySQL Database Consolidation** (if cost becomes concern)
+   - Use separate schemas instead of separate MySQL instances
+   - Consolidate auth-db and chat-db into shared MySQL: Saves ~$7/month
+   - Trade-off: Reduced isolation but still separate service deployments
 
-2. **Use Smaller Instances**
-   - Start with 512MB for all services
-   - Scale up only when needed
+2. **Cassandra Option for Chat**
+   - If message volume >100k/day, replace MySQL chat-db with Cassandra
+   - Options:
+     - DataStax Astra (free tier up to certain limits)
+     - Self-hosted Cassandra on Railway (~$5-10/month for single node)
+   - Potential savings/neutral cost while gaining scalability
 
-3. **Share Databases**
-   - Use schemas instead of separate databases
-   - Saves ~$40/month (but loses isolation)
+3. **Right-Size Resources**
+   - Start with minimum RAM allocations
+   - Monitor Railway metrics
+   - Scale up only services that need it
+   - Activity Service likely needs 1.5-2GB due to traffic
+   - Chat Service can stay minimal (512MB) with efficient WebSocket impl
 
-4. **Optimized Configuration:**
+4. **Share Redis Across Services**
+   - Already planned: one Redis instance with namespacing
+   - Cost: $5/month total (vs $5 per service)
+   - Namespacing strategy:
+     ```
+     auth:*
+     activity:*
+     chat:*
+     monolith:*
+     ```
 
-| Service | RAM | Cost/Month |
-|---------|-----|------------|
-| API Gateway | 512MB | $5 |
-| User Service | 512MB | $5 |
-| Activity Service | 1GB | $7 |
-| Social Service | 512MB | $5 |
-| Auth Service | 512MB | $5 |
-| Chat Service | 1GB | $7 |
-| Notification Service | 512MB | $5 |
-| Media + Analytics | 512MB | $5 |
-| **Subtotal (Apps)** | | **$44** |
-| PostgreSQL (3 shared DBs) | | $30 |
-| Redis (shared) | | $10 |
-| **Total** | | **$84/month** |
+### Learning Value per Dollar
 
-**Recommendation:** Start with optimized configuration, scale up based on monitoring.
+| Approach | 5-Year Cost | Learning Value | Value/$ |
+|----------|-------------|----------------|---------|
+| Monolith | $1,320 | Low | - |
+| Selective Microservices | $4,380 | **High** | **Best** |
+| Full Microservices | $6,300 | Very High | Medium |
+
+**Selective Microservices Justification:**
+- Extra $3,060 over 5 years (~$612/year)
+- Practical experience with microservices architecture
+- WebSocket implementation in distributed systems
+- Real-world service orchestration
+- Resume/portfolio value
+- Can scale down or consolidate if needed
 
 ---
 
@@ -1084,32 +1388,77 @@ Railway provides basic metrics. Add custom monitoring:
 
 ## Conclusion
 
-This implementation plan provides a pragmatic, phased approach to migrating Spawn App to microservices on Railway. By following the Strangler Fig pattern and starting with the least-coupled services, we minimize risk while maximizing learning.
+This selective microservices implementation plan provides a pragmatic approach to learning microservices architecture while maintaining manageable complexity and cost for Spawn App on Railway.
 
 **Key Success Factors:**
-1. **Start Small:** Analytics Service first
-2. **Measure Everything:** Latency, error rates, costs
-3. **Automate Testing:** Integration and E2E tests
-4. **Plan for Rollback:** Keep monolith as fallback
-5. **Optimize Costs:** Right-size resources
+1. **Focus on Learning:** 3-4 core services provide full microservices experience
+2. **WebSocket Implementation:** Real-time chat as practical distributed systems learning
+3. **MySQL Consistency:** Familiar database technology reduces operational burden
+4. **Hybrid Approach:** Keep low-traffic services in modular monolith
+5. **Flexibility:** Can scale up (extract more services) or scale down (consolidate)
+
+**Timeline Summary:**
+- **Week 0-3:** Infrastructure setup (API Gateway, shared libraries, Redis)
+- **Week 4-9:** Auth Service extraction and deployment
+- **Week 10-15:** Activity Service extraction and deployment
+- **Week 16-19:** Chat Service with WebSocket implementation
+- **Week 20-23:** (Optional) User Service extraction
+- **Week 24+:** Monitoring, optimization, learning consolidation
 
 **Next Steps:**
-1. Review and approve architecture
-2. Set up Railway project and infrastructure
+1. Review and approve selective architecture
+2. Set up Railway project infrastructure
 3. Begin Phase 1: Preparation & Infrastructure
-4. Extract Analytics Service as proof-of-concept
+4. Extract Auth Service as first real service
+5. Iterate and learn from each service extraction
 
 ---
 
-**Questions? Concerns?** Review the [MICROSERVICES_ARCHITECTURE.md](./MICROSERVICES_ARCHITECTURE.md) for the architectural context and rationale.
+**Questions? Concerns?** 
 
-**Estimated Total Timeline:** 3-6 months (depending on team size and velocity)
+- Review [MICROSERVICES_ARCHITECTURE.md](./MICROSERVICES_ARCHITECTURE.md) for architectural details
+- Review [MICROSERVICES_DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) for decision rationale
 
-**Recommended Team:** 2-3 developers working part-time (20-30 hours/week)
+**Estimated Total Timeline:** 3-5 months (depending on pace and optional User Service)
+
+**Recommended Approach:** Part-time implementation (10-15 hours/week) while maintaining existing features
 
 ---
 
 **Document Maintainer:** Backend Team  
 **Last Updated:** November 9, 2025  
-**Version:** 1.0
+**Version:** 2.0 (Updated for Selective Microservices Approach)
+
+---
+
+## Appendix: Technology Stack
+
+### Core Technologies
+- **Java 17+** with Spring Boot 3.x
+- **Spring Cloud OpenFeign** for REST client communication
+- **Spring Cloud Gateway** for API Gateway
+- **Spring WebSocket** (STOMP) for real-time chat
+- **Resilience4j** for circuit breakers and retries
+- **Spring Cloud Sleuth** for distributed tracing
+
+### Databases
+- **MySQL 8.0** for all services (primary choice)
+- **Cassandra** (optional for chat if volume justifies)
+
+### Infrastructure
+- **Railway** for hosting and deployment
+- **Redis** for distributed caching and session management
+- **Docker** (Railway handles automatically)
+
+### Monitoring & Logging
+- **Spring Boot Actuator** for health checks and metrics
+- **Railway logs** for centralized logging
+- **Optional:** Zipkin for trace visualization
+
+### Testing
+- **JUnit 5** for unit tests
+- **TestContainers** for integration tests with real databases
+- **WireMock** for mocking service calls
+
+---
 

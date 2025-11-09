@@ -1,97 +1,103 @@
 # Microservices Architecture Documentation
 
-**Navigation Guide for Spawn App Microservices Decision**
+**Navigation Guide for Spawn App Microservices Implementation**
 
 ---
 
-## 🚦 Start Here: Decision Flow
+## 🚦 Decision Made: Selective Microservices for Learning
+
+**Date:** November 9, 2025  
+**Approach:** Extract 3-4 core services while keeping other domains in modular monolith
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  "Should we migrate to microservices?"                      │
+│  ✅ DECISION: Selective Microservices for Learning          │
+│                                                              │
+│  Extract:                                                    │
+│  ├─ Auth Service (highest traffic)                          │
+│  ├─ Activity Service (highest traffic)                      │
+│  ├─ Chat Service (WebSocket implementation)                 │
+│  └─ User Service (optional)                                 │
+│                                                              │
+│  Keep in Monolith:                                          │
+│  ├─ Social Service                                          │
+│  ├─ Notification Service                                    │
+│  ├─ Media Service                                           │
+│  └─ Analytics Service                                       │
+│                                                              │
+│  Database: MySQL (all services)                             │
+│  Optional: Cassandra for Chat (if volume >100k msg/day)     │
+│  Cost: $73-85/month (3.3-3.9x increase)                     │
+│  Timeline: 3-5 months                                       │
 └─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│  1. Read: MICROSERVICES_DECISION_GUIDE.md                   │
-│     ├─ Benefits & Drawbacks Analysis                        │
-│     ├─ Railway Cost Analysis (17 → $105/mo)                 │
-│     ├─ Decision Framework (Scoring: 23/85)                  │
-│     ├─ Current Recommendation: Modular Monolith             │
-│     └─ When to Reconsider Microservices                     │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                  ┌─────────┴─────────┐
-                  │                   │
-                  ▼                   ▼
-    ┌──────────────────────┐   ┌──────────────────────┐
-    │  Decided: Monolith   │   │ Decided: Microservices│
-    │  ✅ Good choice!     │   │ ⚠️ Are you sure?    │
-    └──────────────────────┘   └──────────────────────┘
-                  │                   │
-                  ▼                   ▼
-    ┌──────────────────────┐   ┌──────────────────────┐
-    │  Implement:          │   │  2. Read:            │
-    │  Modular Monolith    │   │  ARCHITECTURE.md     │
-    │                      │   │  (Service boundaries)│
-    │  (See Decision Guide)│   └──────────────────────┘
-    └──────────────────────┘              │
-                                          ▼
-                              ┌──────────────────────┐
-                              │  3. Follow:          │
-                              │  IMPLEMENTATION_     │
-                              │  PLAN.md             │
-                              │  (Step-by-step)      │
-                              └──────────────────────┘
 ```
 
 ---
 
 ## 📚 Document Index
 
-### 1. [MICROSERVICES_DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) ⭐ **START HERE**
+### 1. [SELECTIVE_MICROSERVICES_DECISION.md](./SELECTIVE_MICROSERVICES_DECISION.md) ⭐ **START HERE**
 
-**Purpose:** Comprehensive analysis to help decide if microservices is right for Spawn App
+**Purpose:** Summary of selective microservices decision and implementation approach
 
 **Contents:**
-- ✅ Detailed benefits (scalability, deployment independence, team autonomy)
-- ❌ Detailed drawbacks (complexity, cost, performance overhead)
-- 💰 Railway cost analysis (current $17/mo → $105/mo for full microservices)
-- 📊 Decision framework with scoring system
-- 🏗️ Alternative: Modular monolith (recommended)
-- 🎯 Specific recommendation for Spawn App
+- ✅ Final decision rationale (learning + selective scaling)
+- 🎯 Services to extract (Auth, Activity, Chat, optionally User)
+- 🗄️ Database strategy (MySQL primary, Cassandra optional)
+- 🔌 WebSocket implementation details for Chat Service
+- 💰 Cost analysis ($73-85/month for selective approach)
+- 📅 Timeline and learning objectives
 
 **Key Takeaway:** 
-> For Spawn App's current scale (1-2 devs, <1000 users), a **modular monolith** is recommended. Microservices should be reconsidered when:
-> - User base grows 10x (>10,000 concurrent users)
-> - Team grows to >5 developers
-> - Specific services need independent scaling
+> Implementing selective microservices (3-4 services) for **learning experience** while keeping complexity and costs manageable. Focus on Auth (highest traffic), Activity (highest traffic), and Chat (WebSocket learning opportunity).
 
-**Time to Read:** 30-45 minutes
+**Time to Read:** 15-20 minutes
 
 ---
 
-### 2. [MICROSERVICES_ARCHITECTURE.md](./MICROSERVICES_ARCHITECTURE.md)
+### 2. [MICROSERVICES_DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) 
 
-**Purpose:** Technical architecture for microservices (IF you decide to proceed)
+**Purpose:** Comprehensive analysis leading to selective microservices decision
 
 **Contents:**
-- Service boundaries (8 core services)
-- Service descriptions and responsibilities
-- Database-per-service strategy
-- Inter-service communication (REST + events)
-- Data consistency patterns (SAGA, event sourcing)
+- ✅ Updated recommendation: Selective microservices for learning
+- 📊 Benefits vs drawbacks analysis
+- 💰 Railway cost analysis (updated for selective approach)
+- 🏗️ Comparison: Monolith vs Modular Monolith vs Selective vs Full Microservices
+- 📖 Action plan for selective implementation
+- 🔌 WebSocket chat service details
+
+**Updated Sections:**
+- Phase 1: Prepare core infrastructure (3-4 weeks)
+- Phase 2: Extract priority services (Auth, Activity, Chat)
+- Phase 3: Keep remaining services in modular monolith
+- Phase 4: WebSocket chat implementation
+
+**Time to Read:** 40-50 minutes
+
+---
+
+### 3. [MICROSERVICES_ARCHITECTURE.md](./MICROSERVICES_ARCHITECTURE.md)
+
+**Purpose:** Technical architecture for microservices
+
+**Contents:**
+- Service boundaries and descriptions
+- Database-per-service strategy (MySQL focus)
+- Inter-service communication patterns
+- Data consistency strategies
 - Security and monitoring setup
 
-**When to Read:** After deciding microservices is necessary
-
-**Key Services:**
+**Applicable Services:**
 ```
-1. User Service       - User profiles, search
+Priority Extract:
+1. Auth Service       - JWT, OAuth (Google, Apple)
 2. Activity Service   - Activities, types, locations
-3. Social Service     - Friendships, requests, blocking
-4. Auth Service       - JWT, OAuth, email verification
-5. Chat Service       - Messages, likes
+3. Chat Service       - WebSocket real-time messaging
+4. User Service       - (Optional) User profiles, search
+
+Keep in Monolith:
+5. Social Service     - Friendships, requests, blocking
 6. Notification Service - Push notifications
 7. Media Service      - S3 uploads, profile pictures
 8. Analytics Service  - Reports, feedback, share links
@@ -101,162 +107,246 @@
 
 ---
 
-### 3. [MICROSERVICES_IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md)
+### 4. [MICROSERVICES_IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md)
 
-**Purpose:** Step-by-step migration plan for Railway
+**Purpose:** Step-by-step migration plan tailored for selective approach on Railway
 
 **Contents:**
-- Phase 1: Preparation (2-3 weeks)
-- Phase 2: Extract first service (2-3 weeks)
-- Phase 3: Extract core services (8-12 weeks)
-- Phase 4: API Gateway (2-3 weeks)
-- Phase 5: Optimization (2-3 weeks)
-- Phase 6: Production cutover (1-2 weeks)
+- Phase 1: Preparation & Infrastructure (2-3 weeks)
+- Phase 2: Extract Core Services
+  - 2.1: Auth Service (4-6 weeks)
+  - 2.2: Activity Service (4-6 weeks)
+  - 2.3: Chat Service with WebSocket (3-4 weeks)
+  - 2.4: User Service - Optional (3-4 weeks)
+- Phase 3: API Gateway & Service Mesh (2-3 weeks)
+- Phase 4: Optimization & Monitoring (ongoing)
 
-**Total Timeline:** 3-6 months
+**Total Timeline:** 3-5 months
 
 **Railway-Specific:**
-- Service discovery via `service-name.railway.internal`
-- Database provisioning per service
+- MySQL provisioning per service
 - Shared Redis with namespacing
+- WebSocket deployment on Railway
 - Cost optimization strategies
 
-**Time to Read:** 60-90 minutes (reference document, don't read all at once)
+**Time to Read:** 60-90 minutes (reference document)
 
 ---
 
-## 🎯 Quick Decision Matrix
+## 🎯 Quick Reference
 
-| Your Situation | Recommended Approach | Document to Read |
-|----------------|---------------------|------------------|
-| **"Just exploring options"** | Read decision guide first | [DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) |
-| **"Team: 1-2 devs"** | Modular monolith | [DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) (see alternative section) |
-| **"Users: <1,000"** | Modular monolith | [DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) |
-| **"Users: 10,000+"** | Consider microservices | All three docs |
-| **"Team: 5+ devs"** | Consider microservices | All three docs |
-| **"Proven bottlenecks"** | Consider microservices | All three docs |
-| **"Budget: <$50/mo"** | Stay with monolith | [DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) |
-| **"Already decided on microservices"** | Read architecture first | [ARCHITECTURE.md](./MICROSERVICES_ARCHITECTURE.md) → [IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md) |
-
----
-
-## 📊 Spawn App Current Assessment (Nov 2025)
-
-| Factor | Status | Score (0-5) | Microservices? |
-|--------|--------|-------------|----------------|
-| **Team Size** | 1-2 devs | 1 | ❌ |
-| **User Scale** | <1,000 concurrent | 1 | ❌ |
-| **Deployment Frequency** | 1-2x/week | 2 | ❌ |
-| **Different Scaling Needs** | Uniform load | 1 | ❌ |
-| **Performance Bottlenecks** | None identified | 1 | ❌ |
-| **Budget** | $17-25/mo hosting | 2 | ⚠️ |
-| **Total Score** | | **23/85** | ❌ **Not Yet** |
-
-**Recommendation:** 🏗️ **Modular Monolith**
+| Topic | Information |
+|-------|-------------|
+| **Approach** | Selective microservices (3-4 services) |
+| **Services to Extract** | Auth, Activity, Chat (WebSocket), optionally User |
+| **Services in Monolith** | Social, Notification, Media, Analytics |
+| **Database** | MySQL for all services (Cassandra optional for Chat) |
+| **Cost** | $73-85/month (3.3-3.9x increase from $22/month) |
+| **Timeline** | 3-5 months (10-15 hours/week part-time) |
+| **Primary Goal** | Learning experience with microservices |
+| **Secondary Goal** | Scale Auth and Activity services |
 
 ---
 
-## 🚀 Next Steps
+## 📊 Selective Microservices Architecture
 
-### If Staying with Monolith (Recommended)
+```
+┌──────────────────────────────────────────────────────────────┐
+│                       API Gateway                             │
+│               (Routing, Auth, Rate Limiting)                  │
+└──────────────────────────────────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+        ▼                   ▼                   ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   Auth       │    │   Activity   │    │   Chat       │
+│   Service    │    │   Service    │    │   Service    │
+│              │    │              │    │  (WebSocket) │
+│  (1GB RAM)   │    │  (1.5GB RAM) │    │  (512MB RAM) │
+│   MySQL      │    │   MySQL      │    │   MySQL      │
+└──────────────┘    └──────────────┘    └──────────────┘
 
-1. ✅ Complete current refactoring (DRY, Mediator pattern)
-2. ✅ Restructure into modular monolith
-   - Clear module boundaries (user, activity, social, etc.)
-   - Event-driven communication between modules
-   - Enforce boundaries with ArchUnit
-3. ✅ Monitor metrics for 6 months
-   - Resource usage per module
-   - Deployment bottlenecks
-   - Team coordination overhead
-4. 🔄 Revisit microservices decision in 6 months
+        (Optional)
+        ▼
+┌──────────────┐
+│   User       │
+│   Service    │
+│              │
+│  (512MB RAM) │
+│   MySQL      │
+└──────────────┘
 
-**Estimated Time:** 2-3 months for modular refactoring
+┌──────────────────────────────────────────────────────────────┐
+│                   Modular Monolith                            │
+│  (Social, Notification, Media, Analytics)                     │
+│                                                               │
+│  1GB RAM + MySQL                                              │
+└──────────────────────────────────────────────────────────────┘
 
-**Cost:** No change ($17-25/month)
-
-### If Proceeding with Microservices
-
-1. ⚠️ **Re-read decision guide** - confirm you have:
-   - >5 developers OR
-   - >10,000 concurrent users OR
-   - Proven bottlenecks OR
-   - Budget >$100/month
-2. 📖 Read MICROSERVICES_ARCHITECTURE.md
-3. 📝 Create detailed project plan based on IMPLEMENTATION_PLAN.md
-4. 🛠️ Start with Phase 1: Preparation (2-3 weeks)
-
-**Estimated Time:** 3-6 months full migration
-
-**Cost:** $60-105/month (3.5-6x increase)
-
----
-
-## 💡 Key Insights from Analysis
-
-### Why Modular Monolith is Better for Current Spawn
-
-1. **Cost:** $17/mo vs $105/mo (6x increase)
-2. **Complexity:** Low vs High (easier to maintain)
-3. **Performance:** 45ms vs 115ms (2.5x faster)
-4. **Development Speed:** Fast vs 50% slower initially
-5. **Team Size:** Optimized for 1-2 devs
-
-### When Microservices Makes Sense
-
-Only when you hit **multiple** of these thresholds:
-- [ ] >10,000 concurrent users
-- [ ] >5 full-time developers
-- [ ] Specific services using >50% resources
-- [ ] Deployment frequency >5x/week
-- [ ] Budget comfortable at >$100/month
-- [ ] Operational maturity (monitoring, on-call rotation)
-
-### Hidden Costs of Microservices
-
-- **Time:** 3-6 months migration (not building features)
-- **Operational:** 4x time spent on DevOps
-- **Learning Curve:** Distributed systems complexity
-- **Debugging:** Distributed tracing required
-- **Testing:** 4x longer CI/CD pipelines
+┌──────────────────────────────────────────────────────────────┐
+│              Shared Infrastructure                            │
+│  Redis (Caching + WebSocket Sessions)                        │
+└──────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 🔗 Related Resources
+## 🚀 Implementation Roadmap
 
-### Internal Documentation
-- [Main README](../../README.md) - Project overview
-- [Entity Relationship Diagram](../../diagrams/ENTITIES_SUMMARY.md)
-- [Optimization Docs](../optimization/) - RAM and performance
+### Phase 1: Infrastructure (Weeks 1-3)
+- [ ] Set up API Gateway (Spring Cloud Gateway)
+- [ ] Configure shared Redis on Railway
+- [ ] Create shared library modules (DTOs, utilities)
+- [ ] Set up distributed tracing (Spring Cloud Sleuth)
 
-### External Reading
-- [Martin Fowler: Monolith First](https://martinfowler.com/bliki/MonolithFirst.html)
-- [Sam Newman: When to Use Microservices](https://samnewman.io/books/building_microservices/)
-- [Railway Documentation](https://docs.railway.app/)
+### Phase 2a: Auth Service (Weeks 4-9)
+- [ ] Extract Auth Service
+- [ ] Migrate OAuth (Google, Apple)
+- [ ] Implement JWT generation/validation
+- [ ] Deploy to Railway with MySQL database
+- [ ] Test end-to-end authentication flow
+
+### Phase 2b: Activity Service (Weeks 10-15)
+- [ ] Extract Activity Service
+- [ ] Migrate activity CRUD operations
+- [ ] Migrate activity types and templates
+- [ ] Deploy to Railway with MySQL database
+- [ ] Test with Auth Service integration
+
+### Phase 2c: Chat Service (Weeks 16-19)
+- [ ] Extract Chat Service
+- [ ] **Implement WebSocket (STOMP) for real-time messaging**
+- [ ] Implement REST API for message history
+- [ ] Configure minimal resources (512MB)
+- [ ] Deploy to Railway with MySQL database
+- [ ] Test real-time messaging flow
+
+### Phase 2d: User Service (Weeks 20-23, Optional)
+- [ ] Evaluate need based on Auth/Activity/Chat experience
+- [ ] Extract User Service if beneficial
+- [ ] Migrate user profile and search functionality
+- [ ] Deploy to Railway with MySQL database
+
+### Phase 3: Monitoring & Optimization (Weeks 24+)
+- [ ] Monitor service performance and costs
+- [ ] Optimize resource allocation
+- [ ] Document learnings
+- [ ] Decide: expand, maintain, or consolidate
 
 ---
 
-## 📞 Questions?
+## 💰 Cost Breakdown
 
-**Common Questions:**
+### Current State
+| Component | Cost |
+|-----------|------|
+| Monolith (1GB) | $7 |
+| MySQL (2GB) | $10 |
+| Redis (512MB) | $5 |
+| **Total** | **$22/month** |
 
-**Q: "But isn't microservices the industry standard?"**  
-A: Only for companies at scale (Netflix, Uber). Most successful startups start with monoliths. Shopify, GitHub, and Basecamp run monoliths at massive scale.
+### Selective Microservices (3 services)
+| Component | Cost |
+|-----------|------|
+| Modular Monolith (1GB) | $7 |
+| Auth Service (1GB) | $7 |
+| Activity Service (1.5GB) | $10 |
+| Chat Service (512MB) | $5 |
+| API Gateway (512MB) | $5 |
+| MySQL databases (4 × varies) | $34 |
+| Redis (512MB shared) | $5 |
+| **Total** | **$73/month** |
 
-**Q: "Won't it be harder to migrate later?"**  
-A: Modular monolith makes migration easier, not harder. You're building the same boundaries.
+### With User Service (4 services)
+| Additional | Cost |
+|------------|------|
+| User Service (512MB) | $5 |
+| MySQL user_db (1GB) | $7 |
+| **New Total** | **$85/month** |
 
-**Q: "What about my resume?"**  
-A: Employers value shipping features over over-engineering. Demonstrating pragmatic architecture decisions is more impressive.
-
-**Q: "How do I know when to migrate?"**  
-A: Use the scoring system in DECISION_GUIDE.md. Revisit every 6 months.
+**Investment:** $51-63/month extra ($612-756/year) for learning and experience
 
 ---
 
-**Document Status:** Current (November 9, 2025)  
-**Recommendation:** Start with modular monolith, reconsider when you hit 10x growth
+## 🎓 Learning Objectives
+
+### Primary
+1. **Microservices Architecture**
+   - Service boundaries and domain-driven design
+   - Inter-service communication (REST + events)
+   - Database-per-service patterns
+
+2. **WebSocket in Distributed Systems**
+   - Real-time messaging implementation
+   - Session management across instances
+   - Spring WebSocket (STOMP) configuration
+
+3. **Service Orchestration**
+   - API Gateway routing and auth
+   - Circuit breakers (Resilience4j)
+   - Distributed tracing (Sleuth)
+
+### Secondary
+- MySQL per-service strategy
+- Optional NoSQL (Cassandra) for chat
+- Independent deployment workflows
+- Railway platform expertise
 
 ---
 
-**Next Document:** [MICROSERVICES_DECISION_GUIDE.md](./MICROSERVICES_DECISION_GUIDE.md) (30-45 min read)
+## 📞 Key Decisions Summary
+
+| Question | Answer |
+|----------|--------|
+| **Microservices or Monolith?** | Selective microservices (hybrid) |
+| **Why?** | Learning experience + scale key services |
+| **How many services?** | 3-4 core services |
+| **Which services?** | Auth, Activity, Chat (WebSocket), optionally User |
+| **Database?** | MySQL (all services) |
+| **What about NoSQL?** | Optional Cassandra for Chat if volume grows |
+| **What stays in monolith?** | Social, Notification, Media, Analytics |
+| **Cost acceptable?** | Yes, 3.3-3.9x increase as learning investment |
+| **Timeline?** | 3-5 months part-time |
+| **Can we scale back?** | Yes, can consolidate if needed |
+
+---
+
+## 🔄 Flexibility Options
+
+### Scale Up (if needed)
+- Extract Social Service for independent scaling
+- Extract Notification Service for higher throughput
+- Extract Media Service for storage optimization
+- Move toward full 8-service architecture
+
+### Scale Down (if desired)
+- Consolidate services back into modular monolith
+- Keep architecture patterns and learnings
+- Reduce costs while maintaining code quality
+
+### Pivot Points
+- After Auth Service: Evaluate complexity
+- After Activity Service: Assess operational overhead
+- After Chat Service: Decide on User Service extraction
+- After 6 months: Comprehensive review
+
+---
+
+## 📚 Next Steps
+
+1. **Review** [SELECTIVE_MICROSERVICES_DECISION.md](./SELECTIVE_MICROSERVICES_DECISION.md) (decision summary)
+2. **Study** [MICROSERVICES_IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md) (detailed roadmap)
+3. **Plan** Infrastructure setup (Week 0-3)
+4. **Execute** Service extraction starting with Auth
+
+---
+
+**Document Status:** Updated for Selective Microservices Approach (November 9, 2025)  
+**Version:** 2.0  
+**Next Review:** June 9, 2026 (6 months post-implementation)
+
+---
+
+**Start Reading:** [SELECTIVE_MICROSERVICES_DECISION.md](./SELECTIVE_MICROSERVICES_DECISION.md) (15-20 min)
+
