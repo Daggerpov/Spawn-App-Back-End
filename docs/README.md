@@ -34,6 +34,14 @@ Database-related documentation and scripts:
 - **[migrations/](database/migrations/)** - Database migration documentation
   - `README-name-migration.md` - Name field migration guide
 
+### 🏗️ [microservices/](microservices/)
+Microservices architecture planning and implementation:
+- **[README.md](microservices/README.md)** - **START HERE** - Quick navigation guide with decision flow diagram and current recommendation summary
+- **[MICROSERVICES_DECISION_GUIDE.md](microservices/MICROSERVICES_DECISION_GUIDE.md)** - Complete benefits/drawbacks analysis, cost implications, and decision framework with modular monolith alternative
+- **[MICROSERVICES_ARCHITECTURE.md](microservices/MICROSERVICES_ARCHITECTURE.md)** - Comprehensive microservices decomposition strategy with service boundaries and data architecture
+- **[MICROSERVICES_IMPLEMENTATION_PLAN.md](microservices/MICROSERVICES_IMPLEMENTATION_PLAN.md)** - Step-by-step implementation plan for Railway platform with detailed tasks and timelines
+- **[VISUAL_ARCHITECTURE.md](microservices/VISUAL_ARCHITECTURE.md)** - Visual diagrams and ASCII art for quick reference
+
 ### 📋 Root Level
 - **[IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)** - Overall implementation status and completion tracking
 - **README.md** (this file) - Documentation index and navigation guide
@@ -54,6 +62,9 @@ Check [fixes/](fixes/) directory
 ### For Database Issues
 Review [database/](database/) directory
 
+### For Microservices Decision
+Start with [microservices/MICROSERVICES_DECISION_GUIDE.md](microservices/MICROSERVICES_DECISION_GUIDE.md) to understand benefits, drawbacks, costs, and alternatives
+
 ---
 
 ## 📝 Documentation Standards
@@ -63,12 +74,15 @@ When adding new documentation:
 2. **features/** - New feature implementations and architecture
 3. **fixes/** - Bug fixes, hotfixes, and issue resolutions
 4. **database/** - Schema changes, migrations, and database-specific issues
-5. **Root level** - Only high-level overview and status documents
+5. **microservices/** - Microservices architecture, decomposition, and implementation plans
+6. **Root level** - Only high-level overview and status documents
 
 ---
 
 ## 🔄 Recent Updates
 
+- **November 9, 2025**: Added comprehensive microservices decision guide with cost analysis and modular monolith alternative
+- **November 9, 2025**: Added microservices architecture and implementation documentation
 - **October 31, 2025**: Reorganized docs folder into logical categories
 - **October 31, 2025**: Added memory leak fixes and performance improvements
 - **October 2025**: Implemented RAM optimization strategies
@@ -95,4 +109,4 @@ When contributing documentation:
 
 ---
 
-**Last Updated:** October 31, 2025
+**Last Updated:** November 9, 2025
