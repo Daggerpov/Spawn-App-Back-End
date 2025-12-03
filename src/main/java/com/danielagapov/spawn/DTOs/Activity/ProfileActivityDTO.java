@@ -22,6 +22,7 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
     private List<BaseUserDTO> participantUsers;
     private List<BaseUserDTO> invitedUsers;
     private List<UUID> chatMessageIds;
+    private boolean isPastActivity;
     
     public ProfileActivityDTO(UUID id,
     String title,
@@ -37,22 +38,25 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
     List<UUID> chatMessageIds,
     Instant createdAt,
     boolean isExpired,
-    String clientTimezone) {
+    String clientTimezone,
+    boolean isPastActivity) {
         super(id, title, startTime, endTime, note, icon, participantLimit, createdAt, isExpired, clientTimezone);
         this.location = location;
         this.creatorUser = creatorUser;
         this.participantUsers = participantUsers;
         this.invitedUsers = invitedUsers;
         this.chatMessageIds = chatMessageIds;
+        this.isPastActivity = isPastActivity;
     }
     
     /**
      * Creates a ProfileActivityDTO from a FullFeedActivityDTO
      * 
      * @param fullFeedActivityDTO The FullFeedActivityDTO to convert
+     * @param isPastActivity Whether this activity is in the past
      * @return A new ProfileActivityDTO
      */
-    public static ProfileActivityDTO fromFullFeedActivityDTO(FullFeedActivityDTO fullFeedActivityDTO) {
+    public static ProfileActivityDTO fromFullFeedActivityDTO(FullFeedActivityDTO fullFeedActivityDTO, boolean isPastActivity) {
         // Convert chat messages to their IDs
         List<UUID> chatMessageIds = fullFeedActivityDTO.getChatMessages() != null ? 
             fullFeedActivityDTO.getChatMessages().stream().map(msg -> msg.getId()).collect(java.util.stream.Collectors.toList()) : 
@@ -73,7 +77,8 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
             chatMessageIds,
             fullFeedActivityDTO.getCreatedAt(),
             fullFeedActivityDTO.isExpired(),
-            fullFeedActivityDTO.getClientTimezone()
+            fullFeedActivityDTO.getClientTimezone(),
+            isPastActivity
         );
     }
 } 

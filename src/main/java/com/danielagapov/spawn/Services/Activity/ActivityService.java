@@ -1118,9 +1118,8 @@ public class ActivityService implements IActivityService {
             List<FullFeedActivityDTO> fullFeedActivities = convertActivitiesToFullFeedActivities(pastActivityDTOs, requestingUserId);
             List<ProfileActivityDTO> result = new ArrayList<>();
             
-            // Convert each FullFeedActivityDTO to ProfileActivityDTO
             for (FullFeedActivityDTO fullFeedActivity : fullFeedActivities) {
-                result.add(ProfileActivityDTO.fromFullFeedActivityDTO(fullFeedActivity));
+                result.add(ProfileActivityDTO.fromFullFeedActivityDTO(fullFeedActivity, true)); // true = isPastActivity
             }
             
             return result;
@@ -1155,7 +1154,7 @@ public class ActivityService implements IActivityService {
             if (!nonExpiredActivities.isEmpty()) {
                 sortActivitiesByStartTime(nonExpiredActivities);
                 for (FullFeedActivityDTO Activity : nonExpiredActivities) {
-                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity));
+                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity, false)); // false = not past activity
                 }
                 return result;
             }
