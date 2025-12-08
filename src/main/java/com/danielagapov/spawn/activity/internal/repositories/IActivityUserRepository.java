@@ -30,7 +30,7 @@ public interface IActivityUserRepository extends JpaRepository<ActivityUser, Act
     @Query("SELECT au.activity.id FROM ActivityUser au WHERE au.user.id = :userId AND au.status = :status AND au.activity.endTime <= :now")
     List<UUID> findPastActivityIdsForUser(@Param("userId") UUID userId, @Param("status") ParticipationStatus status, @Param("now") OffsetDateTime now, Limit limit);
 
-    @Query("SELECT DISTINCT new com.danielagapov.spawn.DTOs.UserIdActivityTimeDTO(au.user.id, MAX(au.activity.startTime)) FROM ActivityUser au WHERE au.activity.id IN :activityIds AND au.status = :status AND au.user.id != :userId GROUP BY au.user.id ORDER BY MAX(au.activity.startTime) DESC")
+    @Query("SELECT DISTINCT new com.danielagapov.spawn.activity.api.dto.UserIdActivityTimeDTO(au.user.id, MAX(au.activity.startTime)) FROM ActivityUser au WHERE au.activity.id IN :activityIds AND au.status = :status AND au.user.id != :userId GROUP BY au.user.id ORDER BY MAX(au.activity.startTime) DESC")
     List<UserIdActivityTimeDTO> findOtherUserIdsByActivityIds(List<UUID> activityIds, UUID userId, ParticipationStatus status);
 
     Optional<ActivityUser> findByActivity_IdAndUser_Id(UUID activityId, UUID userId);

@@ -55,14 +55,11 @@ class FriendshipIntegrationTests {
 
     @BeforeEach
     void setUp() {
-        // Clean up any existing data
-        friendshipRepository.deleteAll();
-        friendRequestRepository.deleteAll();
-        
-        // Create test users
-        userA = createAndSaveUser("userA", "userA@example.com");
-        userB = createAndSaveUser("userB", "userB@example.com");
-        userC = createAndSaveUser("userC", "userC@example.com");
+        // Create test users with unique identifiers to avoid conflicts with other tests
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        userA = createAndSaveUser("userA_" + uniqueId, "userA_" + uniqueId + "@example.com");
+        userB = createAndSaveUser("userB_" + uniqueId, "userB_" + uniqueId + "@example.com");
+        userC = createAndSaveUser("userC_" + uniqueId, "userC_" + uniqueId + "@example.com");
     }
 
     @Test
@@ -119,7 +116,7 @@ class FriendshipIntegrationTests {
         CreateFriendRequestDTO requestBtoA = new CreateFriendRequestDTO(
             null, userB.getId(), userA.getId()
         );
-        CreateFriendRequestDTO result = friendRequestService.saveFriendRequest(requestBtoA);
+        friendRequestService.saveFriendRequest(requestBtoA);
 
         // Step 3: Verify they are now friends
         assertTrue(userService.isUserFriendOfUser(userA.getId(), userB.getId()));
