@@ -1,0 +1,128 @@
+package com.danielagapov.spawn.shared.config;
+
+import com.danielagapov.spawn.user.api.dto.UserDTO;
+import com.danielagapov.spawn.media.internal.services.IS3Service;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
+
+import java.util.UUID;
+
+@Configuration
+@Profile("test")
+@EnableCaching
+public class TestConfig {
+    
+    @Bean
+    @Primary
+    public CacheManager testCacheManager() {
+        return new ConcurrentMapCacheManager(
+            // User-related caches
+            "friendsByUserId",
+            "recommendedFriends",
+            "userInterests",
+            "userSocialMedia",
+            "userSocialMediaByUserId",
+            "userStats",
+            "userStatsById",
+            
+            // Friend request caches
+            "incomingFetchFriendRequests",
+            "sentFetchFriendRequests",
+            "friendRequests",
+            "friendRequestsByUserId",
+            
+            // Activity caches
+            "ActivityById",
+            "fullActivityById",
+            "ActivityInviteById",
+            "ActivitiesByOwnerId",
+            "feedActivities",
+            "ActivitiesInvitedTo",
+            "fullActivitiesInvitedTo",
+            
+            // Activity type caches
+            "activityTypes",
+            "activityTypesByUserId",
+            
+            // Location caches
+            "locations",
+            "locationById",
+            
+            // Blocked user caches
+            "blockedUsers",
+            "blockedUserIds",
+            "isBlocked"
+        );
+    }
+    
+    @Bean
+    @Primary
+    public IS3Service mockS3Service() {
+        return new MockS3Service();
+    }
+    
+    /**
+     * Mock implementation of S3Service for testing
+     * Returns default/mock values without actually connecting to S3
+     */
+    private static class MockS3Service implements IS3Service {
+        
+        private static final String MOCK_DEFAULT_PFP = "https://mock-cdn.com/default.jpg";
+        private static final String MOCK_CDN_BASE = "https://mock-cdn.com/";
+        
+        @Override
+        public String putObjectWithKey(byte[] file, String key) {
+            return MOCK_CDN_BASE + key;
+        }
+        
+        @Override
+        public void deleteObjectByUserId(UUID userId) {
+            // No-op for test
+        }
+        
+        @Override
+        public String putObject(byte[] file) {
+            return MOCK_CDN_BASE + UUID.randomUUID().toString();
+        }
+        
+        @Override
+        public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
+            // Return the same user for testing purposes
+            return user;
+        }
+        
+        @Override
+        public UserDTO updateProfilePicture(byte[] file, UUID userId) {
+            // For test, return a simple mock UserDTO
+            return new UserDTO(
+                    userId,
+                    java.util.List.of(),
+                    "testuser",
+                    file == null ? MOCK_DEFAULT_PFP : putObject(file),
+                    "Test User",
+                    "Test Bio",
+                    "test@example.com"
+            );
+        }
+        
+        @Override
+        public String getDefaultProfilePicture() {
+            return MOCK_DEFAULT_PFP;
+        }
+        
+        @Override
+        public void deleteObjectByURL(String urlString) {
+            // No-op for test
+        }
+
+        @Override
+        public String updateProfilePictureWithUserId(byte[] file, UUID userId) {
+            return "";
+        }
+    }
+} 

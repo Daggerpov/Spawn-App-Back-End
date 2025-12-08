@@ -1,0 +1,17 @@
+package com.danielagapov.spawn.auth.api.dto;
+
+import com.danielagapov.spawn.shared.util.OAuthProvider;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+public class OAuthRegistrationDTO {
+    private String email;
+    private String idToken;  // Changed from externalIdToken to idToken
+    private OAuthProvider provider;
+    private String name;
+    private String profilePictureUrl;
+}
