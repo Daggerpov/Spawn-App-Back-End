@@ -910,10 +910,55 @@ public class ActivityService implements IActivityService {
             }
             visitedActivities.add(Activity.getId());
 
-            // Safely fetch location and creator
+            // Safely fetch location
             LocationDTO location = Activity.getLocation();
 
-            UserDTO creator = userService.getUserById(Activity.getCreatorUserId());
+            // Fetch creator - if this fails, we can't show the activity
+            UserDTO creator;
+            try {
+                creator = userService.getUserById(Activity.getCreatorUserId());
+            } catch (BaseNotFoundException e) {
+                logger.warn("Cannot display activity " + Activity.getId() + " - creator not found: " + e.getMessage());
+                return null;
+            }
+
+            // Fetch participants - if this fails, show empty list instead of dropping activity
+            List<BaseUserDTO> participants;
+            try {
+                participants = userService.getParticipantsByActivityId(Activity.getId());
+            } catch (Exception e) {
+                logger.warn("Error fetching participants for activity " + Activity.getId() + ": " + e.getMessage());
+                participants = new ArrayList<>();
+            }
+
+            // Fetch invited users - if this fails, show empty list instead of dropping activity
+            List<BaseUserDTO> invitedUsers;
+            try {
+                invitedUsers = userService.getInvitedByActivityId(Activity.getId());
+            } catch (Exception e) {
+                logger.warn("Error fetching invited users for activity " + Activity.getId() + ": " + e.getMessage());
+                invitedUsers = new ArrayList<>();
+            }
+
+            // Fetch chat messages - if this fails, show empty list instead of dropping activity
+            List<FullActivityChatMessageDTO> chatMessages;
+            try {
+                chatMessages = chatMessageService.getFullChatMessagesByActivityId(Activity.getId());
+            } catch (Exception e) {
+                logger.warn("Error fetching chat messages for activity " + Activity.getId() + ": " + e.getMessage());
+                chatMessages = new ArrayList<>();
+            }
+
+            // Fetch participation status - if this fails, show notInvited instead of dropping activity
+            ParticipationStatus participationStatus = null;
+            if (requestingUserId != null) {
+                try {
+                    participationStatus = getParticipationStatus(Activity.getId(), requestingUserId);
+                } catch (Exception e) {
+                    logger.warn("Error fetching participation status for activity " + Activity.getId() + ": " + e.getMessage());
+                    participationStatus = ParticipationStatus.notInvited;
+                }
+            }
 
             return new FullFeedActivityDTO(
                     Activity.getId(),
@@ -926,16 +971,17 @@ public class ActivityService implements IActivityService {
                     Activity.getIcon(),
                     Activity.getParticipantLimit(),
                     creator,
-                    userService.getParticipantsByActivityId(Activity.getId()),
-                    userService.getInvitedByActivityId(Activity.getId()),
-                    chatMessageService.getFullChatMessagesByActivityId(Activity.getId()),
-                    requestingUserId != null ? getParticipationStatus(Activity.getId(), requestingUserId) : null,
+                    participants,
+                    invitedUsers,
+                    chatMessages,
+                    participationStatus,
                     Activity.getCreatorUserId().equals(requestingUserId),
                     Activity.getCreatedAt(),
                     expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone()),
                     Activity.getClientTimezone()
             );
-        } catch (BaseNotFoundException e) {
+        } catch (Exception e) {
+            logger.error("Unexpected error converting activity " + Activity.getId() + " to FullFeedActivityDTO: " + e.getMessage());
             return null;
         }
     }

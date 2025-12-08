@@ -12,11 +12,13 @@ import java.util.UUID;
  */
 public class ActivityInviteNotificationEvent extends NotificationEvent {
     private final Set<UUID> invitedUserIds;
+    private final User creator;
 
     public ActivityInviteNotificationEvent(User creator, Activity activity, Set<UUID> invitedUserIds) {
         super(NotificationType.Activity_INVITE);
         
         this.invitedUserIds = invitedUserIds;
+        this.creator = creator;
         
         // Set common data
         addData("activityId", activity.getId().toString());
@@ -32,7 +34,9 @@ public class ActivityInviteNotificationEvent extends NotificationEvent {
     
     @Override
     public void findTargetUsers() {
-        // Add all invited users as targets
-        invitedUserIds.forEach(this::addTargetUser);
+        // Add all invited users as targets, except the creator (no self-notifications)
+        invitedUserIds.stream()
+            .filter(userId -> !userId.equals(creator.getId()))
+            .forEach(this::addTargetUser);
     }
 } 
