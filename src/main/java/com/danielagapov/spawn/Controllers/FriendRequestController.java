@@ -128,11 +128,11 @@ public final class FriendRequestController {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
 
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (BaseNotFoundException e) {
             logger.warn("Friend request not found (may have been already processed): " + friendRequestId + ": " + e.getMessage());
             // Return success instead of 404 to avoid client-side errors when friend request was already processed
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             logger.error("Error processing friend request action: " + friendRequestAction + " for request: " + friendRequestId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -150,11 +150,11 @@ public final class FriendRequestController {
 
         try {
             friendRequestService.deleteFriendRequest(friendRequestId);
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (BaseNotFoundException e) {
             // If the request was already removed, treat as success to keep client idempotent
             logger.warn("Friend request not found (may have been already deleted): " + friendRequestId + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             logger.error("Error deleting friend request: " + friendRequestId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
