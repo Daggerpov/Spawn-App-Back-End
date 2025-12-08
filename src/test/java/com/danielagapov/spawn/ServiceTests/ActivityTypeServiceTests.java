@@ -1,14 +1,14 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Exceptions.ActivityTypeValidationException;
-import com.danielagapov.spawn.Models.ActivityType;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
-import com.danielagapov.spawn.Services.ActivityType.ActivityTypeService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
+import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.ActivityTypeValidationException;
+import com.danielagapov.spawn.activity.internal.domain.ActivityType;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository;
+import com.danielagapov.spawn.activity.internal.services.ActivityTypeService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -1000,8 +1000,8 @@ class ActivityTypeServiceTests {
              activityTypeId1,
              "Chill",
              Arrays.asList(
-                 new com.danielagapov.spawn.DTOs.User.BaseUserDTO(friend1Id, "Friend One", "friend1@test.com", "friend1", "bio1", "pic1.jpg"),
-                 new com.danielagapov.spawn.DTOs.User.BaseUserDTO(friend2Id, "Friend Two", "friend2@test.com", "friend2", "bio2", "pic2.jpg")
+                 new com.danielagapov.spawn.user.api.dto.BaseUserDTO(friend1Id, "Friend One", "friend1@test.com", "friend1", "bio1", "pic1.jpg"),
+                 new com.danielagapov.spawn.user.api.dto.BaseUserDTO(friend2Id, "Friend Two", "friend2@test.com", "friend2", "bio2", "pic2.jpg")
              ),
             "🛋️",
             1,

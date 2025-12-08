@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.Config.ActivityTypeInitializer;
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
+import com.danielagapov.spawn.shared.config.ActivityTypeInitializer;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;

@@ -1,16 +1,16 @@
 package com.danielagapov.spawn.IntegrationTests;
 
-import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
-import com.danielagapov.spawn.Enums.UserStatus;
-import com.danielagapov.spawn.Models.Friendship;
-import com.danielagapov.spawn.Models.FriendRequest;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
-import com.danielagapov.spawn.Repositories.IFriendshipRepository;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
+import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
+import com.danielagapov.spawn.shared.util.UserStatus;
+import com.danielagapov.spawn.social.internal.domain.Friendship;
+import com.danielagapov.spawn.social.internal.domain.FriendRequest;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository;
+import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
+import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,14 +55,11 @@ class FriendshipIntegrationTests {
 
     @BeforeEach
     void setUp() {
-        // Clean up any existing data
-        friendshipRepository.deleteAll();
-        friendRequestRepository.deleteAll();
-        
-        // Create test users
-        userA = createAndSaveUser("userA", "userA@example.com");
-        userB = createAndSaveUser("userB", "userB@example.com");
-        userC = createAndSaveUser("userC", "userC@example.com");
+        // Create test users with unique identifiers to avoid conflicts with other tests
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        userA = createAndSaveUser("userA_" + uniqueId, "userA_" + uniqueId + "@example.com");
+        userB = createAndSaveUser("userB_" + uniqueId, "userB_" + uniqueId + "@example.com");
+        userC = createAndSaveUser("userC_" + uniqueId, "userC_" + uniqueId + "@example.com");
     }
 
     @Test
@@ -119,7 +116,7 @@ class FriendshipIntegrationTests {
         CreateFriendRequestDTO requestBtoA = new CreateFriendRequestDTO(
             null, userB.getId(), userA.getId()
         );
-        CreateFriendRequestDTO result = friendRequestService.saveFriendRequest(requestBtoA);
+        friendRequestService.saveFriendRequest(requestBtoA);
 
         // Step 3: Verify they are now friends
         assertTrue(userService.isUserFriendOfUser(userA.getId(), userB.getId()));

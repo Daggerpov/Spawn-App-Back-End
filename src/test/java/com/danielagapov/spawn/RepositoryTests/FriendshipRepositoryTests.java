@@ -1,10 +1,10 @@
 package com.danielagapov.spawn.RepositoryTests;
 
-import com.danielagapov.spawn.Enums.UserStatus;
-import com.danielagapov.spawn.Models.Friendship;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IFriendshipRepository;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
+import com.danielagapov.spawn.shared.util.UserStatus;
+import com.danielagapov.spawn.social.internal.domain.Friendship;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
+import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

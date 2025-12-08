@@ -1,12 +1,12 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.Activity.LocationDTO;
-import com.danielagapov.spawn.Exceptions.ApplicationException;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Models.Location;
-import com.danielagapov.spawn.Repositories.ILocationRepository;
-import com.danielagapov.spawn.Services.Location.LocationService;
+import com.danielagapov.spawn.activity.api.dto.LocationDTO;
+import com.danielagapov.spawn.shared.exceptions.ApplicationException;
+import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.BasesNotFoundException;
+import com.danielagapov.spawn.activity.internal.domain.Location;
+import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
+import com.danielagapov.spawn.activity.internal.services.LocationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -27,7 +27,7 @@ public class LocationServiceTests {
     private ILocationRepository locationRepository;
 
     @Mock
-    private com.danielagapov.spawn.Exceptions.Logger.ILogger logger;
+    private com.danielagapov.spawn.shared.exceptions.ILogger logger;
 
     @InjectMocks
     private LocationService locationService;

@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.User.Profile.UserInterest;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Repositories.User.Profile.UserInterestRepository;
-import com.danielagapov.spawn.Services.UserInterest.UserInterestService;
+import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.user.internal.domain.UserInterest;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import com.danielagapov.spawn.user.internal.repositories.UserInterestRepository;
+import com.danielagapov.spawn.user.internal.services.UserInterestService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
