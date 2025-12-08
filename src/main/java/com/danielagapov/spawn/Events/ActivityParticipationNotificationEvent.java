@@ -10,11 +10,13 @@ import com.danielagapov.spawn.Models.User.User;
  */
 public class ActivityParticipationNotificationEvent extends NotificationEvent {
     private final Activity activity;
+    private final User participant;
 
     private ActivityParticipationNotificationEvent(User participant, Activity activity, NotificationType type) {
         super(type);
 
         this.activity = activity;
+        this.participant = participant;
 
         // Set data
         addData("activityId", activity.getId().toString());
@@ -52,6 +54,9 @@ public class ActivityParticipationNotificationEvent extends NotificationEvent {
     @Override
     public void findTargetUsers() {
         // The activity creator should be notified of participation changes
-        addTargetUser(activity.getCreator().getId());
+        // BUT only if the participant is not the creator themselves (no self-notifications)
+        if (!participant.getId().equals(activity.getCreator().getId())) {
+            addTargetUser(activity.getCreator().getId());
+        }
     }
 } 
