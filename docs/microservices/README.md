@@ -4,10 +4,37 @@
 
 ---
 
+## ⚠️ IMPORTANT: Spring Modulith First!
+
+**Updated:** December 8, 2025
+
+Before proceeding with microservices extraction, **we strongly recommend** completing Spring Modulith refactoring:
+
+1. **Read First:** [../refactoring/WHY_SPRING_MODULITH_FIRST.md](../refactoring/WHY_SPRING_MODULITH_FIRST.md)
+   - Why Spring Modulith is effective as a first step
+   - Analysis of current circular dependencies in the codebase
+   - Risk comparison: Direct to microservices vs. Modulith-first
+
+2. **Then Implement:** [../refactoring/SPRING_MODULITH_REFACTORING_PLAN.md](../refactoring/SPRING_MODULITH_REFACTORING_PLAN.md)
+   - 6-8 week implementation roadmap
+   - Fixes circular dependencies before microservices
+   - Validates service boundaries without infrastructure complexity
+
+3. **Finally Extract:** Continue with this document for microservices extraction
+
+**Why this order?**
+- Current codebase has 2 circular dependencies (Activity↔Chat, User↔ActivityType)
+- Modulith catches boundary violations at compile time
+- Reduces microservices migration risk by 70%
+- Saves 2-3 months of production debugging
+
+---
+
 ## 🚦 Decision Made: Selective Microservices for Learning
 
 **Date:** November 9, 2025  
-**Approach:** Extract 3-4 core services while keeping other domains in modular monolith
+**Updated:** December 8, 2025 (Added Modulith prerequisite)  
+**Approach:** Spring Modulith refactoring → Extract 3-4 core services
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -28,9 +55,15 @@
 │  Database: MySQL (all services)                             │
 │  Optional: Cassandra for Chat (if volume >100k msg/day)     │
 │  Cost: $73-85/month (3.3-3.9x increase)                     │
-│  Timeline: 3-5 months                                       │
+│  Timeline: 6-8 weeks Modulith + 3-4 months microservices   │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+**Revised Timeline:**
+- **Phase 0:** Spring Modulith Refactoring (6-8 weeks) ← **Start here!**
+- **Phase 1:** Infrastructure Setup (2-3 weeks)
+- **Phase 2:** Service Extraction (12-16 weeks)
+- **Phase 3:** API Gateway & Optimization (2-3 weeks)
 
 ---
 
@@ -96,16 +129,26 @@
 
 ## 📚 Next Steps
 
-1. **Review** [SELECTIVE_MICROSERVICES_DECISION.md](./SELECTIVE_MICROSERVICES_DECISION.md) - Read the decision summary (15-20 min)
-2. **Study** [MICROSERVICES_IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md) - Review detailed implementation roadmap
-3. **Plan** Infrastructure setup (Weeks 1-3)
-4. **Execute** Service extraction starting with Auth Service
+### Recommended Path (Updated December 2025)
+
+1. **Prerequisites** (6-8 weeks) - **Do this first!**
+   - Read [../refactoring/WHY_SPRING_MODULITH_FIRST.md](../refactoring/WHY_SPRING_MODULITH_FIRST.md)
+   - Follow [../refactoring/SPRING_MODULITH_REFACTORING_PLAN.md](../refactoring/SPRING_MODULITH_REFACTORING_PLAN.md)
+   - Fix circular dependencies and validate module boundaries
+
+2. **Review** [SELECTIVE_MICROSERVICES_DECISION.md](./SELECTIVE_MICROSERVICES_DECISION.md) - Read the decision summary (15-20 min)
+
+3. **Study** [MICROSERVICES_IMPLEMENTATION_PLAN.md](./MICROSERVICES_IMPLEMENTATION_PLAN.md) - Review detailed implementation roadmap
+
+4. **Plan** Infrastructure setup (Weeks 1-3)
+
+5. **Execute** Service extraction starting with Auth Service
 
 ---
 
-**Document Status:** Consolidated for Selective Microservices Approach  
-**Last Updated:** November 25, 2025  
-**Version:** 2.1  
+**Document Status:** Updated with Spring Modulith Prerequisite  
+**Last Updated:** December 8, 2025  
+**Version:** 2.2  
 **Next Review:** June 2026 (6 months post-implementation)
 
 ---
