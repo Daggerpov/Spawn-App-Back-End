@@ -97,13 +97,6 @@ public class BlockedUserService implements IBlockedUserService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {
-            "blockedUsers",
-            "blockedUserIds",
-            "recommendedFriends",
-            "otherProfiles",
-            "friendsList"
-    }, key = "#blockerId")
     public void unblockUser(UUID blockerId, UUID blockedId) {
         try {
             User blocker = userService.getUserEntityById(blockerId);
@@ -116,8 +109,12 @@ public class BlockedUserService implements IBlockedUserService {
                     .ifPresent(blockEntity -> {
                         repository.delete(blockEntity);
 
-                        // Also evict caches for the previously blocked user
+                        // Manually evict all relevant caches
+                        evictBlockedUserCaches(blockerId);
                         evictBlockedUserCaches(blockedId);
+                        
+                        // Evict the specific isBlocked cache entry
+                        evictIsBlockedCache(blockerId, blockedId);
 
                         logger.info("Successfully unblocked user: " + LoggingUtils.formatUserInfo(blocked) +
                                 " by blocker: " + LoggingUtils.formatUserInfo(blocker));
@@ -233,8 +230,19 @@ public class BlockedUserService implements IBlockedUserService {
         cacheEvictionHelper.evictCaches(userId, 
             CacheNames.RECOMMENDED_FRIENDS,
             CacheNames.OTHER_PROFILES,
-            CacheNames.FRIENDS_LIST
+            CacheNames.FRIENDS_LIST,
+            CacheNames.BLOCKED_USERS,
+            CacheNames.BLOCKED_USER_IDS
         );
+    }
+
+    /**
+     * Helper method to evict the isBlocked cache for a specific blocker-blocked pair
+     */
+    private void evictIsBlockedCache(UUID blockerId, UUID blockedId) {
+        String cacheKey = blockerId.toString() + ":" + blockedId.toString();
+        logger.info("Evicting isBlocked cache for key: " + cacheKey);
+        cacheEvictionHelper.evictCache("isBlocked", cacheKey);
     }
 
     @Override
