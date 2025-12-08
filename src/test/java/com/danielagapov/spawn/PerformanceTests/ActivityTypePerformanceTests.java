@@ -1,13 +1,13 @@
 package com.danielagapov.spawn.PerformanceTests;
 
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.ActivityType;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
-import com.danielagapov.spawn.Services.ActivityType.ActivityTypeService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
+import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.activity.internal.domain.ActivityType;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository;
+import com.danielagapov.spawn.activity.internal.services.ActivityTypeService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;

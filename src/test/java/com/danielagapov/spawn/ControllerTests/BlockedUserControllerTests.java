@@ -1,12 +1,12 @@
 package com.danielagapov.spawn.ControllerTests;
 
-import com.danielagapov.spawn.Controllers.User.BlockedUserController;
-import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserCreationDTO;
-import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
+import com.danielagapov.spawn.user.api.BlockedUserController;
+import com.danielagapov.spawn.user.api.dto.BlockedUserCreationDTO;
+import com.danielagapov.spawn.user.api.dto.BlockedUserDTO;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

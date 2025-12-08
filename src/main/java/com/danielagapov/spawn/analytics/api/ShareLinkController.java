@@ -40,7 +40,7 @@ public final class ShareLinkController {
     public ResponseEntity<Map<String, String>> generateActivityShareCode(@PathVariable UUID activityId) {
         try {
             // Get the activity DTO to access start and end times
-            com.danielagapov.spawn.DTOs.Activity.ActivityDTO activity = activityService.getActivityById(activityId);
+            com.danielagapov.spawn.activity.api.dto.ActivityDTO activity = activityService.getActivityById(activityId);
             if (activity == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -66,7 +66,7 @@ public final class ShareLinkController {
     @PostMapping("/profile/{userId}")
     public ResponseEntity<Map<String, String>> generateProfileShareCode(@PathVariable UUID userId) {
         try {
-            com.danielagapov.spawn.DTOs.User.UserDTO user = userService.getUserById(userId);
+            com.danielagapov.spawn.user.api.dto.UserDTO user = userService.getUserById(userId);
             if (user == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -138,7 +138,7 @@ public final class ShareLinkController {
             }
             
             // Get the user profile details - need to create a BaseUserDTO from UserDTO
-            com.danielagapov.spawn.DTOs.User.UserDTO user = userService.getUserById(link.getTargetId());
+            com.danielagapov.spawn.user.api.dto.UserDTO user = userService.getUserById(link.getTargetId());
             if (user == null) {
                 // User was deleted, clean up the share link
                 shareLinkService.deleteShareLinksForTarget(link.getTargetId(), ShareLinkType.PROFILE);

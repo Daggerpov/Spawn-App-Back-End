@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.Services.Activity.ActivityExpirationService;
+import com.danielagapov.spawn.activity.internal.services.ActivityExpirationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

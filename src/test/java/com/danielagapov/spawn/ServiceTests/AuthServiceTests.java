@@ -1,16 +1,16 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.User.AuthUserDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.User.UserDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IEmailVerificationRepository;
-import com.danielagapov.spawn.Services.Auth.AuthService;
-import com.danielagapov.spawn.Services.Email.IEmailService;
-import com.danielagapov.spawn.Services.JWT.IJWTService;
-import com.danielagapov.spawn.Services.OAuth.IOAuthService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.user.api.dto.AuthUserDTO;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.user.api.dto.UserDTO;
+import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.auth.internal.repositories.IEmailVerificationRepository;
+import com.danielagapov.spawn.auth.internal.services.AuthService;
+import com.danielagapov.spawn.auth.internal.services.IEmailService;
+import com.danielagapov.spawn.auth.internal.services.IJWTService;
+import com.danielagapov.spawn.auth.internal.services.IOAuthService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;

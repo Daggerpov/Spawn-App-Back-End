@@ -44,7 +44,7 @@ public class ActivityTypeInitializer {
                 for (User user : allUsers) {
                     try {
                         // Check if user has any activity types
-                        List<com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO> existingActivityTypes = 
+                        List<com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO> existingActivityTypes = 
                             activityTypeService.getActivityTypesByUserId(user.getId());
                         
                         if (existingActivityTypes.isEmpty()) {
@@ -63,7 +63,7 @@ public class ActivityTypeInitializer {
                                         ". Attempting to recover by checking current state...");
                                     
                                     // Re-check if user now has activity types (maybe partial success)
-                                    List<com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO> currentActivityTypes = 
+                                    List<com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO> currentActivityTypes = 
                                         activityTypeService.getActivityTypesByUserId(user.getId());
                                     
                                     if (currentActivityTypes.isEmpty()) {
@@ -114,7 +114,7 @@ public class ActivityTypeInitializer {
                                 }
                                 
                                 // Retry fetching activity types (will hit database now)
-                                List<com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO> existingActivityTypes = 
+                                List<com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO> existingActivityTypes = 
                                     activityTypeService.getActivityTypesByUserId(user.getId());
                                 
                                 if (existingActivityTypes.isEmpty()) {

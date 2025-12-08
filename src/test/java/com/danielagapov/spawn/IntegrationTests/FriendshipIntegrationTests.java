@@ -1,16 +1,16 @@
 package com.danielagapov.spawn.IntegrationTests;
 
-import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
-import com.danielagapov.spawn.Enums.UserStatus;
-import com.danielagapov.spawn.Models.Friendship;
-import com.danielagapov.spawn.Models.FriendRequest;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IFriendRequestsRepository;
-import com.danielagapov.spawn.Repositories.IFriendshipRepository;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
+import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
+import com.danielagapov.spawn.shared.util.UserStatus;
+import com.danielagapov.spawn.social.internal.domain.Friendship;
+import com.danielagapov.spawn.social.internal.domain.FriendRequest;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository;
+import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
+import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

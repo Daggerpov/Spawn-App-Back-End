@@ -1,13 +1,13 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.BetaAccessSignUpDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.BetaAccessSignUp;
-import com.danielagapov.spawn.Repositories.IBetaAccessSignUpRepository;
-import com.danielagapov.spawn.Services.BetaAccessSignUp.BetaAccessSignUpService;
-import com.danielagapov.spawn.Services.Email.IEmailService;
+import com.danielagapov.spawn.analytics.api.dto.BetaAccessSignUpDTO;
+import com.danielagapov.spawn.shared.exceptions.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.analytics.internal.domain.BetaAccessSignUp;
+import com.danielagapov.spawn.analytics.internal.repositories.IBetaAccessSignUpRepository;
+import com.danielagapov.spawn.analytics.internal.services.BetaAccessSignUpService;
+import com.danielagapov.spawn.auth.internal.services.IEmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
