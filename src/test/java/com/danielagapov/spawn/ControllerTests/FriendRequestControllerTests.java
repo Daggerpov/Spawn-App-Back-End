@@ -542,8 +542,8 @@ class FriendRequestControllerTests {
             .friendRequestAction(UUID.randomUUID(), FriendRequestAction.reject);
 
         // Assert
-        assertEquals(HttpStatus.OK, response1.getStatusCode());
-        assertEquals(HttpStatus.OK, response2.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response1.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response2.getStatusCode());
     }
 
     @Test
@@ -574,7 +574,7 @@ class FriendRequestControllerTests {
         
         mockMvc.perform(put("/api/v1/friend-requests/{friendRequestId}", friendRequestId)
                 .param("friendRequestAction", "accept"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         
         verify(logger).info(contains("Processing friend request action: accept"));
         verify(logger).info(contains("Successfully accepted friend request: " + friendRequestId));
@@ -585,7 +585,7 @@ class FriendRequestControllerTests {
         
         mockMvc.perform(put("/api/v1/friend-requests/{friendRequestId}", friendRequestId)
                 .param("friendRequestAction", "reject"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         
         verify(logger).info(contains("Processing friend request action: reject"));
         verify(logger).info(contains("Successfully rejected friend request: " + friendRequestId));
