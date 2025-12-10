@@ -26,6 +26,8 @@ Bug fixes and issue resolutions:
 - **[OAUTH_CONCURRENCY_FIX_SUMMARY.md](fixes/OAUTH_CONCURRENCY_FIX_SUMMARY.md)** - OAuth concurrency issue resolution
 - **[PHONE_NUMBER_MATCHING_FIX.md](fixes/PHONE_NUMBER_MATCHING_FIX.md)** - Phone number matching improvements
 - **[REAPPLIED_FIXES_SUMMARY.md](fixes/REAPPLIED_FIXES_SUMMARY.md)** - Summary of re-applied memory leak and performance fixes
+- **[DEPENDENCY_FIXES_SUMMARY.md](fixes/DEPENDENCY_FIXES_SUMMARY.md)** - Dependency resolution and fixes
+- **[TEST_FIXES_SUMMARY.md](fixes/TEST_FIXES_SUMMARY.md)** - Test suite fixes and improvements
 
 ### 🔄 [refactoring/](refactoring/)
 Code refactoring and architectural improvements:
@@ -36,11 +38,23 @@ Code refactoring and architectural improvements:
 - **[BUGS_FIXED_SUMMARY.md](refactoring/BUGS_FIXED_SUMMARY.md)** - Summary of bugs fixed during refactoring
 
 ### 🗄️ [database/](database/)
-Database-related documentation and scripts:
-- **[issues/](database/issues/)** - Database constraint issues and diagnostics
-  - `diagnose_user_constraint_issue.sql` - User constraint diagnostic queries
+Database-related documentation:
+- **[DATABASE_INDEXES.md](database/DATABASE_INDEXES.md)** - Database indexing strategy and implementation
 - **[migrations/](database/migrations/)** - Database migration documentation
   - `README-name-migration.md` - Name field migration guide
+
+> **Note:** Database scripts and SQL files are located in `../scripts/database/`
+
+### 🎨 [diagrams/](diagrams/)
+Architecture diagrams and visual documentation:
+- **[entity-relationship-diagram.png](diagrams/entity-relationship-diagram.png)** - ER diagram visualization
+- **[entity-relationship-diagram.md](diagrams/entity-relationship-diagram.md)** - ER diagram documentation
+- **[entity-relationship-diagram.dbml](diagrams/entity-relationship-diagram.dbml)** - DBML source file
+- **[entity-relationship-diagram-updated.dbml](diagrams/entity-relationship-diagram-updated.dbml)** - Updated DBML source
+- **[diagrams-architecture-dependency-injection-dtos.png](diagrams/diagrams-architecture-dependency-injection-dtos.png)** - Architecture diagram
+- **[user-dto-relationships.png](diagrams/user-dto-relationships.png)** - User DTO relationships
+- **[diagrams.excalidraw](diagrams/diagrams.excalidraw)** - Editable Excalidraw diagram source
+- **[ENTITIES_SUMMARY.md](diagrams/ENTITIES_SUMMARY.md)** - Summary of entity relationships
 
 ### 🏗️ [microservices/](microservices/)
 Microservices architecture planning and implementation:
@@ -51,7 +65,7 @@ Microservices architecture planning and implementation:
 - **[VISUAL_ARCHITECTURE.md](microservices/VISUAL_ARCHITECTURE.md)** - Visual diagrams and ASCII art for quick reference
 
 ### 📋 Root Level
-- **[IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)** - Overall implementation status and completion tracking
+- **[TESTS_STATUS.md](TESTS_STATUS.md)** - Test suite status and coverage tracking
 - **README.md** (this file) - Documentation index and navigation guide
 
 ---
@@ -95,6 +109,7 @@ When adding new documentation:
 
 ## 🔄 Recent Updates
 
+- **December 10, 2025**: Major folder structure reorganization - moved all bash scripts to organized subdirectories in `scripts/`, moved diagrams to `docs/diagrams/`, consolidated fix summaries
 - **December 8, 2025**: Added Spring Modulith refactoring documentation - recommended first step before microservices extraction
 - **December 8, 2025**: Added WHY_SPRING_MODULITH_FIRST.md with detailed analysis of current codebase circular dependencies
 - **November 9, 2025**: Added comprehensive microservices decision guide with cost analysis and modular monolith alternative
@@ -109,7 +124,7 @@ When adding new documentation:
 ## 📚 Related Documentation
 
 - [Main README](../README.md) - Project overview and setup
-- [diagrams/](../diagrams/) - Architecture and entity relationship diagrams
+- [diagrams/](diagrams/) - Architecture and entity relationship diagrams
 - [scripts/](../scripts/) - Utility scripts for deployment and maintenance
 
 ---
@@ -125,4 +140,4 @@ When contributing documentation:
 
 ---
 
-**Last Updated:** December 8, 2025
+**Last Updated:** December 10, 2025

@@ -1,9 +1,7 @@
 #!/bin/bash
-# Comprehensive fix for ALL test imports
+#Fix test imports script
 
-TEST_DIR="src/test/java"
-
-echo "Fixing all test imports comprehensively..."
+TEST_DIR="src/test/java/com/danielagapov/spawn"
 
 # Controllers
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
@@ -15,13 +13,8 @@ find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
 
 # DTOs - Activity
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.Activity\.ActivityTypeDTO|com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO|g' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.Activity\.BatchActivityTypeUpdateDTO|com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO|g' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.Activity\.ActivityDTO|com.danielagapov.spawn.activity.api.dto.ActivityDTO|g' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.Activity\.FullFeedActivityDTO|com.danielagapov.spawn.activity.api.dto.FullFeedActivityDTO|g' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.Activity\.ActivityParticipationDTO|com.danielagapov.spawn.activity.api.dto.ActivityParticipationDTO|g' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.Activity\.LocationDTO|com.danielagapov.spawn.activity.api.dto.LocationDTO|g' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.Activity\.|com.danielagapov.spawn.activity.api.dto.|g' \
+  -e 's|com\.danielagapov\.spawn\.DTOs\.ActivityType\.ActivityTypeDTO|com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO|g' \
+  -e 's|com\.danielagapov\.spawn\.DTOs\.ActivityType\.BatchActivityTypeUpdateDTO|com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO|g' \
   {} +
 
 # DTOs - User
@@ -29,7 +22,6 @@ find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.DTOs\.User\.AbstractUserDTO|com.danielagapov.spawn.user.api.dto.AbstractUserDTO|g' \
   -e 's|com\.danielagapov\.spawn\.DTOs\.User\.BaseUserDTO|com.danielagapov.spawn.user.api.dto.BaseUserDTO|g' \
   -e 's|com\.danielagapov\.spawn\.DTOs\.User\.FriendUser\.FullFriendUserDTO|com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO|g' \
-  -e 's|com\.danielagapov\.spawn\.DTOs\.User\.|com.danielagapov.spawn.user.api.dto.|g' \
   {} +
 
 # DTOs - BlockedUser
@@ -49,16 +41,12 @@ find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.Services\.ActivityType\.IActivityTypeService|com.danielagapov.spawn.activity.internal.services.IActivityTypeService|g' \
   -e 's|com\.danielagapov\.spawn\.Services\.ActivityType\.ActivityTypeService|com.danielagapov.spawn.activity.internal.services.ActivityTypeService|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.Activity\.IActivityExpirationService|com.danielagapov.spawn.activity.internal.services.IActivityExpirationService|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.Activity\.IActivityService|com.danielagapov.spawn.activity.internal.services.IActivityService|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.Activity\.ActivityService|com.danielagapov.spawn.activity.internal.services.ActivityService|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.Activity\.|com.danielagapov.spawn.activity.internal.services.|g' \
   {} +
 
 # Services - User
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.Services\.User\.IUserService|com.danielagapov.spawn.user.internal.services.IUserService|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.BlockedUser\.IBlockedUserService|com.danielagapov.spawn.social.internal.services.IBlockedUserService|g' \
+  -e 's|com\.danielagapov\.spawn\.Services\.BlockedUser\.IBlockedUserService|com.danielagapov.spawn.user.internal.services.IBlockedUserService|g' \
   {} +
 
 # Services - Social/Friend
@@ -66,30 +54,23 @@ find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.Services\.FriendRequest\.IFriendRequestService|com.danielagapov.spawn.social.internal.services.IFriendRequestService|g' \
   {} +
 
-# Services - Other
+# Services - Auth and S3
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.Services\.Auth\.IAuthService|com.danielagapov.spawn.auth.internal.services.IAuthService|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.S3\.IS3Service|com.danielagapov.spawn.media.internal.services.IS3Service|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.Location\.|com.danielagapov.spawn.location.internal.services.|g' \
-  -e 's|com\.danielagapov\.spawn\.Services\.ChatMessage\.|com.danielagapov.spawn.chat.internal.services.|g' \
+  -e 's|com\.danielagapov\.spawn\.Services\.S3\.IS3Service|com.danielagapov.spawn.storage.internal.services.IS3Service|g' \
   {} +
 
 # Models/Domain
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.Models\.ActivityType|com.danielagapov.spawn.activity.internal.domain.ActivityType|g' \
-  -e 's|com\.danielagapov\.spawn\.Models\.Activity|com.danielagapov.spawn.activity.internal.domain.Activity|g' \
   -e 's|com\.danielagapov\.spawn\.Models\.User\.User|com.danielagapov.spawn.user.internal.domain.User|g' \
   -e 's|com\.danielagapov\.spawn\.Models\.Friendship|com.danielagapov.spawn.social.internal.domain.Friendship|g' \
   -e 's|com\.danielagapov\.spawn\.Models\.FriendRequest|com.danielagapov.spawn.social.internal.domain.FriendRequest|g' \
-  -e 's|com\.danielagapov\.spawn\.Models\.Location|com.danielagapov.spawn.location.internal.domain.Location|g' \
-  -e 's|com\.danielagapov\.spawn\.Models\.CompositeKeys\.|com.danielagapov.spawn.activity.internal.domain.|g' \
   {} +
 
 # Repositories
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.Repositories\.IActivityTypeRepository|com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository|g' \
-  -e 's|com\.danielagapov\.spawn\.Repositories\.IActivityRepository|com.danielagapov.spawn.activity.internal.repositories.IActivityRepository|g' \
-  -e 's|com\.danielagapov\.spawn\.Repositories\.IActivityParticipationRepository|com.danielagapov.spawn.activity.internal.repositories.IActivityParticipationRepository|g' \
   -e 's|com\.danielagapov\.spawn\.Repositories\.User\.IUserRepository|com.danielagapov.spawn.user.internal.repositories.IUserRepository|g' \
   -e 's|com\.danielagapov\.spawn\.Repositories\.IFriendshipRepository|com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository|g' \
   -e 's|com\.danielagapov\.spawn\.Repositories\.IFriendRequestsRepository|com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository|g' \
@@ -97,18 +78,10 @@ find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
 
 # Exceptions
 find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
-  -e 's|com\.danielagapov\.spawn\.Exceptions\.Logger\.ILogger|com.danielagapov.spawn.shared.exceptions.ILogger|g' \
+  -e 's|com\.danielagapov\.spawn\.Exceptions\.Logger\.ILogger|com.danielagapov.spawn.shared.exceptions.Logger.ILogger|g' \
   -e 's|com\.danielagapov\.spawn\.Exceptions\.ActivityTypeValidationException|com.danielagapov.spawn.shared.exceptions.ActivityTypeValidationException|g' \
-  -e 's|com\.danielagapov\.spawn\.Exceptions\.ApplicationException|com.danielagapov.spawn.shared.exceptions.ApplicationException|g' \
-  -e 's|com\.danielagapov\.spawn\.Exceptions\.Base\.BaseNotFoundException|com.danielagapov.spawn.shared.exceptions.BaseNotFoundException|g' \
-  -e 's|com\.danielagapov\.spawn\.Exceptions\.Base\.BasesNotFoundException|com.danielagapov.spawn.shared.exceptions.BasesNotFoundException|g' \
-  -e 's|com\.danielagapov\.spawn\.Exceptions\.|com.danielagapov.spawn.shared.exceptions.|g' \
-  {} +
-
-# Mappers/Utils
-find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
-  -e 's|com\.danielagapov\.spawn\.Mappers\.ActivityMapper|com.danielagapov.spawn.shared.util.ActivityMapper|g' \
-  -e 's|com\.danielagapov\.spawn\.Mappers\.|com.danielagapov.spawn.shared.util.|g' \
+  -e 's|com\.danielagapov\.spawn\.Exceptions\.Base\.BaseNotFoundException|com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException|g' \
+  -e 's|com\.danielagapov\.spawn\.Exceptions\.Base\.BasesNotFoundException|com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException|g' \
   {} +
 
 # Enums/Utils
@@ -116,9 +89,9 @@ find "$TEST_DIR" -type f -name "*.java" -exec sed -i '' \
   -e 's|com\.danielagapov\.spawn\.Enums\.EntityType|com.danielagapov.spawn.shared.util.EntityType|g' \
   -e 's|com\.danielagapov\.spawn\.Enums\.FriendRequestAction|com.danielagapov.spawn.shared.util.FriendRequestAction|g' \
   -e 's|com\.danielagapov\.spawn\.Enums\.UserStatus|com.danielagapov.spawn.shared.util.UserStatus|g' \
-  -e 's|com\.danielagapov\.spawn\.Enums\.ParticipationStatus|com.danielagapov.spawn.shared.util.ParticipationStatus|g' \
-  -e 's|com\.danielagapov\.spawn\.Enums\.|com.danielagapov.spawn.shared.util.|g' \
   {} +
 
-echo "All test imports fixed successfully!"
+echo "Test imports fixed successfully!"
+
+
 
