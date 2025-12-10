@@ -15,17 +15,17 @@ Table of contents:
 
 ## Architecture, Dependency Injection, Testing, & Entities vs. DTOs (+ Mappers)
 
-![diagrams-architecture-dependency-injection-dtos](diagrams/diagrams-architecture-dependency-injection-dtos.png)
+![diagrams-architecture-dependency-injection-dtos](docs/diagrams/diagrams-architecture-dependency-injection-dtos.png)
 
 # Relationship Diagrams
 
 ## Entity Relationship Diagram
 
-![entity-relationship-diagram-Nov-20-v4-location-db-table](diagrams/entity-relationship-diagram.png)
+![entity-relationship-diagram-Nov-20-v4-location-db-table](docs/diagrams/entity-relationship-diagram.png)
 
 ## User DTO Relationships
 
-![user-dto-relationships.png](diagrams/user-dto-relationships.png)
+![user-dto-relationships.png](docs/diagrams/user-dto-relationships.png)
 
 # Code Explanations
 
