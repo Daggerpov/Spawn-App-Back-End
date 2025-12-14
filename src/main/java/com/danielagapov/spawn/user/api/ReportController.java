@@ -29,8 +29,8 @@ public final class ReportController {
         this.logger = logger;
     }
 
-    // full path: /api/v1/reports/create
-    @PostMapping("/create")
+    // full path: POST /api/v1/reports
+    @PostMapping
     public ResponseEntity<ReportedContentDTO> createReportSimplified(@RequestBody CreateReportedContentDTO createReportDTO) {
         try {
             ReportedContentDTO newReport = reportService.fileReport(createReportDTO);
@@ -41,8 +41,8 @@ public final class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/fetch?reportType=?<ReportType>&contentType=<EntityType>
-    @GetMapping("/fetch")
+    // full path: GET /api/v1/reports?reportType=<ReportType>&contentType=<EntityType>
+    @GetMapping
     public ResponseEntity<List<FetchReportedContentDTO>> getFetchReports(
             @RequestParam(value = "reportType", required = false) ReportType reportType,
             @RequestParam(value = "contentType", required = false) EntityType contentType
@@ -56,8 +56,8 @@ public final class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/fetch/reporter/{reporterId}
-    @GetMapping("/fetch/reporter/{reporterId}")
+    // full path: GET /api/v1/reports/reporter/{reporterId}
+    @GetMapping("/reporter/{reporterId}")
     public ResponseEntity<?> getFetchReportsByReporter(@PathVariable UUID reporterId) {
         if (reporterId == null) {
             logger.error("Invalid parameter: reporterId is null");
@@ -82,8 +82,8 @@ public final class ReportController {
         }
     }
 
-    // full path: /api/v1/reports/fetch/content-owner/{contentOwnerId}
-    @GetMapping("/fetch/content-owner/{contentOwnerId}")
+    // full path: GET /api/v1/reports/content-owner/{contentOwnerId}
+    @GetMapping("/content-owner/{contentOwnerId}")
     public ResponseEntity<?> getFetchReportsByContentOwner(@PathVariable UUID contentOwnerId) {
         if (contentOwnerId == null) {
             logger.error("Invalid parameter: contentOwnerId is null");
