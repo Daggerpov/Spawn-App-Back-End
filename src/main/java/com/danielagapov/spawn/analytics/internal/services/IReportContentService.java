@@ -31,5 +31,14 @@ public interface IReportContentService {
      */
     List<FetchReportedContentDTO> getFetchReportsByFilters(ReportType reportType, EntityType contentType);
 
+    /**
+     * Updates the resolution status of a report
+     */
+    ReportedContentDTO updateReportStatus(UUID reportId, String resolution);
+
+    /**
+     * Deletes a report by id
+     */
+    void deleteReport(UUID reportId);
 
 }

@@ -5,9 +5,9 @@ import com.danielagapov.spawn.analytics.api.dto.FetchReportedContentDTO;
 import com.danielagapov.spawn.analytics.api.dto.ReportedContentDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.ReportType;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.BasesNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.analytics.internal.services.IReportContentService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.http.HttpStatus;
@@ -108,5 +108,49 @@ public final class ReportController {
         }
     }
 
+    // full path: PUT /api/v1/reports/{reportId}?resolution={resolution}
+    @PutMapping("/{reportId}")
+    public ResponseEntity<?> updateReportStatus(
+            @PathVariable UUID reportId,
+            @RequestParam String resolution
+    ) {
+        if (reportId == null) {
+            logger.error("Invalid parameter: reportId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        if (resolution == null || resolution.trim().isEmpty()) {
+            logger.error("Invalid parameter: resolution is null or empty");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            ReportedContentDTO updatedReport = reportService.updateReportStatus(reportId, resolution);
+            return ResponseEntity.ok(updatedReport);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error updating report status: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error updating report status for reportId: " + reportId + ": " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // full path: DELETE /api/v1/reports/{reportId}
+    @DeleteMapping("/{reportId}")
+    public ResponseEntity<?> deleteReport(@PathVariable UUID reportId) {
+        if (reportId == null) {
+            logger.error("Invalid parameter: reportId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            reportService.deleteReport(reportId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Error deleting report: " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Unexpected error deleting report with id: " + reportId + ": " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
 }
