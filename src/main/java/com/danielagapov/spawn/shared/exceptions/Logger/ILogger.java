@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.shared.exceptions;
+package com.danielagapov.spawn.shared.exceptions.Logger;
 
 public interface ILogger {
     void info(String message);

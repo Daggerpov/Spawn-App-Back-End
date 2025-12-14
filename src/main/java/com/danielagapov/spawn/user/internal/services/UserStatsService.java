@@ -3,7 +3,7 @@ package com.danielagapov.spawn.user.internal.services;
 import com.danielagapov.spawn.user.api.dto.UserStatsDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.activity.internal.domain.ActivityUser;
 import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;
 import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;

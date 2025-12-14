@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.shared.exceptions;
+package com.danielagapov.spawn.shared.exceptions.Base;
 
 public class BaseSaveException extends RuntimeException {
     public BaseSaveException(String message) {

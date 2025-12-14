@@ -6,7 +6,7 @@ import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.auth.api.dto.OAuthRegistrationDTO;
 import com.danielagapov.spawn.shared.util.OAuthProvider;
 import com.danielagapov.spawn.shared.util.UserStatus;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.auth.internal.domain.UserIdExternalIdMap;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;

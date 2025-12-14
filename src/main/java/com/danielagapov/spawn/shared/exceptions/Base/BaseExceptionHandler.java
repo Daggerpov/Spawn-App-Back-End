@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.shared.exceptions;
+package com.danielagapov.spawn.shared.exceptions.Base;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

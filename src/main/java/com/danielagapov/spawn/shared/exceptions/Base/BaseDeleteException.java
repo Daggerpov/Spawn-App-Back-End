@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.shared.exceptions;
+package com.danielagapov.spawn.shared.exceptions.Base;
 
 public class BaseDeleteException extends RuntimeException {
     public BaseDeleteException(String message) {

@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.notification.internal.services;
 
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.google.firebase.messaging.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

@@ -2,7 +2,7 @@ package com.danielagapov.spawn.media.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.shared.exceptions.ApplicationException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.UserMapper;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.services.UserService;

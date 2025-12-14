@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.user.api;
 
 import com.danielagapov.spawn.activity.api.dto.CalendarActivityDTO;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.activity.internal.services.ICalendarService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -4,7 +4,7 @@ import com.danielagapov.spawn.activity.api.ActivityTypeController;
 import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
 import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.exceptions.ActivityTypeValidationException;
 import com.danielagapov.spawn.activity.internal.domain.ActivityType;
 import com.danielagapov.spawn.user.internal.domain.User;

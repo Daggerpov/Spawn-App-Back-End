@@ -5,7 +5,7 @@ import com.danielagapov.spawn.notification.api.dto.NotificationPreferencesDTO;
 import com.danielagapov.spawn.shared.util.NotificationType;
 import com.danielagapov.spawn.shared.events.NotificationEvent;
 import com.danielagapov.spawn.shared.events.PushRegistrationNotificationEvent;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.notification.internal.domain.DeviceToken;
 import com.danielagapov.spawn.notification.internal.domain.NotificationPreferences;
 import com.danielagapov.spawn.user.internal.domain.User;

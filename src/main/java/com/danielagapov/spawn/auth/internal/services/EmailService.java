@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.auth.internal.services;
 
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.EmailTemplates;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.mail.MessagingException;

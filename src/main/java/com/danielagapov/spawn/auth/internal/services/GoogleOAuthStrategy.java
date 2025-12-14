@@ -2,7 +2,7 @@ package com.danielagapov.spawn.auth.internal.services;
 
 
 import com.danielagapov.spawn.shared.util.OAuthProvider;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.exceptions.TokenExpiredException;
 import com.danielagapov.spawn.shared.exceptions.OAuthProviderUnavailableException;
 import com.danielagapov.spawn.shared.util.RetryHelper;

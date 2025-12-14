@@ -10,7 +10,7 @@ import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.shared.util.UserStatus;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.FriendUserMapper;
 import com.danielagapov.spawn.shared.util.UserMapper;
 import com.danielagapov.spawn.activity.internal.domain.ActivityUser;

@@ -4,9 +4,9 @@ import com.danielagapov.spawn.analytics.api.dto.CreateFeedbackSubmissionDTO;
 import com.danielagapov.spawn.analytics.api.dto.FetchFeedbackSubmissionDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.FeedbackStatus;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.BaseSaveException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.FeedbackSubmissionMapper;
 import com.danielagapov.spawn.analytics.internal.domain.FeedbackSubmission;
 import com.danielagapov.spawn.user.internal.domain.User;
@@ -17,6 +17,7 @@ import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
+    @Transactional
     public FetchFeedbackSubmissionDTO submitFeedback(CreateFeedbackSubmissionDTO dto) {
         try {
             // Find user
@@ -86,6 +88,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
+    @Transactional
     public FetchFeedbackSubmissionDTO resolveFeedback(UUID id, String resolutionComment) {
         try {
             FeedbackSubmission feedback = repository.findById(id)
@@ -111,6 +114,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
+    @Transactional
     public FetchFeedbackSubmissionDTO markFeedbackInProgress(UUID id, String comment) {
         try {
             FeedbackSubmission feedback = repository.findById(id)
@@ -137,6 +141,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
+    @Transactional
     public FetchFeedbackSubmissionDTO updateFeedbackStatus(UUID id, FeedbackStatus status, String comment) {
         try {
             FeedbackSubmission feedback = repository.findById(id)
@@ -163,6 +168,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FetchFeedbackSubmissionDTO> getAllFeedbacks() {
         try {
             logger.info("Retrieving all feedback submissions");
@@ -179,6 +185,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     }
 
     @Override
+    @Transactional
     public void deleteFeedback(UUID id) {
         try {
             FeedbackSubmission feedback = repository.findById(id).orElse(null);

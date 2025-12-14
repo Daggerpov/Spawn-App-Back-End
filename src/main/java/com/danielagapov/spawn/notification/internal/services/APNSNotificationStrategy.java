@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.notification.internal.services;
 
 import com.danielagapov.spawn.shared.util.DeviceType;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.notnoop.apns.APNS;
 import com.notnoop.apns.ApnsNotification;
 import com.notnoop.apns.ApnsService;

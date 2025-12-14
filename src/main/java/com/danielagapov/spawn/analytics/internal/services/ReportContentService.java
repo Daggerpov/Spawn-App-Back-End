@@ -5,14 +5,15 @@ import com.danielagapov.spawn.analytics.api.dto.FetchReportedContentDTO;
 import com.danielagapov.spawn.analytics.api.dto.ReportedContentDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.ReportType;
-import com.danielagapov.spawn.shared.exceptions.BasesNotFoundException;
+import com.danielagapov.spawn.shared.util.ResolutionStatus;
+import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.analytics.internal.domain.ReportedContent;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.analytics.internal.repositories.IReportedContentRepository;
 import com.danielagapov.spawn.chat.internal.services.IChatMessageService;
 import com.danielagapov.spawn.activity.internal.services.IActivityService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
-import com.danielagapov.spawn.shared.exceptions.Logger;
+import com.danielagapov.spawn.shared.exceptions.Logger.Logger;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -116,6 +117,38 @@ public class ReportContentService implements IReportContentService {
             logger.error("Unexpected error while getting reports: " + e.getMessage());
             throw e;
         }
+    }
+
+    @Override
+    public ReportedContentDTO updateReportStatus(UUID reportId, String resolution) {
+        ReportedContent report = repository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("Report not found with id: " + reportId));
+        
+        ResolutionStatus resolutionStatus;
+        try {
+            // Handle special cases for frontend compatibility
+            if ("REJECTED".equalsIgnoreCase(resolution)) {
+                resolutionStatus = ResolutionStatus.FALSE;
+            } else {
+                // Try to parse as enum value (PENDING, FALSE, BAN, SUSPENSION, WARN)
+                resolutionStatus = ResolutionStatus.valueOf(resolution.toUpperCase());
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid resolution status: " + resolution + 
+                    ". Valid values are: PENDING, FALSE, BAN, SUSPENSION, WARN, or REJECTED");
+        }
+        
+        report.setResolution(resolutionStatus);
+        ReportedContent updatedReport = repository.save(report);
+        return ReportedContentDTO.fromEntity(updatedReport);
+    }
+
+    @Override
+    public void deleteReport(UUID reportId) {
+        if (!repository.existsById(reportId)) {
+            throw new IllegalArgumentException("Report not found with id: " + reportId);
+        }
+        repository.deleteById(reportId);
     }
 
 

@@ -2,7 +2,7 @@ package com.danielagapov.spawn.notification.api;
 
 import com.danielagapov.spawn.notification.api.dto.DeviceTokenDTO;
 import com.danielagapov.spawn.notification.api.dto.NotificationPreferencesDTO;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.notification.internal.services.FCMService;
 import com.danielagapov.spawn.notification.internal.services.NotificationService;
 import com.danielagapov.spawn.notification.internal.services.NotificationVO;

@@ -2,9 +2,9 @@ package com.danielagapov.spawn.analytics.internal.services;
 
 import com.danielagapov.spawn.analytics.api.dto.BetaAccessSignUpDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
-import com.danielagapov.spawn.shared.exceptions.BaseSaveException;
-import com.danielagapov.spawn.shared.exceptions.BasesNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.BetaAccessSignUpMapper;
 import com.danielagapov.spawn.analytics.internal.domain.BetaAccessSignUp;
 import com.danielagapov.spawn.analytics.internal.repositories.IBetaAccessSignUpRepository;

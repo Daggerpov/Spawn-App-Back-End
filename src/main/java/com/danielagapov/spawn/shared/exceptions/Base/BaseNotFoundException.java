@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.shared.exceptions;
+package com.danielagapov.spawn.shared.exceptions.Base;
 
 import com.danielagapov.spawn.shared.util.EntityType;
 
