@@ -150,7 +150,8 @@ public final class FeedbackSubmissionController {
      * @return A no content response (204--standard for deletions)
      * if the feedback was deleted successfully, otherwise an error response.
      */
-    @DeleteMapping("/delete/{id}")
+    // full path: /api/v1/feedback/{id}
+    @DeleteMapping("/{id}")
     public ResponseEntity<FetchFeedbackSubmissionDTO> deleteFeedback(@PathVariable UUID id) {
         try {
             service.deleteFeedback(id);
