@@ -4,6 +4,7 @@ import com.danielagapov.spawn.activity.api.dto.LocationDTO;
 import com.danielagapov.spawn.shared.exceptions.ApplicationException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.activity.internal.domain.Location;
 import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
 import com.danielagapov.spawn.activity.internal.services.LocationService;
@@ -27,7 +28,7 @@ public class LocationServiceTests {
     private ILocationRepository locationRepository;
 
     @Mock
-    private com.danielagapov.spawn.shared.exceptions.ILogger logger;
+    private ILogger logger;
 
     @InjectMocks
     private LocationService locationService;
