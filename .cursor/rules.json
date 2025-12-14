@@ -600,6 +600,45 @@
     ],
     "success_criteria": "All tests must pass with output showing 'Tests run: 206, Failures: 0, Errors: 0, Skipped: 0'"
   },
+  "compilation_verification_order": {
+    "description": "CRITICAL: Always verify both application AND test compilation in the correct order",
+    "mandatory_workflow": [
+      "1. FIRST: Compile the application code with './mvnw clean compile'",
+      "2. SECOND: Compile the test code with './mvnw test-compile'",
+      "3. Fix any compilation errors in order (application first, then tests)",
+      "4. NEVER assume tests compile just because application compiles",
+      "5. ALWAYS verify both before considering compilation complete"
+    ],
+    "why_this_matters": [
+      "Application compilation only checks src/main/java/**",
+      "Test compilation checks src/test/java/** which often has different imports",
+      "Test files frequently get missed during global import updates",
+      "Compilation errors in tests are just as critical as in application code"
+    ],
+    "compilation_commands": {
+      "application_only": "./mvnw clean compile",
+      "tests_only": "./mvnw test-compile",
+      "both_plus_run_tests": "./mvnw clean test"
+    },
+    "common_test_compilation_issues": [
+      "Imports not updated in test files (especially after package restructuring)",
+      "Fully qualified class names in test code instead of imports",
+      "Mock objects using old package paths",
+      "Test utilities and helpers with outdated imports"
+    ],
+    "enforcement": [
+      "ALWAYS run both './mvnw compile' AND './mvnw test-compile' after structural changes",
+      "NEVER consider compilation 'fixed' until both application and tests compile",
+      "Pay extra attention to test files when refactoring package structures",
+      "Verify test compilation before running actual tests"
+    ],
+    "success_criteria": [
+      "✓ Application compilation: BUILD SUCCESS with 0 errors",
+      "✓ Test compilation: BUILD SUCCESS with 0 errors",
+      "✓ No 'cannot find symbol' errors in any file",
+      "✓ All imports resolved correctly in both main and test code"
+    ]
+  },
   "mandatory_test_execution_after_unit_test_changes": {
     "description": "CRITICAL: Always run tests after adding, modifying, or adjusting unit tests and fix all failures",
     "trigger_conditions": [

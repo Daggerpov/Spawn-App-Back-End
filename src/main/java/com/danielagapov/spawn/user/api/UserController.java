@@ -117,8 +117,8 @@ public final class UserController {
         }
     }
 
-    // full path: /api/v1/users/update-pfp/{id}
-    @PatchMapping("update-pfp/{id}")
+    // full path: /api/v1/users/{id}/profile-picture
+    @PatchMapping("{id}/profile-picture")
     public ResponseEntity<UserDTO> updatePfp(@PathVariable UUID id, @RequestBody byte[] file) {
         if (id == null) {
             logger.error("Invalid parameter: user ID is null");
@@ -173,8 +173,8 @@ public final class UserController {
         }
     }
 
-    // full path: /api/v1/users/update/{id}
-    @PatchMapping("update/{id}")
+    // full path: /api/v1/users/{id}
+    @PatchMapping("{id}")
     public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
         if (id == null) {
             logger.error("Invalid parameter: user ID is null");

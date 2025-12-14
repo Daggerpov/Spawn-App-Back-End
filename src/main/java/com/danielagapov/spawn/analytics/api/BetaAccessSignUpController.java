@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.Map;
 
 @RestController()
-@RequestMapping("api/v1/betaAccessSignUp")
+@RequestMapping("api/v1/beta-access-sign-up")
 public final class BetaAccessSignUpController {
     private final IBetaAccessSignUpService service;
     private final ILogger logger;
@@ -23,7 +23,7 @@ public final class BetaAccessSignUpController {
         this.logger = logger;
     }
 
-    // full path: /api/v1/betaAccessSignUp/emails
+    // full path: /api/v1/beta-access-sign-up/emails
 
     /**
      * Use case: when we'll want to send out emails for the beta access
@@ -41,7 +41,7 @@ public final class BetaAccessSignUpController {
         }
     }
 
-    // full path: /api/v1/betaAccessSignUp/records
+    // full path: /api/v1/beta-access-sign-up/records
 
     /**
      * @return returns all signed-up users, for our own internal reference,
@@ -60,7 +60,7 @@ public final class BetaAccessSignUpController {
         }
     }
 
-    // full path: /api/v1/betaAccessSignUp/{id}/emailed
+    // full path: /api/v1/beta-access-sign-up/{id}/emailed
     
     /**
      * Update the hasBeenEmailed flag for a beta access sign up
@@ -89,7 +89,7 @@ public final class BetaAccessSignUpController {
         }
     }
 
-    // full path: /api/v1/betaAccessSignUp
+    // full path: /api/v1/beta-access-sign-up
 
     /**
      * Sign-up endpoint for creating a new record

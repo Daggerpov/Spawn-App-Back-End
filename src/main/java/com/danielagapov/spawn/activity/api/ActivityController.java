@@ -171,15 +171,15 @@ public final class ActivityController {
     }
 
     // this corresponds to the button on the activity for invited users
-    // full path: /api/v1/activities/{ActivityId}/toggleStatus/{userId}
-    @PutMapping("{ActivityId}/toggleStatus/{userId}")
-    public ResponseEntity<?> toggleParticipation(@PathVariable UUID ActivityId, @PathVariable UUID userId) {
-        if (userId == null || ActivityId == null) {
-            logger.error("Invalid parameters: userId or ActivityId is null");
+    // full path: /api/v1/activities/{activityId}/toggle-status/{userId}
+    @PutMapping("{activityId}/toggle-status/{userId}")
+    public ResponseEntity<?> toggleParticipation(@PathVariable UUID activityId, @PathVariable UUID userId) {
+        if (userId == null || activityId == null) {
+            logger.error("Invalid parameters: userId or activityId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            FullFeedActivityDTO updatedActivityAfterParticipationToggle = activityService.toggleParticipation(ActivityId, userId);
+            FullFeedActivityDTO updatedActivityAfterParticipationToggle = activityService.toggleParticipation(activityId, userId);
             return new ResponseEntity<>(updatedActivityAfterParticipationToggle, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             // Only return 404 for appropriate entity types
@@ -187,29 +187,29 @@ public final class ActivityController {
                 logger.error("User not found for participation toggle: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             } else if (e.entityType == EntityType.Activity) {
-                logger.error("Activity not found for participation toggle: " + ActivityId + ": " + e.getMessage());
+                logger.error("Activity not found for participation toggle: " + activityId + ": " + e.getMessage());
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             } else if (e.entityType == EntityType.ActivityUser) {
                 // If the user is not invited to the activity, return 404
-                logger.error("User not invited to activity for participation toggle: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + ActivityId + ": " + e.getMessage());
+                logger.error("User not invited to activity for participation toggle: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + activityId + ": " + e.getMessage());
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             } else {
                 logger.error("Entity not found for participation toggle: " + e.getMessage());
                 return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
             }
         } catch (ActivityFullException e) {
-            logger.error("Activity is full for participation toggle: " + ActivityId + ": " + e.getMessage());
+            logger.error("Activity is full for participation toggle: " + activityId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            logger.error("Error toggling participation for user: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + ActivityId + ": " + e.getMessage());
+            logger.error("Error toggling participation for user: " + LoggingUtils.formatUserIdInfo(userId) + " in activity: " + activityId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // full path: /api/v1/activities/feedActivities/{requestingUserId}
+    // full path: /api/v1/activities/feed-activities/{requestingUserId}
     // this method will return the activities created by a given user (like in `getActivitiesCreatedByUserId()`),
     // in the universal accent color, followed by feed activities (like in `getActivitiesInvitedTo()`
-    @GetMapping("feedActivities/{requestingUserId}")
+    @GetMapping("feed-activities/{requestingUserId}")
     // need this `? extends AbstractActivityDTO` instead of simply `AbstractActivityDTO`, because of this error:
     // https://stackoverflow.com/questions/27522741/incompatible-types-inference-variable-t-has-incompatible-bounds
     public ResponseEntity<?> getFeedActivities(@PathVariable UUID requestingUserId) {
