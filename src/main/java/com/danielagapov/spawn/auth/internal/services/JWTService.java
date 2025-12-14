@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.auth.internal.services;
 
-import com.danielagapov.spawn.shared.exceptions.ILogger;
-import com.danielagapov.spawn.shared.exceptions.BadTokenException;
-import com.danielagapov.spawn.shared.exceptions.TokenNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Token.BadTokenException;
+import com.danielagapov.spawn.shared.exceptions.Token.TokenNotFoundException;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;

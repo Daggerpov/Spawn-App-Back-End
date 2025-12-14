@@ -2,8 +2,8 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.activity.api.dto.LocationDTO;
 import com.danielagapov.spawn.shared.exceptions.ApplicationException;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.activity.internal.domain.Location;
 import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
 import com.danielagapov.spawn.activity.internal.services.LocationService;

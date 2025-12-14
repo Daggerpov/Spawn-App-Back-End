@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.analytics.api;
 
 import com.danielagapov.spawn.analytics.api.dto.BetaAccessSignUpDTO;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.analytics.internal.services.IBetaAccessSignUpService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -3,7 +3,7 @@ package com.danielagapov.spawn.ServiceTests;
 import com.danielagapov.spawn.user.api.dto.AuthUserDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.user.api.dto.UserDTO;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.auth.internal.repositories.IEmailVerificationRepository;
 import com.danielagapov.spawn.auth.internal.services.AuthService;

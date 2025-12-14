@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.social.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.BlockedUserDTO;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.BaseSaveException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.BlockedUserMapper;
 import com.danielagapov.spawn.user.internal.domain.BlockedUser;
 import com.danielagapov.spawn.user.internal.domain.User;

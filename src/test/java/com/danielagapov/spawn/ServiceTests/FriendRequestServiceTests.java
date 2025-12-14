@@ -2,9 +2,9 @@ package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
 import com.danielagapov.spawn.social.api.dto.FetchFriendRequestDTO;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.BaseSaveException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.social.internal.domain.FriendRequest;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository;

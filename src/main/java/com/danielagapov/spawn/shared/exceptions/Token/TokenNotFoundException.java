@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.shared.exceptions;
+package com.danielagapov.spawn.shared.exceptions.Token;
 
 public class TokenNotFoundException extends RuntimeException {
     public TokenNotFoundException(String message) {

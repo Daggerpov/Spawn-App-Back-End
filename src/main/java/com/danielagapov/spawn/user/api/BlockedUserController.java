@@ -2,7 +2,7 @@ package com.danielagapov.spawn.user.api;
 
 import com.danielagapov.spawn.user.api.dto.BlockedUserCreationDTO;
 import com.danielagapov.spawn.user.api.dto.BlockedUserDTO;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;

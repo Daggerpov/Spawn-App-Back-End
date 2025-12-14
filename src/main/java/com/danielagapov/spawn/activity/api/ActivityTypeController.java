@@ -2,7 +2,7 @@ package com.danielagapov.spawn.activity.api;
 
 import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
 import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;

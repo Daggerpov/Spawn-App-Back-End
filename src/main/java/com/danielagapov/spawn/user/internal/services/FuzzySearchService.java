@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.shared.config.FuzzySearchConfig;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.text.similarity.JaroWinklerDistance;

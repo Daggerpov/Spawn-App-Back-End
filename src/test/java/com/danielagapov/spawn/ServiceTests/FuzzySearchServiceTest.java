@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.shared.config.FuzzySearchConfig;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.services.FuzzySearchService;
 import org.apache.commons.text.similarity.JaroWinklerDistance;
 import org.junit.jupiter.api.BeforeEach;

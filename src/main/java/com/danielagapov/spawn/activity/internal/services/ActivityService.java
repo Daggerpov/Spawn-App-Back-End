@@ -11,10 +11,10 @@ import com.danielagapov.spawn.shared.events.ActivityParticipationNotificationEve
 import com.danielagapov.spawn.shared.events.ActivityUpdateNotificationEvent;
 import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.ApplicationException;
-import com.danielagapov.spawn.shared.exceptions.BaseNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.BaseSaveException;
-import com.danielagapov.spawn.shared.exceptions.BasesNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.ActivityMapper;
 import com.danielagapov.spawn.shared.util.LocationMapper;
 import com.danielagapov.spawn.shared.util.UserMapper;

@@ -4,7 +4,7 @@ import com.danielagapov.spawn.user.api.BlockedUserController;
 import com.danielagapov.spawn.user.api.dto.BlockedUserCreationDTO;
 import com.danielagapov.spawn.user.api.dto.BlockedUserDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -2,7 +2,7 @@ package com.danielagapov.spawn.activity.internal.services;
 
 import com.danielagapov.spawn.activity.api.dto.CalendarActivityDTO;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.activity.internal.domain.Activity;
 import com.danielagapov.spawn.activity.internal.domain.ActivityUser;
 import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;

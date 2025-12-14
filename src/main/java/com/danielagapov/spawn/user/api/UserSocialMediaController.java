@@ -2,7 +2,7 @@ package com.danielagapov.spawn.user.api;
 
 import com.danielagapov.spawn.user.api.dto.UpdateUserSocialMediaDTO;
 import com.danielagapov.spawn.user.api.dto.UserSocialMediaDTO;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.services.IUserSocialMediaService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;

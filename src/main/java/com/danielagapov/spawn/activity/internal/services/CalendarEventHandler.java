@@ -3,7 +3,7 @@ package com.danielagapov.spawn.activity.internal.services;
 import com.danielagapov.spawn.shared.events.ActivityInviteNotificationEvent;
 import com.danielagapov.spawn.shared.events.ActivityUpdateNotificationEvent;
 import com.danielagapov.spawn.shared.events.ActivityParticipationNotificationEvent;
-import com.danielagapov.spawn.shared.exceptions.ILogger;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
