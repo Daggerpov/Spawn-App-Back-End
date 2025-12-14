@@ -83,6 +83,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> {
                     authorize.requestMatchers(whitelistedUrls).permitAll();
                     authorize.requestMatchers(RegexRequestMatcher.regexMatcher(HttpMethod.GET, "/api/v1/activities/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\\?.*)?")).permitAll(); // Allow GET requests to specific activity by UUID for external invites (with optional query parameters)
+                    authorize.requestMatchers(HttpMethod.POST, "/api/v1/betaAccessSignUp").permitAll(); // Allow POST requests for beta access signup
+                    authorize.requestMatchers(HttpMethod.GET, "/api/v1/share/activity/**").permitAll(); // Allow GET requests to resolve activity share codes
+                    authorize.requestMatchers(HttpMethod.GET, "/api/v1/share/profile/**").permitAll(); // Allow GET requests to resolve profile share codes
+                    authorize.requestMatchers(HttpMethod.GET, "/api/v1/share/validate/**").permitAll(); // Allow GET requests to validate share codes
                     
                     // Add whitelisted URL patterns
                     for (String pattern : whitelistedUrlPatterns) {
@@ -93,8 +97,11 @@ public class SecurityConfig {
                         authorize.requestMatchers(pattern).hasRole("ONBOARDING");
                     }
 
+                    authorize.requestMatchers("/api/v1/reports/**").hasAnyRole("ADMIN","ONBOARDING","ACTIVE");
+                    authorize.requestMatchers("/api/v1/feedback/**").hasAnyRole("ADMIN","ONBOARDING","ACTIVE");
+                    authorize.requestMatchers("/api/v1/betaAccessSignUp/**").hasAnyRole("ADMIN","ONBOARDING","ACTIVE");
+                    
                     authorize.requestMatchers("/api/v1/auth/quick-sign-in").hasAnyRole("ONBOARDING","ACTIVE");
-                    authorize.requestMatchers("/api/v1/reports/**").hasAnyRole("ONBOARDING","ACTIVE");
                     authorize.requestMatchers("/api/v1/**").hasRole("ACTIVE");
                     authorize.anyRequest().authenticated(); // Comment this out if wanting to unsecure endpoints for development purposes
                 })
