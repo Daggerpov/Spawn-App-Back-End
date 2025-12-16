@@ -26,9 +26,9 @@ import java.util.UUID;
         name = "friend_request",
         uniqueConstraints = @UniqueConstraint(columnNames = {"sender_id", "receiver_id"}),
         indexes = {
-                @Index(name = "idx_sender_id", columnList = "sender_id"),
-                @Index(name = "idx_receiver_id", columnList = "receiver_id"),
-                @Index(name = "idx_created_at", columnList = "created_at")
+                @Index(name = "idx_friend_request_sender_id", columnList = "sender_id"),
+                @Index(name = "idx_friend_request_receiver_id", columnList = "receiver_id"),
+                @Index(name = "idx_friend_request_created_at", columnList = "created_at")
         }
 )
 @NoArgsConstructor
