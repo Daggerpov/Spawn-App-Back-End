@@ -86,7 +86,7 @@ class BlockedUserControllerTests {
         doNothing().when(blockedUserService).blockUser(blockerId, blockedId, "Inappropriate behavior");
 
         // Act & Assert
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(blockedUserCreationDTO)))
                 .andExpect(status().isNoContent());
@@ -102,7 +102,7 @@ class BlockedUserControllerTests {
             .when(blockedUserService).blockUser(blockerId, blockedId, "Inappropriate behavior");
 
         // Act & Assert
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(blockedUserCreationDTO)))
                 .andExpect(status().isInternalServerError());
@@ -113,7 +113,7 @@ class BlockedUserControllerTests {
     @Test
     void blockUser_ShouldReturnBadRequest_WhenInvalidJson() throws Exception {
         // Act & Assert
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{invalid json}"))
                 .andExpect(status().isBadRequest());
@@ -122,7 +122,7 @@ class BlockedUserControllerTests {
     @Test
     void blockUser_ShouldReturnBadRequest_WhenMissingRequestBody() throws Exception {
         // Act & Assert
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
@@ -139,7 +139,7 @@ class BlockedUserControllerTests {
         doNothing().when(blockedUserService).blockUser(blockerId, blockedId, null);
 
         // Act & Assert
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(partialDTO)))
                 .andExpect(status().isNoContent());
@@ -155,9 +155,7 @@ class BlockedUserControllerTests {
         doNothing().when(blockedUserService).unblockUser(blockerId, blockedId);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/v1/blocked-users/unblock")
-                .param("blockerId", blockerId.toString())
-                .param("blockedId", blockedId.toString()))
+        mockMvc.perform(delete("/api/v1/blocked-users/{blockerId}/{blockedId}", blockerId, blockedId))
                 .andExpect(status().isNoContent());
 
         verify(blockedUserService).unblockUser(blockerId, blockedId);
@@ -170,9 +168,7 @@ class BlockedUserControllerTests {
             .when(blockedUserService).unblockUser(blockerId, blockedId);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/v1/blocked-users/unblock")
-                .param("blockerId", blockerId.toString())
-                .param("blockedId", blockedId.toString()))
+        mockMvc.perform(delete("/api/v1/blocked-users/{blockerId}/{blockedId}", blockerId, blockedId))
                 .andExpect(status().isInternalServerError());
 
         verify(logger).error(contains("Error unblocking user"));
@@ -180,18 +176,15 @@ class BlockedUserControllerTests {
 
     @Test
     void unblockUser_ShouldReturnBadRequest_WhenMissingParameters() throws Exception {
-        // Act & Assert - Missing blockedId parameter
-        mockMvc.perform(delete("/api/v1/blocked-users/unblock")
-                .param("blockerId", blockerId.toString()))
-                .andExpect(status().isBadRequest());
+        // Act & Assert - With path variables, missing parameter results in 405 Method Not Allowed
+        mockMvc.perform(delete("/api/v1/blocked-users/{blockerId}", blockerId))
+                .andExpect(status().isMethodNotAllowed());
     }
 
     @Test
     void unblockUser_ShouldReturnBadRequest_WhenInvalidUUIDs() throws Exception {
         // Act & Assert
-        mockMvc.perform(delete("/api/v1/blocked-users/unblock")
-                .param("blockerId", "invalid-uuid")
-                .param("blockedId", blockedId.toString()))
+        mockMvc.perform(delete("/api/v1/blocked-users/{blockerId}/{blockedId}", "invalid-uuid", blockedId.toString()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -464,7 +457,7 @@ class BlockedUserControllerTests {
         doNothing().when(blockedUserService).blockUser(blockerId, blockedId, "Inappropriate behavior");
 
         // Act
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(blockedUserCreationDTO)))
                 .andExpect(status().isNoContent());
@@ -481,7 +474,7 @@ class BlockedUserControllerTests {
             .when(friendRequestService).deleteFriendRequestBetweenUsersIfExists(blockerId, blockedId);
 
         // Act & Assert - Should return error since cleanup failed
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(blockedUserCreationDTO)))
                 .andExpect(status().isInternalServerError());
@@ -526,7 +519,7 @@ class BlockedUserControllerTests {
         doNothing().when(blockedUserService).blockUser(eq(blockerId), eq(blockedId), any());
 
         // Act & Assert
-        mockMvc.perform(post("/api/v1/blocked-users/block")
+        mockMvc.perform(post("/api/v1/blocked-users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(specialReasonDTO)))
                 .andExpect(status().isNoContent());
