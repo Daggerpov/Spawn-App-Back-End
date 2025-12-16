@@ -26,11 +26,11 @@ import java.util.UUID;
 @Table(
         name = "activity",
         indexes = {
-                @Index(name = "idx_creator_id", columnList = "creator_id"),
-                @Index(name = "idx_start_time", columnList = "startTime"),
-                @Index(name = "idx_end_time", columnList = "endTime"),
-                @Index(name = "idx_last_updated", columnList = "last_updated"),
-                @Index(name = "idx_created_at", columnList = "created_at")
+                @Index(name = "idx_activity_creator_id", columnList = "creator_id"),
+                @Index(name = "idx_activity_start_time", columnList = "startTime"),
+                @Index(name = "idx_activity_end_time", columnList = "endTime"),
+                @Index(name = "idx_activity_last_updated", columnList = "last_updated"),
+                @Index(name = "idx_activity_created_at", columnList = "created_at")
         }
 )
 @NoArgsConstructor

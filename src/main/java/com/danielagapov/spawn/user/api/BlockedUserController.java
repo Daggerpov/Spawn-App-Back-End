@@ -27,8 +27,8 @@ public final class BlockedUserController {
         this.logger = logger;
     }
 
-    // POST /api/v1/blocked-users/block
-    @PostMapping("block")
+    // POST /api/v1/blocked-users
+    @PostMapping
     public ResponseEntity<Void> blockUser(@RequestBody BlockedUserCreationDTO dto) {
         try {
             friendRequestService.deleteFriendRequestBetweenUsersIfExists(dto.getBlockerId(), dto.getBlockedId());
@@ -40,10 +40,10 @@ public final class BlockedUserController {
         }
     }
 
-    // DELETE /api/v1/blocked-users/unblock?blockerId=...&blockedId=...
-    @DeleteMapping("unblock")
-    public ResponseEntity<Void> unblockUser(@RequestParam UUID blockerId,
-                                            @RequestParam UUID blockedId) {
+    // DELETE /api/v1/blocked-users/{blockerId}/{blockedId}
+    @DeleteMapping("{blockerId}/{blockedId}")
+    public ResponseEntity<Void> unblockUser(@PathVariable UUID blockerId,
+                                            @PathVariable UUID blockedId) {
         try {
             blockedUserService.unblockUser(blockerId, blockedId);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

@@ -30,8 +30,8 @@ public final class NotificationController {
         this.logger = logger;
     }
 
-    // full path: /api/v1/notifications/device-tokens/register
-    @PostMapping("/device-tokens/register")
+    // full path: /api/v1/notifications/device-tokens
+    @PostMapping("/device-tokens")
     public ResponseEntity<?> registerDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
         try {
             notificationService.registerDeviceToken(deviceTokenDTO);
@@ -43,8 +43,9 @@ public final class NotificationController {
         }
     }
 
-    // full path: /api/v1/notifications/device-tokens/unregister
-    @DeleteMapping("/device-tokens/unregister")
+    // full path: /api/v1/notifications/device-tokens
+    // Note: Accepts token in request body to avoid URL encoding issues with special characters
+    @DeleteMapping("/device-tokens")
     public ResponseEntity<?> unregisterDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
         try {
             notificationService.unregisterDeviceToken(deviceTokenDTO.getToken());
