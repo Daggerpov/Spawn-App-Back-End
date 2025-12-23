@@ -18,7 +18,7 @@ import java.util.UUID;
  * 
  * Part of Phase 3: Shared Data Resolution in Spring Modulith refactoring.
  */
-public interface ActivityPublicApi {
+public interface IActivityService {
     
     // ==================== Participant Queries ====================
     
@@ -115,4 +115,5 @@ public interface ActivityPublicApi {
      */
     List<UUID> getActivityIdsCreatedByUser(UUID userId);
 }
+
 

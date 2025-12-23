@@ -8,7 +8,7 @@ import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
+import com.danielagapov.spawn.activity.internal.services.IInternalActivityService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +20,10 @@ import java.util.UUID;
 @RestController()
 @RequestMapping("api/v1/activities")
 public class ActivityController {
-    private final IActivityService activityService;
+    private final IInternalActivityService activityService;
     private final ILogger logger;
 
-    public ActivityController(IActivityService ActivityService, ILogger logger) {
+    public ActivityController(IInternalActivityService ActivityService, ILogger logger) {
         this.activityService = ActivityService;
         this.logger = logger;
     }

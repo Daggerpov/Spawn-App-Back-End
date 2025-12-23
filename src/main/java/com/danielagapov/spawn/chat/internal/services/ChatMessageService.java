@@ -17,7 +17,7 @@ import com.danielagapov.spawn.shared.util.ChatMessageLikesMapper;
 import com.danielagapov.spawn.shared.util.ChatMessageMapper;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserMapper;
-import com.danielagapov.spawn.activity.api.ActivityPublicApi;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.activity.internal.domain.Activity;
 import com.danielagapov.spawn.chat.internal.domain.ChatMessage;
 import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikes;
@@ -49,13 +49,13 @@ public class ChatMessageService implements IChatMessageService {
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
-    private final ActivityPublicApi activityApi;
+    private final IActivityService activityService;
     private final ApplicationEventPublisher eventPublisher;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IActivityRepository ActivityRepository, IChatMessageLikesRepository chatMessageLikesRepository,
                               IUserRepository userRepository, ILogger logger,
-                              ActivityPublicApi activityApi,
+                              IActivityService activityService,
                               ApplicationEventPublisher eventPublisher) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
@@ -63,7 +63,7 @@ public class ChatMessageService implements IChatMessageService {
         this.chatMessageLikesRepository = chatMessageLikesRepository;
         this.userRepository = userRepository;
         this.logger = logger;
-        this.activityApi = activityApi;
+        this.activityService = activityService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -140,7 +140,7 @@ public class ChatMessageService implements IChatMessageService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, savedMessage.getSenderUserId()));
 
         // Get participant IDs using the public API (maintains module boundaries)
-        List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(
+        List<UUID> participantIds = activityService.getParticipantUserIdsByActivityIdAndStatus(
                 activity.getId(), ParticipationStatus.participating);
 
         // Create and publish notification event with participant IDs

@@ -4,7 +4,7 @@ import com.danielagapov.spawn.user.api.dto.UserStatsDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.activity.api.ActivityPublicApi;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -18,14 +18,14 @@ import java.util.UUID;
 @Service
 public class UserStatsService implements IUserStatsService {
 
-    private final ActivityPublicApi activityApi;
+    private final IActivityService activityService;
     private final IUserRepository userRepository;
 
     @Autowired
     public UserStatsService(
-            ActivityPublicApi activityApi,
+            IActivityService activityService,
             IUserRepository userRepository) {
-        this.activityApi = activityApi;
+        this.activityService = activityService;
         this.userRepository = userRepository;
     }
 
@@ -37,11 +37,11 @@ public class UserStatsService implements IUserStatsService {
         }
 
         // Get activities created by user
-        List<UUID> createdActivityIds = activityApi.getActivityIdsCreatedByUser(userId);
+        List<UUID> createdActivityIds = activityService.getActivityIdsCreatedByUser(userId);
         int spawnsMade = createdActivityIds.size();
 
         // Get activities participated in
-        List<UUID> participatedActivityIds = activityApi.getActivityIdsByUserIdAndStatus(userId, ParticipationStatus.participating);
+        List<UUID> participatedActivityIds = activityService.getActivityIdsByUserIdAndStatus(userId, ParticipationStatus.participating);
         
         // Filter out activities created by the user (spawns joined = participated but not created)
         Set<UUID> createdSet = new HashSet<>(createdActivityIds);
@@ -54,7 +54,7 @@ public class UserStatsService implements IUserStatsService {
 
         // Add people from activities created by the user
         for (UUID activityId : createdActivityIds) {
-            List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+            List<UUID> participantIds = activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
             for (UUID participantId : participantIds) {
                 if (!participantId.equals(userId)) {
                     peopleMet.add(participantId);
@@ -65,13 +65,13 @@ public class UserStatsService implements IUserStatsService {
         // Add people from activities the user participated in
         for (UUID activityId : participatedActivityIds) {
             // Add the creator if it's not the user
-            UUID creatorId = activityApi.getActivityCreatorId(activityId);
+            UUID creatorId = activityService.getActivityCreatorId(activityId);
             if (creatorId != null && !creatorId.equals(userId)) {
                 peopleMet.add(creatorId);
             }
 
             // Add other participants
-            List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+            List<UUID> participantIds = activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
             for (UUID participantId : participantIds) {
                 if (!participantId.equals(userId)) {
                     peopleMet.add(participantId);

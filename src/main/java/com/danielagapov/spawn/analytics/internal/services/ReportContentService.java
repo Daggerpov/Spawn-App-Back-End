@@ -11,7 +11,7 @@ import com.danielagapov.spawn.analytics.internal.domain.ReportedContent;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.analytics.internal.repositories.IReportedContentRepository;
 import com.danielagapov.spawn.chat.internal.services.IChatMessageService;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
+import com.danielagapov.spawn.activity.internal.services.IInternalActivityService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.shared.exceptions.Logger.Logger;
 import lombok.AllArgsConstructor;
@@ -29,7 +29,7 @@ import static com.danielagapov.spawn.shared.util.ResolutionStatus.PENDING;
 public class ReportContentService implements IReportContentService {
     private final IReportedContentRepository repository;
     private final IUserService userService;
-    private final IActivityService ActivityService;
+    private final IInternalActivityService ActivityService;
     private final IChatMessageService chatMessageService;
     private final Logger logger;
 

@@ -13,7 +13,7 @@ import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.FriendUserMapper;
 import com.danielagapov.spawn.shared.util.UserMapper;
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.api.ActivityPublicApi;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.analytics.internal.services.SearchAnalyticsService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
@@ -49,7 +49,7 @@ public class UserSearchService implements IUserSearchService {
     private final IUserFriendshipQueryService friendshipQueryService;
     private final IUserRepository userRepository;
     private final IBlockedUserService blockedUserService;
-    private final ActivityPublicApi activityApi;
+    private final IActivityService activityService;
     private final FuzzySearchService<User> fuzzySearchService;
     private final SearchAnalyticsService searchAnalyticsService;
     private final ILogger logger;
@@ -62,7 +62,7 @@ public class UserSearchService implements IUserSearchService {
                            IUserFriendshipQueryService friendshipQueryService,
                            IUserRepository userRepository,
                            IBlockedUserService blockedUserService,
-                           ActivityPublicApi activityApi,
+                           IActivityService activityService,
                            FuzzySearchService<User> fuzzySearchService,
                            SearchAnalyticsService searchAnalyticsService,
                            ILogger logger) {
@@ -71,7 +71,7 @@ public class UserSearchService implements IUserSearchService {
         this.friendshipQueryService = friendshipQueryService;
         this.userRepository = userRepository;
         this.blockedUserService = blockedUserService;
-        this.activityApi = activityApi;
+        this.activityService = activityService;
         this.fuzzySearchService = fuzzySearchService;
         this.searchAnalyticsService = searchAnalyticsService;
         this.logger = logger;
@@ -390,8 +390,8 @@ public class UserSearchService implements IUserSearchService {
      */
     private int getSharedActivitiesCount(UUID requestingUserId, UUID potentialFriendId) {
         try {
-            // Use the ActivityPublicApi to get shared activities count
-            return activityApi.getSharedActivitiesCount(requestingUserId, potentialFriendId, ParticipationStatus.participating);
+            // Use the IActivityService to get shared activities count
+            return activityService.getSharedActivitiesCount(requestingUserId, potentialFriendId, ParticipationStatus.participating);
         } catch (Exception e) {
             logger.error("Error calculating shared activities between users " + requestingUserId + " and " + potentialFriendId + ": " + e.getMessage());
             return 0;

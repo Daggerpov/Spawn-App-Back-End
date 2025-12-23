@@ -13,7 +13,7 @@ import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.UserMapper;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.api.ActivityPublicApi;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
-    private final ActivityPublicApi activityApi;
+    private final IActivityService activityService;
     private final IFriendshipRepository friendshipRepository;
 
     private final IS3Service s3Service;
@@ -58,7 +58,7 @@ public class UserService implements IUserService {
 
     @Autowired
     public UserService(IUserRepository repository,
-                       ActivityPublicApi activityApi,
+                       IActivityService activityService,
                        IFriendshipRepository friendshipRepository,
 
                        IS3Service s3Service, ILogger logger,
@@ -68,7 +68,7 @@ public class UserService implements IUserService {
                        ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
         this.repository = repository;
-        this.activityApi = activityApi;
+        this.activityService = activityService;
         this.friendshipRepository = friendshipRepository;
         this.s3Service = s3Service;
         this.logger = logger;
@@ -335,7 +335,7 @@ public class UserService implements IUserService {
     @Override
     public List<BaseUserDTO> getParticipantsByActivityId(UUID activityId) {
         try {
-            List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+            List<UUID> participantIds = activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
 
             List<BaseUserDTO> participants = participantIds.stream()
                     .map(userId -> {
@@ -356,7 +356,7 @@ public class UserService implements IUserService {
     @Override
     public List<BaseUserDTO> getInvitedByActivityId(UUID activityId) {
         try {
-            List<UUID> invitedIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
+            List<UUID> invitedIds = activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
 
             List<BaseUserDTO> invitedUsers = invitedIds.stream()
                     .map(userId -> {
@@ -377,7 +377,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getParticipantUserIdsByActivityId(UUID activityId) {
         try {
-            return activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+            return activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
         } catch (Exception e) {
             logger.error("Error retrieving participant user IDs for activityId " + activityId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving participant user IDs for activityId " + activityId, e);
@@ -387,7 +387,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getInvitedUserIdsByActivityId(UUID activityId) {
         try {
-            return activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
+            return activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
         } catch (Exception e) {
             logger.error("Error retrieving invited user IDs for activityId " + activityId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving invited user IDs for activityId " + activityId, e);
@@ -547,8 +547,8 @@ public class UserService implements IUserService {
             final int userLimit = 40;
             // Use UTC for consistent timezone comparison across server and client timezones
             OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
-            List<UUID> pastActivityIds = activityApi.getPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
-            List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityApi.getOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
+            List<UUID> pastActivityIds = activityService.getPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
+            List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityService.getOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
             Set<UUID> excludedIds = userSearchQueryService.getExcludedUserIds(requestingUserId);
 
             return pastActivityParticipantIds.stream()
