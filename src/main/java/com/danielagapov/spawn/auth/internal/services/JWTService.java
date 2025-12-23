@@ -32,7 +32,7 @@ public class JWTService implements IJWTService {
     private enum TokenType {ACCESS, REFRESH, EMAIL}
 
     private static final long ACCESS_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; //  24 hours
-    private static final long REFRESH_TOKEN_EXPIRY = 1000L * 60 * 60 * 24 * 7; // 7 days (reduced from 180 days for security)
+    private static final long REFRESH_TOKEN_EXPIRY = 1000L * 60 * 60 * 24 * 60; // 60 days (reduced from 180 days for security)
     private static final long EMAIL_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; // 24 hours
     private final ILogger logger;
     private final IUserService userService;
