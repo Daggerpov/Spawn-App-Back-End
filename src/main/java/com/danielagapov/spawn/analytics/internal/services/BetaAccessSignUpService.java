@@ -9,7 +9,6 @@ import com.danielagapov.spawn.shared.util.BetaAccessSignUpMapper;
 import com.danielagapov.spawn.analytics.internal.domain.BetaAccessSignUp;
 import com.danielagapov.spawn.analytics.internal.repositories.IBetaAccessSignUpRepository;
 import com.danielagapov.spawn.auth.internal.services.IEmailService;
-import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataAccessException;
@@ -116,12 +115,8 @@ public class BetaAccessSignUpService implements IBetaAccessSignUpService {
                          "<p>Check out the admin dashboard for more information: <a href='https://getspawn.com/admin/dashboard'>Admin Dashboard</a></p>";
         
         for (String recipient : notificationEmails) {
-            try {
-                emailService.sendEmail(recipient, subject, content);
-            } catch (MessagingException e) {
-                logger.error("Failed to send notification email to " + recipient + ": " + e.getMessage());
-                // Continue with other emails even if one fails
-            }
+            // EmailService.sendEmail() is async and handles exceptions internally
+            emailService.sendEmail(recipient, subject, content);
         }
     }
     

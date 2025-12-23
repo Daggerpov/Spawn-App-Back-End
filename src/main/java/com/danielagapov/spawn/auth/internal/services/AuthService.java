@@ -541,17 +541,13 @@ public class AuthService implements IAuthService {
         verification.setVerificationCode(passwordEncoder.encode(verificationCode));
         verification.setCodeExpiresAt(codeExpiresAt);
 
-        try {
-            String expiryTime = codeExpiresAt.toString();
-            emailService.sendVerificationCodeEmail(email, verificationCode, expiryTime);
-            logger.info("Email verification code sent for registration to: " + email);
-            emailVerificationRepository.save(verification);
-            
-            return new EmailVerificationResponseDTO(secondsUntilNextAttempt, "Verification code sent successfully");
-        } catch (Exception e) {
-            logger.error("Failed to send email verification code for registration to: " + email + ": " + e.getMessage());
-            throw new RuntimeException("Failed to send verification code", e);
-        }
+        String expiryTime = codeExpiresAt.toString();
+        // Email is sent asynchronously - errors are logged by the email service
+        emailService.sendVerificationCodeEmail(email, verificationCode, expiryTime);
+        logger.info("Email verification code sent for registration to: " + email);
+        emailVerificationRepository.save(verification);
+        
+        return new EmailVerificationResponseDTO(secondsUntilNextAttempt, "Verification code sent successfully");
     }
 
     @Override
@@ -736,14 +732,9 @@ public class AuthService implements IAuthService {
     }
 
     private void createEmailTokenAndSendEmail(AuthUserDTO authUserDTO) {
-        try {
-            String emailToken = jwtService.generateEmailToken(authUserDTO.getUsername());
-            //String linkToVerification = "http://localhost:8080/api/v1/auth/verify-email?token=" + emailToken; // TODO: change to deployment url
-            emailService.sendVerifyAccountEmail(authUserDTO.getEmail(), emailToken);
-            //emailService.sendEmail(authUserDTO.getEmail(), "Verify Email", linkToVerification);
-        } catch (Exception e) {
-            logger.error("Unexpected error while sending email: " + e.getMessage());
-        }
+        String emailToken = jwtService.generateEmailToken(authUserDTO.getUsername());
+        // Email is sent asynchronously - errors are logged by the email service
+        emailService.sendVerifyAccountEmail(authUserDTO.getEmail(), emailToken);
     }
 
 }

@@ -11,7 +11,6 @@ import com.danielagapov.spawn.auth.internal.services.IEmailService;
 import com.danielagapov.spawn.auth.internal.services.IJWTService;
 import com.danielagapov.spawn.auth.internal.services.IOAuthService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
-import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -137,7 +136,7 @@ class AuthServiceTests {
     // =================================================================================
 
     @Test
-    void registerUser_ShouldCallCreateAndSaveUser_WhenUserIsCreated() throws MessagingException {
+    void registerUser_ShouldCallCreateAndSaveUser_WhenUserIsCreated() {
         // NOTE: This test is currently disabled due to mocking complexity
         // The actual implementation DOES call createAndSaveUser() as intended
         

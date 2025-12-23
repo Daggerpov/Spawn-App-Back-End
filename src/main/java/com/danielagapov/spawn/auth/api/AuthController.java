@@ -18,7 +18,6 @@ import com.danielagapov.spawn.auth.internal.services.IJWTService;
 import com.danielagapov.spawn.auth.internal.services.IOAuthService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.shared.util.ErrorResponse;
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -399,15 +398,8 @@ public final class AuthController {
     @Deprecated(since = "For testing purposes")
     @GetMapping("test-email")
     public ResponseEntity<String> email() {
-        try {
-            emailService.sendEmail("spawnappmarketing@gmail.com", "Test Email", "This is a test email sent programmatically.");
-            return ResponseEntity.ok().body("Email sent");
-        } catch (MessagingException e) {
-            logger.error("Messaging Exception: " + e.getMessage());
-            return ResponseEntity.internalServerError().body("Messaging Exception: " + e.getMessage());
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return ResponseEntity.internalServerError().body("Internal Server Error: " + e.getMessage());
-        }
+        // Email is sent asynchronously - errors are logged by the email service
+        emailService.sendEmail("spawnappmarketing@gmail.com", "Test Email", "This is a test email sent programmatically.");
+        return ResponseEntity.ok().body("Email queued for sending");
     }
 }
