@@ -3,6 +3,7 @@ package com.danielagapov.spawn.ServiceTests;
 import com.danielagapov.spawn.activity.internal.domain.Location;
 import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
 import com.danielagapov.spawn.activity.internal.services.LocationService;
+import com.danielagapov.spawn.shared.exceptions.ApplicationException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.EntityType;
@@ -67,11 +68,12 @@ class LocationServiceTests {
     }
 
     @Test
-    void save_ShouldThrowException_WhenDatabaseError() {
+    void save_ShouldThrowApplicationException_WhenDatabaseError() {
         when(locationRepository.save(any(Location.class)))
                 .thenThrow(new DataAccessException("Database error") {});
 
-        assertThrows(DataAccessException.class, () -> locationService.save(testLocation));
+        // LocationService wraps DataAccessException into ApplicationException
+        assertThrows(ApplicationException.class, () -> locationService.save(testLocation));
         verify(locationRepository, times(1)).save(testLocation);
     }
 

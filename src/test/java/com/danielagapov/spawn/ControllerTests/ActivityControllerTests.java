@@ -4,6 +4,7 @@ import com.danielagapov.spawn.activity.api.ActivityController;
 import com.danielagapov.spawn.activity.api.dto.*;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
+import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
@@ -95,23 +96,32 @@ class ActivityControllerTests {
             "America/New_York"
         );
         
-        BaseUserDTO creator = new BaseUserDTO(creatorId, "testuser", "pic.jpg", "Test User");
+        // BaseUserDTO(UUID id, String username, String profilePictureUrlString, String name, String email, String bio)
+        BaseUserDTO creator = new BaseUserDTO(creatorId, "testuser", "pic.jpg", "Test User", "test@example.com", "bio");
+        
+        // FullFeedActivityDTO constructor:
+        // (UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, LocationDTO location,
+        //  UUID activityTypeId, String note, String icon, Integer participantLimit, BaseUserDTO creatorUser,
+        //  List<BaseUserDTO> participantUsers, List<BaseUserDTO> invitedUsers, List<FullActivityChatMessageDTO> chatMessages,
+        //  ParticipationStatus participationStatus, boolean isSelfOwned, Instant createdAt, boolean isExpired, String clientTimezone)
         fullFeedActivityDTO = new FullFeedActivityDTO(
             activityId,
             "Test Activity",
             OffsetDateTime.now().plusDays(1),
             OffsetDateTime.now().plusDays(1).plusHours(2),
             locationDTO,
-            null,
+            null,  // activityTypeId
             "Test note",
             "🎉",
             5,
             creator,
-            List.of(),
-            List.of(),
-            List.of(),
+            List.of(),  // participantUsers
+            List.of(),  // invitedUsers
+            List.of(),  // chatMessages
+            ParticipationStatus.participating,  // participationStatus
+            false,  // isSelfOwned
             Instant.now(),
-            false,
+            false,  // isExpired
             "America/New_York"
         );
     }
@@ -122,9 +132,28 @@ class ActivityControllerTests {
     void getProfileActivities_ShouldReturnActivities_WhenValidRequest() throws Exception {
         UUID profileUserId = UUID.randomUUID();
         UUID requestingUserId = UUID.randomUUID();
-        List<ProfileActivityDTO> activities = List.of(
-            new ProfileActivityDTO(activityId, "Test Activity", OffsetDateTime.now().plusDays(1), "🎉")
+        
+        // Create a proper ProfileActivityDTO using the full constructor
+        BaseUserDTO creator = new BaseUserDTO(creatorId, "testuser", "pic.jpg", "Test User", "test@example.com", "bio");
+        ProfileActivityDTO profileActivity = new ProfileActivityDTO(
+            activityId,
+            "Test Activity",
+            OffsetDateTime.now().plusDays(1),
+            OffsetDateTime.now().plusDays(1).plusHours(2),
+            locationDTO,
+            "Test note",
+            "🎉",
+            5,
+            creator,
+            List.of(),  // participantUsers
+            List.of(),  // invitedUsers
+            List.of(),  // chatMessageIds
+            Instant.now(),
+            false,  // isExpired
+            "America/New_York",
+            false  // isPastActivity
         );
+        List<ProfileActivityDTO> activities = List.of(profileActivity);
         
         when(activityService.getProfileActivities(profileUserId, requestingUserId)).thenReturn(activities);
 
@@ -223,8 +252,11 @@ class ActivityControllerTests {
     }
 
     @Test
-    void replaceActivity_ShouldReturnBadRequest_WhenNullId() throws Exception {
-        mockMvc.perform(put("/api/v1/activities/{id}", (Object) null)
+    void replaceActivity_ShouldReturnNotFound_WhenInvalidId() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 404 or 405 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(put("/api/v1/activities/invalid-uuid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(activityDTO)))
                 .andExpect(status().isBadRequest());
@@ -325,8 +357,11 @@ class ActivityControllerTests {
     }
 
     @Test
-    void toggleParticipation_ShouldReturnBadRequest_WhenNullParameters() throws Exception {
-        mockMvc.perform(put("/api/v1/activities/{activityId}/toggle-status/{userId}", activityId, (Object) null))
+    void toggleParticipation_ShouldReturnBadRequest_WhenInvalidUuid() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 404 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(put("/api/v1/activities/{activityId}/toggle-status/invalid-uuid", activityId))
                 .andExpect(status().isBadRequest());
 
         verify(activityService, never()).toggleParticipation(any(), any());
@@ -334,8 +369,9 @@ class ActivityControllerTests {
 
     @Test
     void toggleParticipation_ShouldReturnBadRequest_WhenActivityFull() throws Exception {
+        // ActivityFullException(UUID activityId, Integer participantLimit)
         when(activityService.toggleParticipation(activityId, userId))
-                .thenThrow(new ActivityFullException("Activity is full"));
+                .thenThrow(new ActivityFullException(activityId, 5));
 
         mockMvc.perform(put("/api/v1/activities/{activityId}/toggle-status/{userId}", activityId, userId))
                 .andExpect(status().isBadRequest());
@@ -412,10 +448,26 @@ class ActivityControllerTests {
 
     @Test
     void getFullActivityById_ShouldReturnActivityInvite_WhenExternalInvite() throws Exception {
+        // ActivityInviteDTO constructor:
+        // (UUID id, String title, OffsetDateTime startTime, OffsetDateTime endTime, UUID locationId,
+        //  UUID activityTypeId, String note, String icon, Integer participantLimit, UUID creatorUserId,
+        //  List<UUID> participantUserIds, List<UUID> invitedUserIds, Instant createdAt, boolean isExpired, String clientTimezone)
         ActivityInviteDTO inviteDTO = new ActivityInviteDTO(
-            activityId, "Test Activity", OffsetDateTime.now().plusDays(1), 
-            OffsetDateTime.now().plusDays(1).plusHours(2), locationDTO.getId(), 
-            null, "🎉", 5, creatorId, List.of(), List.of()
+            activityId,
+            "Test Activity",
+            OffsetDateTime.now().plusDays(1),
+            OffsetDateTime.now().plusDays(1).plusHours(2),
+            locationDTO.getId(),
+            null,  // activityTypeId
+            "Test note",
+            "🎉",
+            5,
+            creatorId,
+            List.of(),  // participantUserIds
+            List.of(),  // invitedUserIds
+            Instant.now(),
+            false,  // isExpired
+            "America/New_York"
         );
         
         when(activityService.getActivityInviteById(activityId)).thenReturn(inviteDTO);
@@ -588,4 +640,3 @@ class ActivityControllerTests {
         verify(activityService, times(1)).getActivitiesByOwnerId(creatorId);
     }
 }
-

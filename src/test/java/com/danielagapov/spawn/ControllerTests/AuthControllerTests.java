@@ -4,6 +4,7 @@ import com.danielagapov.spawn.auth.api.AuthController;
 import com.danielagapov.spawn.auth.api.dto.*;
 import com.danielagapov.spawn.user.api.dto.*;
 import com.danielagapov.spawn.shared.util.OAuthProvider;
+import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.*;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
@@ -34,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -95,9 +97,11 @@ class AuthControllerTests {
         email = "test@example.com";
         idToken = "test-id-token";
         
-        baseUserDTO = new BaseUserDTO(userId, username, "pic.jpg", "Test User");
+        // BaseUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture)
+        baseUserDTO = new BaseUserDTO(userId, "Test User", email, username, "bio", "pic.jpg");
         userDTO = new UserDTO(userId, List.of(), username, "pic.jpg", "Test User", "bio", email);
-        authResponseDTO = new AuthResponseDTO(baseUserDTO, true);
+        // AuthResponseDTO(BaseUserDTO user, UserStatus status)
+        authResponseDTO = new AuthResponseDTO(baseUserDTO, UserStatus.ACTIVE);
         
         user = new User();
         user.setId(userId);
@@ -109,29 +113,30 @@ class AuthControllerTests {
 
     @Test
     void signIn_ShouldReturnOk_WhenUserExists() throws Exception {
-        when(oauthService.signInUser(idToken, email, OAuthProvider.GOOGLE))
+        // OAuthProvider uses lowercase: google, apple
+        when(oauthService.signInUser(idToken, email, OAuthProvider.google))
                 .thenReturn(Optional.of(authResponseDTO));
         when(userService.getUserEntityById(userId)).thenReturn(user);
         when(authService.makeHeadersForTokens(any(User.class))).thenReturn(new HttpHeaders());
 
         mockMvc.perform(get("/api/v1/auth/sign-in")
                 .param("idToken", idToken)
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .param("email", email))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.id").value(userId.toString()));
 
-        verify(oauthService, times(1)).signInUser(idToken, email, OAuthProvider.GOOGLE);
+        verify(oauthService, times(1)).signInUser(idToken, email, OAuthProvider.google);
     }
 
     @Test
     void signIn_ShouldReturnNotFound_WhenUserDoesNotExist() throws Exception {
-        when(oauthService.signInUser(idToken, email, OAuthProvider.GOOGLE))
+        when(oauthService.signInUser(idToken, email, OAuthProvider.google))
                 .thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/v1/auth/sign-in")
                 .param("idToken", idToken)
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .param("email", email))
                 .andExpect(status().isNotFound());
 
@@ -140,12 +145,12 @@ class AuthControllerTests {
 
     @Test
     void signIn_ShouldReturnConflict_WhenIncorrectProvider() throws Exception {
-        when(oauthService.signInUser(idToken, email, OAuthProvider.GOOGLE))
+        when(oauthService.signInUser(idToken, email, OAuthProvider.google))
                 .thenThrow(new IncorrectProviderException("User registered with different provider"));
 
         mockMvc.perform(get("/api/v1/auth/sign-in")
                 .param("idToken", idToken)
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .param("email", email))
                 .andExpect(status().isConflict());
 
@@ -154,12 +159,12 @@ class AuthControllerTests {
 
     @Test
     void signIn_ShouldReturnUnauthorized_WhenTokenExpired() throws Exception {
-        when(oauthService.signInUser(idToken, email, OAuthProvider.GOOGLE))
+        when(oauthService.signInUser(idToken, email, OAuthProvider.google))
                 .thenThrow(new TokenExpiredException("Token has expired"));
 
         mockMvc.perform(get("/api/v1/auth/sign-in")
                 .param("idToken", idToken)
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .param("email", email))
                 .andExpect(status().isUnauthorized());
 
@@ -168,12 +173,12 @@ class AuthControllerTests {
 
     @Test
     void signIn_ShouldReturnServiceUnavailable_WhenProviderUnavailable() throws Exception {
-        when(oauthService.signInUser(idToken, email, OAuthProvider.APPLE))
+        when(oauthService.signInUser(idToken, email, OAuthProvider.apple))
                 .thenThrow(new OAuthProviderUnavailableException("Apple OAuth is temporarily unavailable"));
 
         mockMvc.perform(get("/api/v1/auth/sign-in")
                 .param("idToken", idToken)
-                .param("provider", "APPLE")
+                .param("provider", "apple")
                 .param("email", email))
                 .andExpect(status().isServiceUnavailable());
 
@@ -184,37 +189,38 @@ class AuthControllerTests {
 
     @Test
     void makeUser_ShouldReturnOk_WhenUserCreated() throws Exception {
+        // UserCreationDTO(UUID id, String username, byte[] profilePictureData, String name, String bio, String email)
         UserCreationDTO creationDTO = new UserCreationDTO(
-            username, "pic.jpg", "Test User", "bio", email, null, null
+            null, username, null, "Test User", "bio", email
         );
         
-        when(oauthService.createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.GOOGLE)))
+        when(oauthService.createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.google)))
                 .thenReturn(baseUserDTO);
         when(authService.makeHeadersForTokens(username)).thenReturn(new HttpHeaders());
 
         mockMvc.perform(post("/api/v1/auth/make-user")
                 .param("idToken", idToken)
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(creationDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId.toString()));
 
-        verify(oauthService, times(1)).createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.GOOGLE));
+        verify(oauthService, times(1)).createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.google));
     }
 
     @Test
     void makeUser_ShouldReturnBadRequest_WhenInvalidData() throws Exception {
         UserCreationDTO creationDTO = new UserCreationDTO(
-            "", "pic.jpg", "Test User", "bio", email, null, null
+            null, "", null, "Test User", "bio", email
         );
         
-        when(oauthService.createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.GOOGLE)))
+        when(oauthService.createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.google)))
                 .thenThrow(new IllegalArgumentException("Username cannot be empty"));
 
         mockMvc.perform(post("/api/v1/auth/make-user")
                 .param("idToken", idToken)
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(creationDTO)))
                 .andExpect(status().isBadRequest());
@@ -225,15 +231,15 @@ class AuthControllerTests {
     @Test
     void makeUser_ShouldReturnUnauthorized_WhenSecurityError() throws Exception {
         UserCreationDTO creationDTO = new UserCreationDTO(
-            username, "pic.jpg", "Test User", "bio", email, null, null
+            null, username, null, "Test User", "bio", email
         );
         
-        when(oauthService.createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.GOOGLE)))
+        when(oauthService.createUserFromOAuth(any(UserCreationDTO.class), eq(idToken), eq(OAuthProvider.google)))
                 .thenThrow(new SecurityException("Invalid token"));
 
         mockMvc.perform(post("/api/v1/auth/make-user")
                 .param("idToken", idToken)
-                .param("provider", "GOOGLE")
+                .param("provider", "google")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(creationDTO)))
                 .andExpect(status().isUnauthorized());
@@ -275,8 +281,9 @@ class AuthControllerTests {
     void refreshToken_ShouldReturnUnauthorized_WhenBadToken() {
         HttpServletRequest request = mock(HttpServletRequest.class);
         
+        // BadTokenException has no-arg constructor
         when(jwtService.refreshAccessToken(request))
-                .thenThrow(new BadTokenException("Invalid refresh token"));
+                .thenThrow(new BadTokenException());
 
         ResponseEntity<String> response = authController.refreshToken(request);
 
@@ -288,7 +295,8 @@ class AuthControllerTests {
 
     @Test
     void register_ShouldReturnOk_WhenUserRegistered() throws Exception {
-        AuthUserDTO authUserDTO = new AuthUserDTO(username, email, "password123", "Test User");
+        // AuthUserDTO(UUID id, String name, String email, String username, String bio, String password)
+        AuthUserDTO authUserDTO = new AuthUserDTO(null, "Test User", email, username, "bio", "password123");
         
         when(authService.registerUser(any(AuthUserDTO.class))).thenReturn(userDTO);
         when(authService.makeHeadersForTokens(username)).thenReturn(new HttpHeaders());
@@ -304,7 +312,7 @@ class AuthControllerTests {
 
     @Test
     void register_ShouldReturnConflict_WhenFieldAlreadyExists() throws Exception {
-        AuthUserDTO authUserDTO = new AuthUserDTO(username, email, "password123", "Test User");
+        AuthUserDTO authUserDTO = new AuthUserDTO(null, "Test User", email, username, "bio", "password123");
         
         when(authService.registerUser(any(AuthUserDTO.class)))
                 .thenThrow(new UsernameAlreadyExistsException("Username already exists"));
@@ -354,8 +362,9 @@ class AuthControllerTests {
     void login_ShouldReturnNotFound_WhenUserNotFound() throws Exception {
         LoginDTO loginDTO = new LoginDTO(username, "password123");
         
+        // BaseNotFoundException requires UUID, not String
         when(authService.loginUser(username, "password123"))
-                .thenThrow(new BaseNotFoundException(EntityType.User, username));
+                .thenThrow(new BaseNotFoundException(EntityType.User, userId));
 
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -398,8 +407,9 @@ class AuthControllerTests {
     void verifyEmail_ShouldReturnNotFound_WhenTokenNotFound() {
         String emailToken = "invalid-email-token";
         
+        // BaseNotFoundException requires UUID
         when(authService.verifyEmail(emailToken))
-                .thenThrow(new BaseNotFoundException(EntityType.User, emailToken));
+                .thenThrow(new BaseNotFoundException(EntityType.User, userId));
 
         ModelAndView result = authController.verifyEmail(emailToken);
 
@@ -413,8 +423,9 @@ class AuthControllerTests {
 
     @Test
     void registerViaOAuth_ShouldReturnOk_WhenSuccessful() throws Exception {
+        // OAuthRegistrationDTO(String email, String idToken, OAuthProvider provider, String name, String profilePictureUrl)
         OAuthRegistrationDTO registration = new OAuthRegistrationDTO(
-            idToken, OAuthProvider.GOOGLE, email, username, "Test User", "pic.jpg", null
+            email, idToken, OAuthProvider.google, "Test User", "pic.jpg"
         );
         
         when(authService.registerUserViaOAuth(any(OAuthRegistrationDTO.class))).thenReturn(authResponseDTO);
@@ -433,7 +444,7 @@ class AuthControllerTests {
     @Test
     void registerViaOAuth_ShouldReturnConflict_WhenAccountExists() throws Exception {
         OAuthRegistrationDTO registration = new OAuthRegistrationDTO(
-            idToken, OAuthProvider.GOOGLE, email, username, "Test User", "pic.jpg", null
+            email, idToken, OAuthProvider.google, "Test User", "pic.jpg"
         );
         
         when(authService.registerUserViaOAuth(any(OAuthRegistrationDTO.class)))
@@ -450,7 +461,7 @@ class AuthControllerTests {
     @Test
     void registerViaOAuth_ShouldTryGracefulHandling_WhenRegistrationFails() throws Exception {
         OAuthRegistrationDTO registration = new OAuthRegistrationDTO(
-            idToken, OAuthProvider.GOOGLE, email, username, "Test User", "pic.jpg", null
+            email, idToken, OAuthProvider.google, "Test User", "pic.jpg"
         );
         
         when(authService.registerUserViaOAuth(any(OAuthRegistrationDTO.class)))
@@ -473,7 +484,8 @@ class AuthControllerTests {
     @Test
     void sendEmailVerificationForRegistration_ShouldReturnOk_WhenSuccessful() throws Exception {
         SendEmailVerificationRequestDTO request = new SendEmailVerificationRequestDTO(email);
-        EmailVerificationResponseDTO response = new EmailVerificationResponseDTO("Verification code sent");
+        // EmailVerificationResponseDTO(long secondsUntilNextAttempt, String message)
+        EmailVerificationResponseDTO response = new EmailVerificationResponseDTO(0L, "Verification code sent");
         
         when(authService.sendEmailVerificationCodeForRegistration(email)).thenReturn(response);
 
@@ -674,31 +686,31 @@ class AuthControllerTests {
 
     @Test
     void signIn_ShouldHandleMultipleProviders_WhenAppleProvider() throws Exception {
-        when(oauthService.signInUser(idToken, email, OAuthProvider.APPLE))
+        when(oauthService.signInUser(idToken, email, OAuthProvider.apple))
                 .thenReturn(Optional.of(authResponseDTO));
         when(userService.getUserEntityById(userId)).thenReturn(user);
         when(authService.makeHeadersForTokens(any(User.class))).thenReturn(new HttpHeaders());
 
         mockMvc.perform(get("/api/v1/auth/sign-in")
                 .param("idToken", idToken)
-                .param("provider", "APPLE")
+                .param("provider", "apple")
                 .param("email", email))
                 .andExpect(status().isOk());
 
-        verify(oauthService, times(1)).signInUser(idToken, email, OAuthProvider.APPLE);
+        verify(oauthService, times(1)).signInUser(idToken, email, OAuthProvider.apple);
     }
 
     @Test
     void registerViaOAuth_ShouldFallbackToSignIn_WhenAllRecoveryFails() throws Exception {
         OAuthRegistrationDTO registration = new OAuthRegistrationDTO(
-            idToken, OAuthProvider.GOOGLE, email, username, "Test User", "pic.jpg", null
+            email, idToken, OAuthProvider.google, "Test User", "pic.jpg"
         );
         
         when(authService.registerUserViaOAuth(any(OAuthRegistrationDTO.class)))
                 .thenThrow(new RuntimeException("Database error"));
         when(authService.handleOAuthRegistrationGracefully(any(OAuthRegistrationDTO.class), any()))
                 .thenReturn(null);
-        when(oauthService.signInUser(idToken, email, OAuthProvider.GOOGLE))
+        when(oauthService.signInUser(idToken, email, OAuthProvider.google))
                 .thenReturn(Optional.of(authResponseDTO));
         when(userService.getUserEntityById(userId)).thenReturn(user);
         when(authService.makeHeadersForTokens(any(User.class))).thenReturn(new HttpHeaders());
@@ -711,4 +723,3 @@ class AuthControllerTests {
         verify(logger, times(1)).info(contains("final fallback sign-in"));
     }
 }
-

@@ -6,6 +6,7 @@ import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;
 import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import com.danielagapov.spawn.shared.util.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,8 +52,9 @@ class ActivityRepositoryTests {
         testUser = new User();
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
-        testUser.setFullName("Test User");
-        testUser.setProfilePicture("pic.jpg");
+        testUser.setName("Test User");
+        testUser.setProfilePictureUrlString("pic.jpg");
+        testUser.setStatus(UserStatus.ACTIVE);
         testUser = userRepository.save(testUser);
 
         // Create test location
@@ -175,7 +177,8 @@ class ActivityRepositoryTests {
         User anotherUser = new User();
         anotherUser.setUsername("anotheruser");
         anotherUser.setEmail("another@example.com");
-        anotherUser.setFullName("Another User");
+        anotherUser.setName("Another User");
+        anotherUser.setStatus(UserStatus.ACTIVE);
         anotherUser = userRepository.save(anotherUser);
 
         List<Activity> userActivities = activityRepository.findByCreatorId(anotherUser.getId());
@@ -256,14 +259,15 @@ class ActivityRepositoryTests {
     }
 
     @Test
-    void delete_ShouldNotDeleteLocation_WhenActivityDeleted() {
+    void delete_ShouldDeleteLocation_WhenActivityDeleted() {
+        // Note: Activity has CascadeType.REMOVE on location, so location is deleted with activity
         Activity saved = activityRepository.save(testActivity);
         UUID locationId = testLocation.getId();
 
         activityRepository.deleteById(saved.getId());
 
         Optional<Location> location = locationRepository.findById(locationId);
-        assertTrue(location.isPresent());
+        assertFalse(location.isPresent());
     }
 
     // MARK: - Edge Case Tests

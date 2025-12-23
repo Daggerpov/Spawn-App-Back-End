@@ -2,6 +2,7 @@ package com.danielagapov.spawn.RepositoryTests;
 
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import com.danielagapov.spawn.shared.util.UserStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ class UserRepositoryTests {
         testUser.setName("Test User");
         testUser.setProfilePictureUrlString("pic.jpg");
         testUser.setBio("Test bio");
+        testUser.setStatus(UserStatus.ACTIVE);
     }
 
     // MARK: - Basic CRUD Tests
@@ -80,6 +82,7 @@ class UserRepositoryTests {
         secondUser.setUsername("seconduser");
         secondUser.setEmail("second@example.com");
         secondUser.setName("Second User");
+        secondUser.setStatus(UserStatus.ACTIVE);
         userRepository.save(secondUser);
 
         List<User> all = userRepository.findAll();
@@ -284,6 +287,7 @@ class UserRepositoryTests {
         second.setUsername("seconduser");
         second.setEmail("second@example.com");
         second.setName("Second User");
+        second.setStatus(UserStatus.ACTIVE);
         User secondSaved = userRepository.save(second);
 
         assertNotEquals(first.getId(), secondSaved.getId());
@@ -344,6 +348,7 @@ class UserRepositoryTests {
         second.setUsername("seconduser");
         second.setEmail("second@example.com");
         second.setName("Second User");
+        second.setStatus(UserStatus.ACTIVE);
         User secondSaved = userRepository.save(second);
 
         assertNotNull(first.getId());
@@ -359,6 +364,7 @@ class UserRepositoryTests {
         second.setUsername("differentuser");
         second.setEmail("different@example.com");
         second.setName("Different User");
+        second.setStatus(UserStatus.ACTIVE);
         User secondSaved = userRepository.save(second);
 
         assertNotNull(first.getId());
@@ -395,6 +401,7 @@ class UserRepositoryTests {
         anotherUser.setUsername("anotheruser");
         anotherUser.setEmail("another@example.com");
         anotherUser.setName("Another User");
+        anotherUser.setStatus(UserStatus.ACTIVE);
         userRepository.save(anotherUser);
 
         Optional<User> found = userRepository.findByUsername("testuser");
@@ -412,6 +419,7 @@ class UserRepositoryTests {
         anotherUser.setUsername("anotheruser");
         anotherUser.setEmail("another@example.com");
         anotherUser.setName("Another User");
+        anotherUser.setStatus(UserStatus.ACTIVE);
         userRepository.save(anotherUser);
 
         Optional<User> found = userRepository.findByEmail("test@example.com");
