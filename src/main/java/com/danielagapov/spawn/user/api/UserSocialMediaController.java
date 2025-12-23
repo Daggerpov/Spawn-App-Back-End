@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/social-media")
-public final class UserSocialMediaController {
+public class UserSocialMediaController {
 
     private final IUserSocialMediaService userSocialMediaService;
     private final ILogger logger;

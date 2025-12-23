@@ -19,7 +19,7 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/v1/cache")
-public final class CacheController {
+public class CacheController {
 
     private final ICacheService cacheService;
     private final ICalendarService calendarService;

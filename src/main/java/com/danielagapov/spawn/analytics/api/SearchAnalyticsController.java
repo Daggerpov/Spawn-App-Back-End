@@ -17,7 +17,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/v1/analytics/search")
 @AllArgsConstructor
-public final class SearchAnalyticsController {
+public class SearchAnalyticsController {
 
     private final SearchAnalyticsService searchAnalyticsService;
 

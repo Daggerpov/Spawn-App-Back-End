@@ -25,7 +25,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/share")
 @RequiredArgsConstructor
 @Slf4j
-public final class ShareLinkController {
+public class ShareLinkController {
     
     private final ShareLinkService shareLinkService;
     private final ActivityService activityService;
