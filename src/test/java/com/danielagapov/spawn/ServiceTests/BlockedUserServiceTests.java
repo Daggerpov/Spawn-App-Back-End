@@ -12,7 +12,7 @@ import com.danielagapov.spawn.user.internal.repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.social.internal.services.BlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
-import com.danielagapov.spawn.user.internal.services.IUserService;
+import com.danielagapov.spawn.social.internal.services.UserQueryService;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 public class BlockedUserServiceTests {
 
     @Mock private IBlockedUserRepository blockedRepo;
-    @Mock private IUserService userService;
+    @Mock private UserQueryService userQueryService;
     @Mock private IFriendRequestService friendRequestService;
     @Mock private IFriendshipRepository friendshipRepository;
     @Mock private ILogger logger;
@@ -52,7 +52,7 @@ public class BlockedUserServiceTests {
     @Test
     void blockUser_ShouldDoNothing_WhenBlockerBlocksThemself() {
         blockedUserService.blockUser(blockerId, blockerId, "Self-block");
-        verifyNoInteractions(blockedRepo, userService, friendRequestService);
+        verifyNoInteractions(blockedRepo, userQueryService);
     }
 
     @Test
@@ -68,8 +68,8 @@ public class BlockedUserServiceTests {
     @Test
     void blockUser_ShouldSaveBlockAndCleanup() {
         when(blockedRepo.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId)).thenReturn(false);
-        when(userService.getUserEntityById(blockerId)).thenReturn(blocker);
-        when(userService.getUserEntityById(blockedId)).thenReturn(blocked);
+        when(userQueryService.getUserEntityById(blockerId)).thenReturn(blocker);
+        when(userQueryService.getUserEntityById(blockedId)).thenReturn(blocked);
 
 
         blockedUserService.blockUser(blockerId, blockedId, "Testing");
@@ -80,8 +80,8 @@ public class BlockedUserServiceTests {
     @Test
     void blockUser_ShouldThrowSaveException_OnDBError() {
         when(blockedRepo.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId)).thenReturn(false);
-        when(userService.getUserEntityById(blockerId)).thenReturn(blocker);
-        when(userService.getUserEntityById(blockedId)).thenReturn(blocked);
+        when(userQueryService.getUserEntityById(blockerId)).thenReturn(blocker);
+        when(userQueryService.getUserEntityById(blockedId)).thenReturn(blocked);
 
         doThrow(new DataAccessException("DB error") {}).when(blockedRepo).save(any());
 

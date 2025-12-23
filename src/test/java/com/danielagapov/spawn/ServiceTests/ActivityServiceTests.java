@@ -25,7 +25,8 @@ import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeReposi
 import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
 import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.chat.internal.services.IChatMessageService;
+import com.danielagapov.spawn.activity.internal.services.ChatQueryService;
+import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.activity.internal.services.ActivityService;
 import com.danielagapov.spawn.activity.internal.services.ActivityExpirationService;
 import com.danielagapov.spawn.activity.internal.services.ILocationService;
@@ -80,13 +81,16 @@ public class ActivityServiceTests {
     private IUserService userService;
 
     @Mock
-    private IChatMessageService chatMessageService;
+    private ChatQueryService chatQueryService;
     
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @Mock
     private ActivityExpirationService activityExpirationService;
+
+    @Mock
+    private IActivityTypeService activityTypeService;
 
     @InjectMocks
     private ActivityService ActivityService;
@@ -144,7 +148,7 @@ public class ActivityServiceTests {
 
         when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatQueryService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
         List<ActivityDTO> result = ActivityService.getAllActivities();
 
@@ -171,7 +175,7 @@ public class ActivityServiceTests {
 
         when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(chatQueryService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         ActivityDTO result = ActivityService.getActivityById(ActivityId);
 
@@ -506,7 +510,7 @@ public class ActivityServiceTests {
         ActivityDTO returnActivityDTO = dummyActivityDTO(ActivityId, "New Title");
         when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
         when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(chatQueryService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         FullFeedActivityDTO result = ActivityService.replaceActivity(newActivityDTO, ActivityId);
 
@@ -666,7 +670,7 @@ public class ActivityServiceTests {
 
         when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
         when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
-        when(chatMessageService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(chatQueryService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
         List<ActivityDTO> result = ActivityService.getActivitiesByOwnerId(creatorUserId);
 
@@ -685,7 +689,7 @@ public class ActivityServiceTests {
 
         when(userService.getParticipantsByActivityId(ActivityId)).thenReturn(List.of());
         when(userService.getInvitedByActivityId(ActivityId)).thenReturn(List.of());
-        when(chatMessageService.getFullChatMessagesByActivityId(ActivityId)).thenReturn(List.of());
+        when(chatQueryService.getFullChatMessagesByActivityId(ActivityId)).thenReturn(List.of());
 
         
 
