@@ -787,5 +787,79 @@
       "6. Check git status regularly to ensure root directory stays clean"
     ],
     "enforcement": "This rule is NON-NEGOTIABLE. Any file created in the wrong location must be immediately moved to its correct organized directory."
+  },
+  "java_version_management": {
+    "description": "CRITICAL: This project requires Java 17, but the system may have Java 25 (or other versions) as default",
+    "project_java_version": "17",
+    "mandatory_rules": [
+      "ALWAYS set JAVA_HOME to Java 17 before running ANY Maven commands",
+      "NEVER assume the default Java version is correct",
+      "ALWAYS verify Java version before building, testing, or compiling",
+      "The project uses Java 17 features and Lombok 1.18.36 which is NOT compatible with Java 25"
+    ],
+    "required_java_home_setup": {
+      "command": "export JAVA_HOME=$(/usr/libexec/java_home -v 17)",
+      "explanation": "Sets JAVA_HOME to Java 17 on macOS",
+      "when_to_use": "At the start of EVERY terminal session before any Maven command"
+    },
+    "maven_commands_requiring_java_17": [
+      "./mvnw clean compile",
+      "./mvnw test-compile", 
+      "./mvnw clean test",
+      "./mvnw test",
+      "./mvnw clean install",
+      "./mvnw clean package",
+      "./mvnw spring-boot:run"
+    ],
+    "correct_command_pattern": {
+      "single_command": "export JAVA_HOME=$(/usr/libexec/java_home -v 17) && cd /Users/daggerpov/Documents/GitHub/Spawn-App-Back-End && ./mvnw clean test",
+      "explanation": "Always prefix Maven commands with JAVA_HOME setup in the same command to ensure correct Java version"
+    },
+    "error_indicators": {
+      "lombok_error": "java.lang.NoSuchFieldException: com.sun.tools.javac.code.TypeTag :: UNKNOWN",
+      "compilation_error": "Fatal error compiling: java.lang.ExceptionInInitializerError",
+      "wrong_java_message": "These errors typically indicate Java version mismatch (using Java 25 instead of Java 17)"
+    },
+    "debugging_workflow": {
+      "step_1": "Check current Java version: java -version",
+      "step_2": "If not Java 17, set JAVA_HOME: export JAVA_HOME=$(/usr/libexec/java_home -v 17)",
+      "step_3": "Verify change: java -version (should show Java 17)",
+      "step_4": "Re-run the Maven command"
+    },
+    "available_java_versions_on_system": [
+      "Java 25 (default, but INCOMPATIBLE)",
+      "Java 23 (available, but INCOMPATIBLE)",
+      "Java 17 (REQUIRED for this project)",
+      "Java 11 (available, but too old)"
+    ],
+    "why_java_17": [
+      "Project is configured for Java 17 in pom.xml (java.version=17)",
+      "Lombok 1.18.36 has compatibility issues with Java 21+",
+      "Spring Boot 3.3.5 works best with Java 17",
+      "All dependencies are tested with Java 17"
+    ],
+    "automation_principle": {
+      "rule": "ALWAYS include JAVA_HOME setup in the same command as Maven execution",
+      "reason": "Prevents forgetting to set JAVA_HOME and encountering compilation errors",
+      "pattern": "export JAVA_HOME=$(/usr/libexec/java_home -v 17) && cd <project-dir> && ./mvnw <command>"
+    },
+    "testing_workflow": {
+      "step_1_check_java": "export JAVA_HOME=$(/usr/libexec/java_home -v 17) && java -version",
+      "step_2_build": "cd /Users/daggerpov/Documents/GitHub/Spawn-App-Back-End && ./mvnw clean test",
+      "step_3_verify": "Ensure 'BUILD SUCCESS' with no Java version errors"
+    },
+    "forbidden_actions": [
+      "NEVER run Maven commands without setting JAVA_HOME first",
+      "NEVER assume java -version shows Java 17 by default",
+      "NEVER try to fix Lombok errors without checking Java version first",
+      "NEVER update Lombok version to work with Java 25 (use Java 17 instead)"
+    ],
+    "quick_reference": {
+      "verify_java": "java -version (should show Java 17)",
+      "set_java_17": "export JAVA_HOME=$(/usr/libexec/java_home -v 17)",
+      "list_available": "/usr/libexec/java_home -V",
+      "build_with_correct_java": "export JAVA_HOME=$(/usr/libexec/java_home -v 17) && ./mvnw clean test"
+    },
+    "enforcement": "This is MANDATORY. Java version issues waste time and cause confusing errors. ALWAYS set JAVA_HOME to Java 17 before ANY Maven command."
   }
 } 

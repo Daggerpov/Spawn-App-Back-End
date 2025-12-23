@@ -48,7 +48,7 @@ public class UserService implements IUserService {
 
     private final IS3Service s3Service;
     private final ILogger logger;
-    private final IUserSearchService userSearchService;
+    private final IUserSearchQueryService userSearchQueryService;
     private final IUserFriendshipQueryService friendshipQueryService;
     private final CacheManager cacheManager;
     private final ApplicationEventPublisher eventPublisher;
@@ -63,7 +63,7 @@ public class UserService implements IUserService {
                        IFriendshipRepository friendshipRepository,
 
                        IS3Service s3Service, ILogger logger,
-                       IUserSearchService userSearchService,
+                       IUserSearchQueryService userSearchQueryService,
                        IUserFriendshipQueryService friendshipQueryService,
                        CacheManager cacheManager,
                        ApplicationEventPublisher eventPublisher,
@@ -73,7 +73,7 @@ public class UserService implements IUserService {
         this.friendshipRepository = friendshipRepository;
         this.s3Service = s3Service;
         this.logger = logger;
-        this.userSearchService = userSearchService;
+        this.userSearchQueryService = userSearchQueryService;
         this.friendshipQueryService = friendshipQueryService;
         this.cacheManager = cacheManager;
         this.eventPublisher = eventPublisher;
@@ -320,17 +320,17 @@ public class UserService implements IUserService {
     @Override
     @Cacheable(value = "recommendedFriends", key = "#userId")
     public List<RecommendedFriendUserDTO> getLimitedRecommendedFriendsForUserId(UUID userId) {
-        return userSearchService.getLimitedRecommendedFriendsForUserId(userId);
+        return userSearchQueryService.getLimitedRecommendedFriendsForUserId(userId);
     }
 
     @Override
     public SearchedUserResult getRecommendedFriendsBySearch(UUID requestingUserId, String searchQuery) {
-        return userSearchService.getRecommendedFriendsBySearch(requestingUserId, searchQuery);
+        return userSearchQueryService.getRecommendedFriendsBySearch(requestingUserId, searchQuery);
     }
 
     @Override
     public List<BaseUserDTO> searchByQuery(String searchQuery, UUID requestingUserId) {
-        return userSearchService.searchByQuery(searchQuery, requestingUserId);
+        return userSearchQueryService.searchByQuery(searchQuery, requestingUserId);
     }
 
     @Override
@@ -550,7 +550,7 @@ public class UserService implements IUserService {
             OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
             List<UUID> pastActivityIds = activityUserRepository.findPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
             List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityUserRepository.findOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
-            Set<UUID> excludedIds = userSearchService.getExcludedUserIds(requestingUserId);
+            Set<UUID> excludedIds = userSearchQueryService.getExcludedUserIds(requestingUserId);
 
             return pastActivityParticipantIds.stream()
                     .filter(e -> !excludedIds.contains(e.getUserId()))
