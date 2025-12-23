@@ -14,7 +14,6 @@ import com.danielagapov.spawn.shared.exceptions.OAuthProviderUnavailableExceptio
 import com.danielagapov.spawn.shared.util.RetryHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.security.PublicKey;
@@ -34,7 +33,6 @@ public final class AppleOAuthStrategy implements OAuthStrategy {
     private String appleClientId;
 
     @Autowired
-    @Lazy
     public AppleOAuthStrategy(ILogger logger) {
         this.logger = logger;
 
