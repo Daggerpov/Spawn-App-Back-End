@@ -1,5 +1,28 @@
 # Mediator Pattern Refactoring Plan
 
+**Status:** ⏸️ **ON HOLD** - To be implemented AFTER Spring Modulith refactoring  
+**Current Priority:** [Spring Modulith Phase 2](../refactoring/SPRING_MODULITH_REFACTORING_PLAN.md)  
+**Related Decision:** [REFACTORING_ORDER_DECISION.md](../refactoring/REFACTORING_ORDER_DECISION.md)
+
+---
+
+## ⚠️ Important Note
+
+**This refactoring should be done AFTER Spring Modulith refactoring is complete** (estimated Week 8+).
+
+**Why wait?**
+- Modulith establishes clear module boundaries first
+- Prevents reorganizing 90+ mediator files when boundaries change
+- Mediator can then be implemented cleanly within each module's `internal/mediator/` package
+- See [REFACTORING_ORDER_DECISION.md](../refactoring/REFACTORING_ORDER_DECISION.md) for detailed rationale
+
+**Current Progress:**
+- ✅ Spring Modulith Phase 1 Complete (Dec 8, 2025)
+- 🔄 Spring Modulith Phase 2 In Progress (Fix circular dependencies)
+- ⏸️ Mediator Pattern: Waiting for Spring Modulith completion
+
+---
+
 ## Goal
 
 Implement CQRS/MediatR-style mediator pattern for authentication and social modules using Spring's ApplicationEventPublisher, reducing tight coupling between controllers and services.

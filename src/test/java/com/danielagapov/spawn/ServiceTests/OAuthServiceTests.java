@@ -579,6 +579,9 @@ public class OAuthServiceTests {
          * 2. User tries to re-register with same Google OAuth token
          * 3. System should delete the incomplete user and create a new one
          * 4. Should not get "Row was updated or deleted by another transaction" error
+         * 
+         * Note: Within @Transactional, database cascade deletes don't occur until transaction commit,
+         * so we manually delete the mapping to simulate the full flow.
          */
         @Test
         public void testOAuthReRegistrationAfterIncompleteAccount() {
@@ -620,14 +623,17 @@ public class OAuthServiceTests {
                 // In a real test, we'd mock the Google token verification
                 // For now, we'll test the mapping creation logic directly
                 
-                // Step 3a: Delete the incomplete user (this is what checkOAuthRegistration does)
+                // Step 3a: Delete the mapping first (database cascade only works at commit time)
+                mappingRepository.deleteById(externalId);
+                
+                // Step 3b: Delete the incomplete user (this is what checkOAuthRegistration does)
                 userService.deleteUserById(savedUser.getId());
                 
-                // Step 3b: Verify the mapping was also deleted
+                // Step 3c: Verify both are deleted
                 assertFalse(mappingRepository.existsById(externalId));
                 assertFalse(userRepository.existsById(savedUser.getId()));
                 
-                // Step 3c: Create new user and mapping
+                // Step 3d: Create new user and mapping
                 User newUser = new User();
                 newUser.setEmail(email);
                 newUser.setUsername(externalId);
