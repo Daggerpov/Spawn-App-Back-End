@@ -6,7 +6,6 @@ import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
 import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.user.api.dto.SearchResultUserDTO;
-import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.shared.util.UserStatus;
@@ -20,8 +19,6 @@ import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.analytics.internal.services.SearchAnalyticsService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
-import com.danielagapov.spawn.user.internal.services.FuzzySearchService;
-import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Limit;
@@ -49,6 +46,7 @@ public class UserSearchService implements IUserSearchService {
 
     private final IFriendRequestService friendRequestService;
     private final IUserService userService;
+    private final IUserFriendshipQueryService friendshipQueryService;
     private final IUserRepository userRepository;
     private final IBlockedUserService blockedUserService;
     private final IActivityUserRepository activityUserRepository;
@@ -61,6 +59,7 @@ public class UserSearchService implements IUserSearchService {
 
     public UserSearchService(IFriendRequestService friendRequestService,
                            IUserService userService,
+                           IUserFriendshipQueryService friendshipQueryService,
                            IUserRepository userRepository,
                            IBlockedUserService blockedUserService,
                            IActivityUserRepository activityUserRepository,
@@ -69,6 +68,7 @@ public class UserSearchService implements IUserSearchService {
                            ILogger logger) {
         this.friendRequestService = friendRequestService;
         this.userService = userService;
+        this.friendshipQueryService = friendshipQueryService;
         this.userRepository = userRepository;
         this.blockedUserService = blockedUserService;
         this.activityUserRepository = activityUserRepository;
@@ -104,7 +104,7 @@ public class UserSearchService implements IUserSearchService {
             List<CreateFriendRequestDTO> outgoingFriendRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
             
             for (CreateFriendRequestDTO request : outgoingFriendRequests) {
-                User receiverUser = userService.getUserEntityById(request.getReceiverUserId());
+                User receiverUser = friendshipQueryService.getUserEntityById(request.getReceiverUserId());
                 BaseUserDTO receiverUserDTO = new BaseUserDTO(
                     receiverUser.getId(),
                     receiverUser.getName(),
@@ -294,7 +294,7 @@ public class UserSearchService implements IUserSearchService {
      */
     public List<RecommendedFriendUserDTO> getRecommendedMutuals(UUID userId) {
         // Fetch the requesting user's friends
-        List<UUID> requestingUserFriendIds = userService.getFriendUserIdsByUserId(userId);
+        List<UUID> requestingUserFriendIds = friendshipQueryService.getFriendUserIdsByUserId(userId);
 
         Set<UUID> excludedUserIds = getExcludedUserIds(userId);
 
@@ -314,7 +314,7 @@ public class UserSearchService implements IUserSearchService {
                     UserRelationshipType relationshipStatus = determineRelationshipStatus(userId, potentialFriendId);
                     UUID pendingFriendRequestId = getPendingFriendRequestId(userId, potentialFriendId, relationshipStatus);
                     
-                    User user = userService.getUserEntityById(potentialFriendId);
+                    User user = friendshipQueryService.getUserEntityById(potentialFriendId);
                     return FriendUserMapper.toDTO(user, mutualFriendCount, sharedActivitiesCount, relationshipStatus, pendingFriendRequestId);
                 })
                 .sorted((friend1, friend2) -> {
@@ -331,10 +331,11 @@ public class UserSearchService implements IUserSearchService {
 
     private List<RecommendedFriendUserDTO> getRandomRecommendations(UUID userId) {
         List<RecommendedFriendUserDTO> recommendedFriends = new ArrayList<>();
-        List<UserDTO> allUsers = userService.getAllUsers();
+        // Get all active users directly instead of going through UserService
+        List<User> allUsers = friendshipQueryService.getAllActiveUsers();
         Set<UUID> excludedUserIds = getExcludedUserIds(userId);
 
-        for (UserDTO potentialFriend : allUsers) {
+        for (User potentialFriend : allUsers) {
             if (recommendedFriends.size() >= recommendedFriendLimit) break;
             UUID potentialFriendId = potentialFriend.getId();
 
@@ -344,7 +345,7 @@ public class UserSearchService implements IUserSearchService {
                 UserRelationshipType relationshipStatus = determineRelationshipStatus(userId, potentialFriendId);
                 UUID pendingFriendRequestId = getPendingFriendRequestId(userId, potentialFriendId, relationshipStatus);
                 
-                recommendedFriends.add(FriendUserMapper.toDTO(userService.getUserEntityById(potentialFriendId), 0, 0, relationshipStatus, pendingFriendRequestId));
+                recommendedFriends.add(FriendUserMapper.toDTO(potentialFriend, 0, 0, relationshipStatus, pendingFriendRequestId));
                 // Add to excluded list to prActivity duplicates
                 excludedUserIds.add(potentialFriendId);
             }
@@ -355,7 +356,7 @@ public class UserSearchService implements IUserSearchService {
     private Map<UUID, Integer> getMutualFriendCounts(List<UUID> requestingUserFriendIds, Set<UUID> excludedUserIds) {
         Map<UUID, Integer> mutualFriendCounts = new HashMap<>();
         for (UUID friendId : requestingUserFriendIds) {
-            List<UUID> friendOfFriendIds = userService.getFriendUserIdsByUserId(friendId);
+            List<UUID> friendOfFriendIds = friendshipQueryService.getFriendUserIdsByUserId(friendId);
 
             for (UUID friendOfFriendId : friendOfFriendIds) {
                 if (!excludedUserIds.contains(friendOfFriendId)) {
@@ -552,7 +553,7 @@ public class UserSearchService implements IUserSearchService {
     // Create a set of the requesting user's friends, users they've sent requests to, users they've received requests from, and self for quick lookup
     public Set<UUID> getExcludedUserIds(UUID userId) {
         // Fetch the requesting user's friends
-        List<UUID> requestingUserFriendIds = userService.getFriendUserIdsByUserId(userId);
+        List<UUID> requestingUserFriendIds = friendshipQueryService.getFriendUserIdsByUserId(userId);
 
         // Fetch users who have already received a friend request from the user
         List<UUID> sentFriendRequestReceiverUserIds = friendRequestService.getSentFriendRequestsByUserId(userId)
@@ -656,7 +657,7 @@ public class UserSearchService implements IUserSearchService {
     private UserRelationshipType determineRelationshipStatus(UUID requestingUserId, UUID potentialFriendId) {
         try {
             // Check if they are already friends
-            if (userService.isUserFriendOfUser(requestingUserId, potentialFriendId)) {
+            if (friendshipQueryService.isUserFriendOfUser(requestingUserId, potentialFriendId)) {
                 return UserRelationshipType.FRIEND;
             }
             

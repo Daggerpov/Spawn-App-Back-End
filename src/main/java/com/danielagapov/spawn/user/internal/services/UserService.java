@@ -20,7 +20,6 @@ import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRep
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.shared.events.UserActivityTypeEvents.UserCreatedEvent;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
-import com.danielagapov.spawn.user.internal.services.IUserSearchService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.PhoneNumberMatchingUtil;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;

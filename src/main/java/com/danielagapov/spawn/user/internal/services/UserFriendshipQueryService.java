@@ -5,7 +5,6 @@ import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.UserStatus;
-import com.danielagapov.spawn.social.internal.domain.Friendship;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
