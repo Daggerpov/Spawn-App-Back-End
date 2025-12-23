@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/interests")
-public final class UserInterestController {
+public class UserInterestController {
 
     private final IUserInterestService userInterestService;
     private final ILogger logger;

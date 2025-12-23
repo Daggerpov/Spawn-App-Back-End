@@ -27,7 +27,7 @@ import java.util.UUID;
 @RestController()
 @RequestMapping("api/v1/users")
 @Validated
-public final class UserController {
+public class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
     private final IBlockedUserService blockedUserService;

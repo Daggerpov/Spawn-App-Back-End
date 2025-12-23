@@ -4,6 +4,7 @@ import com.danielagapov.spawn.auth.api.AuthController;
 import com.danielagapov.spawn.auth.api.dto.*;
 import com.danielagapov.spawn.user.api.dto.*;
 import com.danielagapov.spawn.shared.util.OAuthProvider;
+import com.danielagapov.spawn.shared.util.UserField;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.*;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
@@ -607,7 +608,7 @@ class AuthControllerTests {
 
     @Test
     void updateUserDetails_ShouldReturnOk_WhenSuccessful() throws Exception {
-        UpdateUserDetailsDTO dto = new UpdateUserDetailsDTO(userId, username, "New Name", "pic.jpg");
+        UpdateUserDetailsDTO dto = new UpdateUserDetailsDTO(userId, username, "+12345678901", "newPassword123");
         
         when(authService.updateUserDetails(any(UpdateUserDetailsDTO.class))).thenReturn(baseUserDTO);
         when(userService.getUserEntityById(userId)).thenReturn(user);
@@ -623,10 +624,10 @@ class AuthControllerTests {
 
     @Test
     void updateUserDetails_ShouldReturnConflict_WhenUsernameExists() throws Exception {
-        UpdateUserDetailsDTO dto = new UpdateUserDetailsDTO(userId, "existinguser", "New Name", "pic.jpg");
+        UpdateUserDetailsDTO dto = new UpdateUserDetailsDTO(userId, "existinguser", "+12345678901", "password123");
         
         when(authService.updateUserDetails(any(UpdateUserDetailsDTO.class)))
-                .thenThrow(new UsernameAlreadyExistsException("Username already exists"));
+                .thenThrow(new FieldAlreadyExistsException("Username already exists", UserField.USERNAME));
 
         mockMvc.perform(post("/api/v1/auth/user/details")
                 .contentType(MediaType.APPLICATION_JSON)

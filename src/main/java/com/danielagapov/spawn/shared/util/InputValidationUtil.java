@@ -11,7 +11,7 @@ public class InputValidationUtil {
     // Regex patterns for validation
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]{3,30}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[1-9]\\d{1,14}$"); // E.164 format
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[1-9]\\d{6,14}$"); // E.164 format (7-15 digits)
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z\\s'-]{1,100}$");
     private static final Pattern SAFE_TEXT_PATTERN = Pattern.compile("^[a-zA-Z0-9\\s.,!?'-]{1,500}$");
     
@@ -34,9 +34,13 @@ public class InputValidationUtil {
             return false;
         }
         
-        String cleanUsername = username.trim();
-        return USERNAME_PATTERN.matcher(cleanUsername).matches() && 
-               !containsDangerousContent(cleanUsername);
+        // Reject usernames with leading/trailing spaces
+        if (!username.equals(username.trim())) {
+            return false;
+        }
+        
+        return USERNAME_PATTERN.matcher(username).matches() && 
+               !containsDangerousContent(username);
     }
 
     /**
