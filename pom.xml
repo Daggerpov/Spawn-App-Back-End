@@ -251,6 +251,10 @@
                         <junit.jupiter.execution.parallel.config.strategy>dynamic</junit.jupiter.execution.parallel.config.strategy>
                         <junit.jupiter.execution.parallel.config.dynamic.factor>1.0</junit.jupiter.execution.parallel.config.dynamic.factor>
                     </systemPropertyVariables>
+                    <environmentVariables>
+                        <!-- Test signing secret for JWT tests - base64 encoded -->
+                        <SIGNING_SECRET>dGVzdC1zZWNyZXQta2V5LWZvci1qd3QtdGVzdGluZy10aGF0LWlzLWxvbmctZW5vdWdo</SIGNING_SECRET>
+                    </environmentVariables>
                 </configuration>
             </plugin>
             <plugin>
