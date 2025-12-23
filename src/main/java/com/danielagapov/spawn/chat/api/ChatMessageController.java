@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @RestController()
 @RequestMapping("api/v1/chat-messages")
-public final class ChatMessageController {
+public class ChatMessageController {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
 

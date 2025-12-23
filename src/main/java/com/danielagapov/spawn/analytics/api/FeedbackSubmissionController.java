@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("api/v1/feedback")
-public final class FeedbackSubmissionController {
+public class FeedbackSubmissionController {
     private final IFeedbackSubmissionService service;
     private final ILogger logger;
 

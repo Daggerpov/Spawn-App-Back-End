@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/activity-types")
-public final class ActivityTypeController {
+public class ActivityTypeController {
 
     private final IActivityTypeService activityTypeService;
     private final ILogger logger;

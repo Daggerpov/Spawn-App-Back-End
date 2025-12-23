@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("api/v1/friend-requests")
-public final class FriendRequestController {
+public class FriendRequestController {
 
     private final IFriendRequestService friendRequestService;
     private final IBlockedUserService blockedUserService;

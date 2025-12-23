@@ -555,9 +555,29 @@ public class UserService implements IUserService {
             User user = repository.findById(id)
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
 
-            user.setBio(updateDTO.getBio());
-            user.setUsername(updateDTO.getUsername());
-            user.setName(updateDTO.getName());
+            // Validate username if being updated
+            if (updateDTO.getUsername() != null && !updateDTO.getUsername().isEmpty()) {
+                if (!com.danielagapov.spawn.shared.util.InputValidationUtil.isValidUsername(updateDTO.getUsername())) {
+                    throw new IllegalArgumentException("Username must be 3-30 characters and contain only letters, numbers, dots, underscores, and hyphens (no spaces)");
+                }
+                user.setUsername(updateDTO.getUsername());
+            }
+            
+            // Validate name if being updated
+            if (updateDTO.getName() != null && !updateDTO.getName().isEmpty()) {
+                if (!com.danielagapov.spawn.shared.util.InputValidationUtil.isValidName(updateDTO.getName())) {
+                    throw new IllegalArgumentException("Name must be 1-100 characters and contain only letters, spaces, hyphens, and apostrophes");
+                }
+                user.setName(updateDTO.getName());
+            }
+            
+            // Validate bio if being updated
+            if (updateDTO.getBio() != null) {
+                if (updateDTO.getBio().length() > 500) {
+                    throw new IllegalArgumentException("Bio must not exceed 500 characters");
+                }
+                user.setBio(updateDTO.getBio());
+            }
 
             user = repository.save(user);
 

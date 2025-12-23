@@ -1,5 +1,9 @@
 package com.danielagapov.spawn.user.api.dto;
 
+import com.danielagapov.spawn.shared.validation.ValidName;
+import com.danielagapov.spawn.shared.validation.ValidUsername;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,9 +19,17 @@ import java.util.UUID;
 // Abstract class since interface describes behaviours
 public abstract class AbstractUserDTO implements Serializable {
     private UUID id;
+    
+    @ValidName(optional = true)
     private String name;
+    
+    @Email(message = "Email must be valid")
     private String email;
+    
+    @ValidUsername(optional = true)
     private String username;
+    
+    @Size(max = 500, message = "Bio must not exceed 500 characters")
     private String bio;
 
     @Override

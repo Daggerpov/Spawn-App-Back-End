@@ -19,11 +19,13 @@ import com.danielagapov.spawn.auth.internal.services.IOAuthService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.shared.util.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -34,7 +36,8 @@ import java.util.UUID;
 @RestController()
 @RequestMapping("api/v1/auth")
 @AllArgsConstructor
-public final class AuthController {
+@Validated
+public class AuthController {
     private final IOAuthService oauthService;
     private final IJWTService jwtService;
     private final ILogger logger;
@@ -148,7 +151,7 @@ public final class AuthController {
 
     // full path: /api/v1/auth/register
     @PostMapping("register")
-    public ResponseEntity<UserDTO> register(@RequestBody() AuthUserDTO authUserDTO) {
+    public ResponseEntity<UserDTO> register(@Valid @RequestBody() AuthUserDTO authUserDTO) {
         try {
             UserDTO newUserDTO = authService.registerUser(authUserDTO);
             HttpHeaders headers = authService.makeHeadersForTokens(newUserDTO.getUsername());
@@ -213,7 +216,7 @@ public final class AuthController {
 
     // full path: /api/v1/auth/register/oauth
     @PostMapping("register/oauth")
-    public ResponseEntity<?> registerViaOAuth(@RequestBody OAuthRegistrationDTO registration) {
+    public ResponseEntity<?> registerViaOAuth(@Valid @RequestBody OAuthRegistrationDTO registration) {
         try {
             AuthResponseDTO user = authService.registerUserViaOAuth(registration);
             // Use User object for token generation to handle null usernames
@@ -344,7 +347,7 @@ public final class AuthController {
 
     // full path: /api/v1/auth/user/details
     @PostMapping("user/details")
-    public ResponseEntity<?> updateUserDetails(@RequestBody UpdateUserDetailsDTO dto) {
+    public ResponseEntity<?> updateUserDetails(@Valid @RequestBody UpdateUserDetailsDTO dto) {
         try {
             BaseUserDTO updatedUser = authService.updateUserDetails(dto);
             // Use User object for token generation to handle cases where username was just set

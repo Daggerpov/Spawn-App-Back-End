@@ -14,11 +14,37 @@ Performance and memory optimization documentation:
 - **[PERFORMANCE_OPTIMIZATION_SUMMARY.md](optimization/PERFORMANCE_OPTIMIZATION_SUMMARY.md)** - Overall performance improvements
 - **[MEMORY_LEAK_AND_PERFORMANCE_FIXES.md](optimization/MEMORY_LEAK_AND_PERFORMANCE_FIXES.md)** - Memory leak fixes and performance improvements (marking classes as final)
 
+### 🔐 [security/](security/)
+Security and authentication documentation:
+- **[AUTHENTICATION_FLOWS.md](security/AUTHENTICATION_FLOWS.md)** - Authentication flow documentation and OAuth integration
+- **[SECURITY_AUDIT_SUMMARY.md](security/SECURITY_AUDIT_SUMMARY.md)** - Security audit findings and recommendations
+
+### 🌐 [api/](api/)
+API design and REST conventions:
+- **[API_DISCREPANCIES.md](api/API_DISCREPANCIES.md)** - API discrepancies and inconsistencies
+- **[CONTROLLER_REST_CONVENTION_ISSUES.md](api/CONTROLLER_REST_CONVENTION_ISSUES.md)** - REST convention issues and improvements
+
+### ✅ [validation/](validation/)
+Input validation and data integrity:
+- **[VALIDATION_IMPLEMENTATION.md](validation/VALIDATION_IMPLEMENTATION.md)** - Validation implementation details
+- **[VALIDATION_SUMMARY.md](validation/VALIDATION_SUMMARY.md)** - Validation strategy summary
+
 ### ✨ [features/](features/)
 Feature implementation documentation:
+- **[EMAIL_NOTIFICATION_IMPLEMENTATION.md](features/EMAIL_NOTIFICATION_IMPLEMENTATION.md)** - Email notification system implementation
 - **[MOBILE_CACHE_IMPLEMENTATION.md](features/MOBILE_CACHE_IMPLEMENTATION.md)** - Mobile cache validation system
 - **[FUZZY_SEARCH_IMPLEMENTATION.md](features/FUZZY_SEARCH_IMPLEMENTATION.md)** - Fuzzy search with Jaro-Winkler algorithm
 - **[FRIENDSHIP_REFACTOR_PLAN.md](features/FRIENDSHIP_REFACTOR_PLAN.md)** - Friendship system refactoring plan
+
+### 🧪 [testing/](testing/)
+Testing documentation and coverage tracking:
+- **[README.md](testing/README.md)** - Testing overview and guidelines
+- **[CODE_COVERAGE_ANALYSIS.md](testing/CODE_COVERAGE_ANALYSIS.md)** - Detailed code coverage analysis and testing plan
+- **[TEST_COVERAGE_TRACKER.md](testing/TEST_COVERAGE_TRACKER.md)** - Test coverage progress tracker
+- **[TESTING_INITIATIVE_SUMMARY.md](testing/TESTING_INITIATIVE_SUMMARY.md)** - Testing initiative summary
+- **[TESTING_QUICK_REFERENCE.md](testing/TESTING_QUICK_REFERENCE.md)** - Quick reference for writing tests
+- **[TESTING_QUICK_START_GUIDE.md](testing/TESTING_QUICK_START_GUIDE.md)** - Quick start guide for testing
+- **[TESTS_STATUS.md](testing/TESTS_STATUS.md)** - Current test status and results
 
 ### 🔧 [fixes/](fixes/)
 Bug fixes and issue resolutions:
@@ -70,7 +96,6 @@ Microservices architecture planning and implementation:
 - **[VISUAL_ARCHITECTURE.md](microservices/VISUAL_ARCHITECTURE.md)** - Visual diagrams and ASCII art for quick reference
 
 ### 📋 Root Level
-- **[TESTS_STATUS.md](TESTS_STATUS.md)** - Test suite status and coverage tracking
 - **README.md** (this file) - Documentation index and navigation guide
 
 ---
@@ -104,23 +129,33 @@ Review [database/](database/) directory
 ### For Code Refactoring
 **✅ Phase 1 Complete!** Continue with Phase 2 in [refactoring/SPRING_MODULITH_REFACTORING_PLAN.md](refactoring/SPRING_MODULITH_REFACTORING_PLAN.md)
 
+### For Testing and Coverage
+Check [testing/](testing/) directory for comprehensive testing documentation
+
 ---
 
 ## 📝 Documentation Standards
 
 When adding new documentation:
 1. **optimization/** - RAM, CPU, network, database performance improvements
-2. **features/** - New feature implementations and architecture
-3. **fixes/** - Bug fixes, hotfixes, and issue resolutions
-4. **refactoring/** - Code refactoring, architectural improvements, and design patterns
-5. **database/** - Schema changes, migrations, and database-specific issues
-6. **microservices/** - Microservices architecture, decomposition, and implementation plans
-7. **Root level** - Only high-level overview and status documents
+2. **security/** - Security audits, authentication, and authorization documentation
+3. **api/** - API design, REST conventions, and API-related issues
+4. **validation/** - Input validation, data integrity, and validation strategies
+5. **features/** - New feature implementations and architecture
+6. **testing/** - Test documentation, coverage tracking, and testing strategies
+7. **fixes/** - Bug fixes, hotfixes, and issue resolutions
+8. **refactoring/** - Code refactoring, architectural improvements, and design patterns
+9. **database/** - Schema changes, migrations, and database-specific issues
+10. **diagrams/** - Architecture diagrams, ERDs, and visual documentation
+11. **mediator/** - Mediator pattern documentation
+12. **microservices/** - Microservices architecture, decomposition, and implementation plans
+13. **Root level** - Only high-level overview and status documents
 
 ---
 
 ## 🔄 Recent Updates
 
+- **December 23, 2025**: 📁 **Documentation Reorganization** - Created new topic folders (api/, security/, validation/), moved all docs to appropriate folders, removed duplicates for clean organization
 - **December 23, 2025**: ✅ **Spring Modulith Phase 1 COMPLETE** - All 266 files moved to modular structure, compilation successful, Phase 2 in progress
 - **December 8, 2025**: Started Spring Modulith refactoring - Phase 1 package restructuring
 - **December 8, 2025**: Added comprehensive Spring Modulith documentation (refactoring plan, rationale, decision guide)
