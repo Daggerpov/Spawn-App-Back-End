@@ -4,6 +4,17 @@
 
 A comprehensive input validation system has been added to ensure usernames, names, emails, phone numbers, and other user inputs follow standard conventions and security best practices.
 
+## Important: Password Validation & Authentication Methods
+
+⚠️ **Password validation is ONLY applied to email/password authentication flows.**
+
+The application supports multiple authentication methods:
+- **Email/Password Auth:** Uses `AuthUserDTO` - password IS required and validated
+- **OAuth Auth (Google/Apple):** Uses `OAuthRegistrationDTO` - NO password field
+- **Legacy OAuth:** Uses `UserCreationDTO` - NO password field
+
+See `docs/AUTHENTICATION_FLOWS.md` for complete details on each authentication method.
+
 ## Key Changes
 
 ### 1. Added Jakarta Bean Validation Dependency
@@ -19,7 +30,7 @@ A comprehensive input validation system has been added to ensure usernames, name
 - `ValidUsername.java` - Annotation for username validation
 - `UsernameValidator.java` - Validator implementation
 - `ValidName.java` - Annotation for name validation
-- `ValidName Validator.java` - Validator implementation
+- `NameValidator.java` - Validator implementation
 - `ValidPhoneNumber.java` - Annotation for phone number validation
 - `PhoneNumberValidator.java` - Validator implementation
 
@@ -27,14 +38,19 @@ A comprehensive input validation system has been added to ensure usernames, name
 
 **Files Updated:**
 - `AbstractUserDTO.java` - Added `@ValidName`, `@ValidUsername`, `@Email`, `@Size` annotations
-- `AuthUserDTO.java` - Added `@NotBlank`, `@Size` for password
+- `AuthUserDTO.java` - Added `@NotBlank`, `@Size` for password (email/password auth only)
+- `OAuthRegistrationDTO.java` - Added `@NotBlank`, `@Email`, `@NotNull`, `@ValidName` (OAuth only, no password)
+- `UserCreationDTO.java` - Inherits validation from AbstractUserDTO (legacy OAuth, no password)
 - `UpdateUserDetailsDTO.java` - Added `@NotNull`, `@ValidUsername`, `@ValidPhoneNumber`
 - `UserUpdateDTO.java` - Added `@ValidUsername`, `@ValidName`, `@Size`
 
 ### 4. Applied @Valid in Controllers
 
 **Files Updated:**
-- `AuthController.java` - Added `@Valid` to `register()` and `updateUserDetails()` endpoints
+- `AuthController.java` - Added `@Valid` to:
+  - `register()` - Email/password registration (validates password)
+  - `registerViaOAuth()` - OAuth registration (no password field)
+  - `updateUserDetails()` - User details update
 - `UserController.java` - Added `@Valid` to `updateUser()` endpoint
 
 Both controllers also marked with `@Validated` annotation.
@@ -64,7 +80,8 @@ Tests cover:
 ### 7. Documentation
 
 **New Files:**
-- `docs/VALIDATION_IMPLEMENTATION.md` - Comprehensive documentation
+- `docs/VALIDATION_IMPLEMENTATION.md` - Comprehensive validation documentation
+- `docs/AUTHENTICATION_FLOWS.md` - Authentication methods and password handling
 - `docs/VALIDATION_SUMMARY.md` - This summary
 
 ## Validation Rules Summary
@@ -166,7 +183,7 @@ Ensure your mobile app validates input on the client side as well:
 
 ## Files Changed
 
-### New Files (10)
+### New Files (11)
 - `src/main/java/com/danielagapov/spawn/shared/validation/ValidUsername.java`
 - `src/main/java/com/danielagapov/spawn/shared/validation/UsernameValidator.java`
 - `src/main/java/com/danielagapov/spawn/shared/validation/ValidName.java`
@@ -175,12 +192,15 @@ Ensure your mobile app validates input on the client side as well:
 - `src/main/java/com/danielagapov/spawn/shared/validation/PhoneNumberValidator.java`
 - `src/test/java/com/danielagapov/spawn/shared/validation/ValidationTest.java`
 - `docs/VALIDATION_IMPLEMENTATION.md`
+- `docs/AUTHENTICATION_FLOWS.md`
 - `docs/VALIDATION_SUMMARY.md`
 
-### Modified Files (8)
+### Modified Files (10)
 - `pom.xml` - Added validation dependency
 - `src/main/java/com/danielagapov/spawn/user/api/dto/AbstractUserDTO.java`
-- `src/main/java/com/danielagapov/spawn/user/api/dto/AuthUserDTO.java`
+- `src/main/java/com/danielagapov/spawn/user/api/dto/AuthUserDTO.java` - Email/password auth only
+- `src/main/java/com/danielagapov/spawn/auth/api/dto/OAuthRegistrationDTO.java` - OAuth auth only
+- `src/main/java/com/danielagapov/spawn/user/api/dto/UserCreationDTO.java` - Legacy OAuth
 - `src/main/java/com/danielagapov/spawn/user/api/dto/UpdateUserDetailsDTO.java`
 - `src/main/java/com/danielagapov/spawn/user/api/dto/UserUpdateDTO.java`
 - `src/main/java/com/danielagapov/spawn/auth/api/AuthController.java`
@@ -190,5 +210,7 @@ Ensure your mobile app validates input on the client side as well:
 
 ## Questions?
 
-For more details, see `docs/VALIDATION_IMPLEMENTATION.md`
+For more details:
+- **Validation Rules:** See `docs/VALIDATION_IMPLEMENTATION.md`
+- **Authentication Methods & Password Handling:** See `docs/AUTHENTICATION_FLOWS.md`
 
