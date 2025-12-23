@@ -100,8 +100,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 // Add basic security headers
                 .headers(headers -> headers
-                    .frameOptions().deny() // Prevent clickjacking
-                    .contentTypeOptions() // Prevent MIME type sniffing
+                    .frameOptions(frame -> frame.deny()) // Prevent clickjacking
+                    .contentTypeOptions(contentType -> {}) // Prevent MIME type sniffing (enabled by default)
                 )
                 // Endpoints can be made unsecured by specifying it with requestMatchers() below and permitting
                 // that be accessed without authentication with permitAll().
