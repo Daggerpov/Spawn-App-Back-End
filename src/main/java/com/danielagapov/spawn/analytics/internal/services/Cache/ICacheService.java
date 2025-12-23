@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.analytics.internal.services;
+package com.danielagapov.spawn.analytics.internal.services.Cache;
 
 import com.danielagapov.spawn.shared.config.CacheValidationResponseDTO;
 
