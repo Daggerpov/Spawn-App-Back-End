@@ -82,12 +82,14 @@ Spring Modulith provides a structured approach to validate service boundaries BE
 
 ### Success Criteria
 
-- [x] Zero circular dependencies between modules *(In Progress - Phase 2)*
-- [ ] All inter-module communication via events or public APIs
-- [ ] Module boundary tests passing
-- [ ] No performance regression
-- [ ] Clear ownership of all database entities
-- [ ] Documentation of module contracts
+- [x] Zero circular dependencies between modules ✅ *(Complete - Phase 2)*
+- [x] Zero `@Lazy` annotations in cross-module dependencies ✅ *(Complete - Phase 2)*
+- [ ] All inter-module communication via events or public APIs *(In Progress - Phase 3)*
+- [ ] No direct cross-module repository access *(In Progress - Phase 3)*
+- [ ] Module boundary tests passing *(Phase 5)*
+- [ ] No performance regression *(Phase 5)*
+- [ ] Clear ownership of all database entities *(In Progress - Phase 3)*
+- [ ] Documentation of module contracts *(Phase 6)*
 
 ---
 
@@ -1638,10 +1640,16 @@ Track your progress:
 - [x] Remove all `@Lazy` annotations
 - [x] Test each fix independently (build successful)
 
-**Week 5: Shared Data + Add Modulith**
-- [ ] Document data ownership matrix
-- [ ] Move repositories to owning modules
-- [ ] Create public APIs for frequent queries
+**Week 5: Shared Data Resolution (Phase 3)** ⬅️ Current
+- [ ] Document data ownership matrix (see [PHASE_3_PLAN.md](./PHASE_3_PLAN.md))
+- [ ] Create `ActivityPublicApi` interface
+- [ ] Create `ActivityPublicApiImpl` implementation
+- [ ] Update User module services to use public API
+- [ ] Update Chat module services to use public API
+- [ ] Update notification events to use DTOs
+- [ ] Verify no cross-module repository imports remain
+
+**Week 5-6: Add Spring Modulith (Phase 4)**
 - [ ] Update POM with Modulith dependencies
 - [ ] Create `package-info.java` for each module
 - [ ] Update main application class with `@Modulith`
@@ -1714,29 +1722,42 @@ Track your progress:
 
 ---
 
-**Document Status:** In Progress - Phase 2  
+**Document Status:** In Progress - Phase 3  
 **Last Updated:** December 23, 2025  
-**Version:** 1.1  
-**Next Review:** After Phase 2 completion
+**Version:** 1.2  
+**Next Review:** After Phase 3 completion
 
 ---
 
 **✅ Phase 1 Complete!** See [PHASE_1_COMPLETE.md](./PHASE_1_COMPLETE.md)
 
-**🔄 Current Focus: Phase 2 - Fix Circular Dependencies**
+**✅ Phase 2 Complete!** See [PHASE_2_COMPLETE.md](./PHASE_2_COMPLETE.md)
 
-**Quick Start Phase 2:**
+**🔄 Current Focus: Phase 3 - Shared Data Resolution**
+
+**Quick Start Phase 3:**
 ```bash
 # Verify current build status
-./build.sh clean compile -DskipTests
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ./mvnw clean compile -DskipTests
 
-# Start working on circular dependencies
-# See Phase 2 section above for detailed steps
+# Check for cross-module repository violations
+grep -r "import com.danielagapov.spawn.activity.internal.repositories" \
+  src/main/java/com/danielagapov/spawn/user \
+  src/main/java/com/danielagapov/spawn/chat
+
+# See Phase 3 detailed plan
+# docs/refactoring/PHASE_3_PLAN.md
 ```
 
+**Phase 3 Key Tasks:**
+1. Create `ActivityPublicApi` interface and implementation
+2. Update User module services to use public API instead of direct repository access
+3. Update Chat module services similarly
+4. Update notification events to use DTOs instead of repository types
+
 **Need Help?**
-- Review [WHY_SPRING_MODULITH_FIRST.md](./WHY_SPRING_MODULITH_FIRST.md) for context
-- Check [PHASE_1_COMPLETE.md](./PHASE_1_COMPLETE.md) for what was accomplished
+- Review [PHASE_3_PLAN.md](./PHASE_3_PLAN.md) for detailed tasks
+- Check [WHY_SPRING_MODULITH_FIRST.md](./WHY_SPRING_MODULITH_FIRST.md) for context
 - Check troubleshooting section in this doc
 - Refer to Spring Modulith samples repository
 
