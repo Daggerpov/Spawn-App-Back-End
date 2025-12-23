@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.analytics.internal.services.Cache;
+package com.danielagapov.spawn.analytics.internal.services;
 
 /**
  * Enumeration of cache types used in the mobile cache validation system.

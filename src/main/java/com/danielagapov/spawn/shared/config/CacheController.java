@@ -3,7 +3,7 @@ package com.danielagapov.spawn.shared.config;
 import com.danielagapov.spawn.shared.config.CacheValidationRequestDTO;
 import com.danielagapov.spawn.shared.config.CacheValidationResponseDTO;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.danielagapov.spawn.analytics.internal.services.Cache.ICacheService;
+import com.danielagapov.spawn.analytics.internal.services.ICacheService;
 import com.danielagapov.spawn.activity.internal.services.ICalendarService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
