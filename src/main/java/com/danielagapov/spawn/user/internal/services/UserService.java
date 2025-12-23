@@ -1,9 +1,6 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.*;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.UserProfileInfoDTO;
 import com.danielagapov.spawn.activity.api.dto.UserIdActivityTimeDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
@@ -21,7 +18,7 @@ import com.danielagapov.spawn.activity.internal.repositories.IActivityUserReposi
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
+import com.danielagapov.spawn.shared.events.UserActivityTypeEvents.UserCreatedEvent;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.IUserSearchService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
@@ -33,7 +30,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
@@ -54,14 +51,13 @@ public class UserService implements IUserService {
     private final ILogger logger;
     private final IUserSearchService userSearchService;
     private final CacheManager cacheManager;
-    private final IActivityTypeService activityTypeService;
+    private final ApplicationEventPublisher eventPublisher;
     private final IUserIdExternalIdMapRepository userIdExternalIdMapRepository;
 
     @Value("${ADMIN_USERNAME:admin}")
     private String adminUsername;
 
     @Autowired
-    @Lazy // Avoid circular dependency issues with ftService
     public UserService(IUserRepository repository,
                        IActivityUserRepository activityUserRepository,
                        IFriendshipRepository friendshipRepository,
@@ -69,7 +65,7 @@ public class UserService implements IUserService {
                        IS3Service s3Service, ILogger logger,
                        IUserSearchService userSearchService,
                        CacheManager cacheManager,
-                       IActivityTypeService activityTypeService,
+                       ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
         this.repository = repository;
         this.activityUserRepository = activityUserRepository;
@@ -78,7 +74,7 @@ public class UserService implements IUserService {
         this.logger = logger;
         this.userSearchService = userSearchService;
         this.cacheManager = cacheManager;
-        this.activityTypeService = activityTypeService;
+        this.eventPublisher = eventPublisher;
         this.userIdExternalIdMapRepository = userIdExternalIdMapRepository;
     }
 
@@ -261,8 +257,14 @@ public class UserService implements IUserService {
     public User createAndSaveUser(User user) {
         // Save the user first so it has a valid ID for foreign key relationships
         user = repository.save(user);
-        // Now initialize default activity types with the persisted user
-        activityTypeService.initializeDefaultActivityTypesForUser(user);
+        
+        // Publish event for Activity module to initialize default activity types
+        // This breaks the circular dependency between User and ActivityType
+        eventPublisher.publishEvent(new UserCreatedEvent(
+            user.getId(),
+            user.getUsername() != null ? user.getUsername() : "unknown"
+        ));
+        
         return user;
     }
 
