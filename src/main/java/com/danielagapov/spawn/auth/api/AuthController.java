@@ -216,7 +216,7 @@ public final class AuthController {
 
     // full path: /api/v1/auth/register/oauth
     @PostMapping("register/oauth")
-    public ResponseEntity<?> registerViaOAuth(@RequestBody OAuthRegistrationDTO registration) {
+    public ResponseEntity<?> registerViaOAuth(@Valid @RequestBody OAuthRegistrationDTO registration) {
         try {
             AuthResponseDTO user = authService.registerUserViaOAuth(registration);
             // Use User object for token generation to handle null usernames

@@ -13,10 +13,12 @@ import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.UUID;
 
 @RestController()
 @RequestMapping("api/v1/users")
+@Validated
 public final class UserController {
     private final IUserService userService;
     private final IS3Service s3Service;
@@ -175,7 +178,7 @@ public final class UserController {
 
     // full path: /api/v1/users/{id}
     @PatchMapping("{id}")
-    public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @RequestBody UserUpdateDTO updateDTO) {
+    public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @Valid @RequestBody UserUpdateDTO updateDTO) {
         if (id == null) {
             logger.error("Invalid parameter: user ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
