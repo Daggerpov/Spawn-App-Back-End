@@ -13,7 +13,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -22,26 +22,42 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Set;
 
 @Service
-@AllArgsConstructor
 // TODO: consider refactor to type hierarchy with AccessToken, RefreshToken, EmailToken extending JWTService
 public class JWTService implements IJWTService {
-    private static final String SIGNING_SECRET;
+    private final String signingSecret;
 
     private enum TokenType {ACCESS, REFRESH, EMAIL}
 
-    static {
-        final String secret = System.getenv("SIGNING_SECRET");
-        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        SIGNING_SECRET = secret == null ? dotenv.get("SIGNING_SECRET") : secret;
-    }
-
     private static final long ACCESS_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; //  24 hours
-    private static final long REFRESH_TOKEN_EXPIRY = 1000L * 60 * 60 * 24 * 180; // 180 days or 6 months
+    private static final long REFRESH_TOKEN_EXPIRY = 1000L * 60 * 60 * 24 * 60; // 60 days (reduced from 180 days for security)
     private static final long EMAIL_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; // 24 hours
     private final ILogger logger;
     private final IUserService userService;
+
+    public JWTService(
+            ILogger logger,
+            IUserService userService,
+            @Value("${jwt.signing-secret:#{null}}") String configuredSecret
+    ) {
+        this.logger = logger;
+        this.userService = userService;
+        
+        // Priority: 1) Spring property, 2) Environment variable, 3) .env file
+        if (configuredSecret != null && !configuredSecret.isEmpty()) {
+            this.signingSecret = configuredSecret;
+        } else {
+            String envSecret = System.getenv("SIGNING_SECRET");
+            if (envSecret != null && !envSecret.isEmpty()) {
+                this.signingSecret = envSecret;
+            } else {
+                Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+                this.signingSecret = dotenv.get("SIGNING_SECRET");
+            }
+        }
+    }
 
 
     @Override
@@ -67,7 +83,17 @@ public class JWTService implements IJWTService {
     public boolean isValidToken(String token, UserDetails userDetails) {
         try {
             final String username = extractUsername(token);
-            return username.equals(userDetails.getUsername()) && isTokenNonExpired(token) && isMatchingTokenType(token, TokenType.ACCESS);
+            
+            // Validate basic token properties
+            boolean isUsernameValid = username.equals(userDetails.getUsername());
+            boolean isTokenNonExpired = isTokenNonExpired(token);
+            boolean isCorrectType = isMatchingTokenType(token, TokenType.ACCESS);
+            
+            // Additional security validations
+            boolean hasValidIssuer = isValidIssuer(token);
+            boolean hasValidAudience = isValidAudience(token);
+            
+            return isUsernameValid && isTokenNonExpired && isCorrectType && hasValidIssuer && hasValidAudience;
         } catch (Exception e) {
             logger.warn("Token validation failed: " + e.getMessage());
             return false;
@@ -169,14 +195,24 @@ public class JWTService implements IJWTService {
 
     private String generateToken(String username, long expiry, Map<String, Object> claims) {
         try {
+            if (signingSecret == null || signingSecret.trim().isEmpty()) {
+                throw new SecurityException("JWT signing secret is not configured");
+            }
+            
             return Jwts.builder()
-                    .claims()
-                    .add(claims)
-                    .subject(username)
-                    .issuedAt(new Date(System.currentTimeMillis()))
-                    .expiration(new Date(System.currentTimeMillis() + expiry))
+                    .header()
+                        .type("JWT")
+                        .add("alg", "HS256") // Explicitly specify algorithm to prevent algorithm confusion attacks
                     .and()
-                    .signWith(getKey())
+                    .claims()
+                        .add(claims)
+                        .subject(username)
+                        .issuer("spawn-backend") // Add issuer for additional validation
+                        .audience().add("spawn-app").and() // Add audience validation
+                        .issuedAt(new Date(System.currentTimeMillis()))
+                        .expiration(new Date(System.currentTimeMillis() + expiry))
+                    .and()
+                    .signWith(getKey(), Jwts.SIG.HS256) // Explicitly specify algorithm
                     .compact();
         } catch (Exception e) {
             logger.error("Error generating JWT token: " + e.getMessage());
@@ -247,7 +283,7 @@ public class JWTService implements IJWTService {
      */
     private SecretKey getKey() {
         try {
-            final byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
+            final byte[] keyBytes = Decoders.BASE64.decode(signingSecret);
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
             logger.error("Error generating signing key: " + e.getMessage());
@@ -267,6 +303,28 @@ public class JWTService implements IJWTService {
             return type == tokenType;
         } catch (Exception e) {
             logger.warn("Error matching token type: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean isValidIssuer(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            String issuer = claims.getIssuer();
+            return "spawn-backend".equals(issuer);
+        } catch (Exception e) {
+            logger.warn("Error validating token issuer: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean isValidAudience(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Set<String> audiences = claims.getAudience();
+            return audiences != null && audiences.contains("spawn-app");
+        } catch (Exception e) {
+            logger.warn("Error validating token audience: " + e.getMessage());
             return false;
         }
     }

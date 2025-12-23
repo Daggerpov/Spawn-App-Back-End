@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.shared.config;
 
+import com.danielagapov.spawn.user.internal.services.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,16 +13,17 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Arrays;
 import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 @EnableWebSecurity
@@ -29,6 +31,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
     private final JWTFilterConfig jwtFilterConfig;
+    private final UserInfoService userInfoService;
+    
     private final String[] whitelistedUrls = new String[] {
             "/api/v1/auth/refresh-token",
             "/api/v1/auth/register/verification/send",
@@ -58,25 +62,47 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.setAllowedOrigins(List.of(
-                            "https://getspawn.com",
-                            "https://getspawn.com/admin",
-                            "http://localhost:3000",
-                            "http://localhost:8080",
-                            "http://localhost:4200",
-                            "http://localhost:8100", // ionic default
-                            "http://127.0.0.1:3000",
-                            "http://127.0.0.1:8080",
-                            "capacitor://localhost"
-                    ));
+                    
+                    // Determine if we're in production based on environment
+                    String environment = System.getProperty("spring.profiles.active", "dev");
+                    boolean isProduction = "prod".equals(environment) || "production".equals(environment);
+                    
+                    if (isProduction) {
+                        // Production: Only allow specific domains
+                        configuration.setAllowedOrigins(List.of(
+                                "https://getspawn.com",
+                                "https://admin.getspawn.com",
+                                "https://getspawn.com/admin"
+                        ));
+                    } else {
+                        // Development: Allow localhost and development domains
+                        configuration.setAllowedOrigins(List.of(
+                                "https://getspawn.com",
+                                "https://admin.getspawn.com",
+                                "https://getspawn.com/admin",
+                                "http://localhost:3000",
+                                "http://localhost:8080",
+                                "http://localhost:4200",
+                                "http://localhost:8100", // ionic default
+                                "http://127.0.0.1:3000",
+                                "http://127.0.0.1:8080",
+                                "capacitor://localhost"
+                        ));
+                    }
 
                     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     configuration.setAllowedHeaders(List.of("Authorization", "X-Refresh-Token", "Content-Type", "Accept"));
                     configuration.setExposedHeaders(List.of("Authorization", "X-Refresh-Token"));
                     configuration.setAllowCredentials(true);
+                    configuration.setMaxAge(3600L); // Cache preflight for 1 hour
                     return configuration;
                 }))
                 .csrf(AbstractHttpConfigurer::disable)
+                // Add basic security headers
+                .headers(headers -> headers
+                    .frameOptions(frame -> frame.deny()) // Prevent clickjacking
+                    .contentTypeOptions(contentType -> {}) // Prevent MIME type sniffing (enabled by default)
+                )
                 // Endpoints can be made unsecured by specifying it with requestMatchers() below and permitting
                 // that be accessed without authentication with permitAll().
                 // Below, the auth and oauth endpoints are unsecured
@@ -107,7 +133,22 @@ public class SecurityConfig {
                 })
                 // When authenticating a request fails, status code 401 (unauthorized) is returned
                 .exceptionHandling(e -> e
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // Log security event
+                            String clientIp = getClientIpAddress(request);
+                            String userAgent = request.getHeader("User-Agent");
+                            String requestUrl = request.getRequestURL().toString();
+                            
+                            // Use System.out for basic logging since we can't inject logger here
+                            System.out.println("Authentication failed - IP: " + clientIp + 
+                                ", URL: " + requestUrl + 
+                                ", User-Agent: " + userAgent + 
+                                ", Error: " + authException.getMessage());
+                            
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Authentication required\"}");
+                        })
                 )
                 // 'Stateless' session management means Spring will not create and store any session state on the server
                 // Each request is treated as 'new' and thus requires authentication (a JWT) to access secured endpoints
@@ -147,4 +188,29 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Provides a UserDetailsService bean.
+     * <p>
+     * This service is responsible for loading user details from the database
+     * based on the username during authentication.
+     *
+     * @return An instance of UserDetailsService, implemented by UserInfoService.
+     */
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return userInfoService;
+    }
+    
+    /**
+     * Helper method to extract client IP address for security logging
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedForHeader = request.getHeader("X-Forwarded-For");
+        if (xForwardedForHeader == null || xForwardedForHeader.isEmpty()) {
+            return request.getRemoteAddr();
+        } else {
+            // X-Forwarded-For can contain multiple IPs, take the first one
+            return xForwardedForHeader.split(",")[0].trim();
+        }
+    }
 }
