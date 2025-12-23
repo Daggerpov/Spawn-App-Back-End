@@ -13,7 +13,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -25,24 +25,39 @@ import java.util.function.Function;
 import java.util.Set;
 
 @Service
-@AllArgsConstructor
 // TODO: consider refactor to type hierarchy with AccessToken, RefreshToken, EmailToken extending JWTService
 public class JWTService implements IJWTService {
-    private static final String SIGNING_SECRET;
+    private final String signingSecret;
 
     private enum TokenType {ACCESS, REFRESH, EMAIL}
-
-    static {
-        final String secret = System.getenv("SIGNING_SECRET");
-        Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        SIGNING_SECRET = secret == null ? dotenv.get("SIGNING_SECRET") : secret;
-    }
 
     private static final long ACCESS_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; //  24 hours
     private static final long REFRESH_TOKEN_EXPIRY = 1000L * 60 * 60 * 24 * 7; // 7 days (reduced from 180 days for security)
     private static final long EMAIL_TOKEN_EXPIRY = 1000L * 60 * 60 * 24; // 24 hours
     private final ILogger logger;
     private final IUserService userService;
+
+    public JWTService(
+            ILogger logger,
+            IUserService userService,
+            @Value("${jwt.signing-secret:#{null}}") String configuredSecret
+    ) {
+        this.logger = logger;
+        this.userService = userService;
+        
+        // Priority: 1) Spring property, 2) Environment variable, 3) .env file
+        if (configuredSecret != null && !configuredSecret.isEmpty()) {
+            this.signingSecret = configuredSecret;
+        } else {
+            String envSecret = System.getenv("SIGNING_SECRET");
+            if (envSecret != null && !envSecret.isEmpty()) {
+                this.signingSecret = envSecret;
+            } else {
+                Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+                this.signingSecret = dotenv.get("SIGNING_SECRET");
+            }
+        }
+    }
 
 
     @Override
@@ -180,7 +195,7 @@ public class JWTService implements IJWTService {
 
     private String generateToken(String username, long expiry, Map<String, Object> claims) {
         try {
-            if (SIGNING_SECRET == null || SIGNING_SECRET.trim().isEmpty()) {
+            if (signingSecret == null || signingSecret.trim().isEmpty()) {
                 throw new SecurityException("JWT signing secret is not configured");
             }
             
@@ -268,7 +283,7 @@ public class JWTService implements IJWTService {
      */
     private SecretKey getKey() {
         try {
-            final byte[] keyBytes = Decoders.BASE64.decode(SIGNING_SECRET);
+            final byte[] keyBytes = Decoders.BASE64.decode(signingSecret);
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
             logger.error("Error generating signing key: " + e.getMessage());
