@@ -26,6 +26,7 @@ import com.danielagapov.spawn.shared.util.PhoneNumberMatchingUtil;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -63,7 +64,7 @@ public class UserService implements IUserService {
                        IFriendshipRepository friendshipRepository,
 
                        IS3Service s3Service, ILogger logger,
-                       IUserSearchService userSearchService,
+                       @Lazy IUserSearchService userSearchService,
                        CacheManager cacheManager,
                        ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
