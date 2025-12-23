@@ -19,7 +19,7 @@ import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository
 import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.chat.internal.services.ChatMessageService;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
+import com.danielagapov.spawn.activity.internal.services.IInternalActivityService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -56,7 +56,7 @@ public class ChatMessageServiceTests {
     private IActivityRepository ActivityRepository;
 
     @Mock
-    private IActivityService ActivityService;
+    private IInternalActivityService ActivityService;
 
     @Mock
     private IUserRepository userRepository;

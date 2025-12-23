@@ -14,7 +14,7 @@ import java.util.UUID;
  * Service interface for managing activities (events) and their related operations.
  * Provides CRUD operations, participation management, feed generation, and activity conversion utilities.
  */
-public interface IActivityService {
+public interface IInternalActivityService {
     
     /**
      * Retrieves all activities from the database.
@@ -296,3 +296,4 @@ public interface IActivityService {
      */
     FullFeedActivityDTO autoJoinUserToActivity(UUID activityId, UUID userId);
 }
+
