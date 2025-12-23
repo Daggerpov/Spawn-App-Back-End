@@ -1,7 +1,22 @@
 # Spawn App - Selective Microservices Decision Summary
 
 **Date:** November 9, 2025  
-**Decision:** Proceed with selective microservices for learning and scaling key services
+**Decision:** Proceed with selective microservices for learning and scaling key services  
+**Current Status:** ⏸️ **ON HOLD** - Spring Modulith refactoring in progress (prerequisite)  
+**Prerequisite:** [Spring Modulith Refactoring](../refactoring/SPRING_MODULITH_REFACTORING_PLAN.md) must complete first
+
+---
+
+## ⚠️ Implementation Status
+
+**This microservices extraction should begin AFTER Spring Modulith refactoring is complete.**
+
+**Current Progress:**
+- ✅ Spring Modulith Phase 1 Complete (Dec 8, 2025) - Package restructuring done
+- 🔄 Spring Modulith Phase 2-6 In Progress (Dec 2025 - Jan 2026) - Fixing circular dependencies, adding Modulith, testing
+- ⏸️ Microservices Extraction: Estimated to begin **February 2026** (after Phase 6)
+
+**Why wait?** Spring Modulith validates service boundaries and fixes circular dependencies before the complexity of distributed systems. See [WHY_SPRING_MODULITH_FIRST.md](../refactoring/WHY_SPRING_MODULITH_FIRST.md) for detailed rationale.
 
 ---
 
