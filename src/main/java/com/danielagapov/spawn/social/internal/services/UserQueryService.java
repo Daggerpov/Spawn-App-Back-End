@@ -21,7 +21,7 @@ import java.util.concurrent.TimeoutException;
  * breaking the circular dependency between Social and User modules.
  */
 @Service
-public class UserQueryService {
+public class UserQueryService implements IUserQueryService {
     
     private static final long QUERY_TIMEOUT_MS = 5000; // 5 second timeout
     

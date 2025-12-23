@@ -14,7 +14,7 @@ import com.danielagapov.spawn.social.internal.domain.FriendRequest;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
-import com.danielagapov.spawn.social.internal.services.UserQueryService;
+import com.danielagapov.spawn.social.internal.services.IUserQueryService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import com.danielagapov.spawn.shared.util.CacheNames;
@@ -33,7 +33,7 @@ import java.util.UUID;
 @Service
 public class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
-    private final UserQueryService userQueryService;
+    private final IUserQueryService userQueryService;
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final ApplicationEventPublisher eventPublisher;
@@ -41,7 +41,7 @@ public class FriendRequestService implements IFriendRequestService {
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
-            UserQueryService userQueryService,
+            IUserQueryService userQueryService,
             IBlockedUserService blockedUserService, ILogger logger,
             ApplicationEventPublisher eventPublisher, CacheEvictionHelper cacheEvictionHelper) {
         this.repository = repository;

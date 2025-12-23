@@ -9,7 +9,7 @@ import com.danielagapov.spawn.user.internal.domain.BlockedUser;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
-import com.danielagapov.spawn.social.internal.services.UserQueryService;
+import com.danielagapov.spawn.social.internal.services.IUserQueryService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import com.danielagapov.spawn.shared.util.CacheNames;
@@ -29,12 +29,12 @@ import java.util.Set;
 public class BlockedUserService implements IBlockedUserService {
 
     private final IBlockedUserRepository repository;
-    private final UserQueryService userQueryService;
+    private final IUserQueryService userQueryService;
     private final IFriendshipRepository friendshipRepository;
     private final ILogger logger;
     private final CacheEvictionHelper cacheEvictionHelper;
 
-    public BlockedUserService(IBlockedUserRepository repository, UserQueryService userQueryService, IFriendshipRepository friendshipRepository, ILogger logger, CacheEvictionHelper cacheEvictionHelper) {
+    public BlockedUserService(IBlockedUserRepository repository, IUserQueryService userQueryService, IFriendshipRepository friendshipRepository, ILogger logger, CacheEvictionHelper cacheEvictionHelper) {
         this.repository = repository;
         this.userQueryService = userQueryService;
         this.friendshipRepository = friendshipRepository;

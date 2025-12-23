@@ -10,7 +10,7 @@ import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.FriendRequestService;
-import com.danielagapov.spawn.social.internal.services.UserQueryService;
+import com.danielagapov.spawn.social.internal.services.IUserQueryService;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class FriendRequestServiceTests {
     private IFriendRequestsRepository repository;
 
     @Mock
-    private UserQueryService userQueryService;
+    private IUserQueryService userQueryService;
 
     @Mock
     private IBlockedUserService blockedUserService;

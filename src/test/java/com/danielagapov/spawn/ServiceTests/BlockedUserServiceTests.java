@@ -12,7 +12,7 @@ import com.danielagapov.spawn.user.internal.repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.social.internal.services.BlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
-import com.danielagapov.spawn.social.internal.services.UserQueryService;
+import com.danielagapov.spawn.social.internal.services.IUserQueryService;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 public class BlockedUserServiceTests {
 
     @Mock private IBlockedUserRepository blockedRepo;
-    @Mock private UserQueryService userQueryService;
+    @Mock private IUserQueryService userQueryService;
     @Mock private IFriendRequestService friendRequestService;
     @Mock private IFriendshipRepository friendshipRepository;
     @Mock private ILogger logger;

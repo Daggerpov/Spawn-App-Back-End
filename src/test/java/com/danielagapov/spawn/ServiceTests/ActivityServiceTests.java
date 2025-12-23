@@ -25,7 +25,7 @@ import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeReposi
 import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
 import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.activity.internal.services.ChatQueryService;
+import com.danielagapov.spawn.activity.internal.services.IChatQueryService;
 import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.activity.internal.services.ActivityService;
 import com.danielagapov.spawn.activity.internal.services.ActivityExpirationService;
@@ -81,7 +81,7 @@ public class ActivityServiceTests {
     private IUserService userService;
 
     @Mock
-    private ChatQueryService chatQueryService;
+    private IChatQueryService chatQueryService;
     
     @Mock
     private ApplicationEventPublisher eventPublisher;

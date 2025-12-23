@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * breaking the circular dependency between Activity and Chat modules.
  */
 @Service
-public class ChatQueryService {
+public class ChatQueryService implements IChatQueryService {
     
     private static final long QUERY_TIMEOUT_MS = 5000; // 5 second timeout
     

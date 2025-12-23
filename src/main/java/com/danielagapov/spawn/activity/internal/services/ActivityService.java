@@ -52,7 +52,7 @@ public class ActivityService implements IActivityService {
     private final IActivityUserRepository activityUserRepository;
     private final IUserRepository userRepository;
     private final IUserService userService;
-    private final ChatQueryService chatQueryService;
+    private final IChatQueryService chatQueryService;
     private final ILogger logger;
     private final ILocationService locationService;
     private final ApplicationEventPublisher eventPublisher;
@@ -63,7 +63,7 @@ public class ActivityService implements IActivityService {
     public ActivityService(IActivityRepository repository, IActivityTypeRepository activityTypeRepository,
                         ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
                         IUserRepository userRepository, IUserService userService, 
-                        ChatQueryService chatQueryService, ILogger logger, ILocationService locationService, 
+                        IChatQueryService chatQueryService, ILogger logger, ILocationService locationService, 
                         ApplicationEventPublisher eventPublisher, ActivityExpirationService expirationService,
                         IActivityTypeService activityTypeService) {
         this.repository = repository;
