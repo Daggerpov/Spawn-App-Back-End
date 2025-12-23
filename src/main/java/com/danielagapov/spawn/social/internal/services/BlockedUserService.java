@@ -9,7 +9,7 @@ import com.danielagapov.spawn.user.internal.domain.BlockedUser;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IBlockedUserRepository;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
-import com.danielagapov.spawn.user.internal.services.IUserService;
+import com.danielagapov.spawn.social.internal.services.IUserQueryService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import com.danielagapov.spawn.shared.util.CacheNames;
@@ -29,14 +29,14 @@ import java.util.Set;
 public class BlockedUserService implements IBlockedUserService {
 
     private final IBlockedUserRepository repository;
-    private final IUserService userService;
+    private final IUserQueryService userQueryService;
     private final IFriendshipRepository friendshipRepository;
     private final ILogger logger;
     private final CacheEvictionHelper cacheEvictionHelper;
 
-    public BlockedUserService(IBlockedUserRepository repository, IUserService userService, IFriendshipRepository friendshipRepository, ILogger logger, CacheEvictionHelper cacheEvictionHelper) {
+    public BlockedUserService(IBlockedUserRepository repository, IUserQueryService userQueryService, IFriendshipRepository friendshipRepository, ILogger logger, CacheEvictionHelper cacheEvictionHelper) {
         this.repository = repository;
-        this.userService = userService;
+        this.userQueryService = userQueryService;
         this.friendshipRepository = friendshipRepository;
         this.logger = logger;
         this.cacheEvictionHelper = cacheEvictionHelper;
@@ -55,8 +55,8 @@ public class BlockedUserService implements IBlockedUserService {
         if (blockerId.equals(blockedId)) return;
 
         try {
-            User blocker = userService.getUserEntityById(blockerId);
-            User blocked = userService.getUserEntityById(blockedId);
+            User blocker = userQueryService.getUserEntityById(blockerId);
+            User blocked = userQueryService.getUserEntityById(blockedId);
 
             logger.info("Attempting to block user: " + LoggingUtils.formatUserInfo(blocked) +
                     " by blocker: " + LoggingUtils.formatUserInfo(blocker));
@@ -99,8 +99,8 @@ public class BlockedUserService implements IBlockedUserService {
     @Transactional
     public void unblockUser(UUID blockerId, UUID blockedId) {
         try {
-            User blocker = userService.getUserEntityById(blockerId);
-            User blocked = userService.getUserEntityById(blockedId);
+            User blocker = userQueryService.getUserEntityById(blockerId);
+            User blocked = userQueryService.getUserEntityById(blockedId);
 
             logger.info("Attempting to unblock user: " + LoggingUtils.formatUserInfo(blocked) +
                     " by blocker: " + LoggingUtils.formatUserInfo(blocker));
@@ -152,7 +152,7 @@ public class BlockedUserService implements IBlockedUserService {
     @Cacheable(value = "blockedUsers", key = "#blockerId")
     public List<BlockedUserDTO> getBlockedUsers(UUID blockerId) {
         try {
-            User blocker = userService.getUserEntityById(blockerId);
+            User blocker = userQueryService.getUserEntityById(blockerId);
             logger.info("Getting blocked users for blocker: " + LoggingUtils.formatUserInfo(blocker));
 
             List<BlockedUser> blockedUserEntities = repository.findAllByBlocker_Id(blockerId);
@@ -205,8 +205,8 @@ public class BlockedUserService implements IBlockedUserService {
     @Transactional
     public void removeFriendshipBetweenUsers(UUID userAId, UUID userBId) {
         try {
-            User userA = userService.getUserEntityById(userAId);
-            User userB = userService.getUserEntityById(userBId);
+            User userA = userQueryService.getUserEntityById(userAId);
+            User userB = userQueryService.getUserEntityById(userBId);
 
             logger.info("Removing friendship between users: " + LoggingUtils.formatUserInfo(userA) +
                     " and " + LoggingUtils.formatUserInfo(userB));

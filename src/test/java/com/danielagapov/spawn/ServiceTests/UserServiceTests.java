@@ -20,7 +20,7 @@ import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.UserService;
-import com.danielagapov.spawn.user.internal.services.IUserSearchService;
+import com.danielagapov.spawn.user.internal.services.IUserSearchQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ public class UserServiceTests {
     private IS3Service s3Service;
 
     @Mock
-    private IUserSearchService userSearchService;
+    private IUserSearchQueryService userSearchQueryService;
 
     @Mock
     private IActivityUserRepository activityUserRepository;
@@ -78,6 +78,9 @@ public class UserServiceTests {
     @Mock
     private IUserIdExternalIdMapRepository userIdExternalIdMapRepository;
 
+    @Mock
+    private com.danielagapov.spawn.user.internal.services.IUserFriendshipQueryService friendshipQueryService;
+
     @Spy
     @InjectMocks
     private UserService userService;
@@ -87,6 +90,14 @@ public class UserServiceTests {
         MockitoAnnotations.openMocks(this);
         // Set the adminUsername field since @Value annotation doesn't work in unit tests
         ReflectionTestUtils.setField(userService, "adminUsername", "admin");
+        
+        // Mock default friendshipQueryService behavior
+        when(friendshipQueryService.getAllActiveUsers()).thenReturn(List.of());
+        when(friendshipQueryService.getFriendUserIdsByUserId(any())).thenReturn(List.of());
+        when(friendshipQueryService.getFriendUsersByUserId(any())).thenReturn(List.of());
+        when(friendshipQueryService.getFullFriendUsersByUserId(any())).thenReturn(List.of());
+        when(friendshipQueryService.getMutualFriendCount(any(), any())).thenReturn(0);
+        when(friendshipQueryService.isUserFriendOfUser(any(), any())).thenReturn(false);
     }
 
     @Test
@@ -96,15 +107,15 @@ public class UserServiceTests {
         User user2 = createUser(UUID.randomUUID(), "user2", "user2@example.com");
         List<User> users = Arrays.asList(user1, user2);
 
-        when(userRepository.findAllUsersByStatus(UserStatus.ACTIVE)).thenReturn(users);
-        doReturn(List.of()).when(userService).getFriendUserIdsByUserId(any());
+        when(friendshipQueryService.getAllActiveUsers()).thenReturn(users);
+        when(friendshipQueryService.getFriendUserIdsByUserId(any())).thenReturn(List.of());
 
         // When
         List<UserDTO> result = userService.getAllUsers();
 
         // Then
         assertEquals(2, result.size());
-        verify(userRepository, times(1)).findAllUsersByStatus(UserStatus.ACTIVE);
+        verify(friendshipQueryService, times(1)).getAllActiveUsers();
     }
 
     @Test
@@ -113,7 +124,7 @@ public class UserServiceTests {
         UUID userId = UUID.randomUUID();
         User user = createUser(userId, "john_doe", "john.doe@example.com");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        doReturn(List.of()).when(userService).getFriendUserIdsByUserId(userId);
+        when(friendshipQueryService.getFriendUserIdsByUserId(userId)).thenReturn(List.of());
 
         // When
         UserDTO result = userService.getUserById(userId);
@@ -142,20 +153,8 @@ public class UserServiceTests {
         UUID friendId1 = UUID.randomUUID();
         UUID friendId2 = UUID.randomUUID();
         
-        User user = createUser(userId, "user", "user@example.com");
-        User friend1 = createUser(friendId1, "friend1", "friend1@example.com");
-        User friend2 = createUser(friendId2, "friend2", "friend2@example.com");
-        
-        Friendship friendship1 = new Friendship();
-        friendship1.setUserA(user);
-        friendship1.setUserB(friend1);
-        
-        Friendship friendship2 = new Friendship();
-        friendship2.setUserA(friend2);
-        friendship2.setUserB(user);
-        
-        when(friendshipRepository.findAllByUserIdBidirectional(userId))
-            .thenReturn(Arrays.asList(friendship1, friendship2));
+        List<UUID> expectedFriendIds = Arrays.asList(friendId1, friendId2);
+        when(friendshipQueryService.getFriendUserIdsByUserId(userId)).thenReturn(expectedFriendIds);
 
         // When
         List<UUID> result = userService.getFriendUserIdsByUserId(userId);
@@ -242,7 +241,7 @@ public class UserServiceTests {
     void getFriendUserIdsByUserId_ShouldReturnEmptyList_WhenUserHasNoFriends() {
         // Given
         UUID userId = UUID.randomUUID();
-        when(friendshipRepository.findAllByUserIdBidirectional(userId)).thenReturn(List.of());
+        when(friendshipQueryService.getFriendUserIdsByUserId(userId)).thenReturn(List.of());
 
         // When
         List<UUID> result = userService.getFriendUserIdsByUserId(userId);
@@ -258,21 +257,8 @@ public class UserServiceTests {
         UUID friendId1 = UUID.randomUUID();
         UUID friendId2 = UUID.randomUUID();
         
-        User user = createUser(userId, "user", "user@example.com");
-        User friend1 = createUser(friendId1, "friend1", "friend1@example.com");
-        User friend2 = createUser(friendId2, "friend2", "friend2@example.com");
-        
-        // Create friendships where user is sometimes userA, sometimes userB
-        Friendship friendship1 = new Friendship();
-        friendship1.setUserA(user);
-        friendship1.setUserB(friend1);
-        
-        Friendship friendship2 = new Friendship();
-        friendship2.setUserA(friend2);
-        friendship2.setUserB(user);
-        
-        when(friendshipRepository.findAllByUserIdBidirectional(userId))
-            .thenReturn(Arrays.asList(friendship1, friendship2));
+        List<UUID> expectedFriendIds = Arrays.asList(friendId1, friendId2);
+        when(friendshipQueryService.getFriendUserIdsByUserId(userId)).thenReturn(expectedFriendIds);
 
         // When
         List<UUID> result = userService.getFriendUserIdsByUserId(userId);
@@ -288,7 +274,7 @@ public class UserServiceTests {
         // Given
         UUID userId = UUID.randomUUID();
         UUID friendId = UUID.randomUUID();
-        when(friendshipRepository.existsBidirectionally(userId, friendId)).thenReturn(false);
+        when(friendshipQueryService.isUserFriendOfUser(userId, friendId)).thenReturn(false);
 
         // When
         boolean result = userService.isUserFriendOfUser(userId, friendId);
@@ -304,23 +290,10 @@ public class UserServiceTests {
         UUID friendId1 = UUID.randomUUID();
         UUID friendId2 = UUID.randomUUID();
         
-        User user = createUser(userId, "user", "user@example.com");
         User friend1 = createUser(friendId1, "friend1", "friend1@example.com");
         User friend2 = createUser(friendId2, "friend2", "friend2@example.com");
         
-        Friendship friendship1 = new Friendship();
-        friendship1.setUserA(user);
-        friendship1.setUserB(friend1);
-        
-        Friendship friendship2 = new Friendship();
-        friendship2.setUserA(friend2);
-        friendship2.setUserB(user);
-        
-        when(friendshipRepository.findAllByUserIdBidirectional(userId))
-            .thenReturn(Arrays.asList(friendship1, friendship2));
-        
-        // Mock the repository call to find users by IDs
-        when(userRepository.findAllById(any(Iterable.class)))
+        when(friendshipQueryService.getFriendUsersByUserId(userId))
             .thenReturn(Arrays.asList(friend1, friend2));
 
         // When
@@ -337,16 +310,8 @@ public class UserServiceTests {
         // Given
         UUID userId1 = UUID.randomUUID();
         UUID userId2 = UUID.randomUUID();
-        UUID mutualFriendId1 = UUID.randomUUID();
-        UUID mutualFriendId2 = UUID.randomUUID();
-        UUID nonMutualFriendId = UUID.randomUUID();
 
-        // Mock friend lists
-        List<UUID> user1Friends = Arrays.asList(mutualFriendId1, mutualFriendId2, nonMutualFriendId);
-        List<UUID> user2Friends = Arrays.asList(mutualFriendId1, mutualFriendId2);
-
-        doReturn(user1Friends).when(userService).getFriendUserIdsByUserId(userId1);
-        doReturn(user2Friends).when(userService).getFriendUserIdsByUserId(userId2);
+        when(friendshipQueryService.getMutualFriendCount(userId1, userId2)).thenReturn(2);
 
         // When
         int result = userService.getMutualFriendCount(userId1, userId2);
@@ -361,8 +326,7 @@ public class UserServiceTests {
         UUID userId1 = UUID.randomUUID();
         UUID userId2 = UUID.randomUUID();
 
-        doReturn(Arrays.asList(UUID.randomUUID())).when(userService).getFriendUserIdsByUserId(userId1);
-        doReturn(Arrays.asList(UUID.randomUUID())).when(userService).getFriendUserIdsByUserId(userId2);
+        when(friendshipQueryService.getMutualFriendCount(userId1, userId2)).thenReturn(0);
 
         // When
         int result = userService.getMutualFriendCount(userId1, userId2);
@@ -376,7 +340,7 @@ public class UserServiceTests {
         // Given
         UUID userId = UUID.randomUUID();
         UUID friendId = UUID.randomUUID();
-        when(friendshipRepository.existsBidirectionally(userId, friendId)).thenReturn(true);
+        when(friendshipQueryService.isUserFriendOfUser(userId, friendId)).thenReturn(true);
 
         // When
         boolean result = userService.isUserFriendOfUser(userId, friendId);
@@ -420,7 +384,7 @@ public class UserServiceTests {
             .thenReturn(pastActivityIds);
         when(activityUserRepository.findOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating))
             .thenReturn(activityParticipants);
-        when(userSearchService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of());
+        when(userSearchQueryService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of());
 
         // Mock the getBaseUserById method
         BaseUserDTO mockBaseUserDTO = new BaseUserDTO();

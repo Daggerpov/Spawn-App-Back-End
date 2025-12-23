@@ -10,7 +10,7 @@ import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.FriendRequestService;
-import com.danielagapov.spawn.user.internal.services.IUserService;
+import com.danielagapov.spawn.social.internal.services.IUserQueryService;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class FriendRequestServiceTests {
     private IFriendRequestsRepository repository;
 
     @Mock
-    private IUserService userService;
+    private IUserQueryService userQueryService;
 
     @Mock
     private IBlockedUserService blockedUserService;
@@ -82,8 +82,8 @@ class FriendRequestServiceTests {
 
     @Test
     void saveFriendRequest_ShouldSaveAndReturnDTO_WhenValidRequest() {
-        when(userService.getUserEntityById(senderId)).thenReturn(sender);
-        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(userQueryService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userQueryService.getUserEntityById(receiverId)).thenReturn(receiver);
         when(repository.save(any(FriendRequest.class))).thenReturn(friendRequest);
 
         CreateFriendRequestDTO savedRequest = friendRequestService.saveFriendRequest(friendRequestDTO);
@@ -95,8 +95,8 @@ class FriendRequestServiceTests {
 
     @Test
     void saveFriendRequest_ShouldThrowBaseSaveException_WhenDataAccessExceptionOccurs() {
-        when(userService.getUserEntityById(senderId)).thenReturn(sender);
-        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(userQueryService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userQueryService.getUserEntityById(receiverId)).thenReturn(receiver);
         doThrow(new DataAccessException("DB error") {
         }).when(repository).save(any(FriendRequest.class));
 
@@ -135,7 +135,7 @@ class FriendRequestServiceTests {
 
         friendRequestService.acceptFriendRequest(friendRequestId);
 
-        verify(userService, times(1)).saveFriendToUser(senderId, receiverId);
+        verify(userQueryService, times(1)).saveFriendToUser(senderId, receiverId);
         verify(repository, times(1)).deleteById(friendRequestId);
     }
 
@@ -148,23 +148,23 @@ class FriendRequestServiceTests {
         assertDoesNotThrow(() -> friendRequestService.acceptFriendRequest(friendRequestId));
         
         // Verify that no user operations were attempted since request wasn't found
-        verify(userService, never()).saveFriendToUser(any(), any());
-        verify(userService, never()).isUserFriendOfUser(any(), any());
+        verify(userQueryService, never()).saveFriendToUser(any(), any());
+        verify(userQueryService, never()).isUserFriendOfUser(any(), any());
     }
 
     @Test
     void acceptFriendRequest_ShouldHandleGracefully_WhenUsersAlreadyFriends() {
         UUID friendRequestId = friendRequest.getId();
         when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
-        when(userService.isUserFriendOfUser(senderId, receiverId)).thenReturn(true);
+        when(userQueryService.isUserFriendOfUser(senderId, receiverId)).thenReturn(true);
 
         // Should not throw exception, but handle gracefully by deleting stale request
         assertDoesNotThrow(() -> friendRequestService.acceptFriendRequest(friendRequestId));
         
         // Verify that friendship wasn't created again (since they're already friends)
-        verify(userService, never()).saveFriendToUser(any(), any());
+        verify(userQueryService, never()).saveFriendToUser(any(), any());
         // Verify that the stale friend request is cleaned up
-        verify(userService, times(1)).isUserFriendOfUser(senderId, receiverId);
+        verify(userQueryService, times(1)).isUserFriendOfUser(senderId, receiverId);
     }
 
     @Test
@@ -244,8 +244,8 @@ class FriendRequestServiceTests {
     @Test
     void saveFriendRequest_ShouldReturnExistingRequest_WhenRequestAlreadyExists() {
         // Arrange: Mock existing request in same direction
-        when(userService.getUserEntityById(senderId)).thenReturn(sender);
-        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(userQueryService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userQueryService.getUserEntityById(receiverId)).thenReturn(receiver);
         when(repository.findBySenderIdAndReceiverId(senderId, receiverId))
             .thenReturn(List.of(friendRequest));
         when(repository.findBySenderIdAndReceiverId(receiverId, senderId))
@@ -276,8 +276,8 @@ class FriendRequestServiceTests {
         reverseRequest.setSender(receiver);
         reverseRequest.setReceiver(sender);
 
-        when(userService.getUserEntityById(senderId)).thenReturn(sender);
-        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(userQueryService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userQueryService.getUserEntityById(receiverId)).thenReturn(receiver);
         
         // Mock: No existing request in the same direction
         when(repository.findBySenderIdAndReceiverId(senderId, receiverId))
@@ -302,7 +302,7 @@ class FriendRequestServiceTests {
         assertEquals(senderId, result.getReceiverUserId()); // Original receiver of reverse request
 
         // Verify: Friendship was created
-        verify(userService).saveFriendToUser(receiverId, senderId);
+        verify(userQueryService).saveFriendToUser(receiverId, senderId);
 
         // Verify: Reverse request was deleted (as part of acceptance)
         verify(repository).deleteById(reverseRequestId);
@@ -320,8 +320,8 @@ class FriendRequestServiceTests {
     @Test
     void saveFriendRequest_ShouldCreateNewRequest_WhenNoExistingRequests() {
         // Arrange: No existing requests in either direction
-        when(userService.getUserEntityById(senderId)).thenReturn(sender);
-        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(userQueryService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userQueryService.getUserEntityById(receiverId)).thenReturn(receiver);
         when(repository.findBySenderIdAndReceiverId(senderId, receiverId))
             .thenReturn(List.of());
         when(repository.findBySenderIdAndReceiverId(receiverId, senderId))
@@ -354,13 +354,13 @@ class FriendRequestServiceTests {
         // Given
         UUID friendRequestId = friendRequest.getId();
         when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
-        when(userService.isUserFriendOfUser(senderId, receiverId)).thenReturn(false);
+        when(userQueryService.isUserFriendOfUser(senderId, receiverId)).thenReturn(false);
 
         // When
         friendRequestService.acceptFriendRequest(friendRequestId);
 
         // Then
-        verify(userService, times(1)).saveFriendToUser(senderId, receiverId);
+        verify(userQueryService, times(1)).saveFriendToUser(senderId, receiverId);
         verify(repository, times(1)).deleteById(friendRequestId);
     }
 
@@ -369,14 +369,14 @@ class FriendRequestServiceTests {
         // Given
         UUID friendRequestId = friendRequest.getId();
         when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
-        when(userService.isUserFriendOfUser(senderId, receiverId)).thenReturn(false);
+        when(userQueryService.isUserFriendOfUser(senderId, receiverId)).thenReturn(false);
         // Note: Blocked user check would be implemented in the actual service
 
         // When
         friendRequestService.acceptFriendRequest(friendRequestId);
 
         // Then - Should still process (blocking is handled at UI level)
-        verify(userService, times(1)).saveFriendToUser(senderId, receiverId);
+        verify(userQueryService, times(1)).saveFriendToUser(senderId, receiverId);
         verify(repository, times(1)).deleteById(friendRequestId);
     }
 
@@ -403,8 +403,8 @@ class FriendRequestServiceTests {
     @Test
     void saveFriendRequest_ShouldPreventDuplicateRequests_InSameDirection() {
         // Given
-        when(userService.getUserEntityById(senderId)).thenReturn(sender);
-        when(userService.getUserEntityById(receiverId)).thenReturn(receiver);
+        when(userQueryService.getUserEntityById(senderId)).thenReturn(sender);
+        when(userQueryService.getUserEntityById(receiverId)).thenReturn(receiver);
         when(repository.findBySenderIdAndReceiverId(senderId, receiverId))
             .thenReturn(List.of(friendRequest));
         when(repository.findBySenderIdAndReceiverId(receiverId, senderId))
@@ -440,13 +440,13 @@ class FriendRequestServiceTests {
         // Given - Simulate concurrent acceptance where friendship already exists
         UUID friendRequestId = friendRequest.getId();
         when(repository.findById(friendRequestId)).thenReturn(Optional.of(friendRequest));
-        when(userService.isUserFriendOfUser(senderId, receiverId)).thenReturn(true); // Already friends
+        when(userQueryService.isUserFriendOfUser(senderId, receiverId)).thenReturn(true); // Already friends
 
         // When
         friendRequestService.acceptFriendRequest(friendRequestId);
 
         // Then - Should not create friendship again but should clean up request
-        verify(userService, never()).saveFriendToUser(any(), any());
+        verify(userQueryService, never()).saveFriendToUser(any(), any());
         verify(repository, times(1)).deleteById(friendRequestId);
     }
 

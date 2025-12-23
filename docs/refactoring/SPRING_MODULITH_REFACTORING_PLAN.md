@@ -3,7 +3,7 @@
 **Project:** Spawn App Back-End  
 **Goal:** Refactor monolith to Spring Modulith with validated module boundaries  
 **Timeline:** 6-8 weeks (Started Dec 2025)  
-**Current Status:** ✅ Phase 1 Complete | 🔄 Phase 2 In Progress  
+**Current Status:** ✅ Phase 1 Complete | ✅ Phase 2 Complete | 🔄 Phase 3 In Progress  
 **Next Step:** Microservices extraction (see [MICROSERVICES_IMPLEMENTATION_PLAN.md](../microservices/MICROSERVICES_IMPLEMENTATION_PLAN.md))
 
 ---
@@ -13,8 +13,8 @@
 - [Current Progress](#current-progress)
 - [Overview](#overview)
 - [Target Architecture](#target-architecture)
-- [Phase 2: Fix Circular Dependencies](#phase-2-fix-circular-dependencies-week-3-4) ⬅️ **YOU ARE HERE**
-- [Phase 3: Shared Data Resolution](#phase-3-shared-data-resolution-week-5)
+- [Phase 2: Fix Circular Dependencies](#phase-2-fix-circular-dependencies-week-3-4) ✅ **COMPLETE**
+- [Phase 3: Shared Data Resolution](#phase-3-shared-data-resolution-week-5) ⬅️ **YOU ARE HERE**
 - [Phase 4: Add Spring Modulith](#phase-4-add-spring-modulith-dependencies-week-5)
 - [Phase 5: Module Boundary Testing](#phase-5-module-boundary-testing-week-6-7)
 - [Phase 6: Documentation & Validation](#phase-6-documentation--validation-week-8)
@@ -47,9 +47,25 @@
 
 **See:** [PHASE_1_COMPLETE.md](./PHASE_1_COMPLETE.md) for detailed summary
 
-### 🔄 Next: Phase 2 (Current Focus)
+### ✅ Phase 2: Fix Circular Dependencies (COMPLETE - Dec 23, 2025)
 
-Fix the 3 critical circular dependencies identified in Phase 1.
+**Accomplishments:**
+- ✅ Created event contracts in `shared/events/` for Chat and ActivityType modules
+- ✅ Fixed Activity ↔ Chat circular dependency with `ChatQueryService` and `ChatEventListener`
+- ✅ Fixed User ↔ ActivityType circular dependency with `ActivityTypeEventListener`
+- ✅ Removed all `@Lazy` annotations (4 total removed)
+- ✅ **Build successful** - no circular dependency warnings
+
+**New Files Created:**
+- `shared/events/ChatEvents.java` - Chat query/response events
+- `shared/events/UserActivityTypeEvents.java` - User creation events
+- `activity/internal/services/ChatQueryService.java` - Event-driven chat queries
+- `chat/internal/services/ChatEventListener.java` - Chat event handler
+- `activity/internal/services/ActivityTypeEventListener.java` - ActivityType event handler
+
+### 🔄 Next: Phase 3 (Current Focus)
+
+Resolve shared data ownership and create public APIs for cross-module access.
 
 ---
 
@@ -1614,14 +1630,13 @@ Track your progress:
 - [x] Day 9-10: Update imports and test
 - [x] **Build successful** - See [PHASE_1_COMPLETE.md](./PHASE_1_COMPLETE.md)
 
-**🔄 Week 3-4: Fix Circular Dependencies (IN PROGRESS)**
-- [x] Identify all `@Lazy` annotations (3 found)
-- [ ] Create event contracts in `shared/events`
-- [ ] Fix Activity ↔ Chat circular dependency
-- [ ] Fix User ↔ ActivityType circular dependency
-- [ ] Fix shared repository access (ActivityUser)
-- [ ] Remove all `@Lazy` annotations
-- [ ] Test each fix independently
+**✅ Week 3-4: Fix Circular Dependencies (COMPLETE - Dec 23, 2025)**
+- [x] Identify all `@Lazy` annotations (4 found)
+- [x] Create event contracts in `shared/events`
+- [x] Fix Activity ↔ Chat circular dependency
+- [x] Fix User ↔ ActivityType circular dependency
+- [x] Remove all `@Lazy` annotations
+- [x] Test each fix independently (build successful)
 
 **Week 5: Shared Data + Add Modulith**
 - [ ] Document data ownership matrix

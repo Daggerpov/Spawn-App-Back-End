@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class UserSearchServiceTests {
@@ -61,8 +62,11 @@ class UserSearchServiceTests {
     @Mock
     private SearchAnalyticsService searchAnalyticsService;
 
+    @Mock
+    private com.danielagapov.spawn.user.internal.services.IUserFriendshipQueryService friendshipQueryService;
+
     @InjectMocks
-    private UserSearchService userSearchService; // Injected service to test
+    private UserSearchService userSearchService; // Core service with business logic
 
     // Create at least 5 users for testing
     private User user1, user2, user3, user4, user5;
@@ -80,6 +84,10 @@ class UserSearchServiceTests {
         user3.setStatus(UserStatus.ACTIVE);
         user4.setStatus(UserStatus.ACTIVE);
         user5.setStatus(UserStatus.ACTIVE);
+        
+        // Mock default friendshipQueryService behavior with lenient stubbing
+        lenient().when(friendshipQueryService.getAllActiveUsers()).thenReturn(List.of());
+        lenient().when(friendshipQueryService.getFriendUserIdsByUserId(any())).thenReturn(List.of());
     }
 
     @Test
@@ -194,8 +202,8 @@ class UserSearchServiceTests {
 
         // Use spy to isolate the test from internal implementations
         UserSearchService spyUserSearchService = spy(userSearchService);
-        when(spyUserSearchService.getRecommendedMutuals(userId)).thenReturn(List.of(friend1, friend2, friend3));
-        when(userService.getFullFriendUsersByUserId(userId)).thenReturn(List.of());
+        doReturn(List.of(friend1, friend2, friend3)).when(spyUserSearchService).getRecommendedMutuals(userId);
+        lenient().when(friendshipQueryService.getFullFriendUsersByUserId(userId)).thenReturn(List.of());
 
         // Act
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "Alice");
@@ -221,14 +229,12 @@ class UserSearchServiceTests {
         // Mock the friend request service methods
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
 
-        // Use spy to isolate the test from internal implementations
-        UserSearchService spyUserSearchService = spy(userSearchService);
-        // Mock the UserService method instead of the local method
+        // Mock the userService methods that are called when searchQuery is empty
         when(userService.getLimitedRecommendedFriendsForUserId(userId)).thenReturn(List.of(friend1, friend2));
-        doReturn(List.of()).when(userService).getFullFriendUsersByUserId(userId);
+        when(userService.getFullFriendUsersByUserId(userId)).thenReturn(List.of());
 
         // Act
-        SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "");
+        SearchedUserResult result = userSearchService.getRecommendedFriendsBySearch(userId, "");
 
         // Assert
         assertEquals(2, result.getUsers().size()); // Both friends should be returned
@@ -262,7 +268,7 @@ class UserSearchServiceTests {
         // Use spy to isolate the test from internal implementations
         UserSearchService spyUserSearchService = spy(userSearchService);
         doReturn(List.of(friend1, friend2)).when(spyUserSearchService).getRecommendedMutuals(userId);
-        doReturn(List.of()).when(userService).getFullFriendUsersByUserId(userId);
+        lenient().doReturn(List.of()).when(friendshipQueryService).getFullFriendUsersByUserId(userId);
 
         // Act
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "Charlie");
@@ -303,7 +309,7 @@ class UserSearchServiceTests {
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
         when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
-        when(spyUserSearchService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
+        doReturn(List.of(user2Full, user3Full, user4Full)).when(spyUserSearchService).getRecommendedMutuals(user1Id);
         when(userService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of(user5Full));
 
         SearchedUserResult res = spyUserSearchService.getRecommendedFriendsBySearch(user1Id, "person");
@@ -342,11 +348,11 @@ class UserSearchServiceTests {
         FuzzySearchService.SearchResult<User> searchResult = new FuzzySearchService.SearchResult<>(userObject, 0.95, "username", false);
         when(fuzzySearchService.search(eq("person"), any(), any(), any())).thenReturn(List.of(searchResult));
 
-        when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
-        when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
-        when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
-        when(spyUserSearchService.getRecommendedMutuals(user1Id)).thenReturn(List.of(user2Full, user3Full, user4Full));
-        when(userService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
+        lenient().when(friendRequestService.getIncomingFetchFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        lenient().when(friendRequestService.getIncomingCreateFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        lenient().when(friendRequestService.getSentFriendRequestsByUserId(user1Id)).thenReturn(List.of());
+        doReturn(List.of(user2Full, user3Full, user4Full)).when(spyUserSearchService).getRecommendedMutuals(user1Id);
+        lenient().when(friendshipQueryService.getFullFriendUsersByUserId(user1Id)).thenReturn(List.of());
 
         SearchedUserResult res = spyUserSearchService.getRecommendedFriendsBySearch(user1Id, "person");
         
@@ -369,13 +375,12 @@ class UserSearchServiceTests {
 
         when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
 
-        UserSearchService spyUserSearchService = spy(userSearchService);
-        // Mock the UserService method instead of the local method
+        // Mock the userService methods that are called when searchQuery is empty
         when(userService.getLimitedRecommendedFriendsForUserId(userId)).thenReturn(List.of(friend));
-        doReturn(List.of()).when(userService).getFullFriendUsersByUserId(userId);
+        when(userService.getFullFriendUsersByUserId(userId)).thenReturn(List.of());
 
         // Act
-        SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "");
+        SearchedUserResult result = userSearchService.getRecommendedFriendsBySearch(userId, "");
 
         // Assert
         assertEquals(1, result.getUsers().size());
@@ -392,13 +397,13 @@ class UserSearchServiceTests {
         // Arrange
         UUID userId = UUID.randomUUID();
 
-        when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
-        when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
-        when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
+        lenient().when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
+        lenient().when(friendRequestService.getIncomingCreateFriendRequestsByUserId(userId)).thenReturn(List.of());
+        lenient().when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
 
         UserSearchService spyUserSearchService = spy(userSearchService);
         doReturn(List.of()).when(spyUserSearchService).getRecommendedMutuals(userId);
-        doReturn(List.of()).when(userService).getFullFriendUsersByUserId(userId);
+        lenient().doReturn(List.of()).when(friendshipQueryService).getFullFriendUsersByUserId(userId);
 
         // Act & Assert - Should not throw exceptions for unusual search terms
         assertDoesNotThrow(() -> spyUserSearchService.getRecommendedFriendsBySearch(userId, "%^&*"));
@@ -431,7 +436,7 @@ class UserSearchServiceTests {
 
         UserSearchService spyUserSearchService = spy(userSearchService);
         doReturn(List.of()).when(spyUserSearchService).getRecommendedMutuals(userId);
-        doReturn(List.of()).when(userService).getFullFriendUsersByUserId(userId);
+        when(userService.getFullFriendUsersByUserId(userId)).thenReturn(List.of());
 
         // Act
         SearchedUserResult result = spyUserSearchService.getRecommendedFriendsBySearch(userId, "search");
@@ -502,4 +507,3 @@ class UserSearchServiceTests {
         verify(userRepository, never()).findUsersWithPartialMatch(any(), any());
     }
 }
-

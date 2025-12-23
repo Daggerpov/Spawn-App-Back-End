@@ -29,17 +29,12 @@ import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeReposi
 import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
 import com.danielagapov.spawn.activity.internal.repositories.ILocationRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.chat.internal.services.IChatMessageService;
-import com.danielagapov.spawn.activity.internal.services.ActivityExpirationService;
-import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
-import com.danielagapov.spawn.activity.internal.services.ILocationService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +52,7 @@ public class ActivityService implements IActivityService {
     private final IActivityUserRepository activityUserRepository;
     private final IUserRepository userRepository;
     private final IUserService userService;
-    private final IChatMessageService chatMessageService;
+    private final IChatQueryService chatQueryService;
     private final ILogger logger;
     private final ILocationService locationService;
     private final ApplicationEventPublisher eventPublisher;
@@ -65,11 +60,10 @@ public class ActivityService implements IActivityService {
     private final IActivityTypeService activityTypeService;
 
     @Autowired
-    @Lazy // avoid circular dependency problems with ChatMessageService
     public ActivityService(IActivityRepository repository, IActivityTypeRepository activityTypeRepository,
                         ILocationRepository locationRepository, IActivityUserRepository activityUserRepository, 
                         IUserRepository userRepository, IUserService userService, 
-                        IChatMessageService chatMessageService, ILogger logger, ILocationService locationService, 
+                        IChatQueryService chatQueryService, ILogger logger, ILocationService locationService, 
                         ApplicationEventPublisher eventPublisher, ActivityExpirationService expirationService,
                         IActivityTypeService activityTypeService) {
         this.repository = repository;
@@ -78,7 +72,7 @@ public class ActivityService implements IActivityService {
         this.activityUserRepository = activityUserRepository;
         this.userRepository = userRepository;
         this.userService = userService;
-        this.chatMessageService = chatMessageService;
+        this.chatQueryService = chatQueryService;
         this.logger = logger;
         this.locationService = locationService;
         this.eventPublisher = eventPublisher;
@@ -179,18 +173,10 @@ public class ActivityService implements IActivityService {
     
     /**
      * Batch fetch chat message IDs for multiple activities.
+     * Uses event-driven query to Chat module to avoid circular dependency.
      */
     private Map<UUID, List<UUID>> getBatchChatMessageIds(List<UUID> activityIds) {
-        List<Object[]> results = chatMessageService.getChatMessageIdsByActivityIds(activityIds);
-        
-        return results.stream()
-                .collect(Collectors.groupingBy(
-                    row -> (UUID) row[0], // activity ID
-                    Collectors.mapping(
-                        row -> (UUID) row[1], // message ID
-                        Collectors.toList()
-                    )
-                ));
+        return chatQueryService.getChatMessageIdsByActivityIds(activityIds);
     }
 
     @Override
@@ -216,7 +202,7 @@ public class ActivityService implements IActivityService {
         UUID creatorUserId = Activity.getCreator().getId();
         List<UUID> participantUserIds = userService.getParticipantUserIdsByActivityId(id);
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
-        List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(id);
+        List<UUID> chatMessageIds = chatQueryService.getChatMessageIdsByActivityId(id);
 
         return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds, 
                 expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone()));
@@ -310,7 +296,7 @@ public class ActivityService implements IActivityService {
                     ActivityEntity.getCreator().getId(), // creatorUserId
                     userService.getParticipantUserIdsByActivityId(ActivityEntity.getId()), // participantUserIds
                     userService.getInvitedUserIdsByActivityId(ActivityEntity.getId()), // invitedUserIds
-                    chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId()), // chatMessageIds
+                    chatQueryService.getChatMessageIdsByActivityId(ActivityEntity.getId()), // chatMessageIds
                     expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()) // isExpired
             );
         } catch (DataAccessException e) {
@@ -492,7 +478,7 @@ public class ActivityService implements IActivityService {
                         Activity.getCreator().getId(),
                         userService.getParticipantUserIdsByActivityId(Activity.getId()),
                         userService.getInvitedUserIdsByActivityId(Activity.getId()),
-                        chatMessageService.getChatMessageIdsByActivityId(Activity.getId()),
+                        chatQueryService.getChatMessageIdsByActivityId(Activity.getId()),
                         expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone())))
                 .toList();
     }
@@ -652,7 +638,7 @@ public class ActivityService implements IActivityService {
         UUID creatorUserId = ActivityEntity.getCreator().getId();
         List<UUID> participantUserIds = userService.getParticipantUserIdsByActivityId(ActivityEntity.getId());
         List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(ActivityEntity.getId());
-        List<UUID> chatMessageIds = chatMessageService.getChatMessageIdsByActivityId(ActivityEntity.getId());
+        List<UUID> chatMessageIds = chatQueryService.getChatMessageIdsByActivityId(ActivityEntity.getId());
 
         return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds,
                 expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()));
@@ -943,7 +929,7 @@ public class ActivityService implements IActivityService {
             // Fetch chat messages - if this fails, show empty list instead of dropping activity
             List<FullActivityChatMessageDTO> chatMessages;
             try {
-                chatMessages = chatMessageService.getFullChatMessagesByActivityId(Activity.getId());
+                chatMessages = chatQueryService.getFullChatMessagesByActivityId(Activity.getId());
             } catch (Exception e) {
                 logger.warn("Error fetching chat messages for activity " + Activity.getId() + ": " + e.getMessage());
                 chatMessages = new ArrayList<>();
@@ -1055,7 +1041,7 @@ public class ActivityService implements IActivityService {
 
     @Override
     public List<FullActivityChatMessageDTO> getChatMessagesByActivityId(UUID activityId) {
-        return chatMessageService.getFullChatMessagesByActivityId(activityId);
+        return chatQueryService.getFullChatMessagesByActivityId(activityId);
     }
     
     @Override
