@@ -78,19 +78,21 @@ class ChatMessageControllerTests {
             userId
         );
         
-        baseUserDTO = new BaseUserDTO(userId, "testuser", "pic.jpg", "Test User");
+        // BaseUserDTO constructor: (id, name, email, username, bio, profilePicture)
+        baseUserDTO = new BaseUserDTO(userId, "Test User", "test@example.com", "testuser", "Test bio", "pic.jpg");
         
+        // FullActivityChatMessageDTO constructor: (id, content, timestamp, senderUser, activityId, likedByUsers)
         fullActivityChatMessageDTO = new FullActivityChatMessageDTO(
             chatMessageId,
             "Test message content",
-            activityId,
-            baseUserDTO,
             Instant.now(),
+            baseUserDTO,
+            activityId,
             List.of()
         );
         
+        // ChatMessageLikesDTO constructor: (chatMessageId, userId)
         chatMessageLikesDTO = new ChatMessageLikesDTO(
-            UUID.randomUUID(),
             chatMessageId,
             userId
         );
@@ -147,7 +149,7 @@ class ChatMessageControllerTests {
         String longContent = "a".repeat(1000);
         CreateChatMessageDTO longContentDTO = new CreateChatMessageDTO(longContent, activityId, userId);
         FullActivityChatMessageDTO longMessageResponse = new FullActivityChatMessageDTO(
-            chatMessageId, longContent, activityId, baseUserDTO, Instant.now(), List.of()
+            chatMessageId, longContent, Instant.now(), baseUserDTO, activityId, List.of()
         );
         
         when(chatMessageService.createChatMessage(any(CreateChatMessageDTO.class)))
@@ -353,7 +355,7 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessageLike_ShouldReturnNotFound_WhenLikeNotFound() throws Exception {
-        doThrow(new BaseNotFoundException(EntityType.ChatMessageLikes, chatMessageId))
+        doThrow(new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId))
                 .when(chatMessageService).deleteChatMessageLike(chatMessageId, userId);
 
         mockMvc.perform(delete("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, userId))
@@ -443,7 +445,7 @@ class ChatMessageControllerTests {
         String specialContent = "Test 🎉 message with émojis & spëcial çhars!";
         CreateChatMessageDTO specialDTO = new CreateChatMessageDTO(specialContent, activityId, userId);
         FullActivityChatMessageDTO specialResponse = new FullActivityChatMessageDTO(
-            chatMessageId, specialContent, activityId, baseUserDTO, Instant.now(), List.of()
+            chatMessageId, specialContent, Instant.now(), baseUserDTO, activityId, List.of()
         );
         
         when(chatMessageService.createChatMessage(any(CreateChatMessageDTO.class)))
@@ -461,9 +463,9 @@ class ChatMessageControllerTests {
     @Test
     void getChatMessageLikes_ShouldHandleMultipleLikes_WhenManyUsersLiked() throws Exception {
         List<BaseUserDTO> manyLikes = List.of(
-            new BaseUserDTO(UUID.randomUUID(), "user1", "pic1.jpg", "User 1"),
-            new BaseUserDTO(UUID.randomUUID(), "user2", "pic2.jpg", "User 2"),
-            new BaseUserDTO(UUID.randomUUID(), "user3", "pic3.jpg", "User 3")
+            new BaseUserDTO(UUID.randomUUID(), "User 1", "user1@test.com", "user1", "Bio 1", "pic1.jpg"),
+            new BaseUserDTO(UUID.randomUUID(), "User 2", "user2@test.com", "user2", "Bio 2", "pic2.jpg"),
+            new BaseUserDTO(UUID.randomUUID(), "User 3", "user3@test.com", "user3", "Bio 3", "pic3.jpg")
         );
         
         when(chatMessageService.getChatMessageLikes(chatMessageId)).thenReturn(manyLikes);

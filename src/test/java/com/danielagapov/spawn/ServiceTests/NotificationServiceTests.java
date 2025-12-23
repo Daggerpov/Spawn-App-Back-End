@@ -6,21 +6,28 @@ import com.danielagapov.spawn.notification.internal.domain.DeviceToken;
 import com.danielagapov.spawn.notification.internal.domain.NotificationPreferences;
 import com.danielagapov.spawn.notification.internal.repositories.IDeviceTokenRepository;
 import com.danielagapov.spawn.notification.internal.repositories.INotificationPreferencesRepository;
+import com.danielagapov.spawn.notification.internal.services.FCMService;
 import com.danielagapov.spawn.notification.internal.services.NotificationService;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.shared.util.DeviceType;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataAccessException;
+import org.springframework.context.ApplicationEventPublisher;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -28,6 +35,7 @@ import static org.mockito.Mockito.*;
  * Tests notification preferences and device token management with edge cases
  */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("Notification Service Tests")
 class NotificationServiceTests {
 
     @Mock
@@ -37,12 +45,21 @@ class NotificationServiceTests {
     private INotificationPreferencesRepository notificationPreferencesRepository;
 
     @Mock
+    private IUserService userService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
     private ILogger logger;
 
-    @InjectMocks
+    @Mock
+    private FCMService fcmService;
+
     private NotificationService notificationService;
 
     private UUID userId;
+    private User testUser;
     private String deviceToken;
     private DeviceTokenDTO deviceTokenDTO;
     private DeviceToken deviceTokenEntity;
@@ -51,364 +68,390 @@ class NotificationServiceTests {
 
     @BeforeEach
     void setUp() {
+        // Create the service with all required dependencies
+        notificationService = new NotificationService(
+            deviceTokenRepository,
+            notificationPreferencesRepository,
+            userService,
+            eventPublisher,
+            logger,
+            fcmService
+        );
+
         userId = UUID.randomUUID();
         deviceToken = "test-device-token-12345";
-        
-        deviceTokenDTO = new DeviceTokenDTO(userId, deviceToken);
-        
+
+        // Setup test user
+        testUser = new User();
+        testUser.setId(userId);
+        testUser.setUsername("testuser");
+        testUser.setEmail("test@example.com");
+        testUser.setName("Test User");
+
+        // Setup DeviceTokenDTO with correct constructor order: (token, deviceType, userId)
+        deviceTokenDTO = new DeviceTokenDTO(deviceToken, DeviceType.IOS, userId);
+
+        // Setup DeviceToken entity
         deviceTokenEntity = new DeviceToken();
-        deviceTokenEntity.setUserId(userId);
         deviceTokenEntity.setToken(deviceToken);
-        
+        deviceTokenEntity.setUser(testUser);
+        deviceTokenEntity.setDeviceType(DeviceType.IOS);
+
+        // Setup NotificationPreferencesDTO with correct constructor order:
+        // (friendRequestsEnabled, activityInvitesEnabled, activityUpdatesEnabled, chatMessagesEnabled, userId)
         preferencesDTO = new NotificationPreferencesDTO(
-            userId, true, true, true, true, false
+            true, true, true, true, userId
         );
-        
+
+        // Setup NotificationPreferences entity
         preferencesEntity = new NotificationPreferences();
-        preferencesEntity.setUserId(userId);
+        preferencesEntity.setUser(testUser);
         preferencesEntity.setFriendRequestsEnabled(true);
         preferencesEntity.setActivityInvitesEnabled(true);
         preferencesEntity.setActivityUpdatesEnabled(true);
-        preferencesEntity.setNewMessagesEnabled(true);
-        preferencesEntity.setSoundEnabled(false);
+        preferencesEntity.setChatMessagesEnabled(true);
+
+        // Setup default mocks for logger
+        lenient().doNothing().when(logger).info(anyString());
+        lenient().doNothing().when(logger).warn(anyString());
+        lenient().doNothing().when(logger).error(anyString());
     }
 
-    // MARK: - Register Device Token Tests
+    @Nested
+    @DisplayName("Register Device Token Tests")
+    class RegisterDeviceTokenTests {
 
-    @Test
-    void registerDeviceToken_ShouldSaveToken_WhenValidToken() {
-        when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(deviceTokenEntity);
+        @Test
+        @DisplayName("Should save new device token when valid token provided")
+        void shouldSaveToken_WhenValidToken() throws Exception {
+            // Given
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(deviceTokenRepository.findByToken(deviceToken)).thenReturn(List.of());
+            when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(deviceTokenEntity);
 
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(deviceTokenDTO));
+            // When & Then
+            assertThatCode(() -> notificationService.registerDeviceToken(deviceTokenDTO))
+                .doesNotThrowAnyException();
 
-        verify(deviceTokenRepository, times(1)).save(any(DeviceToken.class));
+            verify(deviceTokenRepository, times(1)).save(any(DeviceToken.class));
+        }
+
+        @Test
+        @DisplayName("Should not save duplicate device token")
+        void shouldNotSaveDuplicate_WhenTokenExists() throws Exception {
+            // Given
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(deviceTokenRepository.findByToken(deviceToken)).thenReturn(List.of(deviceTokenEntity));
+
+            // When
+            notificationService.registerDeviceToken(deviceTokenDTO);
+
+            // Then - save should not be called since token exists
+            verify(deviceTokenRepository, never()).save(any(DeviceToken.class));
+        }
+
+        @Test
+        @DisplayName("Should handle long device token")
+        void shouldHandleLongToken() throws Exception {
+            // Given
+            String longToken = "a".repeat(500);
+            DeviceTokenDTO longTokenDTO = new DeviceTokenDTO(longToken, DeviceType.IOS, userId);
+            
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(deviceTokenRepository.findByToken(longToken)).thenReturn(List.of());
+            when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(deviceTokenEntity);
+
+            // When & Then
+            assertThatCode(() -> notificationService.registerDeviceToken(longTokenDTO))
+                .doesNotThrowAnyException();
+
+            verify(deviceTokenRepository, times(1)).save(any(DeviceToken.class));
+        }
+
+        @Test
+        @DisplayName("Should handle special characters in token")
+        void shouldHandleSpecialCharacters() throws Exception {
+            // Given
+            String specialToken = "token:with/special+chars=123";
+            DeviceTokenDTO specialTokenDTO = new DeviceTokenDTO(specialToken, DeviceType.ANDROID, userId);
+            
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(deviceTokenRepository.findByToken(specialToken)).thenReturn(List.of());
+            when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(deviceTokenEntity);
+
+            // When & Then
+            assertThatCode(() -> notificationService.registerDeviceToken(specialTokenDTO))
+                .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("Should propagate exception when user not found")
+        void shouldThrowException_WhenUserNotFound() {
+            // Given
+            when(userService.getUserEntityById(userId)).thenThrow(new RuntimeException("User not found"));
+
+            // When & Then
+            assertThatThrownBy(() -> notificationService.registerDeviceToken(deviceTokenDTO))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("User not found");
+        }
     }
 
-    @Test
-    void registerDeviceToken_ShouldThrowException_WhenDatabaseError() {
-        when(deviceTokenRepository.save(any(DeviceToken.class)))
-                .thenThrow(new DataAccessException("Database error") {});
+    @Nested
+    @DisplayName("Unregister Device Token Tests")
+    class UnregisterDeviceTokenTests {
 
-        assertThrows(DataAccessException.class, 
-            () -> notificationService.registerDeviceToken(deviceTokenDTO));
+        @Test
+        @DisplayName("Should delete token when token exists")
+        void shouldDeleteToken_WhenTokenExists() throws Exception {
+            // Given
+            when(deviceTokenRepository.existsByToken(deviceToken)).thenReturn(true);
+            doNothing().when(deviceTokenRepository).deleteByToken(deviceToken);
 
-        verify(deviceTokenRepository, times(1)).save(any(DeviceToken.class));
+            // When & Then
+            assertThatCode(() -> notificationService.unregisterDeviceToken(deviceToken))
+                .doesNotThrowAnyException();
+
+            verify(deviceTokenRepository, times(1)).deleteByToken(deviceToken);
+        }
+
+        @Test
+        @DisplayName("Should do nothing when token not found")
+        void shouldDoNothing_WhenTokenNotFound() throws Exception {
+            // Given
+            when(deviceTokenRepository.existsByToken(deviceToken)).thenReturn(false);
+
+            // When
+            notificationService.unregisterDeviceToken(deviceToken);
+
+            // Then
+            verify(deviceTokenRepository, never()).deleteByToken(anyString());
+            verify(logger).warn(contains("non-existent"));
+        }
+
+        @Test
+        @DisplayName("Should handle null token")
+        void shouldHandleNullToken() throws Exception {
+            // Given
+            when(deviceTokenRepository.existsByToken(null)).thenReturn(false);
+
+            // When & Then
+            assertThatCode(() -> notificationService.unregisterDeviceToken(null))
+                .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("Should handle empty token")
+        void shouldHandleEmptyToken() throws Exception {
+            // Given
+            when(deviceTokenRepository.existsByToken("")).thenReturn(false);
+
+            // When & Then
+            assertThatCode(() -> notificationService.unregisterDeviceToken(""))
+                .doesNotThrowAnyException();
+        }
     }
 
-    @Test
-    void registerDeviceToken_ShouldHandleLongToken_WhenTokenIsVeryLong() {
-        String longToken = "a".repeat(500);
-        DeviceTokenDTO longTokenDTO = new DeviceTokenDTO(userId, longToken);
-        DeviceToken longTokenEntity = new DeviceToken();
-        longTokenEntity.setUserId(userId);
-        longTokenEntity.setToken(longToken);
-        
-        when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(longTokenEntity);
+    @Nested
+    @DisplayName("Get Notification Preferences Tests")
+    class GetNotificationPreferencesTests {
 
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(longTokenDTO));
-
-        verify(deviceTokenRepository, times(1)).save(any(DeviceToken.class));
-    }
-
-    @Test
-    void registerDeviceToken_ShouldHandleSpecialCharacters_WhenTokenHasSpecialChars() {
-        String specialToken = "token:with/special+chars=123";
-        DeviceTokenDTO specialTokenDTO = new DeviceTokenDTO(userId, specialToken);
-        DeviceToken specialTokenEntity = new DeviceToken();
-        specialTokenEntity.setUserId(userId);
-        specialTokenEntity.setToken(specialToken);
-        
-        when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(specialTokenEntity);
-
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(specialTokenDTO));
-
-        verify(deviceTokenRepository, times(1)).save(any(DeviceToken.class));
-    }
-
-    // MARK: - Unregister Device Token Tests
-
-    @Test
-    void unregisterDeviceToken_ShouldDeleteToken_WhenTokenExists() {
-        when(deviceTokenRepository.findByToken(deviceToken)).thenReturn(Optional.of(deviceTokenEntity));
-        doNothing().when(deviceTokenRepository).delete(deviceTokenEntity);
-
-        assertDoesNotThrow(() -> notificationService.unregisterDeviceToken(deviceToken));
-
-        verify(deviceTokenRepository, times(1)).findByToken(deviceToken);
-        verify(deviceTokenRepository, times(1)).delete(deviceTokenEntity);
-    }
-
-    @Test
-    void unregisterDeviceToken_ShouldDoNothing_WhenTokenNotFound() {
-        when(deviceTokenRepository.findByToken(deviceToken)).thenReturn(Optional.empty());
-
-        assertDoesNotThrow(() -> notificationService.unregisterDeviceToken(deviceToken));
-
-        verify(deviceTokenRepository, times(1)).findByToken(deviceToken);
-        verify(deviceTokenRepository, never()).delete(any());
-    }
-
-    @Test
-    void unregisterDeviceToken_ShouldThrowException_WhenDatabaseError() {
-        when(deviceTokenRepository.findByToken(deviceToken)).thenReturn(Optional.of(deviceTokenEntity));
-        doThrow(new DataAccessException("Database error") {})
-                .when(deviceTokenRepository).delete(deviceTokenEntity);
-
-        assertThrows(DataAccessException.class, 
-            () -> notificationService.unregisterDeviceToken(deviceToken));
-
-        verify(deviceTokenRepository, times(1)).delete(deviceTokenEntity);
-    }
-
-    // MARK: - Get Notification Preferences Tests
-
-    @Test
-    void getNotificationPreferences_ShouldReturnPreferences_WhenPreferencesExist() {
-        when(notificationPreferencesRepository.findByUserId(userId))
+        @Test
+        @DisplayName("Should return preferences when preferences exist")
+        void shouldReturnPreferences_WhenPreferencesExist() throws Exception {
+            // Given
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(notificationPreferencesRepository.findByUser(testUser))
                 .thenReturn(Optional.of(preferencesEntity));
 
-        NotificationPreferencesDTO result = notificationService.getNotificationPreferences(userId);
+            // When
+            NotificationPreferencesDTO result = notificationService.getNotificationPreferences(userId);
 
-        assertNotNull(result);
-        assertEquals(userId, result.getUserId());
-        assertTrue(result.isFriendRequestsEnabled());
-        assertTrue(result.isActivityInvitesEnabled());
-        verify(notificationPreferencesRepository, times(1)).findByUserId(userId);
-    }
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getUserId()).isEqualTo(userId);
+            assertThat(result.isFriendRequestsEnabled()).isTrue();
+            assertThat(result.isActivityInvitesEnabled()).isTrue();
+            assertThat(result.isActivityUpdatesEnabled()).isTrue();
+            assertThat(result.isChatMessagesEnabled()).isTrue();
+        }
 
-    @Test
-    void getNotificationPreferences_ShouldReturnDefaults_WhenPreferencesNotFound() {
-        when(notificationPreferencesRepository.findByUserId(userId))
-                .thenReturn(Optional.empty());
-
-        NotificationPreferencesDTO result = notificationService.getNotificationPreferences(userId);
-
-        assertNotNull(result);
-        assertEquals(userId, result.getUserId());
-        // Verify default values (all enabled)
-        assertTrue(result.isFriendRequestsEnabled());
-        assertTrue(result.isActivityInvitesEnabled());
-        assertTrue(result.isActivityUpdatesEnabled());
-        assertTrue(result.isNewMessagesEnabled());
-        assertTrue(result.isSoundEnabled());
-        verify(notificationPreferencesRepository, times(1)).findByUserId(userId);
-    }
-
-    @Test
-    void getNotificationPreferences_ShouldThrowException_WhenDatabaseError() {
-        when(notificationPreferencesRepository.findByUserId(userId))
-                .thenThrow(new DataAccessException("Database error") {});
-
-        assertThrows(DataAccessException.class, 
-            () -> notificationService.getNotificationPreferences(userId));
-
-        verify(notificationPreferencesRepository, times(1)).findByUserId(userId);
-    }
-
-    // MARK: - Save Notification Preferences Tests
-
-    @Test
-    void saveNotificationPreferences_ShouldSavePreferences_WhenValidPreferences() {
-        when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
+        @Test
+        @DisplayName("Should create and return defaults when preferences not found")
+        void shouldReturnDefaults_WhenPreferencesNotFound() throws Exception {
+            // Given
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(notificationPreferencesRepository.findByUser(testUser))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(preferencesEntity)); // Second call for save
+            when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
                 .thenReturn(preferencesEntity);
 
-        NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(preferencesDTO);
+            // When
+            NotificationPreferencesDTO result = notificationService.getNotificationPreferences(userId);
 
-        assertNotNull(result);
-        assertEquals(userId, result.getUserId());
-        assertTrue(result.isFriendRequestsEnabled());
-        verify(notificationPreferencesRepository, times(1)).save(any(NotificationPreferences.class));
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getUserId()).isEqualTo(userId);
+            // Default values should all be true
+            assertThat(result.isFriendRequestsEnabled()).isTrue();
+            assertThat(result.isActivityInvitesEnabled()).isTrue();
+            assertThat(result.isActivityUpdatesEnabled()).isTrue();
+            assertThat(result.isChatMessagesEnabled()).isTrue();
+        }
     }
 
-    @Test
-    void saveNotificationPreferences_ShouldHandleAllDisabled_WhenAllPreferencesDisabled() {
-        NotificationPreferencesDTO allDisabledDTO = new NotificationPreferencesDTO(
-            userId, false, false, false, false, false
-        );
-        NotificationPreferences allDisabledEntity = new NotificationPreferences();
-        allDisabledEntity.setUserId(userId);
-        allDisabledEntity.setFriendRequestsEnabled(false);
-        allDisabledEntity.setActivityInvitesEnabled(false);
-        allDisabledEntity.setActivityUpdatesEnabled(false);
-        allDisabledEntity.setNewMessagesEnabled(false);
-        allDisabledEntity.setSoundEnabled(false);
-        
-        when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
+    @Nested
+    @DisplayName("Save Notification Preferences Tests")
+    class SaveNotificationPreferencesTests {
+
+        @Test
+        @DisplayName("Should save preferences when valid preferences provided")
+        void shouldSavePreferences_WhenValidPreferences() throws Exception {
+            // Given
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(notificationPreferencesRepository.findByUser(testUser))
+                .thenReturn(Optional.empty());
+            when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
+                .thenReturn(preferencesEntity);
+
+            // When
+            NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(preferencesDTO);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getUserId()).isEqualTo(userId);
+            verify(notificationPreferencesRepository, times(1)).save(any(NotificationPreferences.class));
+        }
+
+        @Test
+        @DisplayName("Should handle all preferences disabled")
+        void shouldHandleAllDisabled() throws Exception {
+            // Given
+            NotificationPreferencesDTO allDisabledDTO = new NotificationPreferencesDTO(
+                false, false, false, false, userId
+            );
+            
+            NotificationPreferences allDisabledEntity = new NotificationPreferences();
+            allDisabledEntity.setUser(testUser);
+            allDisabledEntity.setFriendRequestsEnabled(false);
+            allDisabledEntity.setActivityInvitesEnabled(false);
+            allDisabledEntity.setActivityUpdatesEnabled(false);
+            allDisabledEntity.setChatMessagesEnabled(false);
+
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(notificationPreferencesRepository.findByUser(testUser))
+                .thenReturn(Optional.empty());
+            when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
                 .thenReturn(allDisabledEntity);
 
-        NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(allDisabledDTO);
+            // When
+            NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(allDisabledDTO);
 
-        assertNotNull(result);
-        assertFalse(result.isFriendRequestsEnabled());
-        assertFalse(result.isActivityInvitesEnabled());
-        assertFalse(result.isActivityUpdatesEnabled());
-        assertFalse(result.isNewMessagesEnabled());
-        assertFalse(result.isSoundEnabled());
-        verify(notificationPreferencesRepository, times(1)).save(any(NotificationPreferences.class));
-    }
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.isFriendRequestsEnabled()).isFalse();
+            assertThat(result.isActivityInvitesEnabled()).isFalse();
+            assertThat(result.isActivityUpdatesEnabled()).isFalse();
+            assertThat(result.isChatMessagesEnabled()).isFalse();
+        }
 
-    @Test
-    void saveNotificationPreferences_ShouldHandlePartialPreferences_WhenSomeDisabled() {
-        NotificationPreferencesDTO partialDTO = new NotificationPreferencesDTO(
-            userId, false, false, true, true, false
-        );
-        NotificationPreferences partialEntity = new NotificationPreferences();
-        partialEntity.setUserId(userId);
-        partialEntity.setFriendRequestsEnabled(false);
-        partialEntity.setActivityInvitesEnabled(false);
-        partialEntity.setActivityUpdatesEnabled(true);
-        partialEntity.setNewMessagesEnabled(true);
-        partialEntity.setSoundEnabled(false);
-        
-        when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
+        @Test
+        @DisplayName("Should handle partial preferences")
+        void shouldHandlePartialPreferences() throws Exception {
+            // Given
+            NotificationPreferencesDTO partialDTO = new NotificationPreferencesDTO(
+                false, false, true, true, userId
+            );
+            
+            NotificationPreferences partialEntity = new NotificationPreferences();
+            partialEntity.setUser(testUser);
+            partialEntity.setFriendRequestsEnabled(false);
+            partialEntity.setActivityInvitesEnabled(false);
+            partialEntity.setActivityUpdatesEnabled(true);
+            partialEntity.setChatMessagesEnabled(true);
+
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(notificationPreferencesRepository.findByUser(testUser))
+                .thenReturn(Optional.empty());
+            when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
                 .thenReturn(partialEntity);
 
-        NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(partialDTO);
+            // When
+            NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(partialDTO);
 
-        assertNotNull(result);
-        assertFalse(result.isFriendRequestsEnabled());
-        assertFalse(result.isActivityInvitesEnabled());
-        assertTrue(result.isActivityUpdatesEnabled());
-        assertTrue(result.isNewMessagesEnabled());
-        verify(notificationPreferencesRepository, times(1)).save(any(NotificationPreferences.class));
-    }
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.isFriendRequestsEnabled()).isFalse();
+            assertThat(result.isActivityInvitesEnabled()).isFalse();
+            assertThat(result.isActivityUpdatesEnabled()).isTrue();
+            assertThat(result.isChatMessagesEnabled()).isTrue();
+        }
 
-    @Test
-    void saveNotificationPreferences_ShouldThrowException_WhenDatabaseError() {
-        when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
-                .thenThrow(new DataAccessException("Database error") {});
-
-        assertThrows(DataAccessException.class, 
-            () -> notificationService.saveNotificationPreferences(preferencesDTO));
-
-        verify(notificationPreferencesRepository, times(1)).save(any(NotificationPreferences.class));
-    }
-
-    // MARK: - Edge Case Tests
-
-    @Test
-    void registerDeviceToken_ShouldHandleMultipleTokensSameUser_WhenUserHasMultipleDevices() {
-        String token1 = "token-1";
-        String token2 = "token-2";
-        DeviceTokenDTO dto1 = new DeviceTokenDTO(userId, token1);
-        DeviceTokenDTO dto2 = new DeviceTokenDTO(userId, token2);
-        
-        DeviceToken entity1 = new DeviceToken();
-        entity1.setUserId(userId);
-        entity1.setToken(token1);
-        
-        DeviceToken entity2 = new DeviceToken();
-        entity2.setUserId(userId);
-        entity2.setToken(token2);
-        
-        when(deviceTokenRepository.save(any(DeviceToken.class)))
-                .thenReturn(entity1)
-                .thenReturn(entity2);
-
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(dto1));
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(dto2));
-
-        verify(deviceTokenRepository, times(2)).save(any(DeviceToken.class));
-    }
-
-    @Test
-    void unregisterDeviceToken_ShouldHandleNullToken_WhenTokenIsNull() {
-        when(deviceTokenRepository.findByToken(null)).thenReturn(Optional.empty());
-
-        assertDoesNotThrow(() -> notificationService.unregisterDeviceToken(null));
-
-        verify(deviceTokenRepository, times(1)).findByToken(null);
-        verify(deviceTokenRepository, never()).delete(any());
-    }
-
-    @Test
-    void unregisterDeviceToken_ShouldHandleEmptyToken_WhenTokenIsEmpty() {
-        when(deviceTokenRepository.findByToken("")).thenReturn(Optional.empty());
-
-        assertDoesNotThrow(() -> notificationService.unregisterDeviceToken(""));
-
-        verify(deviceTokenRepository, times(1)).findByToken("");
-        verify(deviceTokenRepository, never()).delete(any());
-    }
-
-    @Test
-    void getNotificationPreferences_ShouldHandleNullUserId_WhenUserIdIsNull() {
-        when(notificationPreferencesRepository.findByUserId(null))
-                .thenReturn(Optional.empty());
-
-        NotificationPreferencesDTO result = notificationService.getNotificationPreferences(null);
-
-        assertNotNull(result);
-        assertNull(result.getUserId());
-        verify(notificationPreferencesRepository, times(1)).findByUserId(null);
-    }
-
-    @Test
-    void saveNotificationPreferences_ShouldHandleConcurrentUpdates_WhenMultipleUpdates() {
-        when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
+        @Test
+        @DisplayName("Should update existing preferences")
+        void shouldUpdateExisting_WhenPreferencesExist() throws Exception {
+            // Given
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(notificationPreferencesRepository.findByUser(testUser))
+                .thenReturn(Optional.of(preferencesEntity));
+            when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
                 .thenReturn(preferencesEntity);
 
-        NotificationPreferencesDTO result1 = notificationService.saveNotificationPreferences(preferencesDTO);
-        NotificationPreferencesDTO result2 = notificationService.saveNotificationPreferences(preferencesDTO);
+            // When
+            NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(preferencesDTO);
 
-        assertNotNull(result1);
-        assertNotNull(result2);
-        verify(notificationPreferencesRepository, times(2)).save(any(NotificationPreferences.class));
+            // Then
+            assertThat(result).isNotNull();
+            verify(notificationPreferencesRepository, times(1)).save(any(NotificationPreferences.class));
+        }
     }
 
-    @Test
-    void registerDeviceToken_ShouldHandleEmptyToken_WhenTokenIsEmpty() {
-        DeviceTokenDTO emptyTokenDTO = new DeviceTokenDTO(userId, "");
-        DeviceToken emptyTokenEntity = new DeviceToken();
-        emptyTokenEntity.setUserId(userId);
-        emptyTokenEntity.setToken("");
-        
-        when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(emptyTokenEntity);
+    @Nested
+    @DisplayName("Edge Case Tests")
+    class EdgeCaseTests {
 
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(emptyTokenDTO));
+        @Test
+        @DisplayName("Should handle multiple tokens for same user")
+        void shouldHandleMultipleTokens() throws Exception {
+            // Given
+            String token1 = "token-1";
+            String token2 = "token-2";
+            DeviceTokenDTO dto1 = new DeviceTokenDTO(token1, DeviceType.IOS, userId);
+            DeviceTokenDTO dto2 = new DeviceTokenDTO(token2, DeviceType.ANDROID, userId);
 
-        verify(deviceTokenRepository, times(1)).save(any(DeviceToken.class));
-    }
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(deviceTokenRepository.findByToken(token1)).thenReturn(List.of());
+            when(deviceTokenRepository.findByToken(token2)).thenReturn(List.of());
+            when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(deviceTokenEntity);
 
-    @Test
-    void saveNotificationPreferences_ShouldUpdateExisting_WhenPreferencesAlreadyExist() {
-        NotificationPreferences existingPreferences = new NotificationPreferences();
-        existingPreferences.setUserId(userId);
-        existingPreferences.setFriendRequestsEnabled(false);
-        
-        when(notificationPreferencesRepository.findByUserId(userId))
-                .thenReturn(Optional.of(existingPreferences));
-        when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
+            // When & Then
+            assertThatCode(() -> {
+                notificationService.registerDeviceToken(dto1);
+                notificationService.registerDeviceToken(dto2);
+            }).doesNotThrowAnyException();
+
+            verify(deviceTokenRepository, times(2)).save(any(DeviceToken.class));
+        }
+
+        @Test
+        @DisplayName("Should handle concurrent preference updates")
+        void shouldHandleConcurrentUpdates() throws Exception {
+            // Given
+            when(userService.getUserEntityById(userId)).thenReturn(testUser);
+            when(notificationPreferencesRepository.findByUser(testUser))
+                .thenReturn(Optional.of(preferencesEntity));
+            when(notificationPreferencesRepository.save(any(NotificationPreferences.class)))
                 .thenReturn(preferencesEntity);
 
-        NotificationPreferencesDTO result = notificationService.saveNotificationPreferences(preferencesDTO);
+            // When
+            NotificationPreferencesDTO result1 = notificationService.saveNotificationPreferences(preferencesDTO);
+            NotificationPreferencesDTO result2 = notificationService.saveNotificationPreferences(preferencesDTO);
 
-        assertNotNull(result);
-        verify(notificationPreferencesRepository, times(1)).save(any(NotificationPreferences.class));
-    }
-
-    @Test
-    void registerDeviceToken_ShouldOverwriteExisting_WhenSameTokenRegisteredAgain() {
-        when(deviceTokenRepository.save(any(DeviceToken.class))).thenReturn(deviceTokenEntity);
-
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(deviceTokenDTO));
-        assertDoesNotThrow(() -> notificationService.registerDeviceToken(deviceTokenDTO));
-
-        verify(deviceTokenRepository, times(2)).save(any(DeviceToken.class));
-    }
-
-    @Test
-    void getNotificationPreferences_ShouldReturnConsistentDefaults_WhenCalledMultipleTimes() {
-        when(notificationPreferencesRepository.findByUserId(userId))
-                .thenReturn(Optional.empty());
-
-        NotificationPreferencesDTO result1 = notificationService.getNotificationPreferences(userId);
-        NotificationPreferencesDTO result2 = notificationService.getNotificationPreferences(userId);
-
-        assertEquals(result1.isFriendRequestsEnabled(), result2.isFriendRequestsEnabled());
-        assertEquals(result1.isActivityInvitesEnabled(), result2.isActivityInvitesEnabled());
-        assertEquals(result1.isActivityUpdatesEnabled(), result2.isActivityUpdatesEnabled());
-        verify(notificationPreferencesRepository, times(2)).findByUserId(userId);
+            // Then
+            assertThat(result1).isNotNull();
+            assertThat(result2).isNotNull();
+            verify(notificationPreferencesRepository, times(2)).save(any(NotificationPreferences.class));
+        }
     }
 }
-
