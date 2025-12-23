@@ -26,7 +26,6 @@ import com.danielagapov.spawn.shared.util.PhoneNumberMatchingUtil;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -51,6 +50,7 @@ public class UserService implements IUserService {
     private final IS3Service s3Service;
     private final ILogger logger;
     private final IUserSearchService userSearchService;
+    private final IUserFriendshipQueryService friendshipQueryService;
     private final CacheManager cacheManager;
     private final ApplicationEventPublisher eventPublisher;
     private final IUserIdExternalIdMapRepository userIdExternalIdMapRepository;
@@ -64,7 +64,8 @@ public class UserService implements IUserService {
                        IFriendshipRepository friendshipRepository,
 
                        IS3Service s3Service, ILogger logger,
-                       @Lazy IUserSearchService userSearchService,
+                       IUserSearchService userSearchService,
+                       IUserFriendshipQueryService friendshipQueryService,
                        CacheManager cacheManager,
                        ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
@@ -74,6 +75,7 @@ public class UserService implements IUserService {
         this.s3Service = s3Service;
         this.logger = logger;
         this.userSearchService = userSearchService;
+        this.friendshipQueryService = friendshipQueryService;
         this.cacheManager = cacheManager;
         this.eventPublisher = eventPublisher;
         this.userIdExternalIdMapRepository = userIdExternalIdMapRepository;
@@ -149,27 +151,12 @@ public class UserService implements IUserService {
 
     @Override
     public List<UUID> getFriendUserIdsByUserId(UUID id) {
-        try {
-            return friendshipRepository.findAllByUserIdBidirectional(id)
-                    .stream()
-                    .map(f -> f.getUserA().getId().equals(id) ? f.getUserB().getId() : f.getUserA().getId())
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error getting friend user IDs for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
-            throw e;
-        }
+        return friendshipQueryService.getFriendUserIdsByUserId(id);
     }
 
     @Override
     public User getUserEntityById(UUID id) {
-        try {
-            User user = repository.findById(id)
-                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
-            return user;
-        } catch (Exception e) {
-            logger.error("Error retrieving user entity: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
-            throw e;
-        }
+        return friendshipQueryService.getUserEntityById(id);
     }
 
     // Friend tags removed
@@ -273,11 +260,11 @@ public class UserService implements IUserService {
 
     private List<UserDTO> getUserDTOs() {
         try {
-            List<User> users = repository.findAllUsersByStatus(UserStatus.ACTIVE);
+            List<User> users = friendshipQueryService.getAllActiveUsers();
             Map<User, List<UUID>> friendUserIdsMap = users.stream()
                     .collect(Collectors.toMap(
                             user -> user,
-                            user -> getFriendUserIdsByUserId(user.getId())
+                            user -> friendshipQueryService.getFriendUserIdsByUserId(user.getId())
                     ));
             return UserMapper.toDTOList(users, friendUserIdsMap);
         } catch (Exception e) {
@@ -456,82 +443,24 @@ public class UserService implements IUserService {
      */
     @Override
     public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
-        try {
-            List<UUID> friendIds = getFriendUserIdsByUserId(requestingUserId);
-            if (friendIds.isEmpty()) {
-                return List.of();
-            }
-            List<User> friendUsers = repository.findAllById(friendIds);
-            List<FullFriendUserDTO> result = new ArrayList<>();
-            for (User friend : friendUsers) {
-                FullFriendUserDTO dto = new FullFriendUserDTO(
-                        friend.getId(),
-                        friend.getUsername(),
-                        friend.getProfilePictureUrlString(),
-                        friend.getName(),
-                        friend.getBio(),
-                        friend.getEmail()
-                );
-                result.add(dto);
-            }
-            return filterOutAdminFromFullFriendUserDTOs(result);
-        } catch (Exception e) {
-            logger.error("Error retrieving full friend users: " + e.getMessage());
-            throw e;
-        }
+        return friendshipQueryService.getFullFriendUsersByUserId(requestingUserId);
     }
 
     /**
      * Fallback method to get friends from the "Everyone" tag when the optimized query returns no results
      */
     private List<FullFriendUserDTO> getFallbackFriendsList(UUID requestingUserId) {
-        List<User> userFriends = getFriendUsersByUserId(requestingUserId);
-        List<FullFriendUserDTO> result = new ArrayList<>();
-        for (User friend : userFriends) {
-            FullFriendUserDTO dto = new FullFriendUserDTO(
-                    friend.getId(),
-                    friend.getUsername(),
-                    friend.getProfilePictureUrlString(),
-                    friend.getName(),
-                    friend.getBio(),
-                    friend.getEmail()
-            );
-            result.add(dto);
-        }
-        return filterOutAdminFromFullFriendUserDTOs(result);
+        return friendshipQueryService.getFullFriendUsersByUserId(requestingUserId);
     }
 
     @Override
     public List<User> getFriendUsersByUserId(UUID requestingUserId) {
-        try {
-            // Get the friend IDs
-            List<UUID> friendIds = getFriendUserIdsByUserId(requestingUserId);
-
-            // Fetch and return the user entities
-            if (!friendIds.isEmpty()) {
-                return repository.findAllById(friendIds);
-            }
-
-            return List.of();
-        } catch (Exception e) {
-            logger.error("Error retrieving friend users by user ID: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ": " + e.getMessage());
-            throw e;
-        }
+        return friendshipQueryService.getFriendUsersByUserId(requestingUserId);
     }
 
     @Override
     public int getMutualFriendCount(UUID userId1, UUID userId2) {
-        try {
-            List<UUID> user1Friends = new ArrayList<>(getFriendUserIdsByUserId(userId1));
-            List<UUID> user2Friends = getFriendUserIdsByUserId(userId2);
-
-            // Create a mutable copy of user1Friends and retain only elements that are also in user2Friends
-            user1Friends.retainAll(user2Friends);
-            return user1Friends.size();
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw e;
-        }
+        return friendshipQueryService.getMutualFriendCount(userId1, userId2);
     }
 
     @Override
@@ -637,14 +566,7 @@ public class UserService implements IUserService {
 
     @Override
     public boolean isUserFriendOfUser(UUID userId, UUID potentialFriendId) {
-        try {
-            return friendshipRepository.existsBidirectionally(userId, potentialFriendId);
-        } catch (Exception e) {
-            logger.error("Error checking if user is friend of user: " +
-                    LoggingUtils.formatUserIdInfo(userId) + " and " +
-                    LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
-            throw e;
-        }
+        return friendshipQueryService.isUserFriendOfUser(userId, potentialFriendId);
     }
 
     @Override
