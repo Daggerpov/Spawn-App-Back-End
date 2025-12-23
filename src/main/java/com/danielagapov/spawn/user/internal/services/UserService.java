@@ -19,7 +19,6 @@ import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.shared.events.UserActivityTypeEvents.UserCreatedEvent;
-import com.danielagapov.spawn.shared.events.UserEvents.*;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.IUserSearchService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
@@ -32,7 +31,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
