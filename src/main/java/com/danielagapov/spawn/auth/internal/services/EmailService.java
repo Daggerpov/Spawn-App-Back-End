@@ -34,17 +34,7 @@ public class EmailService implements IEmailService {
     public void sendEmail(String to, String subject, String content) {
         logger.info("Sending email asynchronously to " + to);
         try {
-            // MIME is an internet standard for the format of email messages
-            MimeMessage message = mailSender.createMimeMessage();
-            // Helper used to populate the MIME message
-            MimeMessageHelper mimeHelper = new MimeMessageHelper(message, "utf-8");
-            // Add recipient, subject, sender, and content to email
-            mimeHelper.setTo(to);
-            mimeHelper.setSubject(subject);
-            mimeHelper.setFrom(new InternetAddress("Spawn <spawnappmarketing@gmail.com>"));
-            mimeHelper.setText(content, true);
-            // Send email
-            mailSender.send(message);
+            sendMimeEmail(to, subject, content);
             logger.info("Email sent successfully to " + to);
         } catch (MessagingException e) {
             logger.error("Failed to send email to " + to + ": " + e.getMessage());
@@ -63,14 +53,7 @@ public class EmailService implements IEmailService {
             final String content = buildVerifyEmailBody(link);
             final String subject = "Verify Account";
             
-            // Directly send the email instead of calling sendEmail() to avoid double async
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper mimeHelper = new MimeMessageHelper(message, "utf-8");
-            mimeHelper.setTo(to);
-            mimeHelper.setSubject(subject);
-            mimeHelper.setFrom(new InternetAddress("Spawn <spawnappmarketing@gmail.com>"));
-            mimeHelper.setText(content, true);
-            mailSender.send(message);
+            sendMimeEmail(to, subject, content);
             logger.info("Verification email sent successfully to " + to);
         } catch (MessagingException e) {
             logger.error("Failed to send verification email to " + to + ": " + e.getMessage());
@@ -87,20 +70,32 @@ public class EmailService implements IEmailService {
             final String content = buildVerificationCodeEmailBody(verificationCode, expiryTime);
             final String subject = "Your Verification Code: " + verificationCode;
             
-            // Directly send the email instead of calling sendEmail() to avoid double async
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper mimeHelper = new MimeMessageHelper(message, "utf-8");
-            mimeHelper.setTo(to);
-            mimeHelper.setSubject(subject);
-            mimeHelper.setFrom(new InternetAddress("Spawn <spawnappmarketing@gmail.com>"));
-            mimeHelper.setText(content, true);
-            mailSender.send(message);
+            sendMimeEmail(to, subject, content);
             logger.info("Verification code email sent successfully to " + to);
         } catch (MessagingException e) {
             logger.error("Failed to send verification code email to " + to + ": " + e.getMessage());
         } catch (Exception e) {
             logger.error("Unexpected error sending verification code email to " + to + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Creates and sends a MIME email message with the provided details.
+     * MIME (Multipurpose Internet Mail Extensions) is an internet standard for email message format.
+     * 
+     * @param to The recipient email address
+     * @param subject The email subject line
+     * @param content The HTML content of the email
+     * @throws MessagingException if there's an error creating or sending the email
+     */
+    private void sendMimeEmail(String to, String subject, String content) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper mimeHelper = new MimeMessageHelper(message, "utf-8");
+        mimeHelper.setTo(to);
+        mimeHelper.setSubject(subject);
+        mimeHelper.setFrom(new InternetAddress("Spawn <spawnappmarketing@gmail.com>"));
+        mimeHelper.setText(content, true); // true enables HTML
+        mailSender.send(message);
     }
 
     /**
@@ -122,3 +117,4 @@ public class EmailService implements IEmailService {
     }
 
 }
+
