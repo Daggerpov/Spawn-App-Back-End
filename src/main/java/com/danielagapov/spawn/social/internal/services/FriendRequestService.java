@@ -14,7 +14,7 @@ import com.danielagapov.spawn.social.internal.domain.FriendRequest;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.repositories.IFriendRequestsRepository;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
-import com.danielagapov.spawn.user.internal.services.IUserService;
+import com.danielagapov.spawn.social.internal.services.UserQueryService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import com.danielagapov.spawn.shared.util.CacheNames;
@@ -33,7 +33,7 @@ import java.util.UUID;
 @Service
 public class FriendRequestService implements IFriendRequestService {
     private final IFriendRequestsRepository repository;
-    private final IUserService userService;
+    private final UserQueryService userQueryService;
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final ApplicationEventPublisher eventPublisher;
@@ -41,11 +41,11 @@ public class FriendRequestService implements IFriendRequestService {
 
     public FriendRequestService(
             IFriendRequestsRepository repository,
-            IUserService userService,
+            UserQueryService userQueryService,
             IBlockedUserService blockedUserService, ILogger logger,
             ApplicationEventPublisher eventPublisher, CacheEvictionHelper cacheEvictionHelper) {
         this.repository = repository;
-        this.userService = userService;
+        this.userQueryService = userQueryService;
         this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.eventPublisher = eventPublisher;
@@ -63,8 +63,8 @@ public class FriendRequestService implements IFriendRequestService {
             UUID senderId = friendRequestDTO.getSenderUserId();
             UUID receiverId = friendRequestDTO.getReceiverUserId();
 
-            User sender = userService.getUserEntityById(senderId);
-            User receiver = userService.getUserEntityById(receiverId);
+            User sender = userQueryService.getUserEntityById(senderId);
+            User receiver = userQueryService.getUserEntityById(receiverId);
 
             logger.info("Creating friend request from sender: " + LoggingUtils.formatUserInfo(sender) +
                     " to receiver: " + LoggingUtils.formatUserInfo(receiver));
@@ -133,7 +133,7 @@ public class FriendRequestService implements IFriendRequestService {
     @Cacheable(value = "incomingFetchFriendRequests", key = "#id")
     public List<FetchFriendRequestDTO> getIncomingFetchFriendRequestsByUserId(UUID id) {
         try {
-            User user = userService.getUserEntityById(id);
+            User user = userQueryService.getUserEntityById(id);
             logger.info("Getting incoming fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = getIncomingFriendRequestsByUserId(id);
@@ -171,7 +171,7 @@ public class FriendRequestService implements IFriendRequestService {
             List<FetchFriendRequestDTO> result = validFriendRequests.stream()
                     .map(fr -> {
                         FetchFriendRequestDTO dto = FetchFriendRequestMapper.toDTO(fr,
-                        userService.getMutualFriendCount(id, fr.getSender().getId()));
+                        userQueryService.getMutualFriendCount(id, fr.getSender().getId()));
                         logger.info("Debug: Created DTO with ID=" + dto.getId() + " from friend request ID=" + fr.getId() + 
                                   ". DTO senderUser ID=" + (dto.getSenderUser() != null ? dto.getSenderUser().getId() : "null"));
                         
@@ -234,7 +234,7 @@ public class FriendRequestService implements IFriendRequestService {
             User receiver = fr.getReceiver();
 
             // Check if users are already friends to avoid duplicate processing
-            if (userService.isUserFriendOfUser(sender.getId(), receiver.getId())) {
+            if (userQueryService.isUserFriendOfUser(sender.getId(), receiver.getId())) {
                 logger.info("Users are already friends, deleting stale friend request with ID: " + id);
                 deleteFriendRequest(id);
                 return;
@@ -243,7 +243,7 @@ public class FriendRequestService implements IFriendRequestService {
             logger.info("Accepting friend request with ID: " + id + " from sender: " +
                     LoggingUtils.formatUserInfo(sender) + " to receiver: " + LoggingUtils.formatUserInfo(receiver));
 
-            userService.saveFriendToUser(sender.getId(), receiver.getId());
+            userQueryService.saveFriendToUser(sender.getId(), receiver.getId());
 
             // Publish friend request accepted notification Activity
             eventPublisher.publishEvent(
@@ -303,8 +303,8 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public void deleteFriendRequestBetweenUsersIfExists(UUID senderId, UUID receiverId) {
         try {
-            User sender = userService.getUserEntityById(senderId);
-            User receiver = userService.getUserEntityById(receiverId);
+            User sender = userQueryService.getUserEntityById(senderId);
+            User receiver = userQueryService.getUserEntityById(receiverId);
 
             logger.info("Deleting friend requests between sender: " + LoggingUtils.formatUserInfo(sender) +
                     " and receiver: " + LoggingUtils.formatUserInfo(receiver));
@@ -334,9 +334,9 @@ public class FriendRequestService implements IFriendRequestService {
             for (CreateFriendRequestDTO friendRequest : friendRequests) {
                 UUID senderId = friendRequest.getSenderUserId();
                 UUID receiverId = friendRequest.getReceiverUserId();
-                int mutualFriendCount = userService.getMutualFriendCount(receiverId, senderId);
+                int mutualFriendCount = userQueryService.getMutualFriendCount(receiverId, senderId);
 
-                User sender = userService.getUserEntityById(senderId);
+                User sender = userQueryService.getUserEntityById(senderId);
                 fullFriendRequests.add(new FetchFriendRequestDTO(
                         friendRequest.getId(),
                         UserMapper.toDTO(sender),
@@ -355,7 +355,7 @@ public class FriendRequestService implements IFriendRequestService {
     @Override
     public List<CreateFriendRequestDTO> getSentFriendRequestsByUserId(UUID userId) {
         try {
-            User user = userService.getUserEntityById(userId);
+            User user = userQueryService.getUserEntityById(userId);
 
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
             List<CreateFriendRequestDTO> dtos = FriendRequestMapper.toDTOList(friendRequests);
@@ -371,7 +371,7 @@ public class FriendRequestService implements IFriendRequestService {
     @Cacheable(value = "sentFetchFriendRequests", key = "#userId")
     public List<FetchSentFriendRequestDTO> getSentFetchFriendRequestsByUserId(UUID userId) {
         try {
-            User user = userService.getUserEntityById(userId);
+            User user = userQueryService.getUserEntityById(userId);
             logger.info("Getting sent fetch friend requests for user: " + LoggingUtils.formatUserInfo(user));
 
             List<FriendRequest> friendRequests = repository.findBySenderId(userId);
