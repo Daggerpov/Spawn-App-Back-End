@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.4.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.danielagapov</groupId>
@@ -29,11 +29,26 @@
     <properties>
         <java.version>17</java.version>
         <lombok.version>1.18.36</lombok.version>
+        <reactor-bom.version>2024.0.0</reactor-bom.version>
     </properties>
     <dependencies>
+        <!-- Switch to WebFlux for HTTP/3 support via Reactor Netty -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <!-- Netty HTTP/3 codec for QUIC support -->
+        <dependency>
+            <groupId>io.netty.incubator</groupId>
+            <artifactId>netty-incubator-codec-http3</artifactId>
+            <version>0.0.28.Final</version>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- Netty transport native for better performance (optional but recommended) -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport-native-epoll</artifactId>
+            <classifier>linux-x86_64</classifier>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
