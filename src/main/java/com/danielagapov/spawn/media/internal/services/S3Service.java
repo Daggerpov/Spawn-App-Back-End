@@ -30,7 +30,8 @@ public class S3Service implements IS3Service {
     // Security constants
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
-        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
+        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
+        "image/heic", "image/heif" // iOS native formats
     );
     private static final List<byte[]> MALICIOUS_SIGNATURES = Arrays.asList(
         // PHP signatures
@@ -75,7 +76,7 @@ public class S3Service implements IS3Service {
         // Validate content type
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
             logger.warn("File upload rejected: invalid content type " + contentType);
-            throw new IllegalArgumentException("Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed");
+            throw new IllegalArgumentException("Invalid file type. Only JPEG, PNG, GIF, WebP, and HEIC/HEIF images are allowed");
         }
 
         // Check for malicious content signatures
@@ -107,7 +108,7 @@ public class S3Service implements IS3Service {
      * Validates image file headers to ensure file is actually an image
      */
     private boolean isValidImageFile(byte[] file, String contentType) {
-        if (file.length < 8) return false;
+        if (file.length < 12) return false;
         
         switch (contentType.toLowerCase()) {
             case "image/jpeg":
@@ -119,6 +120,11 @@ public class S3Service implements IS3Service {
                 return (file[0] == 'G' && file[1] == 'I' && file[2] == 'F');
             case "image/webp":
                 return file[8] == 'W' && file[9] == 'E' && file[10] == 'B' && file[11] == 'P';
+            case "image/heic":
+            case "image/heif":
+                // HEIC/HEIF uses ISO Base Media File Format with 'ftyp' box at bytes 4-7
+                // followed by brand identifier (heic, heix, mif1, etc.)
+                return file[4] == 'f' && file[5] == 't' && file[6] == 'y' && file[7] == 'p';
             default:
                 return false;
         }
