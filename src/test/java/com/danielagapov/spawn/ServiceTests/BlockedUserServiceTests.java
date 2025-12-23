@@ -1,22 +1,22 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.User.SearchResultUserDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.User.BlockedUser;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.User.IBlockedUserRepository;
-import com.danielagapov.spawn.Services.BlockedUser.BlockedUserService;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
-import com.danielagapov.spawn.Repositories.IFriendshipRepository;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.user.api.dto.BlockedUserDTO;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.social.api.dto.FetchFriendRequestDTO;
+import com.danielagapov.spawn.user.api.dto.SearchResultUserDTO;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.user.internal.domain.BlockedUser;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.internal.repositories.IBlockedUserRepository;
+import com.danielagapov.spawn.social.internal.services.BlockedUserService;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
+import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
+import com.danielagapov.spawn.user.internal.services.IUserService;
+import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
-import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataAccessException;
 
 import java.util.*;
@@ -31,7 +31,7 @@ public class BlockedUserServiceTests {
     @Mock private IFriendRequestService friendRequestService;
     @Mock private IFriendshipRepository friendshipRepository;
     @Mock private ILogger logger;
-    @Mock private CacheManager cacheManager;
+    @Mock private CacheEvictionHelper cacheEvictionHelper;
 
     @InjectMocks private BlockedUserService blockedUserService;
 

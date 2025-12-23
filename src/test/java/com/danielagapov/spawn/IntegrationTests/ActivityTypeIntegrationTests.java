@@ -1,16 +1,16 @@
 package com.danielagapov.spawn.IntegrationTests;
 
-import com.danielagapov.spawn.Controllers.ActivityTypeController;
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Exceptions.ActivityTypeValidationException;
-import com.danielagapov.spawn.Models.ActivityType;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
-import com.danielagapov.spawn.Services.ActivityType.ActivityTypeService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.activity.api.ActivityTypeController;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.shared.exceptions.ActivityTypeValidationException;
+import com.danielagapov.spawn.activity.internal.domain.ActivityType;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository;
+import com.danielagapov.spawn.activity.internal.services.ActivityTypeService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -226,7 +226,7 @@ class ActivityTypeIntegrationTests {
             type.setIcon("🎯");
             type.setCreator(testUser);
             type.setOrderNum(i);
-            type.setIsPinned(i <= 3); // First 3 are pinned
+            type.setIsPinned(i <= 4); // First 4 are pinned
             manyActivityTypes.add(type);
             
             // Create corresponding DTO

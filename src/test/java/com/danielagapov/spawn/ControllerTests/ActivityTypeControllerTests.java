@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.ControllerTests;
 
-import com.danielagapov.spawn.Controllers.ActivityTypeController;
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Exceptions.ActivityTypeValidationException;
-import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
+import com.danielagapov.spawn.activity.api.ActivityTypeController;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.shared.exceptions.ActivityTypeValidationException;
+import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

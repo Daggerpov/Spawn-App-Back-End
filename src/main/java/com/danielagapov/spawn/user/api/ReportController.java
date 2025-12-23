@@ -1,0 +1,156 @@
+package com.danielagapov.spawn.user.api;
+
+import com.danielagapov.spawn.analytics.api.dto.CreateReportedContentDTO;
+import com.danielagapov.spawn.analytics.api.dto.FetchReportedContentDTO;
+import com.danielagapov.spawn.analytics.api.dto.ReportedContentDTO;
+import com.danielagapov.spawn.shared.util.EntityType;
+import com.danielagapov.spawn.shared.util.ReportType;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.analytics.internal.services.IReportContentService;
+import com.danielagapov.spawn.shared.util.LoggingUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("api/v1/reports")
+public final class ReportController {
+    private final IReportContentService reportService;
+    private final ILogger logger;
+
+    public ReportController(IReportContentService reportService, ILogger logger) {
+        this.reportService = reportService;
+        this.logger = logger;
+    }
+
+    // full path: POST /api/v1/reports
+    @PostMapping
+    public ResponseEntity<ReportedContentDTO> createReportSimplified(@RequestBody CreateReportedContentDTO createReportDTO) {
+        try {
+            ReportedContentDTO newReport = reportService.fileReport(createReportDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newReport);
+        } catch (Exception e) {
+            logger.error("Error creating report: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // full path: GET /api/v1/reports?reportType=<ReportType>&contentType=<EntityType>
+    @GetMapping
+    public ResponseEntity<List<FetchReportedContentDTO>> getFetchReports(
+            @RequestParam(value = "reportType", required = false) ReportType reportType,
+            @RequestParam(value = "contentType", required = false) EntityType contentType
+    ) {
+        try {
+            List<FetchReportedContentDTO> reports = reportService.getFetchReportsByFilters(reportType, contentType);
+            return ResponseEntity.ok(reports);
+        } catch (Exception e) {
+            logger.error("Error getting reports with filters: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // full path: GET /api/v1/reports/reporter/{reporterId}
+    @GetMapping("/reporter/{reporterId}")
+    public ResponseEntity<?> getFetchReportsByReporter(@PathVariable UUID reporterId) {
+        if (reporterId == null) {
+            logger.error("Invalid parameter: reporterId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            List<FetchReportedContentDTO> reports = reportService.getFetchReportsByReporterId(reporterId);
+            return ResponseEntity.ok(reports);
+        } catch (BaseNotFoundException e) {
+            logger.error("Reporter not found: " + LoggingUtils.formatUserIdInfo(reporterId) + ": " + e.getMessage());
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.ReportedContent) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                logger.error("Unexpected entity type in BasesNotFoundException for reporter: " + LoggingUtils.formatUserIdInfo(reporterId) + ": " + e.getMessage());
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            logger.error("Error getting reports for reporter: " + LoggingUtils.formatUserIdInfo(reporterId) + ": " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // full path: GET /api/v1/reports/content-owner/{contentOwnerId}
+    @GetMapping("/content-owner/{contentOwnerId}")
+    public ResponseEntity<?> getFetchReportsByContentOwner(@PathVariable UUID contentOwnerId) {
+        if (contentOwnerId == null) {
+            logger.error("Invalid parameter: contentOwnerId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            List<FetchReportedContentDTO> reports = reportService.getFetchReportsByContentOwnerId(contentOwnerId);
+            return ResponseEntity.ok(reports);
+        } catch (BaseNotFoundException e) {
+            logger.error("Content owner not found: " + LoggingUtils.formatUserIdInfo(contentOwnerId) + ": " + e.getMessage());
+            return new ResponseEntity<>(e.entityType, HttpStatus.NOT_FOUND);
+        } catch (BasesNotFoundException e) {
+            if (e.entityType == EntityType.ReportedContent) {
+                return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+            } else {
+                logger.error("Unexpected entity type in BasesNotFoundException for content owner: " + LoggingUtils.formatUserIdInfo(contentOwnerId) + ": " + e.getMessage());
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            logger.error("Error getting reports for content owner: " + LoggingUtils.formatUserIdInfo(contentOwnerId) + ": " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // full path: PUT /api/v1/reports/{reportId}?resolution={resolution}
+    @PutMapping("/{reportId}")
+    public ResponseEntity<?> updateReportStatus(
+            @PathVariable UUID reportId,
+            @RequestParam String resolution
+    ) {
+        if (reportId == null) {
+            logger.error("Invalid parameter: reportId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        if (resolution == null || resolution.trim().isEmpty()) {
+            logger.error("Invalid parameter: resolution is null or empty");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            ReportedContentDTO updatedReport = reportService.updateReportStatus(reportId, resolution);
+            return ResponseEntity.ok(updatedReport);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error updating report status: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error updating report status for reportId: " + reportId + ": " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // full path: DELETE /api/v1/reports/{reportId}
+    @DeleteMapping("/{reportId}")
+    public ResponseEntity<?> deleteReport(@PathVariable UUID reportId) {
+        if (reportId == null) {
+            logger.error("Invalid parameter: reportId is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            reportService.deleteReport(reportId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            logger.error("Error deleting report: " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Unexpected error deleting report with id: " + reportId + ": " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+}

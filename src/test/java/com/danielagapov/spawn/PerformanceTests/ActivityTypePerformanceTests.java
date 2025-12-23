@@ -1,13 +1,13 @@
 package com.danielagapov.spawn.PerformanceTests;
 
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.ActivityType;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
-import com.danielagapov.spawn.Services.ActivityType.ActivityTypeService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.activity.internal.domain.ActivityType;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository;
+import com.danielagapov.spawn.activity.internal.services.ActivityTypeService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -406,12 +406,12 @@ class ActivityTypePerformanceTests {
     }
 
     /**
-     * Creates a batch of activity types with a controlled number of pinned items (max 3)
+     * Creates a batch of activity types with a controlled number of pinned items (max 4)
      * Use this when testing pinned functionality specifically
      */
     private List<ActivityTypeDTO> createActivityTypeBatchWithPinnedLimit(int count, int pinnedCount) {
-        if (pinnedCount > 3) {
-            throw new IllegalArgumentException("Cannot create more than 3 pinned activity types");
+        if (pinnedCount > 4) {
+            throw new IllegalArgumentException("Cannot create more than 4 pinned activity types");
         }
         return IntStream.range(0, count)
                 .mapToObj(i -> new ActivityTypeDTO(

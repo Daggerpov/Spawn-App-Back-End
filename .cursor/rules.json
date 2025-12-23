@@ -600,6 +600,45 @@
     ],
     "success_criteria": "All tests must pass with output showing 'Tests run: 206, Failures: 0, Errors: 0, Skipped: 0'"
   },
+  "compilation_verification_order": {
+    "description": "CRITICAL: Always verify both application AND test compilation in the correct order",
+    "mandatory_workflow": [
+      "1. FIRST: Compile the application code with './mvnw clean compile'",
+      "2. SECOND: Compile the test code with './mvnw test-compile'",
+      "3. Fix any compilation errors in order (application first, then tests)",
+      "4. NEVER assume tests compile just because application compiles",
+      "5. ALWAYS verify both before considering compilation complete"
+    ],
+    "why_this_matters": [
+      "Application compilation only checks src/main/java/**",
+      "Test compilation checks src/test/java/** which often has different imports",
+      "Test files frequently get missed during global import updates",
+      "Compilation errors in tests are just as critical as in application code"
+    ],
+    "compilation_commands": {
+      "application_only": "./mvnw clean compile",
+      "tests_only": "./mvnw test-compile",
+      "both_plus_run_tests": "./mvnw clean test"
+    },
+    "common_test_compilation_issues": [
+      "Imports not updated in test files (especially after package restructuring)",
+      "Fully qualified class names in test code instead of imports",
+      "Mock objects using old package paths",
+      "Test utilities and helpers with outdated imports"
+    ],
+    "enforcement": [
+      "ALWAYS run both './mvnw compile' AND './mvnw test-compile' after structural changes",
+      "NEVER consider compilation 'fixed' until both application and tests compile",
+      "Pay extra attention to test files when refactoring package structures",
+      "Verify test compilation before running actual tests"
+    ],
+    "success_criteria": [
+      "✓ Application compilation: BUILD SUCCESS with 0 errors",
+      "✓ Test compilation: BUILD SUCCESS with 0 errors",
+      "✓ No 'cannot find symbol' errors in any file",
+      "✓ All imports resolved correctly in both main and test code"
+    ]
+  },
   "mandatory_test_execution_after_unit_test_changes": {
     "description": "CRITICAL: Always run tests after adding, modifying, or adjusting unit tests and fix all failures",
     "trigger_conditions": [
@@ -642,5 +681,111 @@
       "Test execution completes without hanging or timing out"
     ],
     "automation_principle": "This process must be automatic and non-negotiable. Test failures are blockers that must be resolved before any other work continues."
+  },
+  "file_organization": {
+    "description": "CRITICAL: Never create documentation, scripts, logs, or other non-code files in the main project directory",
+    "mandatory_rules": [
+      "NEVER create .md, .log, .txt, .sh files in the project root directory",
+      "NEVER create temporary scripts, helper files, or documentation in the main directory",
+      "ALWAYS place files in their designated organized directories",
+      "DELETE any existing files in the root that belong in organized directories"
+    ],
+    "file_placement_rules": {
+      "documentation": {
+        "directory": "docs/",
+        "file_types": ["*.md", "*.txt"],
+        "categories": {
+          "fixes": "docs/fixes/ - Bug fix summaries, issue resolutions, hotfix documentation",
+          "features": "docs/features/ - Feature implementation plans, specifications",
+          "optimization": "docs/optimization/ - Performance improvements, RAM optimization docs",
+          "refactoring": "docs/refactoring/ - Refactoring plans, architecture decisions",
+          "database": "docs/database/ - Database migrations, schema changes",
+          "diagrams": "docs/diagrams/ - Architecture diagrams, entity relationships"
+        },
+        "examples": [
+          "Fix summary → docs/fixes/FIX_NAME_SUMMARY.md",
+          "Feature plan → docs/features/FEATURE_NAME_PLAN.md",
+          "Optimization → docs/optimization/OPTIMIZATION_NAME.md",
+          "Refactoring → docs/refactoring/REFACTOR_NAME.md"
+        ]
+      },
+      "scripts": {
+        "directory": "scripts/",
+        "file_types": ["*.sh", "*.sql", "*.py"],
+        "categories": {
+          "cache": "scripts/cache/ - Cache management scripts (clear-cache.sh, etc.)",
+          "database": "scripts/database/ - Database scripts, migrations, cleanups",
+          "database_cleanup": "scripts/database/cleanup-scripts/ - Data cleanup SQL scripts",
+          "database_migrations": "scripts/database/database-migrations/ - Schema migration scripts",
+          "database_constraint_fixes": "scripts/database/constraint-fixes/ - Constraint fix scripts",
+          "database_validation": "scripts/database/validation-tools/ - DB validation tools",
+          "deployment": "scripts/deployment/ - Deployment and startup scripts",
+          "monitoring": "scripts/monitoring/ - RAM monitoring, log analysis",
+          "legacy_fixes": "scripts/legacy-fixes/ - Old migration/fix scripts (rarely used)"
+        },
+        "examples": [
+          "Cache script → scripts/cache/clear-specific-cache.sh",
+          "Data cleanup → scripts/database/cleanup-scripts/cleanup-orphaned-data.sql",
+          "Migration → scripts/database/database-migrations/add-new-column.sql",
+          "Deployment → scripts/deployment/deploy-to-production.sh",
+          "Monitoring → scripts/monitoring/analyze-performance-logs.sh"
+        ]
+      },
+      "logs": {
+        "directory": "logs/ (not tracked in git)",
+        "file_types": ["*.log", "*-output.txt"],
+        "note": "Log files should never be committed. Add to .gitignore if needed."
+      },
+      "temporary_files": {
+        "note": "NEVER create temporary files in the project root",
+        "action": "Use system temp directories or create in target/ directory (which is gitignored)"
+      }
+    },
+    "forbidden_patterns": [
+      "Creating *.md files in project root (except README.md, LICENSE.md)",
+      "Creating *.sh scripts in project root",
+      "Creating *.sql files in project root",
+      "Creating test output logs in project root",
+      "Creating any -output.txt, -logs.txt files in project root",
+      "Creating SUMMARY.md, FIXES.md, PLAN.md, etc. in project root"
+    ],
+    "automatic_cleanup": {
+      "when_found": "If any misplaced files are found in the root directory",
+      "action": "Immediately move them to the appropriate organized directory",
+      "examples": [
+        "TEST_FIXES_SUMMARY.md → docs/fixes/TEST_FIXES_SUMMARY.md",
+        "DEPENDENCY_FIXES_SUMMARY.md → docs/fixes/DEPENDENCY_FIXES_SUMMARY.md",
+        "build-with-java17.sh → scripts/deployment/build-with-java17.sh",
+        "fix-test-imports.sh → scripts/legacy-fixes/fix-test-imports.sh",
+        "clean-orphaned-data.sql → scripts/database/cleanup-scripts/clean-orphaned-data.sql"
+      ]
+    },
+    "git_status_maintenance": {
+      "rule": "Keep project root clean in git status",
+      "acceptable_root_files": [
+        "README.md",
+        "LICENSE.md",
+        "pom.xml",
+        "mvnw",
+        "mvnw.cmd",
+        ".gitignore",
+        ".gitattributes"
+      ],
+      "unacceptable_patterns": [
+        "Untracked *.md files (except README.md, LICENSE.md)",
+        "Untracked *.sh files",
+        "Untracked *.sql files",
+        "Untracked log or output files"
+      ]
+    },
+    "workflow": [
+      "1. Before creating any documentation file, determine its category (fix, feature, optimization, etc.)",
+      "2. Place it in the appropriate docs/ subdirectory",
+      "3. Before creating any script, determine its purpose (cache, database, deployment, etc.)",
+      "4. Place it in the appropriate scripts/ subdirectory",
+      "5. Never create temporary files in the project root - use target/ or system temp",
+      "6. Check git status regularly to ensure root directory stays clean"
+    ],
+    "enforcement": "This rule is NON-NEGOTIABLE. Any file created in the wrong location must be immediately moved to its correct organized directory."
   }
 } 

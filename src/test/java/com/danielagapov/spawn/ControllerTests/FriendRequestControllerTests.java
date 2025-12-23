@@ -1,17 +1,17 @@
 package com.danielagapov.spawn.ControllerTests;
 
-import com.danielagapov.spawn.Controllers.FriendRequestController;
-import com.danielagapov.spawn.DTOs.FriendRequest.CreateFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FetchFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.FriendRequest.FetchSentFriendRequestDTO;
-import com.danielagapov.spawn.DTOs.User.BaseUserDTO;
-import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Enums.FriendRequestAction;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
+import com.danielagapov.spawn.social.api.FriendRequestController;
+import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
+import com.danielagapov.spawn.social.api.dto.FetchFriendRequestDTO;
+import com.danielagapov.spawn.social.api.dto.FetchSentFriendRequestDTO;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.shared.util.EntityType;
+import com.danielagapov.spawn.shared.util.FriendRequestAction;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -300,7 +300,7 @@ class FriendRequestControllerTests {
         // Act & Assert
         mockMvc.perform(put("/api/v1/friend-requests/{friendRequestId}", friendRequestId)
                 .param("friendRequestAction", "accept"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         verify(friendRequestService).acceptFriendRequest(friendRequestId);
         verify(logger).info(contains("Processing friend request action: accept"));
@@ -315,7 +315,7 @@ class FriendRequestControllerTests {
         // Act & Assert
         mockMvc.perform(put("/api/v1/friend-requests/{friendRequestId}", friendRequestId)
                 .param("friendRequestAction", "reject"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         verify(friendRequestService).deleteFriendRequest(friendRequestId);
         verify(logger).info(contains("Processing friend request action: reject"));
@@ -341,7 +341,7 @@ class FriendRequestControllerTests {
     }
 
     @Test
-    void friendRequestAction_ShouldReturnOk_WhenFriendRequestNotFound() throws Exception {
+    void friendRequestAction_ShouldReturnNoContent_WhenFriendRequestNotFound() throws Exception {
         // Arrange - Controller handles this gracefully to avoid client-side errors
         BaseNotFoundException exception = new BaseNotFoundException(EntityType.FriendRequest);
         doThrow(exception).when(friendRequestService).acceptFriendRequest(friendRequestId);
@@ -349,7 +349,7 @@ class FriendRequestControllerTests {
         // Act & Assert
         mockMvc.perform(put("/api/v1/friend-requests/{friendRequestId}", friendRequestId)
                 .param("friendRequestAction", "accept"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         verify(logger).warn(contains("Friend request not found (may have been already processed)"));
     }
@@ -385,20 +385,20 @@ class FriendRequestControllerTests {
 
         // Act & Assert
         mockMvc.perform(delete("/api/v1/friend-requests/{friendRequestId}", friendRequestId))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         verify(friendRequestService).deleteFriendRequest(friendRequestId);
     }
 
     @Test
-    void deleteFriendRequest_ShouldReturnOk_WhenFriendRequestNotFound() throws Exception {
+    void deleteFriendRequest_ShouldReturnNoContent_WhenFriendRequestNotFound() throws Exception {
         // Arrange - Controller handles this gracefully for idempotent behavior
         BaseNotFoundException exception = new BaseNotFoundException(EntityType.FriendRequest);
         doThrow(exception).when(friendRequestService).deleteFriendRequest(friendRequestId);
 
         // Act & Assert
         mockMvc.perform(delete("/api/v1/friend-requests/{friendRequestId}", friendRequestId))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         verify(logger).warn(contains("Friend request not found (may have been already deleted)"));
     }
@@ -467,7 +467,7 @@ class FriendRequestControllerTests {
     }
 
     @Test
-    void friendRequestAction_DirectCall_ShouldReturnOk_WhenAcceptActionSucceeds() {
+    void friendRequestAction_DirectCall_ShouldReturnNoContent_WhenAcceptActionSucceeds() {
         // Arrange
         doNothing().when(friendRequestService).acceptFriendRequest(friendRequestId);
 
@@ -476,12 +476,12 @@ class FriendRequestControllerTests {
             .friendRequestAction(friendRequestId, FriendRequestAction.accept);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(friendRequestService).acceptFriendRequest(friendRequestId);
     }
 
     @Test
-    void friendRequestAction_DirectCall_ShouldReturnOk_WhenRejectActionSucceeds() {
+    void friendRequestAction_DirectCall_ShouldReturnNoContent_WhenRejectActionSucceeds() {
         // Arrange
         doNothing().when(friendRequestService).deleteFriendRequest(friendRequestId);
 
@@ -490,12 +490,12 @@ class FriendRequestControllerTests {
             .friendRequestAction(friendRequestId, FriendRequestAction.reject);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(friendRequestService).deleteFriendRequest(friendRequestId);
     }
 
     @Test
-    void deleteFriendRequest_DirectCall_ShouldReturnOk_WhenServiceSucceeds() {
+    void deleteFriendRequest_DirectCall_ShouldReturnNoContent_WhenServiceSucceeds() {
         // Arrange
         doNothing().when(friendRequestService).deleteFriendRequest(friendRequestId);
 
@@ -503,7 +503,7 @@ class FriendRequestControllerTests {
         ResponseEntity<?> response = friendRequestController.deleteFriendRequest(friendRequestId);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(friendRequestService).deleteFriendRequest(friendRequestId);
     }
 
@@ -542,8 +542,8 @@ class FriendRequestControllerTests {
             .friendRequestAction(UUID.randomUUID(), FriendRequestAction.reject);
 
         // Assert
-        assertEquals(HttpStatus.OK, response1.getStatusCode());
-        assertEquals(HttpStatus.OK, response2.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response1.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, response2.getStatusCode());
     }
 
     @Test
@@ -574,7 +574,7 @@ class FriendRequestControllerTests {
         
         mockMvc.perform(put("/api/v1/friend-requests/{friendRequestId}", friendRequestId)
                 .param("friendRequestAction", "accept"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         
         verify(logger).info(contains("Processing friend request action: accept"));
         verify(logger).info(contains("Successfully accepted friend request: " + friendRequestId));
@@ -585,7 +585,7 @@ class FriendRequestControllerTests {
         
         mockMvc.perform(put("/api/v1/friend-requests/{friendRequestId}", friendRequestId)
                 .param("friendRequestAction", "reject"))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
         
         verify(logger).info(contains("Processing friend request action: reject"));
         verify(logger).info(contains("Successfully rejected friend request: " + friendRequestId));

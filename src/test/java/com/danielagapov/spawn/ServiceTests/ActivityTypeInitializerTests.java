@@ -1,11 +1,11 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.Config.ActivityTypeInitializer;
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.User.IUserRepository;
-import com.danielagapov.spawn.Services.ActivityType.IActivityTypeService;
+import com.danielagapov.spawn.shared.config.ActivityTypeInitializer;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -14,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.ArrayList;
@@ -37,6 +39,12 @@ class ActivityTypeInitializerTests {
 
     @Mock
     private IActivityTypeService activityTypeService;
+
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache cache;
 
     @Mock
     private ILogger logger;
@@ -84,7 +92,7 @@ class ActivityTypeInitializerTests {
 
         // Act
         CommandLineRunner runner = activityTypeInitializer.initializeActivityTypes(
-            userRepository, activityTypeService, logger
+            userRepository, activityTypeService, cacheManager, logger
         );
         runner.run();
 
@@ -122,7 +130,7 @@ class ActivityTypeInitializerTests {
 
         // Act
         CommandLineRunner runner = activityTypeInitializer.initializeActivityTypes(
-            userRepository, activityTypeService, logger
+            userRepository, activityTypeService, cacheManager, logger
         );
         runner.run();
 
@@ -159,7 +167,7 @@ class ActivityTypeInitializerTests {
 
         // Act
         CommandLineRunner runner = activityTypeInitializer.initializeActivityTypes(
-            userRepository, activityTypeService, logger
+            userRepository, activityTypeService, cacheManager, logger
         );
         runner.run();
 
@@ -179,7 +187,7 @@ class ActivityTypeInitializerTests {
 
         // Act
         CommandLineRunner runner = activityTypeInitializer.initializeActivityTypes(
-            userRepository, activityTypeService, logger
+            userRepository, activityTypeService, cacheManager, logger
         );
         runner.run();
 
@@ -206,7 +214,7 @@ class ActivityTypeInitializerTests {
 
         // Act
         CommandLineRunner runner = activityTypeInitializer.initializeActivityTypes(
-            userRepository, activityTypeService, logger
+            userRepository, activityTypeService, cacheManager, logger
         );
         runner.run();
 

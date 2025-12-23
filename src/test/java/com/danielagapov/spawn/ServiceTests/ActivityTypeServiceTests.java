@@ -1,14 +1,14 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.ActivityType.ActivityTypeDTO;
-import com.danielagapov.spawn.DTOs.ActivityType.BatchActivityTypeUpdateDTO;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Exceptions.ActivityTypeValidationException;
-import com.danielagapov.spawn.Models.ActivityType;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.IActivityTypeRepository;
-import com.danielagapov.spawn.Services.ActivityType.ActivityTypeService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
+import com.danielagapov.spawn.activity.api.dto.BatchActivityTypeUpdateDTO;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.shared.exceptions.ActivityTypeValidationException;
+import com.danielagapov.spawn.activity.internal.domain.ActivityType;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository;
+import com.danielagapov.spawn.activity.internal.services.ActivityTypeService;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -465,7 +465,37 @@ class ActivityTypeServiceTests {
     
     @Test
     void batchUpdate_ShouldThrowValidationException_WhenTooManyPinnedActivityTypes() {
-        // Arrange - User tries to pin 4 activity types (exceeds limit of 3)
+        // Arrange - User tries to pin 5 activity types (exceeds limit of 4)
+        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true);
+        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true);
+        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, true);
+        
+        UUID newId1 = UUID.randomUUID();
+        ActivityTypeDTO pinned4 = new ActivityTypeDTO(newId1, "Study", List.of(), "✏️", 4, userId, true);
+        
+        UUID newId2 = UUID.randomUUID();
+        ActivityTypeDTO pinned5 = new ActivityTypeDTO(newId2, "Work", List.of(), "💼", 5, userId, true);
+        
+        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
+                List.of(pinned1, pinned2, pinned3, pinned4, pinned5),
+                List.of()
+        );
+
+        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L); // Current: 1 pinned
+        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L); // Current: 3 total
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+
+        // Act & Assert
+        ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
+                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
+
+        assertTrue(exception.getMessage().contains("Cannot have more than 4 pinned activity types"));
+        verify(activityTypeRepository, never()).saveAll(anyList());
+    }
+    
+    @Test
+    void batchUpdate_ShouldAllowMaximumPinnedActivityTypes_WhenExactlyFourPinned() {
+        // Arrange - User has exactly 4 pinned activity types (should be allowed)
         ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true);
         ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true);
         ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, true);
@@ -478,42 +508,29 @@ class ActivityTypeServiceTests {
                 List.of()
         );
 
-        when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(1L); // Current: 1 pinned
-        when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L); // Current: 3 total
-        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
-
-        // Act & Assert
-        ActivityTypeValidationException exception = assertThrows(ActivityTypeValidationException.class,
-                () -> activityTypeService.updateActivityTypes(userId, batchDTO));
-
-        assertTrue(exception.getMessage().contains("Cannot have more than 3 pinned activity types"));
-        verify(activityTypeRepository, never()).saveAll(anyList());
-    }
-    
-    @Test
-    void batchUpdate_ShouldAllowMaximumPinnedActivityTypes_WhenExactlyThreePinned() {
-        // Arrange - User has exactly 3 pinned activity types (should be allowed)
-        ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true);
-        ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true);
-        ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, true);
-        
-        BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
-                List.of(pinned1, pinned2, pinned3),
-                List.of()
-        );
-
         when(activityTypeRepository.countByCreatorIdAndIsPinnedTrue(userId)).thenReturn(0L); // Current: 0 pinned
         when(activityTypeRepository.countByCreatorId(userId)).thenReturn(3L); // Current: 3 total
-        when(activityTypeRepository.findActivityTypesByCreatorId(userId)).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+        
+        // Create a mock for the new activity type
+        ActivityType studyActivityType = new ActivityType(testUser, "Study", "✏️");
+        studyActivityType.setId(newId);
+        studyActivityType.setIsPinned(true);
+        studyActivityType.setOrderNum(4);
+        
+        // Mock the repository to return all 4 activity types after the update
+        when(activityTypeRepository.findActivityTypesByCreatorId(userId))
+                .thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType)) // Initial state
+                .thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType, studyActivityType)); // After update
+        
         when(userService.getUserEntityById(userId)).thenReturn(testUser);
-        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType));
+        when(activityTypeRepository.saveAll(anyList())).thenReturn(List.of(chillActivityType, foodActivityType, activeActivityType, studyActivityType));
 
         // Act
         List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
         // Assert
         assertNotNull(result);
-        assertEquals(3, result.size());
+        assertEquals(4, result.size());
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }
     
@@ -644,7 +661,7 @@ class ActivityTypeServiceTests {
         // Act
         List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
-        // Assert - Should pass validation: 1 - 1 + 2 = 2 pinned (within limit of 3)
+        // Assert - Should pass validation: 1 - 1 + 2 = 2 pinned (within limit of 4)
         assertNotNull(result);
         assertEquals(3, result.size()); // Returns all user's activity types
         verify(activityTypeRepository, times(1)).deleteAllById(anyList());
@@ -983,8 +1000,8 @@ class ActivityTypeServiceTests {
              activityTypeId1,
              "Chill",
              Arrays.asList(
-                 new com.danielagapov.spawn.DTOs.User.BaseUserDTO(friend1Id, "Friend One", "friend1@test.com", "friend1", "bio1", "pic1.jpg"),
-                 new com.danielagapov.spawn.DTOs.User.BaseUserDTO(friend2Id, "Friend Two", "friend2@test.com", "friend2", "bio2", "pic2.jpg")
+                 new com.danielagapov.spawn.user.api.dto.BaseUserDTO(friend1Id, "Friend One", "friend1@test.com", "friend1", "bio1", "pic1.jpg"),
+                 new com.danielagapov.spawn.user.api.dto.BaseUserDTO(friend2Id, "Friend Two", "friend2@test.com", "friend2", "bio2", "pic2.jpg")
              ),
             "🛋️",
             1,
@@ -1211,16 +1228,19 @@ class ActivityTypeServiceTests {
 
     @Test
     void batchUpdate_ShouldHandleBoundaryPinnedCount_WhenExactlyAtLimit() {
-        // Arrange - Test exactly at the pinned limit boundary (3 pinned)
+        // Arrange - Test exactly at the pinned limit boundary (4 pinned)
         ActivityTypeDTO pinned1 = new ActivityTypeDTO(activityTypeId1, "Chill", List.of(), "🛋️", 1, userId, true);
         ActivityTypeDTO pinned2 = new ActivityTypeDTO(activityTypeId2, "Food", List.of(), "🍽️", 2, userId, true);
         ActivityTypeDTO pinned3 = new ActivityTypeDTO(activityTypeId3, "Active", List.of(), "🏃", 3, userId, true);
         
-        UUID newId = UUID.randomUUID();
-        ActivityTypeDTO unpinned = new ActivityTypeDTO(newId, "Study", List.of(), "📚", 4, userId, false);
+        UUID newId1 = UUID.randomUUID();
+        ActivityTypeDTO pinned4 = new ActivityTypeDTO(newId1, "Study", List.of(), "📚", 4, userId, true);
+        
+        UUID newId2 = UUID.randomUUID();
+        ActivityTypeDTO unpinned = new ActivityTypeDTO(newId2, "Work", List.of(), "💼", 5, userId, false);
         
         BatchActivityTypeUpdateDTO batchDTO = new BatchActivityTypeUpdateDTO(
-            List.of(pinned1, pinned2, pinned3, unpinned),
+            List.of(pinned1, pinned2, pinned3, pinned4, unpinned),
             List.of()
         );
 
@@ -1233,7 +1253,7 @@ class ActivityTypeServiceTests {
         // Act
         List<ActivityTypeDTO> result = activityTypeService.updateActivityTypes(userId, batchDTO);
 
-        // Assert - Should pass with exactly 3 pinned
+        // Assert - Should pass with exactly 4 pinned
         assertNotNull(result);
         verify(activityTypeRepository, times(1)).saveAll(anyList());
     }

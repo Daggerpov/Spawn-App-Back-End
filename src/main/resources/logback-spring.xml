@@ -4,8 +4,20 @@
             <pattern>%d{HH:mm:ss} %highlight(%-5level) [%logger{36}:%line] %msg%n</pattern>
         </encoder>
     </appender>
-
+    
+    <!-- RAM OPTIMIZATION: Reduce duplicate log messages to save memory -->
+    <turboFilter class="ch.qos.logback.classic.turbo.DuplicateMessageFilter"/>
+    
     <root level="info">
         <appender-ref ref="CONSOLE"/>
     </root>
+    
+    <!-- RAM OPTIMIZATION: Reduce verbose library logging to save memory and processing -->
+    <logger name="org.springframework.web" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="INFO"/>
+    <logger name="io.lettuce.core" level="WARN"/>
+    <logger name="software.amazon.awssdk" level="WARN"/>
+    <logger name="com.google.firebase" level="WARN"/>
+    <logger name="com.twilio" level="WARN"/>
 </configuration>

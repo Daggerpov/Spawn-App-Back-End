@@ -1,15 +1,15 @@
 package com.danielagapov.spawn.ControllerTests;
 
-import com.danielagapov.spawn.Controllers.User.UserController;
-import com.danielagapov.spawn.DTOs.User.AbstractUserDTO;
-import com.danielagapov.spawn.DTOs.User.FriendUser.FullFriendUserDTO;
-import com.danielagapov.spawn.Enums.EntityType;
-import com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Services.Auth.IAuthService;
-import com.danielagapov.spawn.Services.BlockedUser.IBlockedUserService;
-import com.danielagapov.spawn.Services.S3.IS3Service;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.user.api.UserController;
+import com.danielagapov.spawn.user.api.dto.AbstractUserDTO;
+import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
+import com.danielagapov.spawn.shared.util.EntityType;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.auth.internal.services.IAuthService;
+import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
+import com.danielagapov.spawn.media.internal.services.IS3Service;
+import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
