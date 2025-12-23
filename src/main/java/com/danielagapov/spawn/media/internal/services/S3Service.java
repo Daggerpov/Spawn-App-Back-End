@@ -28,7 +28,7 @@ public class S3Service implements IS3Service {
     private static final String DEFAULT_PFP;
     
     // Security constants
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
         "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp",
         "image/heic", "image/heif" // iOS native formats
