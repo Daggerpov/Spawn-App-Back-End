@@ -55,6 +55,19 @@ public class AuthService implements IAuthService {
     @Override
     public UserDTO registerUser(AuthUserDTO authUserDTO) throws FieldAlreadyExistsException {
         logger.info("Attempting to register new user with username: " + authUserDTO.getUsername());
+        
+        // Validate input fields
+        if (!com.danielagapov.spawn.shared.util.InputValidationUtil.isValidUsername(authUserDTO.getUsername())) {
+            throw new IllegalArgumentException("Username must be 3-30 characters and contain only letters, numbers, dots, underscores, and hyphens (no spaces)");
+        }
+        if (!com.danielagapov.spawn.shared.util.InputValidationUtil.isValidEmail(authUserDTO.getEmail())) {
+            throw new IllegalArgumentException("Email must be valid");
+        }
+        if (authUserDTO.getName() != null && !authUserDTO.getName().isEmpty() && 
+            !com.danielagapov.spawn.shared.util.InputValidationUtil.isValidName(authUserDTO.getName())) {
+            throw new IllegalArgumentException("Name must be 1-100 characters and contain only letters, spaces, hyphens, and apostrophes");
+        }
+        
         checkIfUniqueCredentials(authUserDTO);
         try {
             UserDTO userDTO = createAndSaveUser(authUserDTO);
@@ -166,6 +179,16 @@ public class AuthService implements IAuthService {
     public BaseUserDTO updateUserDetails(UpdateUserDetailsDTO dto) {
         if (dto.getId() == null || dto.getUsername() == null || dto.getPhoneNumber() == null) {
             throw new IllegalArgumentException("User ID, username, and phone number cannot be null");
+        }
+        
+        // Validate username format
+        if (!com.danielagapov.spawn.shared.util.InputValidationUtil.isValidUsername(dto.getUsername())) {
+            throw new IllegalArgumentException("Username must be 3-30 characters and contain only letters, numbers, dots, underscores, and hyphens (no spaces)");
+        }
+        
+        // Validate phone number format
+        if (!com.danielagapov.spawn.shared.util.InputValidationUtil.isValidPhoneNumber(dto.getPhoneNumber())) {
+            throw new IllegalArgumentException("Phone number must be in valid E.164 format");
         }
 
         User user = userService.getUserEntityById(dto.getId());
