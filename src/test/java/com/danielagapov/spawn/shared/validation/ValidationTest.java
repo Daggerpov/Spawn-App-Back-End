@@ -156,12 +156,19 @@ public class ValidationTest {
         assertNull(InputValidationUtil.sanitizeEmail(null));
     }
 
+    // Test password patterns for validation testing (not real credentials)
+    // ggignore-start
+    private static final String VALID_TEST_PASSWORD_1 = "Password123!";
+    private static final String VALID_TEST_PASSWORD_2 = "MyP@ssw0rd";
+    private static final String VALID_TEST_PASSWORD_3 = "Str0ng!Pass";
+    // ggignore-end
+
     @Test
     public void testPasswordStrength() {
-        // Valid strong passwords
-        assertTrue(InputValidationUtil.isStrongPassword("Password123!"));
-        assertTrue(InputValidationUtil.isStrongPassword("MyP@ssw0rd"));
-        assertTrue(InputValidationUtil.isStrongPassword("Str0ng!Pass"));
+        // Valid strong passwords (test fixtures, not real credentials)
+        assertTrue(InputValidationUtil.isStrongPassword(VALID_TEST_PASSWORD_1));
+        assertTrue(InputValidationUtil.isStrongPassword(VALID_TEST_PASSWORD_2));
+        assertTrue(InputValidationUtil.isStrongPassword(VALID_TEST_PASSWORD_3));
         
         // Invalid passwords - too short
         assertFalse(InputValidationUtil.isStrongPassword("Pass1!"));
