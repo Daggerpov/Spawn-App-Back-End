@@ -20,7 +20,7 @@ import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.UserService;
-import com.danielagapov.spawn.user.internal.services.IUserSearchService;
+import com.danielagapov.spawn.user.internal.services.IUserSearchQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ public class UserServiceTests {
     private IS3Service s3Service;
 
     @Mock
-    private IUserSearchService userSearchService;
+    private IUserSearchQueryService userSearchQueryService;
 
     @Mock
     private IActivityUserRepository activityUserRepository;
@@ -384,7 +384,7 @@ public class UserServiceTests {
             .thenReturn(pastActivityIds);
         when(activityUserRepository.findOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating))
             .thenReturn(activityParticipants);
-        when(userSearchService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of());
+        when(userSearchQueryService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of());
 
         // Mock the getBaseUserById method
         BaseUserDTO mockBaseUserDTO = new BaseUserDTO();
