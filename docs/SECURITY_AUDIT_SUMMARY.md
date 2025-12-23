@@ -54,7 +54,7 @@ This document summarizes the security vulnerabilities identified and fixed durin
 - Unlimited file sizes
 
 **Solutions Implemented**:
-- File size limit: 5MB maximum
+- File size limit: 10MB maximum
 - Content type validation (JPEG, PNG, GIF, WebP only)
 - Magic number validation to prevent file type spoofing
 - Malicious content signature detection (PHP, script tags)

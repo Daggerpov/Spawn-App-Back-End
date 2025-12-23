@@ -47,12 +47,11 @@ public class AdminUserInitializer {
                 return;
             }
             
-            // Validate password strength
+            // Validate password strength, but don't throw.
             if (!isStrongPassword(adminPassword)) {
-                logger.error("Admin password does not meet security requirements. Password must be at least 12 characters long and contain uppercase, lowercase, numbers, and special characters.");
-                throw new SecurityException("Admin password does not meet security requirements");
+                logger.warn("Admin password does not meet security requirements. Password must be at least 12 characters long and contain uppercase, lowercase, numbers, and special characters.");
             }
-            
+
             // Check if admin user already exists
             if (!userRepository.existsByUsername(adminUsername)) {
                 try {
