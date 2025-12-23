@@ -9,6 +9,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 
@@ -29,9 +30,9 @@ public class EmailService implements IEmailService {
 
 
     @Override
-    // TODO: look into @Async
-    public void sendEmail(String to, String subject, String content) throws MessagingException {
-        logger.info("Sending email to " + to);
+    @Async("emailTaskExecutor")
+    public void sendEmail(String to, String subject, String content) {
+        logger.info("Sending email asynchronously to " + to);
         try {
             // MIME is an internet standard for the format of email messages
             MimeMessage message = mailSender.createMimeMessage();
@@ -44,27 +45,62 @@ public class EmailService implements IEmailService {
             mimeHelper.setText(content, true);
             // Send email
             mailSender.send(message);
+            logger.info("Email sent successfully to " + to);
         } catch (MessagingException e) {
-            logger.error("Failed to send email to " + to);
-            throw e;
+            logger.error("Failed to send email to " + to + ": " + e.getMessage());
+            // Exception is logged but not re-thrown since this is an async method
+        } catch (Exception e) {
+            logger.error("Unexpected error sending email to " + to + ": " + e.getMessage());
         }
     }
 
     @Override
-    public void sendVerifyAccountEmail(String to, String token) throws MessagingException {
-        logger.info("Sending verification email to " + to);
-        final String link = BASE_URL + token;
-        final String content = buildVerifyEmailBody(link);
-        final String subject = "Verify Account";
-        sendEmail(to, subject, content);
+    @Async("emailTaskExecutor")
+    public void sendVerifyAccountEmail(String to, String token) {
+        logger.info("Sending verification email asynchronously to " + to);
+        try {
+            final String link = BASE_URL + token;
+            final String content = buildVerifyEmailBody(link);
+            final String subject = "Verify Account";
+            
+            // Directly send the email instead of calling sendEmail() to avoid double async
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper mimeHelper = new MimeMessageHelper(message, "utf-8");
+            mimeHelper.setTo(to);
+            mimeHelper.setSubject(subject);
+            mimeHelper.setFrom(new InternetAddress("Spawn <spawnappmarketing@gmail.com>"));
+            mimeHelper.setText(content, true);
+            mailSender.send(message);
+            logger.info("Verification email sent successfully to " + to);
+        } catch (MessagingException e) {
+            logger.error("Failed to send verification email to " + to + ": " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error sending verification email to " + to + ": " + e.getMessage());
+        }
     }
 
     @Override
-    public void sendVerificationCodeEmail(String to, String verificationCode, String expiryTime) throws MessagingException {
-        logger.info("Sending verification code email to " + to);
-        final String content = buildVerificationCodeEmailBody(verificationCode, expiryTime);
-        final String subject = "Your Verification Code: " + verificationCode;
-        sendEmail(to, subject, content);
+    @Async("emailTaskExecutor")
+    public void sendVerificationCodeEmail(String to, String verificationCode, String expiryTime) {
+        logger.info("Sending verification code email asynchronously to " + to);
+        try {
+            final String content = buildVerificationCodeEmailBody(verificationCode, expiryTime);
+            final String subject = "Your Verification Code: " + verificationCode;
+            
+            // Directly send the email instead of calling sendEmail() to avoid double async
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper mimeHelper = new MimeMessageHelper(message, "utf-8");
+            mimeHelper.setTo(to);
+            mimeHelper.setSubject(subject);
+            mimeHelper.setFrom(new InternetAddress("Spawn <spawnappmarketing@gmail.com>"));
+            mimeHelper.setText(content, true);
+            mailSender.send(message);
+            logger.info("Verification code email sent successfully to " + to);
+        } catch (MessagingException e) {
+            logger.error("Failed to send verification code email to " + to + ": " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error sending verification code email to " + to + ": " + e.getMessage());
+        }
     }
 
     /**
