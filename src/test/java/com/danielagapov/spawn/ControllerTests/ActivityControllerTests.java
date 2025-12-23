@@ -252,8 +252,11 @@ class ActivityControllerTests {
     }
 
     @Test
-    void replaceActivity_ShouldReturnBadRequest_WhenNullId() throws Exception {
-        mockMvc.perform(put("/api/v1/activities/{id}", (Object) null)
+    void replaceActivity_ShouldReturnNotFound_WhenInvalidId() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 404 or 405 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(put("/api/v1/activities/invalid-uuid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(activityDTO)))
                 .andExpect(status().isBadRequest());
@@ -354,8 +357,11 @@ class ActivityControllerTests {
     }
 
     @Test
-    void toggleParticipation_ShouldReturnBadRequest_WhenNullParameters() throws Exception {
-        mockMvc.perform(put("/api/v1/activities/{activityId}/toggle-status/{userId}", activityId, (Object) null))
+    void toggleParticipation_ShouldReturnBadRequest_WhenInvalidUuid() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 404 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(put("/api/v1/activities/{activityId}/toggle-status/invalid-uuid", activityId))
                 .andExpect(status().isBadRequest());
 
         verify(activityService, never()).toggleParticipation(any(), any());

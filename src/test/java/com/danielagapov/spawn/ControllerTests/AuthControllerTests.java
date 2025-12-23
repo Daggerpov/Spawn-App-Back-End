@@ -97,8 +97,8 @@ class AuthControllerTests {
         email = "test@example.com";
         idToken = "test-id-token";
         
-        // BaseUserDTO(UUID id, String username, String profilePictureUrlString, String name, String email, String bio)
-        baseUserDTO = new BaseUserDTO(userId, username, "pic.jpg", "Test User", email, "bio");
+        // BaseUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture)
+        baseUserDTO = new BaseUserDTO(userId, "Test User", email, username, "bio", "pic.jpg");
         userDTO = new UserDTO(userId, List.of(), username, "pic.jpg", "Test User", "bio", email);
         // AuthResponseDTO(BaseUserDTO user, UserStatus status)
         authResponseDTO = new AuthResponseDTO(baseUserDTO, UserStatus.ACTIVE);

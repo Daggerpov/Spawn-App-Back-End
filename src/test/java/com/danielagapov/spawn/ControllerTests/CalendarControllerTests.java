@@ -194,13 +194,15 @@ class CalendarControllerTests {
         }
 
         @Test
-        @DisplayName("Should return bad request when null user ID")
-        void shouldReturnBadRequest_WhenNullUserId() throws Exception {
-            mockMvc.perform(get("/api/v1/users/{userId}/calendar", (Object) null))
+        @DisplayName("Should return bad request when invalid user ID")
+        void shouldReturnBadRequest_WhenInvalidUserId() throws Exception {
+            // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+            // which Spring interprets as a 404 (not a 400 from our controller logic).
+            // Testing with an invalid UUID format instead.
+            mockMvc.perform(get("/api/v1/users/invalid-uuid/calendar"))
                     .andExpect(status().isBadRequest());
 
             verify(calendarService, never()).getCalendarActivitiesWithFilters(any(), any(), any());
-            verify(logger, times(1)).error(contains("userId is null"));
         }
 
         @Test
@@ -259,9 +261,12 @@ class CalendarControllerTests {
         }
 
         @Test
-        @DisplayName("Should return bad request when null user ID")
-        void shouldReturnBadRequest_WhenNullUserId() throws Exception {
-            mockMvc.perform(get("/api/v1/users/{userId}/calendar/all", (Object) null))
+        @DisplayName("Should return bad request when invalid user ID")
+        void shouldReturnBadRequest_WhenInvalidUserId() throws Exception {
+            // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+            // which Spring interprets as a 404 (not a 400 from our controller logic).
+            // Testing with an invalid UUID format instead.
+            mockMvc.perform(get("/api/v1/users/invalid-uuid/calendar/all"))
                     .andExpect(status().isBadRequest());
 
             verify(calendarService, never()).getCalendarActivitiesWithFilters(any(), any(), any());

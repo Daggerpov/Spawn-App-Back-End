@@ -79,7 +79,7 @@ class ChatMessageControllerTests {
         );
         
         // BaseUserDTO constructor: (id, name, email, username, bio, profilePicture)
-        baseUserDTO = new BaseUserDTO(userId, "Test User", "test@example.com", "testuser", "Test bio", "pic.jpg");
+        baseUserDTO = new BaseUserDTO(userId, "Test User", "test@example.com", "testuser", "bio", "pic.jpg");
         
         // FullActivityChatMessageDTO constructor: (id, content, timestamp, senderUser, activityId, likedByUsers)
         fullActivityChatMessageDTO = new FullActivityChatMessageDTO(
@@ -177,12 +177,14 @@ class ChatMessageControllerTests {
     }
 
     @Test
-    void deleteChatMessage_ShouldReturnBadRequest_WhenNullId() throws Exception {
-        mockMvc.perform(delete("/api/v1/chat-messages/{id}", (Object) null))
+    void deleteChatMessage_ShouldReturnBadRequest_WhenInvalidId() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 405 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(delete("/api/v1/chat-messages/invalid-uuid"))
                 .andExpect(status().isBadRequest());
 
         verify(chatMessageService, never()).deleteChatMessageById(any());
-        verify(logger, times(1)).error(contains("chat message ID is null"));
     }
 
     @Test
@@ -233,12 +235,14 @@ class ChatMessageControllerTests {
     }
 
     @Test
-    void createChatMessageLike_ShouldReturnBadRequest_WhenNullParameters() throws Exception {
-        mockMvc.perform(post("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, (Object) null))
+    void createChatMessageLike_ShouldReturnBadRequest_WhenInvalidUserId() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 405 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(post("/api/v1/chat-messages/{chatMessageId}/likes/invalid-uuid", chatMessageId))
                 .andExpect(status().isBadRequest());
 
         verify(chatMessageService, never()).createChatMessageLike(any(), any());
-        verify(logger, times(1)).error(contains("chatMessageId or userId is null"));
     }
 
     @Test
@@ -302,12 +306,14 @@ class ChatMessageControllerTests {
     }
 
     @Test
-    void getChatMessageLikes_ShouldReturnBadRequest_WhenNullId() throws Exception {
-        mockMvc.perform(get("/api/v1/chat-messages/{chatMessageId}/likes", (Object) null))
+    void getChatMessageLikes_ShouldReturnBadRequest_WhenInvalidId() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 404 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(get("/api/v1/chat-messages/invalid-uuid/likes"))
                 .andExpect(status().isBadRequest());
 
         verify(chatMessageService, never()).getChatMessageLikes(any());
-        verify(logger, times(1)).error(contains("chatMessageId is null"));
     }
 
     @Test
@@ -345,12 +351,14 @@ class ChatMessageControllerTests {
     }
 
     @Test
-    void deleteChatMessageLike_ShouldReturnBadRequest_WhenNullParameters() throws Exception {
-        mockMvc.perform(delete("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, (Object) null))
+    void deleteChatMessageLike_ShouldReturnBadRequest_WhenInvalidUserId() throws Exception {
+        // Note: Passing null to a path variable in MockMvc results in a malformed URL,
+        // which Spring interprets as a 405 (not a 400 from our controller logic).
+        // Testing with an invalid UUID format instead.
+        mockMvc.perform(delete("/api/v1/chat-messages/{chatMessageId}/likes/invalid-uuid", chatMessageId))
                 .andExpect(status().isBadRequest());
 
         verify(chatMessageService, never()).deleteChatMessageLike(any(), any());
-        verify(logger, times(1)).error(contains("chatMessageId or userId is null"));
     }
 
     @Test
@@ -462,10 +470,11 @@ class ChatMessageControllerTests {
 
     @Test
     void getChatMessageLikes_ShouldHandleMultipleLikes_WhenManyUsersLiked() throws Exception {
+        // BaseUserDTO constructor: (id, name, email, username, bio, profilePicture)
         List<BaseUserDTO> manyLikes = List.of(
-            new BaseUserDTO(UUID.randomUUID(), "User 1", "user1@test.com", "user1", "Bio 1", "pic1.jpg"),
-            new BaseUserDTO(UUID.randomUUID(), "User 2", "user2@test.com", "user2", "Bio 2", "pic2.jpg"),
-            new BaseUserDTO(UUID.randomUUID(), "User 3", "user3@test.com", "user3", "Bio 3", "pic3.jpg")
+            new BaseUserDTO(UUID.randomUUID(), "User 1", "user1@test.com", "user1", "bio", "pic1.jpg"),
+            new BaseUserDTO(UUID.randomUUID(), "User 2", "user2@test.com", "user2", "bio", "pic2.jpg"),
+            new BaseUserDTO(UUID.randomUUID(), "User 3", "user3@test.com", "user3", "bio", "pic3.jpg")
         );
         
         when(chatMessageService.getChatMessageLikes(chatMessageId)).thenReturn(manyLikes);

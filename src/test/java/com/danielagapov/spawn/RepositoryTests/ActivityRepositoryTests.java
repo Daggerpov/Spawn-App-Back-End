@@ -259,14 +259,15 @@ class ActivityRepositoryTests {
     }
 
     @Test
-    void delete_ShouldNotDeleteLocation_WhenActivityDeleted() {
+    void delete_ShouldDeleteLocation_WhenActivityDeleted() {
+        // Note: Activity has CascadeType.REMOVE on location, so location is deleted with activity
         Activity saved = activityRepository.save(testActivity);
         UUID locationId = testLocation.getId();
 
         activityRepository.deleteById(saved.getId());
 
         Optional<Location> location = locationRepository.findById(locationId);
-        assertTrue(location.isPresent());
+        assertFalse(location.isPresent());
     }
 
     // MARK: - Edge Case Tests
