@@ -11,10 +11,9 @@ import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.UserMapper;
-import com.danielagapov.spawn.activity.internal.domain.ActivityUser;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
+import com.danielagapov.spawn.activity.api.ActivityPublicApi;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
@@ -43,7 +42,7 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
-    private final IActivityUserRepository activityUserRepository;
+    private final ActivityPublicApi activityApi;
     private final IFriendshipRepository friendshipRepository;
 
     private final IS3Service s3Service;
@@ -59,7 +58,7 @@ public class UserService implements IUserService {
 
     @Autowired
     public UserService(IUserRepository repository,
-                       IActivityUserRepository activityUserRepository,
+                       ActivityPublicApi activityApi,
                        IFriendshipRepository friendshipRepository,
 
                        IS3Service s3Service, ILogger logger,
@@ -69,7 +68,7 @@ public class UserService implements IUserService {
                        ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
         this.repository = repository;
-        this.activityUserRepository = activityUserRepository;
+        this.activityApi = activityApi;
         this.friendshipRepository = friendshipRepository;
         this.s3Service = s3Service;
         this.logger = logger;
@@ -336,10 +335,14 @@ public class UserService implements IUserService {
     @Override
     public List<BaseUserDTO> getParticipantsByActivityId(UUID activityId) {
         try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating);
+            List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
 
-            List<BaseUserDTO> participants = activityUsers.stream()
-                    .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
+            List<BaseUserDTO> participants = participantIds.stream()
+                    .map(userId -> {
+                        User user = repository.findById(userId).orElse(null);
+                        return user != null ? UserMapper.toDTO(user) : null;
+                    })
+                    .filter(dto -> dto != null)
                     .collect(Collectors.toList());
 
             // Filter out admin user from activity participants
@@ -353,10 +356,14 @@ public class UserService implements IUserService {
     @Override
     public List<BaseUserDTO> getInvitedByActivityId(UUID activityId) {
         try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.invited);
+            List<UUID> invitedIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
 
-            List<BaseUserDTO> invitedUsers = activityUsers.stream()
-                    .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
+            List<BaseUserDTO> invitedUsers = invitedIds.stream()
+                    .map(userId -> {
+                        User user = repository.findById(userId).orElse(null);
+                        return user != null ? UserMapper.toDTO(user) : null;
+                    })
+                    .filter(dto -> dto != null)
                     .collect(Collectors.toList());
 
             // Filter out admin user from activity invitees
@@ -370,11 +377,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getParticipantUserIdsByActivityId(UUID activityId) {
         try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating);
-
-            return activityUsers.stream()
-                    .map(activityUser -> activityUser.getUser().getId())
-                    .collect(Collectors.toList());
+            return activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
         } catch (Exception e) {
             logger.error("Error retrieving participant user IDs for activityId " + activityId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving participant user IDs for activityId " + activityId, e);
@@ -384,11 +387,7 @@ public class UserService implements IUserService {
     @Override
     public List<UUID> getInvitedUserIdsByActivityId(UUID activityId) {
         try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.invited);
-
-            return activityUsers.stream()
-                    .map(activityUser -> activityUser.getUser().getId())
-                    .collect(Collectors.toList());
+            return activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
         } catch (Exception e) {
             logger.error("Error retrieving invited user IDs for activityId " + activityId + ": " + e.getMessage());
             throw new ApplicationException("Error retrieving invited user IDs for activityId " + activityId, e);
@@ -548,8 +547,8 @@ public class UserService implements IUserService {
             final int userLimit = 40;
             // Use UTC for consistent timezone comparison across server and client timezones
             OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
-            List<UUID> pastActivityIds = activityUserRepository.findPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
-            List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityUserRepository.findOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
+            List<UUID> pastActivityIds = activityApi.getPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
+            List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityApi.getOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
             Set<UUID> excludedIds = userSearchQueryService.getExcludedUserIds(requestingUserId);
 
             return pastActivityParticipantIds.stream()

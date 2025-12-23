@@ -15,14 +15,15 @@ import com.danielagapov.spawn.shared.exceptions.EntityAlreadyExistsException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.ChatMessageLikesMapper;
 import com.danielagapov.spawn.shared.util.ChatMessageMapper;
+import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserMapper;
+import com.danielagapov.spawn.activity.api.ActivityPublicApi;
 import com.danielagapov.spawn.activity.internal.domain.Activity;
 import com.danielagapov.spawn.chat.internal.domain.ChatMessage;
 import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikes;
 import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikesId;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
 import com.danielagapov.spawn.chat.internal.repositories.IChatMessageLikesRepository;
 import com.danielagapov.spawn.chat.internal.repositories.IChatMessageRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
@@ -48,13 +49,13 @@ public class ChatMessageService implements IChatMessageService {
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
-    private final IActivityUserRepository activityUserRepository;
+    private final ActivityPublicApi activityApi;
     private final ApplicationEventPublisher eventPublisher;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
                               IActivityRepository ActivityRepository, IChatMessageLikesRepository chatMessageLikesRepository,
                               IUserRepository userRepository, ILogger logger,
-                              IActivityUserRepository activityUserRepository,
+                              ActivityPublicApi activityApi,
                               ApplicationEventPublisher eventPublisher) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
@@ -62,7 +63,7 @@ public class ChatMessageService implements IChatMessageService {
         this.chatMessageLikesRepository = chatMessageLikesRepository;
         this.userRepository = userRepository;
         this.logger = logger;
-        this.activityUserRepository = activityUserRepository;
+        this.activityApi = activityApi;
         this.eventPublisher = eventPublisher;
     }
 
@@ -138,9 +139,19 @@ public class ChatMessageService implements IChatMessageService {
         User sender = userRepository.findById(savedMessage.getSenderUserId())
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, savedMessage.getSenderUserId()));
 
-        // Create and publish notification Activity
+        // Get participant IDs using the public API (maintains module boundaries)
+        List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(
+                activity.getId(), ParticipationStatus.participating);
+
+        // Create and publish notification event with participant IDs
         eventPublisher.publishEvent(new NewCommentNotificationEvent(
-                sender, activity, savedMessage, activityUserRepository));
+                sender.getId(),
+                sender.getUsername(),
+                activity.getId(),
+                activity.getTitle(),
+                activity.getCreator().getId(),
+                savedMessage,
+                participantIds));
 
         // Convert to FullActivityChatMessageDTO before returning
         return getFullChatMessageByChatMessage(savedMessage);

@@ -539,8 +539,16 @@ public class ActivityService implements IActivityService {
                 }
             }
 
+            // Get participant IDs for the notification event
+            List<UUID> participantIds = getParticipatingUserIdsByActivityId(savedActivity.getId());
+            
             eventPublisher.publishEvent(
-                new ActivityUpdateNotificationEvent(savedActivity.getCreator(), savedActivity, activityUserRepository)
+                new ActivityUpdateNotificationEvent(
+                    savedActivity.getCreator().getId(),
+                    savedActivity.getCreator().getUsername(),
+                    savedActivity.getId(),
+                    savedActivity.getTitle(),
+                    participantIds)
             );
             return getFullActivityById(savedActivity.getId(), newActivity.getCreatorUserId());
         }).orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
@@ -612,9 +620,17 @@ public class ActivityService implements IActivityService {
             // Save updated activity
             Activity savedActivity = repository.save(activity);
 
+            // Get participant IDs for the notification event
+            List<UUID> participantIds = getParticipatingUserIdsByActivityId(savedActivity.getId());
+            
             // Publish update event
             eventPublisher.publishEvent(
-                new ActivityUpdateNotificationEvent(savedActivity.getCreator(), savedActivity, activityUserRepository)
+                new ActivityUpdateNotificationEvent(
+                    savedActivity.getCreator().getId(),
+                    savedActivity.getCreator().getUsername(),
+                    savedActivity.getId(),
+                    savedActivity.getTitle(),
+                    participantIds)
             );
 
             // Get the creator's user ID for the full activity fetch

@@ -11,7 +11,7 @@ import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
+import com.danielagapov.spawn.activity.api.ActivityPublicApi;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
@@ -67,7 +67,7 @@ public class UserServiceTests {
     private IUserSearchQueryService userSearchQueryService;
 
     @Mock
-    private IActivityUserRepository activityUserRepository;
+    private ActivityPublicApi activityApi;
 
     @Mock
     private CacheManager cacheManager;
@@ -380,9 +380,9 @@ public class UserServiceTests {
             new UserIdActivityTimeDTO(otherUserId, OffsetDateTime.now())
         );
 
-        when(activityUserRepository.findPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any(), any()))
+        when(activityApi.getPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any(), any()))
             .thenReturn(pastActivityIds);
-        when(activityUserRepository.findOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating))
+        when(activityApi.getOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating))
             .thenReturn(activityParticipants);
         when(userSearchQueryService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of());
 

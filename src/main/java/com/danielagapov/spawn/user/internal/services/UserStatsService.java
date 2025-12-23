@@ -4,9 +4,7 @@ import com.danielagapov.spawn.user.api.dto.UserStatsDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
-import com.danielagapov.spawn.activity.internal.domain.ActivityUser;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
+import com.danielagapov.spawn.activity.api.ActivityPublicApi;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -20,17 +18,14 @@ import java.util.UUID;
 @Service
 public class UserStatsService implements IUserStatsService {
 
-    private final IActivityRepository activityRepository;
-    private final IActivityUserRepository activityUserRepository;
+    private final ActivityPublicApi activityApi;
     private final IUserRepository userRepository;
 
     @Autowired
     public UserStatsService(
-            IActivityRepository activityRepository,
-            IActivityUserRepository activityUserRepository,
+            ActivityPublicApi activityApi,
             IUserRepository userRepository) {
-        this.activityRepository = activityRepository;
-        this.activityUserRepository = activityUserRepository;
+        this.activityApi = activityApi;
         this.userRepository = userRepository;
     }
 
@@ -42,47 +37,47 @@ public class UserStatsService implements IUserStatsService {
         }
 
         // Get activities created by user
-        int spawnsMade = activityRepository.findByCreatorId(userId).size();
+        List<UUID> createdActivityIds = activityApi.getActivityIdsCreatedByUser(userId);
+        int spawnsMade = createdActivityIds.size();
 
-        // Get activities participated in (but not created by user)
-        List<ActivityUser> participatedActivities = activityUserRepository.findByUser_IdAndStatus(userId, ParticipationStatus.participating);
+        // Get activities participated in
+        List<UUID> participatedActivityIds = activityApi.getActivityIdsByUserIdAndStatus(userId, ParticipationStatus.participating);
         
-        // Filter out activities created by the user
-        int spawnsJoined = (int) participatedActivities.stream()
-                .filter(au -> !au.getActivity().getCreator().getId().equals(userId))
+        // Filter out activities created by the user (spawns joined = participated but not created)
+        Set<UUID> createdSet = new HashSet<>(createdActivityIds);
+        int spawnsJoined = (int) participatedActivityIds.stream()
+                .filter(activityId -> !createdSet.contains(activityId))
                 .count();
 
         // Get all unique users that this user has participated in Activities with
         Set<UUID> peopleMet = new HashSet<>();
 
         // Add people from activities created by the user
-        activityRepository.findByCreatorId(userId).forEach(activity -> {
-            activityUserRepository.findByActivity_IdAndStatus(activity.getId(), ParticipationStatus.participating)
-                    .forEach(au -> {
-                        UUID participantId = au.getUser().getId();
-                        if (!participantId.equals(userId)) {
-                            peopleMet.add(participantId);
-                        }
-                    });
-        });
+        for (UUID activityId : createdActivityIds) {
+            List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+            for (UUID participantId : participantIds) {
+                if (!participantId.equals(userId)) {
+                    peopleMet.add(participantId);
+                }
+            }
+        }
 
         // Add people from activities the user participated in
-        participatedActivities.forEach(activityUser -> {
+        for (UUID activityId : participatedActivityIds) {
             // Add the creator if it's not the user
-            UUID creatorId = activityUser.getActivity().getCreator().getId();
-            if (!creatorId.equals(userId)) {
+            UUID creatorId = activityApi.getActivityCreatorId(activityId);
+            if (creatorId != null && !creatorId.equals(userId)) {
                 peopleMet.add(creatorId);
             }
 
             // Add other participants
-            activityUserRepository.findByActivity_IdAndStatus(activityUser.getActivity().getId(), ParticipationStatus.participating)
-                    .forEach(au -> {
-                        UUID participantId = au.getUser().getId();
-                        if (!participantId.equals(userId)) {
-                            peopleMet.add(participantId);
-                        }
-                    });
-        });
+            List<UUID> participantIds = activityApi.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+            for (UUID participantId : participantIds) {
+                if (!participantId.equals(userId)) {
+                    peopleMet.add(participantId);
+                }
+            }
+        }
 
         return new UserStatsDTO(peopleMet.size(), spawnsMade, spawnsJoined);
     }
