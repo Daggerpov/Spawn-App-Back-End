@@ -19,13 +19,13 @@ import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserMapper;
 import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.activity.internal.domain.Activity;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessage;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikes;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikesId;
-import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessage;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessageLikes;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessageLikesId;
 import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;
-import com.danielagapov.spawn.chat.internal.repositories.IChatMessageLikesRepository;
-import com.danielagapov.spawn.chat.internal.repositories.IChatMessageRepository;
+import com.danielagapov.spawn.activity.internal.repositories.IChatMessageLikesRepository;
+import com.danielagapov.spawn.activity.internal.repositories.IChatMessageRepository;
+import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.springframework.cache.annotation.CacheEvict;
@@ -45,26 +45,27 @@ import java.util.stream.Collectors;
 public class ChatMessageService implements IChatMessageService {
     private final IChatMessageRepository chatMessageRepository;
     private final IUserService userService;
-    private final IActivityRepository ActivityRepository;
     private final IUserRepository userRepository;
     private final IChatMessageLikesRepository chatMessageLikesRepository;
     private final ILogger logger;
     private final IActivityService activityService;
     private final ApplicationEventPublisher eventPublisher;
+    private final IActivityRepository activityRepository;
 
     public ChatMessageService(IChatMessageRepository chatMessageRepository, IUserService userService,
-                              IActivityRepository ActivityRepository, IChatMessageLikesRepository chatMessageLikesRepository,
+                              IChatMessageLikesRepository chatMessageLikesRepository,
                               IUserRepository userRepository, ILogger logger,
                               IActivityService activityService,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher,
+                              IActivityRepository activityRepository) {
         this.chatMessageRepository = chatMessageRepository;
         this.userService = userService;
-        this.ActivityRepository = ActivityRepository;
         this.chatMessageLikesRepository = chatMessageLikesRepository;
         this.userRepository = userRepository;
         this.logger = logger;
         this.activityService = activityService;
         this.eventPublisher = eventPublisher;
+        this.activityRepository = activityRepository;
     }
 
     @Override
@@ -133,23 +134,29 @@ public class ChatMessageService implements IChatMessageService {
 
         ChatMessageDTO savedMessage = saveChatMessage(chatMessageDTO);
 
-        // Get the Activity and sender details
-        Activity activity = ActivityRepository.findById(savedMessage.getActivityId())
-                .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, savedMessage.getActivityId()));
+        // Get the Activity title and creator details using the service API
+        UUID activityId = savedMessage.getActivityId();
+        String activityTitle = activityService.getActivityTitle(activityId);
+        UUID activityCreatorId = activityService.getActivityCreatorId(activityId);
+        
+        if (activityTitle == null || activityCreatorId == null) {
+            throw new BaseNotFoundException(EntityType.Activity, activityId);
+        }
+        
         User sender = userRepository.findById(savedMessage.getSenderUserId())
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.User, savedMessage.getSenderUserId()));
 
         // Get participant IDs using the public API (maintains module boundaries)
         List<UUID> participantIds = activityService.getParticipantUserIdsByActivityIdAndStatus(
-                activity.getId(), ParticipationStatus.participating);
+                activityId, ParticipationStatus.participating);
 
         // Create and publish notification event with participant IDs
         eventPublisher.publishEvent(new NewCommentNotificationEvent(
                 sender.getId(),
                 sender.getUsername(),
-                activity.getId(),
-                activity.getTitle(),
-                activity.getCreator().getId(),
+                activityId,
+                activityTitle,
+                activityCreatorId,
                 savedMessage,
                 participantIds));
 
@@ -172,13 +179,14 @@ public class ChatMessageService implements IChatMessageService {
     }
 
 
-    // Other methods remain mostly the same but updated to work with mappings
     @Override
     public ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessageDTO) {
         try {
             User userSender = userRepository.findById(chatMessageDTO.getSenderUserId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, chatMessageDTO.getSenderUserId()));
-            Activity activity = ActivityRepository.findById(chatMessageDTO.getActivityId())
+            
+            // Fetch the activity from the repository (now in the same module as ChatMessage)
+            Activity activity = activityRepository.findById(chatMessageDTO.getActivityId())
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, chatMessageDTO.getActivityId()));
 
             ChatMessage chatMessageEntity = ChatMessageMapper.toEntity(chatMessageDTO, userSender, activity);

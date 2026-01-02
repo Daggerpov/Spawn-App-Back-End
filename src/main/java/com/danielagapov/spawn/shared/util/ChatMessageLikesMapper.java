@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.shared.util;
 
 import com.danielagapov.spawn.chat.api.dto.ChatMessageLikesDTO;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessage;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikes;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikesId;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessage;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessageLikes;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessageLikesId;
 import com.danielagapov.spawn.user.internal.domain.User;
 
 public final class ChatMessageLikesMapper {

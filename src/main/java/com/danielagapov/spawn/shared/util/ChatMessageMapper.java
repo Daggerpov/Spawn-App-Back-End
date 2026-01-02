@@ -1,8 +1,8 @@
 package com.danielagapov.spawn.shared.util;
 
 import com.danielagapov.spawn.chat.api.dto.ChatMessageDTO;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessage;
 import com.danielagapov.spawn.activity.internal.domain.Activity;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessage;
 import com.danielagapov.spawn.user.internal.domain.User;
 
 import java.util.List;
