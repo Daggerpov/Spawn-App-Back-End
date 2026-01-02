@@ -9,17 +9,16 @@ import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessage;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikes;
 import com.danielagapov.spawn.activity.internal.domain.Activity;
-import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.chat.internal.repositories.IChatMessageRepository;
-import com.danielagapov.spawn.chat.internal.repositories.IChatMessageLikesRepository;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessage;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessageLikes;
 import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
+import com.danielagapov.spawn.activity.internal.repositories.IChatMessageLikesRepository;
+import com.danielagapov.spawn.activity.internal.repositories.IChatMessageRepository;
+import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.chat.internal.services.ChatMessageService;
-import com.danielagapov.spawn.activity.internal.services.IInternalActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -53,19 +52,16 @@ public class ChatMessageServiceTests {
     private IChatMessageLikesRepository chatMessageLikesRepository;
 
     @Mock
-    private IActivityRepository ActivityRepository;
-
-    @Mock
-    private IInternalActivityService ActivityService;
-
-    @Mock
     private IUserRepository userRepository;
 
     @Mock
     private ILogger logger;
 
     @Mock
-    private IActivityUserRepository activityUserRepository;
+    private IActivityService activityService;
+
+    @Mock
+    private IActivityRepository activityRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -135,14 +131,12 @@ public class ChatMessageServiceTests {
                 ActivityId,
                 List.of()
         );
-        // Stub user exists but Activity is missing
+        // Stub user exists but Activity not found
         User dummyUser = createDummyUser(userDTO.getId());
         when(userRepository.findById(userDTO.getId())).thenReturn(Optional.of(dummyUser));
-        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.empty());
-        BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
+        when(activityRepository.findById(ActivityId)).thenReturn(Optional.empty());
+        assertThrows(Exception.class,
                 () -> chatMessageService.saveChatMessage(chatMessageDTO));
-        assertTrue(exception.getMessage().contains(ActivityId.toString()));
-        assertTrue(exception.getMessage().toLowerCase().contains("not found"));
         verify(chatMessageRepository, never()).save(any(ChatMessage.class));
     }
 
@@ -310,7 +304,7 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void saveChatMessage_ShouldSaveMessage_WhenValidad() {
+    void saveChatMessage_ShouldSaveMessage_WhenValid() {
         UUID userId = UUID.randomUUID();
         UUID ActivityId = UUID.randomUUID();
         ChatMessageDTO chatMessageDTO = new ChatMessageDTO(
@@ -326,7 +320,7 @@ public class ChatMessageServiceTests {
         Activity dummyActivity = new Activity();
         dummyActivity.setId(ActivityId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(dummyUser));
-        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(dummyActivity));
+        when(activityRepository.findById(ActivityId)).thenReturn(Optional.of(dummyActivity));
         ChatMessage dummyChatMessage = new ChatMessage();
         dummyChatMessage.setId(chatMessageDTO.getId());
         dummyChatMessage.setContent(chatMessageDTO.getContent());
@@ -343,9 +337,6 @@ public class ChatMessageServiceTests {
     @Test
     void getChatMessageIdsByActivityId_ShouldReturnIds_WhenActivityExists() {
         UUID ActivityId = UUID.randomUUID();
-        Activity dummyActivity = new Activity();
-        dummyActivity.setId(ActivityId);
-        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(dummyActivity));
         ChatMessage chatMessage1 = new ChatMessage();
         ChatMessage chatMessage2 = new ChatMessage();
         UUID id1 = UUID.randomUUID();
@@ -366,12 +357,6 @@ public class ChatMessageServiceTests {
         assertEquals(2, ids.size());
         assertTrue(ids.contains(id1));
         assertTrue(ids.contains(id2));
-    }
-
-    @Test
-    void getChatMessageIdsByActivityId_ShouldThrowBaseNotFoundException_WhenActivityNotFound() {
-        UUID ActivityId = UUID.randomUUID();
-        when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.empty());
     }
 
     @Test

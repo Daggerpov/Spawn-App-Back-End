@@ -9,7 +9,7 @@ import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.danielagapov.spawn.activity.internal.services.IInternalActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.chat.api.dto.FullActivityChatMessageDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -45,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ActivityControllerTests {
 
     @Mock
-    private IInternalActivityService activityService;
+    private IActivityService activityService;
 
     @Mock
     private ILogger logger;

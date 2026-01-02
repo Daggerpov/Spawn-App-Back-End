@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
-import com.danielagapov.spawn.activity.internal.services.IInternalActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.analytics.internal.services.CacheService;
 import com.danielagapov.spawn.analytics.internal.services.CacheType;
@@ -49,7 +49,7 @@ class CacheServiceTests {
     private IUserService userService;
 
     @Mock
-    private IInternalActivityService activityService;
+    private IActivityService activityService;
 
     @Mock
     private IActivityTypeService activityTypeService;
