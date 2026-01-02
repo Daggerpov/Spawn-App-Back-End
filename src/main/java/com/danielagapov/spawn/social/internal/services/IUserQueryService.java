@@ -48,3 +48,5 @@ public interface IUserQueryService {
     boolean saveFriendToUser(UUID userAId, UUID userBId);
 }
 
+
+

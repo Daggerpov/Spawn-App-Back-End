@@ -4,7 +4,7 @@ import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
 import com.danielagapov.spawn.shared.config.CacheValidationResponseDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.activity.internal.services.IInternalActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
@@ -40,7 +40,7 @@ public class CacheService implements ICacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
     private final IUserRepository userRepository;
     private final IUserService userService;
-    private final IInternalActivityService ActivityService;
+    private final IActivityService ActivityService;
     private final IActivityTypeService activityTypeService;
     private final IFriendRequestService friendRequestService;
     private final ObjectMapper objectMapper;
@@ -53,7 +53,7 @@ public class CacheService implements ICacheService {
     public CacheService(
             IUserRepository userRepository,
             IUserService userService,
-            IInternalActivityService ActivityService,
+            IActivityService ActivityService,
             IActivityTypeService activityTypeService,
             IFriendRequestService friendRequestService,
             ObjectMapper objectMapper,

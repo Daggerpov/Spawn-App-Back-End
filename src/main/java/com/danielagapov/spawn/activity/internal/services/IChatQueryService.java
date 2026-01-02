@@ -38,3 +38,5 @@ public interface IChatQueryService {
     List<FullActivityChatMessageDTO> getFullChatMessagesByActivityId(UUID activityId);
 }
 
+
+
