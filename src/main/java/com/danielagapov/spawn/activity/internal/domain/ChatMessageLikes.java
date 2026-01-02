@@ -1,6 +1,5 @@
-package com.danielagapov.spawn.chat.internal.domain;
+package com.danielagapov.spawn.activity.internal.domain;
 
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikesId;
 import com.danielagapov.spawn.user.internal.domain.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -43,3 +42,4 @@ public class ChatMessageLikes implements Serializable {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 }
+

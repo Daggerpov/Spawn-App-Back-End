@@ -9,7 +9,7 @@ import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.chat.api.dto.FullActivityChatMessageDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

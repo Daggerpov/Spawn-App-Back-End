@@ -1,7 +1,6 @@
-package com.danielagapov.spawn.chat.internal.domain;
+package com.danielagapov.spawn.activity.internal.domain;
 
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.internal.domain.Activity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -46,3 +45,4 @@ public class ChatMessage implements Serializable {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Activity activity;
 }
+

@@ -1,8 +1,8 @@
-package com.danielagapov.spawn.chat.internal.repositories;
+package com.danielagapov.spawn.activity.internal.repositories;
 
-import com.danielagapov.spawn.chat.internal.domain.ChatMessage;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikes;
-import com.danielagapov.spawn.chat.internal.domain.ChatMessageLikesId;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessage;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessageLikes;
+import com.danielagapov.spawn.activity.internal.domain.ChatMessageLikesId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,3 +15,4 @@ public interface IChatMessageLikesRepository extends JpaRepository<ChatMessageLi
     void deleteByChatMessage_IdAndUser_Id(UUID chatMessageId, UUID userId);
     List<ChatMessageLikes> findByChatMessage(ChatMessage chatMessage);
 }
+

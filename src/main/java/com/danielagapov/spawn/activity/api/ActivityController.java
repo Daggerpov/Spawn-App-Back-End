@@ -8,7 +8,6 @@ import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

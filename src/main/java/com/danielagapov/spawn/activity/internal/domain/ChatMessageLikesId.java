@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.chat.internal.domain;
+package com.danielagapov.spawn.activity.internal.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -36,3 +36,4 @@ public class ChatMessageLikesId implements Serializable {
         return Objects.hash(chatMessageId, userId);
     }
 }
+

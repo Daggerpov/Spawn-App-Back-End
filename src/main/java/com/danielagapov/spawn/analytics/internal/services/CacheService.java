@@ -4,7 +4,7 @@ import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
 import com.danielagapov.spawn.shared.config.CacheValidationResponseDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
