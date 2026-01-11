@@ -206,7 +206,20 @@ public class UserService implements IUserService {
     public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
         try {
             if (user.getProfilePicture() == null) {
-                user = s3Service.putProfilePictureWithUser(profilePicture, user);
+                // Upload profile picture to S3 and get URL
+                String profilePictureUrl = profilePicture == null 
+                    ? s3Service.getDefaultProfilePicture() 
+                    : s3Service.putObject(profilePicture);
+                // Create new UserDTO with the profile picture URL
+                user = new UserDTO(
+                    user.getId(),
+                    user.getFriendUserIds(),
+                    user.getUsername(),
+                    profilePictureUrl,
+                    user.getName(),
+                    user.getBio(),
+                    user.getEmail()
+                );
             }
             user = saveUser(user);
             return user;
@@ -518,12 +531,45 @@ public class UserService implements IUserService {
             if (optionalDetailsDTO.getName() != null) {
                 user.setName(optionalDetailsDTO.getName());
             }
-            user.setProfilePictureUrlString(s3Service.updateProfilePictureWithUserId(optionalDetailsDTO.getProfilePictureData(), user.getId()));
+            user.setProfilePictureUrlString(s3Service.uploadProfilePicture(optionalDetailsDTO.getProfilePictureData(), user.getId()));
             user.setStatus(UserStatus.NAME_AND_PHOTO);
             user = repository.save(user);
             return UserMapper.toDTO(user);
         } catch (Exception e) {
-            logger.error("Error getting user profile info: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            logger.error("Error setting optional details: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public UserDTO updateProfilePicture(byte[] file, UUID userId) {
+        try {
+            User user = getUserEntityById(userId);
+            String currentUrl = user.getProfilePictureUrlString();
+            
+            String newUrl;
+            if (s3Service.isDefaultProfilePicture(currentUrl)) {
+                // Current picture is default, just upload new one (or keep default if file is null)
+                newUrl = s3Service.uploadProfilePicture(file, userId);
+            } else {
+                // Has custom picture - delete old one first if we're changing it
+                if (file == null) {
+                    // Switching to default - delete the old custom picture
+                    s3Service.deleteObjectByURL(currentUrl);
+                    newUrl = s3Service.getDefaultProfilePicture();
+                } else {
+                    // Replacing with new picture - upload with same key (userId) to replace
+                    newUrl = s3Service.uploadProfilePicture(file, userId);
+                }
+            }
+            
+            user.setProfilePictureUrlString(newUrl);
+            user = repository.save(user);
+            
+            List<UUID> friendUserIds = getFriendUserIdsByUserId(userId);
+            return UserMapper.toDTO(user, friendUserIds);
+        } catch (Exception e) {
+            logger.error("Error updating profile picture for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }

@@ -303,4 +303,15 @@ public interface IUserService {
      * @return List of BaseUserDTO objects for users with matching phone numbers
      */
     List<BaseUserDTO> findUsersByPhoneNumbers(List<String> phoneNumbers, UUID requestingUserId);
+
+    /**
+     * Updates a user's profile picture. Uploads the new picture to S3 and updates the user entity.
+     * If file is null, sets the user's profile picture to the default.
+     *
+     * @param file byte array representation of the profile picture, can be null for default picture
+     * @param userId the unique identifier of the user whose profile picture should be updated
+     * @return UserDTO with updated profile picture URL
+     * @throws com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    UserDTO updateProfilePicture(byte[] file, UUID userId);
 }

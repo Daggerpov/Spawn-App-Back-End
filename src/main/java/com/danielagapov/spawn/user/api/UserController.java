@@ -132,7 +132,7 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            UserDTO updatedUser = s3Service.updateProfilePicture(file, id);
+            UserDTO updatedUser = userService.updateProfilePicture(file, id);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error updating profile picture for user " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
