@@ -1,11 +1,8 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.*;
-import com.danielagapov.spawn.activity.api.dto.UserIdActivityTimeDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
-import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserStatus;
-import com.danielagapov.spawn.shared.exceptions.ApplicationException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
@@ -13,7 +10,6 @@ import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.UserMapper;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
@@ -30,11 +26,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -42,7 +36,6 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
-    private final IActivityService activityService;
     private final IFriendshipRepository friendshipRepository;
 
     private final IS3Service s3Service;
@@ -58,9 +51,7 @@ public class UserService implements IUserService {
 
     @Autowired
     public UserService(IUserRepository repository,
-                       IActivityService activityService,
                        IFriendshipRepository friendshipRepository,
-
                        IS3Service s3Service, ILogger logger,
                        IUserSearchQueryService userSearchQueryService,
                        IUserFriendshipQueryService friendshipQueryService,
@@ -68,7 +59,6 @@ public class UserService implements IUserService {
                        ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
         this.repository = repository;
-        this.activityService = activityService;
         this.friendshipRepository = friendshipRepository;
         this.s3Service = s3Service;
         this.logger = logger;
@@ -333,69 +323,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<BaseUserDTO> getParticipantsByActivityId(UUID activityId) {
-        try {
-            List<UUID> participantIds = activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
-
-            List<BaseUserDTO> participants = participantIds.stream()
-                    .map(userId -> {
-                        User user = repository.findById(userId).orElse(null);
-                        return user != null ? UserMapper.toDTO(user) : null;
-                    })
-                    .filter(dto -> dto != null)
-                    .collect(Collectors.toList());
-
-            // Filter out admin user from activity participants
-            return filterOutAdminFromBaseUserDTOs(participants);
-        } catch (Exception e) {
-            logger.error("Error retrieving participants for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving participants for activityId " + activityId, e);
-        }
-    }
-
-    @Override
-    public List<BaseUserDTO> getInvitedByActivityId(UUID activityId) {
-        try {
-            List<UUID> invitedIds = activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
-
-            List<BaseUserDTO> invitedUsers = invitedIds.stream()
-                    .map(userId -> {
-                        User user = repository.findById(userId).orElse(null);
-                        return user != null ? UserMapper.toDTO(user) : null;
-                    })
-                    .filter(dto -> dto != null)
-                    .collect(Collectors.toList());
-
-            // Filter out admin user from activity invitees
-            return filterOutAdminFromBaseUserDTOs(invitedUsers);
-        } catch (Exception e) {
-            logger.error("Error retrieving invited users for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving invited users for activityId " + activityId, e);
-        }
-    }
-
-    @Override
-    public List<UUID> getParticipantUserIdsByActivityId(UUID activityId) {
-        try {
-            return activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
-        } catch (Exception e) {
-            logger.error("Error retrieving participant user IDs for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving participant user IDs for activityId " + activityId, e);
-        }
-    }
-
-    @Override
-    public List<UUID> getInvitedUserIdsByActivityId(UUID activityId) {
-        try {
-            return activityService.getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
-        } catch (Exception e) {
-            logger.error("Error retrieving invited user IDs for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving invited user IDs for activityId " + activityId, e);
-        }
-    }
-
-
-    @Override
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
     }
@@ -536,28 +463,6 @@ public class UserService implements IUserService {
                     .orElseThrow(() -> new BaseNotFoundException(EntityType.User, email, "email"));
         } catch (Exception e) {
             logger.error(e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
-    public List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId) {
-        try {
-            final int activityLimit = 10;
-            final int userLimit = 40;
-            // Use UTC for consistent timezone comparison across server and client timezones
-            OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
-            List<UUID> pastActivityIds = activityService.getPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
-            List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityService.getOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
-            Set<UUID> excludedIds = userSearchQueryService.getExcludedUserIds(requestingUserId);
-
-            return pastActivityParticipantIds.stream()
-                    .filter(e -> !excludedIds.contains(e.getUserId()))
-                    .map(e -> new RecentlySpawnedUserDTO(getBaseUserById(e.getUserId()), e.getStartTime()))
-                    .limit(userLimit)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error fetching recently spawned-with users for user: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ". " + e.getMessage());
             throw e;
         }
     }
