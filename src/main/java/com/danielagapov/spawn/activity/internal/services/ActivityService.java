@@ -121,6 +121,40 @@ public class ActivityService implements IActivityService {
         return activityUserRepository.findByActivity_IdAndStatus(activityId, status).size();
     }
     
+    // ==================== User DTO Conversion Helpers ====================
+    
+    /**
+     * Get participating users as BaseUserDTOs for an activity.
+     * This method converts user IDs to DTOs without creating circular dependencies.
+     */
+    private List<BaseUserDTO> getParticipantUserDTOsByActivityId(UUID activityId) {
+        List<UUID> participantIds = getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+        return convertUserIdsToDTOs(participantIds);
+    }
+    
+    /**
+     * Get invited users as BaseUserDTOs for an activity.
+     * This method converts user IDs to DTOs without creating circular dependencies.
+     */
+    private List<BaseUserDTO> getInvitedUserDTOsByActivityId(UUID activityId) {
+        List<UUID> invitedIds = getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
+        return convertUserIdsToDTOs(invitedIds);
+    }
+    
+    /**
+     * Convert a list of user IDs to BaseUserDTOs.
+     * Filters out null users (deleted/not found).
+     */
+    private List<BaseUserDTO> convertUserIdsToDTOs(List<UUID> userIds) {
+        return userIds.stream()
+                .map(userId -> {
+                    User user = userRepository.findById(userId).orElse(null);
+                    return user != null ? UserMapper.toDTO(user) : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+    
     // ==================== Activity History Queries ====================
     
     @Override
@@ -312,8 +346,8 @@ public class ActivityService implements IActivityService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
 
         UUID creatorUserId = Activity.getCreator().getId();
-        List<UUID> participantUserIds = userService.getParticipantUserIdsByActivityId(id);
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
+        List<UUID> participantUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.participating);
+        List<UUID> invitedUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.invited);
         List<UUID> chatMessageIds = chatQueryService.getChatMessageIdsByActivityId(id);
 
         return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds, 
@@ -341,8 +375,8 @@ public class ActivityService implements IActivityService {
         String locationName = activity.getLocation() != null ? activity.getLocation().getName() : null;
         
         // Get participating and invited user IDs
-        List<UUID> participatingUserIds = userService.getParticipantUserIdsByActivityId(id);
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
+        List<UUID> participatingUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.participating);
+        List<UUID> invitedUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.invited);
         
         return new ActivityInviteDTO(
                 activity.getId(),
@@ -406,8 +440,8 @@ public class ActivityService implements IActivityService {
             return ActivityMapper.toDTO(
                     ActivityEntity,
                     ActivityEntity.getCreator().getId(), // creatorUserId
-                    userService.getParticipantUserIdsByActivityId(ActivityEntity.getId()), // participantUserIds
-                    userService.getInvitedUserIdsByActivityId(ActivityEntity.getId()), // invitedUserIds
+                    getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.participating), // participantUserIds
+                    getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.invited), // invitedUserIds
                     chatQueryService.getChatMessageIdsByActivityId(ActivityEntity.getId()), // chatMessageIds
                     expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()) // isExpired
             );
@@ -588,8 +622,8 @@ public class ActivityService implements IActivityService {
                 .map(Activity -> ActivityMapper.toDTO(
                         Activity,
                         Activity.getCreator().getId(),
-                        userService.getParticipantUserIdsByActivityId(Activity.getId()),
-                        userService.getInvitedUserIdsByActivityId(Activity.getId()),
+                        getParticipantUserIdsByActivityIdAndStatus(Activity.getId(), ParticipationStatus.participating),
+                        getParticipantUserIdsByActivityIdAndStatus(Activity.getId(), ParticipationStatus.invited),
                         chatQueryService.getChatMessageIdsByActivityId(Activity.getId()),
                         expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone())))
                 .toList();
@@ -764,8 +798,8 @@ public class ActivityService implements IActivityService {
     private ActivityDTO constructDTOFromEntity(Activity ActivityEntity) {
         // Fetch related data for DTO
         UUID creatorUserId = ActivityEntity.getCreator().getId();
-        List<UUID> participantUserIds = userService.getParticipantUserIdsByActivityId(ActivityEntity.getId());
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(ActivityEntity.getId());
+        List<UUID> participantUserIds = getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.participating);
+        List<UUID> invitedUserIds = getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.invited);
         List<UUID> chatMessageIds = chatQueryService.getChatMessageIdsByActivityId(ActivityEntity.getId());
 
         return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds,
@@ -1039,7 +1073,7 @@ public class ActivityService implements IActivityService {
             // Fetch participants - if this fails, show empty list instead of dropping activity
             List<BaseUserDTO> participants;
             try {
-                participants = userService.getParticipantsByActivityId(Activity.getId());
+                participants = getParticipantUserDTOsByActivityId(Activity.getId());
             } catch (Exception e) {
                 logger.warn("Error fetching participants for activity " + Activity.getId() + ": " + e.getMessage());
                 participants = new ArrayList<>();
@@ -1048,7 +1082,7 @@ public class ActivityService implements IActivityService {
             // Fetch invited users - if this fails, show empty list instead of dropping activity
             List<BaseUserDTO> invitedUsers;
             try {
-                invitedUsers = userService.getInvitedByActivityId(Activity.getId());
+                invitedUsers = getInvitedUserDTOsByActivityId(Activity.getId());
             } catch (Exception e) {
                 logger.warn("Error fetching invited users for activity " + Activity.getId() + ": " + e.getMessage());
                 invitedUsers = new ArrayList<>();
