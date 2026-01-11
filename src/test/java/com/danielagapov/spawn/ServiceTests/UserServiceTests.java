@@ -1,17 +1,13 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
-import com.danielagapov.spawn.user.api.dto.RecentlySpawnedUserDTO;
 import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.user.api.dto.UserUpdateDTO;
-import com.danielagapov.spawn.activity.api.dto.UserIdActivityTimeDTO;
-import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
-import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
@@ -26,15 +22,13 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,9 +61,6 @@ public class UserServiceTests {
     private IUserSearchQueryService userSearchQueryService;
 
     @Mock
-    private IActivityService activityService;
-
-    @Mock
     private CacheManager cacheManager;
 
     @Mock
@@ -81,13 +72,28 @@ public class UserServiceTests {
     @Mock
     private com.danielagapov.spawn.user.internal.services.IUserFriendshipQueryService friendshipQueryService;
 
-    @Spy
-    @InjectMocks
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        
+        // Manually construct UserService
+        userService = spy(new UserService(
+            userRepository,
+            friendshipRepository,
+            s3Service,
+            logger,
+            userSearchQueryService,
+            friendshipQueryService,
+            cacheManager,
+            eventPublisher,
+            userIdExternalIdMapRepository
+        ));
+        
         // Set the adminUsername field since @Value annotation doesn't work in unit tests
         ReflectionTestUtils.setField(userService, "adminUsername", "admin");
         
@@ -368,35 +374,6 @@ public class UserServiceTests {
         // Then
         assertNotNull(result);
         verify(userRepository, times(1)).save(existingUser);
-    }
-
-    @Test
-    void getRecentlySpawnedWithUsers_ShouldReturnUsers_WhenDataExists() {
-        // Given
-        UUID requestingUserId = UUID.randomUUID();
-        UUID otherUserId = UUID.randomUUID();
-        List<UUID> pastActivityIds = Arrays.asList(UUID.randomUUID());
-        List<UserIdActivityTimeDTO> activityParticipants = Arrays.asList(
-            new UserIdActivityTimeDTO(otherUserId, OffsetDateTime.now())
-        );
-
-        when(activityService.getPastActivityIdsForUser(eq(requestingUserId), eq(ParticipationStatus.participating), any(), any()))
-            .thenReturn(pastActivityIds);
-        when(activityService.getOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating))
-            .thenReturn(activityParticipants);
-        when(userSearchQueryService.getExcludedUserIds(requestingUserId)).thenReturn(Set.of());
-
-        // Mock the getBaseUserById method
-        BaseUserDTO mockBaseUserDTO = new BaseUserDTO();
-        mockBaseUserDTO.setId(otherUserId);
-        doReturn(mockBaseUserDTO).when(userService).getBaseUserById(otherUserId);
-
-        // When
-        List<RecentlySpawnedUserDTO> result = userService.getRecentlySpawnedWithUsers(requestingUserId);
-
-        // Then
-        assertEquals(1, result.size());
-        assertEquals(otherUserId, result.get(0).getUser().getId());
     }
 
     private User createUser(UUID id, String username, String email) {

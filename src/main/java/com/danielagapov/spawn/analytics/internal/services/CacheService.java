@@ -11,6 +11,7 @@ import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.user.internal.services.IUserInterestService;
 import com.danielagapov.spawn.user.internal.services.IUserSocialMediaService;
 import com.danielagapov.spawn.user.internal.services.IUserStatsService;
+import com.danielagapov.spawn.user.internal.services.IRecentlySpawnedService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,7 @@ public class CacheService implements ICacheService {
     private final IUserInterestService userInterestService;
     private final IUserSocialMediaService userSocialMediaService;
     private final CacheManager cacheManager;
+    private final IRecentlySpawnedService recentlySpawnedService;
 
     @Autowired
     public CacheService(
@@ -60,7 +62,8 @@ public class CacheService implements ICacheService {
             IUserStatsService userStatsService,
             IUserInterestService userInterestService,
             IUserSocialMediaService userSocialMediaService,
-            CacheManager cacheManager) {
+            CacheManager cacheManager,
+            IRecentlySpawnedService recentlySpawnedService) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.ActivityService = ActivityService;
@@ -71,6 +74,7 @@ public class CacheService implements ICacheService {
         this.userInterestService = userInterestService;
         this.userSocialMediaService = userSocialMediaService;
         this.cacheManager = cacheManager;
+        this.recentlySpawnedService = recentlySpawnedService;
     }
 
     /**
@@ -501,7 +505,7 @@ public class CacheService implements ICacheService {
                 clientTimestamp,
                 CacheType.RECENTLY_SPAWNED,
                 () -> getLatestFriendActivity(user.getId()),
-                () -> userService.getRecentlySpawnedWithUsers(user.getId())
+                () -> recentlySpawnedService.getRecentlySpawnedWithUsers(user.getId())
         );
     }
 

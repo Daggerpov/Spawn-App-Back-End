@@ -11,6 +11,7 @@ import com.danielagapov.spawn.auth.internal.services.IAuthService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.IUserService;
+import com.danielagapov.spawn.user.internal.services.IRecentlySpawnedService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
 import jakarta.validation.Valid;
@@ -33,14 +34,17 @@ public class UserController {
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final IAuthService authService;
+    private final IRecentlySpawnedService recentlySpawnedService;
 
     @Autowired
-    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService, IBlockedUserService blockedUserService) {
+    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService, 
+                          IBlockedUserService blockedUserService, IRecentlySpawnedService recentlySpawnedService) {
         this.userService = userService;
         this.s3Service = s3Service;
         this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.authService = authService;
+        this.recentlySpawnedService = recentlySpawnedService;
     }
 
     // full path: /api/v1/users/friends/{id}
@@ -244,7 +248,7 @@ public class UserController {
     @GetMapping("{userId}/recent-users")
     public ResponseEntity<List<RecentlySpawnedUserDTO>> getRecentlySpawnedWithUsers(@PathVariable UUID userId) {
         try {
-            List<RecentlySpawnedUserDTO> recentUsers = userService.getRecentlySpawnedWithUsers(userId);
+            List<RecentlySpawnedUserDTO> recentUsers = recentlySpawnedService.getRecentlySpawnedWithUsers(userId);
             List<RecentlySpawnedUserDTO> filteredRecentUsers = blockedUserService.filterOutBlockedUsers(recentUsers, userId);
             return new ResponseEntity<>(filteredRecentUsers, HttpStatus.OK);
         } catch (Exception e) {

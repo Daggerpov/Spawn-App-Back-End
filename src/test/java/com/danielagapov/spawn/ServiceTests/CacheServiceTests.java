@@ -14,6 +14,7 @@ import com.danielagapov.spawn.user.internal.services.IUserInterestService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.user.internal.services.IUserSocialMediaService;
 import com.danielagapov.spawn.user.internal.services.IUserStatsService;
+import com.danielagapov.spawn.user.internal.services.IRecentlySpawnedService;
 import com.danielagapov.spawn.user.api.dto.UserSocialMediaDTO;
 import com.danielagapov.spawn.user.api.dto.UserStatsDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,6 +73,9 @@ class CacheServiceTests {
     @Mock
     private Cache cache;
 
+    @Mock
+    private IRecentlySpawnedService recentlySpawnedService;
+
     private CacheService cacheService;
     private ObjectMapper objectMapper;
     private User testUser;
@@ -90,7 +94,8 @@ class CacheServiceTests {
             userStatsService,
             userInterestService,
             userSocialMediaService,
-            cacheManager
+            cacheManager,
+            recentlySpawnedService
         );
 
         testUserId = UUID.randomUUID();
@@ -707,7 +712,7 @@ class CacheServiceTests {
                 .thenReturn(Instant.now().minusSeconds(3600));
             when(userRepository.findLatestFriendProfileUpdate(testUserId))
                 .thenReturn(Instant.now().minusSeconds(3700));
-            when(userService.getRecentlySpawnedWithUsers(testUserId))
+            when(recentlySpawnedService.getRecentlySpawnedWithUsers(testUserId))
                 .thenReturn(List.of());
 
             // When
