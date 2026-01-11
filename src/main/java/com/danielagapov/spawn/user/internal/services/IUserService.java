@@ -173,42 +173,6 @@ public interface IUserService {
     Instant getLatestFriendProfileUpdateTimestamp(UUID userId);
 
     /**
-     * Retrieves all users participating in a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of BaseUserDTO objects representing participants
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<BaseUserDTO> getParticipantsByActivityId(UUID activityId);
-
-    /**
-     * Retrieves all users invited to a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of BaseUserDTO objects representing invited users
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<BaseUserDTO> getInvitedByActivityId(UUID activityId);
-
-    /**
-     * Retrieves the user IDs of all participants in a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of UUID objects representing participant user IDs
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<UUID> getParticipantUserIdsByActivityId(UUID activityId);
-
-    /**
-     * Retrieves the user IDs of all users invited to a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of UUID objects representing invited user IDs
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<UUID> getInvitedUserIdsByActivityId(UUID activityId);
-
-    /**
      * Checks if a user exists with the given email address.
      *
      * @param email the email address to check
@@ -310,15 +274,6 @@ public interface IUserService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
      */
     User getUserByEmail(String email);
-
-    /**
-     * Retrieves users who have recently spawned (created activities) that the requesting user was invited to.
-     *
-     * @param requestingUserId the unique identifier of the user making the request
-     * @return List of RecentlySpawnedUserDTO objects representing recently active users
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if requesting user doesn't exist
-     */
-    List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
 
     /**
      * Retrieves a user as a BaseUserDTO by their username.

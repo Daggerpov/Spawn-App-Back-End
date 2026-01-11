@@ -50,7 +50,7 @@ public class UserSearchService implements IUserSearchService {
     private final IUserRepository userRepository;
     private final IBlockedUserService blockedUserService;
     private final IActivityService activityService;
-    private final FuzzySearchService<User> fuzzySearchService;
+    private final IFuzzySearchService<User> fuzzySearchService;
     private final SearchAnalyticsService searchAnalyticsService;
     private final ILogger logger;
 
@@ -63,7 +63,7 @@ public class UserSearchService implements IUserSearchService {
                            IUserRepository userRepository,
                            IBlockedUserService blockedUserService,
                            IActivityService activityService,
-                           FuzzySearchService<User> fuzzySearchService,
+                           IFuzzySearchService<User> fuzzySearchService,
                            SearchAnalyticsService searchAnalyticsService,
                            ILogger logger) {
         this.friendRequestService = friendRequestService;
