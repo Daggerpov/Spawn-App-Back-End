@@ -542,11 +542,12 @@ class ActivityControllerTests {
         when(activityService.createActivityWithSuggestions(any(ActivityDTO.class)))
                 .thenReturn(fullFeedActivityDTO);
 
-        ResponseEntity<FullFeedActivityDTO> response = activityController.createActivity(activityDTO);
+        ResponseEntity<ActivityCreationResponseDTO> response = activityController.createActivity(activityDTO);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(activityId, response.getBody().getId());
+        assertNotNull(response.getBody().getActivity());
+        assertEquals(activityId, response.getBody().getActivity().getId());
         verify(activityService, times(1)).createActivityWithSuggestions(any(ActivityDTO.class));
     }
 
