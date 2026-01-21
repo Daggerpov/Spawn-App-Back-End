@@ -203,8 +203,9 @@ class ActivityControllerTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(activityDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(activityId.toString()))
-                .andExpect(jsonPath("$.title").value("Test Activity"));
+                .andExpect(jsonPath("$.activity.id").value(activityId.toString()))
+                .andExpect(jsonPath("$.activity.title").value("Test Activity"))
+                .andExpect(jsonPath("$.friendSuggestion").doesNotExist());
 
         verify(activityService, times(1)).createActivityWithSuggestions(any(ActivityDTO.class));
     }
