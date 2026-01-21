@@ -1324,8 +1324,8 @@ public class ActivityService implements IActivityService {
     }
     
     /**
-     * Gets feed Activities for a profile. If the profile user has no upcoming Activities, returns past Activities
-     * that the profile user invited the requesting user to, with a flag indicating they are past Activities.
+     * Gets all Activities for a profile, including both upcoming and past Activities.
+     * Each activity is flagged as past or upcoming based on expiration status.
      *
      * @param profileUserId The user ID of the profile being viewed
      * @param requestingUserId The user ID of the user viewing the profile
@@ -1334,27 +1334,49 @@ public class ActivityService implements IActivityService {
     @Override
     public List<ProfileActivityDTO> getProfileActivities(UUID profileUserId, UUID requestingUserId) {
         try {
-            // Get upcoming Activities created by the profile user
-            List<ActivityDTO> upcomingActivities = getActivitiesByOwnerId(profileUserId);
-            List<FullFeedActivityDTO> upcomingFullActivities = convertActivitiesToFullFeedSelfOwnedActivities(upcomingActivities, requestingUserId);
+            // Get ALL Activities created by the profile user
+            List<ActivityDTO> allActivities = getActivitiesByOwnerId(profileUserId);
+            List<FullFeedActivityDTO> allFullActivities = convertActivitiesToFullFeedSelfOwnedActivities(allActivities, requestingUserId);
             
-            // Remove expired Activities
-            List<FullFeedActivityDTO> nonExpiredActivities = removeExpiredActivities(upcomingFullActivities);
-            
-            // Convert to ProfileActivityDTO
+            // Convert to ProfileActivityDTO with proper past/upcoming flag
             List<ProfileActivityDTO> result = new ArrayList<>();
+            List<ProfileActivityDTO> upcomingActivities = new ArrayList<>();
+            List<ProfileActivityDTO> pastActivities = new ArrayList<>();
             
-            // If there are upcoming Activities, return them as ProfileActivityDTOs
-            if (!nonExpiredActivities.isEmpty()) {
-                sortActivitiesByStartTime(nonExpiredActivities);
-                for (FullFeedActivityDTO Activity : nonExpiredActivities) {
-                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity, false)); // false = not past activity
+            for (FullFeedActivityDTO activity : allFullActivities) {
+                boolean isExpired = expirationService.isActivityExpired(
+                    activity.getStartTime(), 
+                    activity.getEndTime(), 
+                    activity.getCreatedAt(), 
+                    activity.getClientTimezone()
+                );
+                
+                ProfileActivityDTO profileActivity = ProfileActivityDTO.fromFullFeedActivityDTO(activity, isExpired);
+                
+                if (isExpired) {
+                    pastActivities.add(profileActivity);
+                } else {
+                    upcomingActivities.add(profileActivity);
                 }
-                return result;
             }
             
-            // If no upcoming Activities, get past Activities where the profile user invited the requesting user
-            return getPastActivitiesWhereUserInvited(profileUserId, requestingUserId);
+            // Sort upcoming activities by start time (soonest first)
+            upcomingActivities.sort(Comparator.comparing(
+                ProfileActivityDTO::getStartTime, 
+                Comparator.nullsLast(Comparator.naturalOrder())
+            ));
+            
+            // Sort past activities by start time (most recent first)
+            pastActivities.sort(Comparator.comparing(
+                ProfileActivityDTO::getStartTime, 
+                Comparator.nullsLast(Comparator.reverseOrder())
+            ));
+            
+            // Combine: upcoming first, then past
+            result.addAll(upcomingActivities);
+            result.addAll(pastActivities);
+            
+            return result;
         } catch (Exception e) {
             logger.error("Error fetching profile Activities for user " + profileUserId + 
                          " requested by " + requestingUserId + ": " + e.getMessage());
