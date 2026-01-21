@@ -1324,8 +1324,8 @@ public class ActivityService implements IActivityService {
     }
     
     /**
-     * Gets all Activities for a profile, including both upcoming and past Activities.
-     * Each activity is flagged as past or upcoming based on expiration status.
+     * Gets Activities for a profile where the requesting user was invited or is participating.
+     * Includes both upcoming and past Activities, each flagged appropriately.
      *
      * @param profileUserId The user ID of the profile being viewed
      * @param requestingUserId The user ID of the user viewing the profile
@@ -1338,12 +1338,17 @@ public class ActivityService implements IActivityService {
             List<ActivityDTO> allActivities = getActivitiesByOwnerId(profileUserId);
             List<FullFeedActivityDTO> allFullActivities = convertActivitiesToFullFeedSelfOwnedActivities(allActivities, requestingUserId);
             
+            // Filter to only include activities where the requesting user is invited or participating
+            List<FullFeedActivityDTO> filteredActivities = allFullActivities.stream()
+                .filter(activity -> isUserInvitedOrParticipating(activity, requestingUserId))
+                .collect(Collectors.toList());
+            
             // Convert to ProfileActivityDTO with proper past/upcoming flag
             List<ProfileActivityDTO> result = new ArrayList<>();
             List<ProfileActivityDTO> upcomingActivities = new ArrayList<>();
             List<ProfileActivityDTO> pastActivities = new ArrayList<>();
             
-            for (FullFeedActivityDTO activity : allFullActivities) {
+            for (FullFeedActivityDTO activity : filteredActivities) {
                 boolean isExpired = expirationService.isActivityExpired(
                     activity.getStartTime(), 
                     activity.getEndTime(), 
@@ -1382,6 +1387,35 @@ public class ActivityService implements IActivityService {
                          " requested by " + requestingUserId + ": " + e.getMessage());
             throw e;
         }
+    }
+    
+    /**
+     * Checks if the requesting user is invited to or participating in the activity.
+     *
+     * @param activity The activity to check
+     * @param requestingUserId The user ID to check for
+     * @return true if the user is in invitedUsers or participantUsers
+     */
+    private boolean isUserInvitedOrParticipating(FullFeedActivityDTO activity, UUID requestingUserId) {
+        // Check if user is in invited users
+        if (activity.getInvitedUsers() != null) {
+            for (BaseUserDTO user : activity.getInvitedUsers()) {
+                if (user.getId().equals(requestingUserId)) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check if user is in participant users
+        if (activity.getParticipantUsers() != null) {
+            for (BaseUserDTO user : activity.getParticipantUsers()) {
+                if (user.getId().equals(requestingUserId)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
 }
