@@ -1,8 +1,9 @@
 package com.danielagapov.spawn.user.api;
 
 import com.danielagapov.spawn.user.api.dto.*;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.UserProfileInfoDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.user.api.dto.ContactCrossReferenceRequestDTO;
 import com.danielagapov.spawn.user.api.dto.ContactCrossReferenceResponseDTO;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;

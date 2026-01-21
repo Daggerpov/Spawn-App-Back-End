@@ -2,7 +2,7 @@ package com.danielagapov.spawn.shared.util;
 
 import com.danielagapov.spawn.user.api.dto.AuthResponseDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
-import com.danielagapov.spawn.user.api.dto.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 import com.danielagapov.spawn.user.api.dto.UserCreationDTO;
 import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
@@ -142,7 +142,7 @@ public final class UserMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<User> toEntityList(List<BaseUserDTO> userDTOs) {
+    public static List<User> toEntityListFromBaseUserDTOs(List<BaseUserDTO> userDTOs) {
         return userDTOs.stream()
                 .map(UserMapper::toEntity)
                 .collect(Collectors.toList());

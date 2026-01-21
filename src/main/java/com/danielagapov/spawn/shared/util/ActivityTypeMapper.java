@@ -2,7 +2,7 @@ package com.danielagapov.spawn.shared.util;
 
 import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
 import com.danielagapov.spawn.activity.internal.domain.ActivityType;
-import com.danielagapov.spawn.user.api.dto.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
 
 import java.util.Collections;

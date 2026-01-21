@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.activity.api.dto;
 
-import com.danielagapov.spawn.user.api.dto.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

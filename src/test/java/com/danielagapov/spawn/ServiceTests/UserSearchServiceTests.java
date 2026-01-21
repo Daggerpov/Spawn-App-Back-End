@@ -3,8 +3,8 @@ package com.danielagapov.spawn.ServiceTests;
 import com.danielagapov.spawn.social.api.dto.FetchFriendRequestDTO;
 
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;

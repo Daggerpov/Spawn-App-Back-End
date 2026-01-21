@@ -1,5 +1,6 @@
-package com.danielagapov.spawn.user.api.dto;
+package com.danielagapov.spawn.user.api.dto.FriendUser;
 
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

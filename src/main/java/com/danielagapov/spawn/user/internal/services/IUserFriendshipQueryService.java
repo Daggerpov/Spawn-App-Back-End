@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.user.internal.services;
 
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
 
 import java.util.List;

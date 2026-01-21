@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.shared.util;
 
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.user.internal.domain.User;
 

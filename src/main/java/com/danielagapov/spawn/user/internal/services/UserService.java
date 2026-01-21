@@ -1,6 +1,10 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.*;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;

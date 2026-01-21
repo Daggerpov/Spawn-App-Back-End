@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.user.api.dto;
+package com.danielagapov.spawn.user.api.dto.Profile;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
