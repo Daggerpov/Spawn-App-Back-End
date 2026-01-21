@@ -21,7 +21,21 @@ public final class UserMapper {
                 user.getUsername(),
                 user.getBio(),
                 user.getProfilePictureUrlString(),
-                user.getHasCompletedOnboarding()
+                user.getHasCompletedOnboarding(),
+                null  // provider not specified
+        );
+    }
+
+    public static BaseUserDTO toDTOWithProvider(User user, String provider) {
+        return new BaseUserDTO(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getBio(),
+                user.getProfilePictureUrlString(),
+                user.getHasCompletedOnboarding(),
+                provider
         );
     }
 
@@ -32,6 +46,11 @@ public final class UserMapper {
 
     public static AuthResponseDTO toAuthResponseDTO(User user, boolean isOAuthUser) {
         BaseUserDTO baseUserDTO = toDTO(user);
+        return new AuthResponseDTO(baseUserDTO, user.getStatus(), isOAuthUser);
+    }
+
+    public static AuthResponseDTO toAuthResponseDTO(User user, boolean isOAuthUser, String provider) {
+        BaseUserDTO baseUserDTO = toDTOWithProvider(user, provider);
         return new AuthResponseDTO(baseUserDTO, user.getStatus(), isOAuthUser);
     }
 
