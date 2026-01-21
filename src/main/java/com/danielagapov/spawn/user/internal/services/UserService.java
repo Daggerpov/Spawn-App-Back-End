@@ -385,6 +385,17 @@ public class UserService implements IUserService {
     }
 
     /**
+     * @param requestingUserId the user who's requesting this from the mobile app,
+     *                         typically from activity creation or activity type management views.
+     * @return `MinimalFriendDTO` list of friends for the requesting user,
+     * containing only essential fields (id, username, name, profilePicture) to reduce memory usage
+     */
+    @Override
+    public List<MinimalFriendDTO> getMinimalFriendUsersByUserId(UUID requestingUserId) {
+        return friendshipQueryService.getMinimalFriendUsersByUserId(requestingUserId);
+    }
+
+    /**
      * Fallback method to get friends from the "Everyone" tag when the optimized query returns no results
      */
     private List<FullFriendUserDTO> getFallbackFriendsList(UUID requestingUserId) {

@@ -67,6 +67,28 @@ public class UserController {
         }
     }
 
+    // full path: /api/v1/users/friends-minimal/{id}
+    // Returns minimal friend data (id, username, name, profilePicture) to reduce memory usage
+    // Use this for friend selection lists in activity creation and activity type management
+    @GetMapping("friends-minimal/{id}")
+    public ResponseEntity<List<MinimalFriendDTO>> getUserFriendsMinimal(@PathVariable UUID id) {
+        if (id == null) {
+            logger.error("Invalid parameter: user ID is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            List<MinimalFriendDTO> friends = userService.getMinimalFriendUsersByUserId(id);
+            List<MinimalFriendDTO> filteredFriends = blockedUserService.filterOutBlockedUsers(friends, id);
+            return new ResponseEntity<>(filteredFriends, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for minimal friends retrieval: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error getting minimal friends for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // full path: /api/v1/users/{id}
     @GetMapping("{id}")
     public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {
