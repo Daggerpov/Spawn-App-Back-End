@@ -1,6 +1,10 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.*;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
@@ -382,6 +386,17 @@ public class UserService implements IUserService {
     @Override
     public List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId) {
         return friendshipQueryService.getFullFriendUsersByUserId(requestingUserId);
+    }
+
+    /**
+     * @param requestingUserId the user who's requesting this from the mobile app,
+     *                         typically from activity creation or activity type management views.
+     * @return `MinimalFriendDTO` list of friends for the requesting user,
+     * containing only essential fields (id, username, name, profilePicture) to reduce memory usage
+     */
+    @Override
+    public List<MinimalFriendDTO> getMinimalFriendUsersByUserId(UUID requestingUserId) {
+        return friendshipQueryService.getMinimalFriendUsersByUserId(requestingUserId);
     }
 
     /**

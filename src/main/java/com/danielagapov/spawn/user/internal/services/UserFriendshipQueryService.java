@@ -6,7 +6,8 @@ import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -114,6 +115,35 @@ public class UserFriendshipQueryService implements IUserFriendshipQueryService {
             return filterOutAdminFromFullFriendUserDTOs(result);
         } catch (Exception e) {
             logger.error("Error retrieving full friend users: " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    @Override
+    public List<MinimalFriendDTO> getMinimalFriendUsersByUserId(UUID requestingUserId) {
+        try {
+            List<UUID> friendIds = getFriendUserIdsByUserId(requestingUserId);
+            if (friendIds.isEmpty()) {
+                return List.of();
+            }
+            List<User> friendUsers = userRepository.findAllById(friendIds);
+            List<MinimalFriendDTO> result = new ArrayList<>();
+            for (User friend : friendUsers) {
+                // Skip admin users
+                if (adminUsername.equals(friend.getUsername())) {
+                    continue;
+                }
+                MinimalFriendDTO dto = new MinimalFriendDTO(
+                        friend.getId(),
+                        friend.getUsername(),
+                        friend.getName(),
+                        friend.getProfilePictureUrlString()
+                );
+                result.add(dto);
+            }
+            return result;
+        } catch (Exception e) {
+            logger.error("Error retrieving minimal friend users: " + e.getMessage());
             throw e;
         }
     }

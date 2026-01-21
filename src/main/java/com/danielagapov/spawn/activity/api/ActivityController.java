@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.activity.api;
 
+import com.danielagapov.spawn.activity.api.dto.ActivityCreationResponseDTO;
 import com.danielagapov.spawn.activity.api.dto.ActivityDTO;
 import com.danielagapov.spawn.activity.api.dto.ActivityPartialUpdateDTO;
 import com.danielagapov.spawn.activity.api.dto.FullFeedActivityDTO;
@@ -70,16 +71,18 @@ public class ActivityController {
 
     // full path: /api/v1/activities
     @PostMapping
-    public ResponseEntity<FullFeedActivityDTO> createActivity(@RequestBody ActivityDTO activityDTO) {
+    public ResponseEntity<ActivityCreationResponseDTO> createActivity(@RequestBody ActivityDTO activityDTO) {
         try {
-            FullFeedActivityDTO response = activityService.createActivityWithSuggestions(activityDTO);
+            FullFeedActivityDTO createdActivity = activityService.createActivityWithSuggestions(activityDTO);
+            // Wrap in ActivityCreationResponseDTO to match iOS expected structure
+            ActivityCreationResponseDTO response = new ActivityCreationResponseDTO(createdActivity);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             logger.error("Invalid request for activity creation: " + e.getMessage());
-            return new ResponseEntity<FullFeedActivityDTO>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<ActivityCreationResponseDTO>(HttpStatus.BAD_REQUEST);
         } catch (BaseNotFoundException e) {
             logger.error("Entity not found during activity creation: " + e.getMessage());
-            return new ResponseEntity<FullFeedActivityDTO>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<ActivityCreationResponseDTO>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error creating activity: " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

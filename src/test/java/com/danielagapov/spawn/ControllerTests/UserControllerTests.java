@@ -2,7 +2,7 @@ package com.danielagapov.spawn.ControllerTests;
 
 import com.danielagapov.spawn.user.api.UserController;
 import com.danielagapov.spawn.user.api.dto.AbstractUserDTO;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;

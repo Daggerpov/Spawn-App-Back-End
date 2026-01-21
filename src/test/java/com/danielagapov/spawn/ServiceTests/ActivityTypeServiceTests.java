@@ -999,10 +999,10 @@ class ActivityTypeServiceTests {
                  ActivityTypeDTO activityTypeWithFriends = new ActivityTypeDTO(
              activityTypeId1,
              "Chill",
-             Arrays.asList(
-                 new com.danielagapov.spawn.user.api.dto.BaseUserDTO(friend1Id, "Friend One", "friend1@test.com", "friend1", "bio1", "pic1.jpg"),
-                 new com.danielagapov.spawn.user.api.dto.BaseUserDTO(friend2Id, "Friend Two", "friend2@test.com", "friend2", "bio2", "pic2.jpg")
-             ),
+            Arrays.asList(
+                new com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO(friend1Id, "friend1", "Friend One", "pic1.jpg"),
+                new com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO(friend2Id, "friend2", "Friend Two", "pic2.jpg")
+            ),
             "🛋️",
             1,
             userId,

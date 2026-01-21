@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.user.api.dto.AbstractUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 
 @Service
 @AllArgsConstructor
@@ -425,7 +426,7 @@ public class ActivityTypeService implements IActivityTypeService {
         // Get associated friends from database instead of creating detached entities
         List<User> associatedFriends = new ArrayList<>();
         if (dto.getAssociatedFriends() != null && !dto.getAssociatedFriends().isEmpty()) {
-            for (BaseUserDTO friendDTO : dto.getAssociatedFriends()) {
+            for (MinimalFriendDTO friendDTO : dto.getAssociatedFriends()) {
                 try {
                     User friend = userService.getUserEntityById(friendDTO.getId());
                     associatedFriends.add(friend);

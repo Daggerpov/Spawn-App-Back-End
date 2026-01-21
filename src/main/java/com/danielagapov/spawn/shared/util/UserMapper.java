@@ -2,6 +2,7 @@ package com.danielagapov.spawn.shared.util;
 
 import com.danielagapov.spawn.user.api.dto.AuthResponseDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 import com.danielagapov.spawn.user.api.dto.UserCreationDTO;
 import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.user.internal.domain.User;
@@ -21,7 +22,21 @@ public final class UserMapper {
                 user.getUsername(),
                 user.getBio(),
                 user.getProfilePictureUrlString(),
-                user.getHasCompletedOnboarding()
+                user.getHasCompletedOnboarding(),
+                null  // provider not specified
+        );
+    }
+
+    public static BaseUserDTO toDTOWithProvider(User user, String provider) {
+        return new BaseUserDTO(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getBio(),
+                user.getProfilePictureUrlString(),
+                user.getHasCompletedOnboarding(),
+                provider
         );
     }
 
@@ -35,8 +50,57 @@ public final class UserMapper {
         return new AuthResponseDTO(baseUserDTO, user.getStatus(), isOAuthUser);
     }
 
+    public static AuthResponseDTO toAuthResponseDTO(User user, boolean isOAuthUser, String provider) {
+        BaseUserDTO baseUserDTO = toDTOWithProvider(user, provider);
+        return new AuthResponseDTO(baseUserDTO, user.getStatus(), isOAuthUser);
+    }
+
     public static List<BaseUserDTO> toDTOList(List<User> users) {
         return users.stream().map(UserMapper::toDTO).toList();
+    }
+
+    /**
+     * Convert User entity to MinimalFriendDTO with only essential fields.
+     * This reduces memory usage when displaying friends in selection lists.
+     */
+    public static MinimalFriendDTO toMinimalFriendDTO(User user) {
+        return new MinimalFriendDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getName(),
+                user.getProfilePictureUrlString()
+        );
+    }
+
+    /**
+     * Convert list of User entities to MinimalFriendDTO list.
+     */
+    public static List<MinimalFriendDTO> toMinimalFriendDTOList(List<User> users) {
+        return users.stream().map(UserMapper::toMinimalFriendDTO).toList();
+    }
+
+    /**
+     * Convert MinimalFriendDTO to User entity (for conversion operations).
+     * WARNING: This creates an incomplete User entity - only id, username, name, profilePicture are set.
+     */
+    public static User toEntity(MinimalFriendDTO dto) {
+        return new User(
+                dto.getId(),
+                dto.getUsername(),
+                dto.getProfilePicture(),
+                dto.getName(),
+                null,  // bio not available in MinimalFriendDTO
+                null   // email not available in MinimalFriendDTO
+        );
+    }
+
+    /**
+     * Convert list of MinimalFriendDTO to list of User entities.
+     */
+    public static List<User> toEntityList(List<MinimalFriendDTO> dtos) {
+        return dtos.stream()
+                .map(UserMapper::toEntity)
+                .collect(Collectors.toList());
     }
 
     public static UserDTO toDTO(User user, List<UUID> friendUserIds) {
@@ -78,7 +142,7 @@ public final class UserMapper {
                 .collect(Collectors.toList());
     }
 
-    public static List<User> toEntityList(List<BaseUserDTO> userDTOs) {
+    public static List<User> toEntityListFromBaseUserDTOs(List<BaseUserDTO> userDTOs) {
         return userDTOs.stream()
                 .map(UserMapper::toEntity)
                 .collect(Collectors.toList());

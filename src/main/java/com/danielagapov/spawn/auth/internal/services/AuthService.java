@@ -172,7 +172,23 @@ public class AuthService implements IAuthService {
     public AuthResponseDTO getUserByToken(String token) {
         final String username = jwtService.extractUsername(token);
         User user = userService.getUserEntityByUsername(username);
-        return UserMapper.toAuthResponseDTO(user, oauthService.isOAuthUser(user.getId()));
+        
+        // Determine the auth provider for this user
+        boolean isOAuthUser = oauthService.isOAuthUser(user.getId());
+        String provider;
+        if (isOAuthUser) {
+            try {
+                OAuthProvider oauthProvider = oauthService.getOAuthProvider(user.getId());
+                provider = oauthProvider.name();  // "google" or "apple"
+            } catch (Exception e) {
+                logger.warn("Could not determine OAuth provider for user: " + user.getId() + ". " + e.getMessage());
+                provider = null;
+            }
+        } else {
+            provider = "email";
+        }
+        
+        return UserMapper.toAuthResponseDTO(user, isOAuthUser, provider);
     }
 
     @Override

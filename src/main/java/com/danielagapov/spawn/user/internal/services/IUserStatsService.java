@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.user.internal.services;
 
-import com.danielagapov.spawn.user.api.dto.UserStatsDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserStatsDTO;
 
 import java.util.UUID;
 

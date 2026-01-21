@@ -1,9 +1,10 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.*;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.UserProfileInfoDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
@@ -124,6 +125,19 @@ public interface IUserService {
      * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
      */
     List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId);
+
+    /**
+     * Retrieves all friends of a user as MinimalFriendDTO objects with only essential fields.
+     * This is optimized for friend selection lists (activity creation, activity types) to reduce memory usage.
+     * 
+     * Fields included: id, username, name, profilePicture
+     * Fields excluded: bio, email, hasCompletedOnboarding, provider
+     *
+     * @param requestingUserId the unique identifier of the user requesting their friends
+     * @return List of MinimalFriendDTO objects representing the user's friends
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    List<MinimalFriendDTO> getMinimalFriendUsersByUserId(UUID requestingUserId);
 
     /**
      * Retrieves all friends of a user as User entities.

@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.IntegrationTests;
 
 import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
 import com.danielagapov.spawn.social.internal.domain.FriendRequest;
