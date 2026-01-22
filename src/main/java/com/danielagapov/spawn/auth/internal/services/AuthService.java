@@ -132,7 +132,7 @@ public class AuthService implements IAuthService {
                 logger.info("Email verified successfully for user: " + LoggingUtils.formatUserInfo(user));
                 return true;
             }
-            logger.warn("Invalid email verification token received");
+            logger.warn("Invalid email verification token received. Token prefix: " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
             return false;
         } catch (Exception e) {
             logger.error("Error during email verification: " + e.getMessage());
@@ -432,7 +432,7 @@ public class AuthService implements IAuthService {
                     }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    logger.warn("Interrupted while waiting to check for concurrent user creation");
+                    logger.warn("Interrupted while waiting to check for concurrent user creation: " + ie.getMessage());
                 } catch (Exception recheckEx) {
                     logger.warn("Error during concurrent user re-check: " + recheckEx.getMessage());
                 }
