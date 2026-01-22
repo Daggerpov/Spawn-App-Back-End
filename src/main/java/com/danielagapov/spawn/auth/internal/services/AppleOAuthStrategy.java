@@ -65,7 +65,7 @@ public final class AppleOAuthStrategy implements OAuthStrategy {
 
                     // Check token expiration before verification
                     if (decodedJWT.getExpiresAt() != null && decodedJWT.getExpiresAt().before(new java.util.Date())) {
-                        logger.error("Apple ID token has expired");
+                        logger.error("Apple ID token has expired. Expiration: " + decodedJWT.getExpiresAt() + ", Current time: " + new java.util.Date());
                         throw new TokenExpiredException("Apple ID token has expired, please sign in again");
                     }
 

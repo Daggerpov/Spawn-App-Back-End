@@ -240,7 +240,7 @@ public class AuthController {
                     logger.info("OAuth registration succeeded via graceful handling");
                     return ResponseEntity.ok().headers(headers).body(gracefulUser);
                 } else {
-                    logger.warn("Graceful handling returned null - attempting final fallback check");
+                    logger.warn("Graceful handling returned null - attempting final fallback check. Email: " + registration.getEmail() + ", provider: " + registration.getProvider());
                     
                     // Final fallback: try to sign in the user if they already exist
                     try {
