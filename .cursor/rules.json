@@ -27,11 +27,92 @@
         "auto_import": true
       }
     },
+    "lombok_usage": {
+      "description": "CRITICAL: Always use Lombok annotations to reduce boilerplate code",
+      "mandatory_rules": [
+        "ALWAYS use @Data instead of manually writing getters, setters, toString, equals, hashCode",
+        "ALWAYS use @NoArgsConstructor and @AllArgsConstructor instead of manual constructors",
+        "NEVER write boilerplate code that Lombok can generate",
+        "Use @Builder for complex object construction patterns",
+        "Import Lombok annotations consistently and in proper order"
+      ],
+      "common_annotations": {
+        "@Data": "Generates getters, setters, toString, equals, hashCode, and requiredArgsConstructor",
+        "@NoArgsConstructor": "Generates a parameter-less constructor",
+        "@AllArgsConstructor": "Generates a constructor with parameters for all fields",
+        "@Builder": "Implements the builder pattern for object construction",
+        "@Getter/@Setter": "Individual getter/setter generation (use sparingly, prefer @Data)",
+        "@ToString": "Generates toString method (included in @Data)",
+        "@EqualsAndHashCode": "Generates equals and hashCode methods (included in @Data)"
+      },
+      "import_pattern": [
+        "lombok.* imports should come after javax.* and before project-specific imports",
+        "Order: lombok.AllArgsConstructor, lombok.Data, lombok.NoArgsConstructor (alphabetical)"
+      ],
+      "forbidden_patterns": [
+        "Manual getter/setter methods when @Data can be used",
+        "Manual toString() methods when @Data/@ToString can be used", 
+        "Manual equals()/hashCode() methods when @Data/@EqualsAndHashCode can be used",
+        "Manual constructors when @NoArgsConstructor/@AllArgsConstructor can be used"
+      ]
+    },
+    "architecture": {
+      "description": "CRITICAL: Maintain proper separation of concerns between layers",
+      "service_controller_separation": {
+        "controllers": {
+          "responsibilities": [
+            "Handle HTTP-specific concerns (status codes, headers, etc.)",
+            "Validate request parameters and path variables",
+            "Convert exceptions to appropriate HTTP responses",
+            "Call service methods and return ResponseEntity objects"
+          ],
+          "forbidden_logic": [
+            "Business logic processing",
+            "Data manipulation or transformation (beyond basic request/response mapping)",
+            "URL decoding or encoding (should be in service layer)",
+            "Complex validation rules (delegate to service or validation layer)",
+            "Direct database operations",
+            "Complex logging beyond basic error logging"
+          ],
+          "pattern": "Keep controllers thin - they should primarily orchestrate calls to service methods"
+        },
+        "services": {
+          "responsibilities": [
+            "Implement all business logic",
+            "Handle data validation and transformation",
+            "Manage transactions",
+            "Coordinate between multiple repositories",
+            "Handle URL encoding/decoding for business operations",
+            "Implement detailed logging for business operations",
+            "Convert between DTOs and entities"
+          ],
+          "mandatory_practices": [
+            "All business logic must reside in service methods",
+            "Services should handle input validation and sanitization",
+            "Services should provide detailed logging for business operations",
+            "Services should throw meaningful business exceptions"
+          ]
+        },
+        "examples": {
+          "good_controller": "@DeleteMapping(\"/{id}\") public ResponseEntity<Void> delete(@PathVariable UUID id) { boolean success = service.deleteById(id); return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build(); }",
+          "bad_controller": "Controller should not contain URL decoding, complex logging, or business validation logic",
+          "good_service": "Service method handles URL decoding, business validation, detailed logging, and data persistence",
+          "bad_service": "Service should not handle HTTP status codes or ResponseEntity creation"
+        }
+      }
+    },
     "controllers": {
       "apply_to": [
         "**/Controllers/**/*.java"
       ],
       "tags": ["api", "controller"],
+      "mandatory_rules": [
+        "NEVER put business logic in controllers - delegate to services",
+        "Keep controllers focused on HTTP concerns only",
+        "Validate path parameters but delegate complex validation to services",
+        "Convert service responses to appropriate HTTP status codes",
+        "Catch and convert service exceptions to HTTP responses"
+      ],
       "snippets": {
         "rest_controller": {
           "prefix": "restcontroller",
@@ -69,6 +150,22 @@
             "}"
           ],
           "description": "Create a POST endpoint"
+        },
+        "delete_mapping": {
+          "prefix": "deletemapping",
+          "body": [
+            "@DeleteMapping(\"/{${1:id}}\")",
+            "public ResponseEntity<Void> ${2:methodName}(@PathVariable ${3:UUID} ${1:id}) {",
+            "    try {",
+            "        boolean success = ${4:service}.${5:deleteMethod}(${1:id});",
+            "        return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();",
+            "    } catch (Exception e) {",
+            "        logger.error(\"Error ${6:deleting resource}: \" + ${1:id} + \": \" + e.getMessage());",
+            "        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();",
+            "    }",
+            "}"
+          ],
+          "description": "Create a DELETE endpoint following best practices"
         }
       }
     },
@@ -77,6 +174,13 @@
         "**/Services/**/*.java"
       ],
       "tags": ["service", "business-logic"],
+      "mandatory_rules": [
+        "ALL business logic must be implemented in service methods",
+        "Services must handle input validation and sanitization",
+        "Services must provide detailed logging for business operations",
+        "Services must handle data encoding/decoding (e.g., URL encoding)",
+        "Services should throw meaningful business exceptions, not HTTP exceptions"
+      ],
       "snippets": {
         "service_class": {
           "prefix": "service",
@@ -86,6 +190,9 @@
             "    ",
             "    @Autowired",
             "    private ${2:Repository} ${3:repository};",
+            "    ",
+            "    @Autowired",
+            "    private ILogger logger;",
             "    ",
             "    $0",
             "}"
@@ -129,7 +236,7 @@
             "public class ${2:${TM_FILENAME_BASE}} {",
             "    ",
             "    @Id",
-            "    @GeneratedValue(strategy = GenerationType.IDENTITY)",
+            "@GeneratedValue(strategy = GenerationType.IDENTITY)",
             "    private Long id;",
             "    ",
             "    $0",
@@ -144,21 +251,211 @@
         "**/DTOs/**/*.java"
       ],
       "tags": ["dto", "data-transfer"],
+      "mandatory_rules": [
+        "ALWAYS use Lombok annotations (@Data, @NoArgsConstructor, @AllArgsConstructor) instead of manual getters/setters",
+        "NEVER write manual constructors, getters, or setters when Lombok can generate them",
+        "ALWAYS implement Serializable interface for DTOs that might be cached",
+        "Import Lombok annotations at the top of the file in consistent order",
+        "Use proper import organization: lombok imports after java/javax imports"
+      ],
+      "required_annotations": [
+        "@Data - Generates getters, setters, toString, equals, hashCode",
+        "@NoArgsConstructor - Generates default constructor", 
+        "@AllArgsConstructor - Generates constructor with all fields"
+      ],
+      "import_order": [
+        "java.* imports",
+        "javax.* imports", 
+        "External library imports (lombok.*)",
+        "Project-specific imports (com.danielagapov.spawn.*)"
+      ],
+      "forbidden_patterns": [
+        "Manual getter/setter methods when Lombok can generate them",
+        "Manual constructors when @NoArgsConstructor/@AllArgsConstructor can be used",
+        "DTOs without Lombok annotations",
+        "Missing Serializable interface for cacheable DTOs"
+      ],
       "snippets": {
         "dto_class": {
           "prefix": "dto",
           "body": [
+            "import lombok.AllArgsConstructor;",
+            "import lombok.Data;", 
+            "import lombok.NoArgsConstructor;",
+            "",
+            "import java.io.Serializable;",
+            "",
             "@Data",
             "@NoArgsConstructor",
+            "@AllArgsConstructor",
+            "public class ${1:${TM_FILENAME_BASE}} implements Serializable {",
+            "    $0",
+            "}"
+          ],
+          "description": "Create a DTO class with proper Lombok annotations and Serializable interface"
+        },
+        "simple_dto": {
+          "prefix": "simpledto",
+          "body": [
+            "@Data",
+            "@NoArgsConstructor", 
             "@AllArgsConstructor",
             "public class ${1:${TM_FILENAME_BASE}} {",
             "    $0",
             "}"
           ],
-          "description": "Create a DTO class"
+          "description": "Create a simple DTO class with Lombok annotations (no Serializable)"
         }
       }
+    },
+    "test_organization": {
+      "description": "CRITICAL: Rules for organizing and creating test files in the Spawn App Back-End",
+      "apply_to": [
+        "**/test/**/*.java"
+      ],
+      "tags": ["testing", "organization"],
+      "avoid_creating_new_test_files": {
+        "mandatory_rules": [
+          "DO NOT create new test files unless absolutely necessary",
+          "ALWAYS check if an appropriate existing test file exists first",
+          "Add new tests to existing service test files whenever possible"
+        ]
+      },
+      "test_file_naming_convention": {
+        "service_tests": "{ServiceName}Tests.java (e.g., OAuthServiceTests.java, UserServiceTests.java)",
+        "directory": "src/test/java/com/danielagapov/spawn/ServiceTests/"
+      },
+      "when_to_add_tests_to_existing_files": [
+        "Unit tests: Add to the corresponding service test file (e.g., OAuth tests → OAuthServiceTests.java)",
+        "Integration tests: Add as inner static classes within the service test file with proper Spring annotations",
+        "Bug fix tests: Add to the service test file that covers the component being fixed",
+        "Race condition tests: Add to the service test file with appropriate concurrency testing setup"
+      ],
+      "when_new_test_files_are_acceptable": [
+        "Testing a completely new service that doesn't have an existing test file",
+        "Creating controller-specific tests that don't fit in service tests",
+        "Testing complex integration scenarios that span multiple services and need their own setup"
+      ],
+      "test_organization_within_files": [
+        "Group related tests together with descriptive comments",
+        "Use inner static classes for integration tests that require different Spring context setup",
+        "Maintain clear separation between unit tests (with mocks) and integration tests (with real dependencies)"
+      ],
+      "code_organization_rules": {
+        "service_layer": [
+          "Keep service interfaces lean and focused",
+          "Use dependency injection consistently",
+          "Handle transaction boundaries explicitly for data modification operations"
+        ],
+        "repository_layer": [
+          "Use @Modifying and @Query for custom delete operations",
+          "Always include @Transactional for modifying queries",
+          "Prefer explicit queries over relying solely on cascade operations for critical data integrity"
+        ],
+        "error_handling": [
+          "Use retry mechanisms with exponential backoff for transient errors",
+          "Log warnings for recoverable errors, errors for unrecoverable issues",
+          "Provide meaningful error messages that help with debugging"
+        ],
+        "database_operations": [
+          "Explicitly handle race conditions in concurrent scenarios",
+          "Use flush() when immediate persistence is required",
+          "Prefer explicit deletion over cascade deletion for critical relationships"
+        ]
+      },
+      "naming_conventions": {
+        "test_methods": [
+          "Use descriptive names that explain the scenario: testOAuthReRegistrationAfterIncompleteAccount()",
+          "Include the expected outcome: testExplicitMappingDeletion()",
+          "Group by functionality with consistent prefixes"
+        ],
+        "variables": [
+          "Use meaningful names that describe the data: incompleteUser, externalId, mappingRepository",
+          "Avoid abbreviations unless they're domain-specific and well-known"
+        ],
+        "comments": [
+          "Include bug report references when fixing specific issues",
+          "Explain complex business logic with inline comments",
+          "Document race condition handling and retry mechanisms"
+        ]
+      }
     }
+  },
+  "redis_cache_serialization": {
+    "description": "CRITICAL: DTOs used with @Cacheable annotations must implement Serializable for Redis caching",
+    "apply_to": [
+      "**/DTOs/**/*.java",
+      "**/Services/**/*.java"
+    ],
+    "mandatory_rules": [
+      "All DTOs returned by @Cacheable methods MUST implement Serializable interface",
+      "All DTOs that contain other DTOs as fields must ensure nested DTOs are also Serializable", 
+      "Collection return types like List<String> are fine since String is Serializable",
+      "Primitive types (int, boolean, etc.) are inherently serializable",
+      "Any DTO that might be cached in the future should implement Serializable preemptively"
+    ],
+    "when_serializable_required": [
+      "DTO is returned by a method annotated with @Cacheable",
+      "DTO is a field in another DTO that is cached",
+      "DTO is used in any Redis caching context",
+      "DTO is stored in any distributed cache"
+    ],
+    "common_cached_dtos": [
+      "UserSocialMediaDTO - cached by UserSocialMediaService",
+      "UserStatsDTO - cached by UserStatsService", 
+      "ActivityTypeDTO - cached by ActivityTypeService",
+      "FetchFriendRequestDTO - cached by FriendRequestService",
+      "CalendarActivityDTO - cached by CalendarService",
+      "RecommendedFriendUserDTO - cached by UserService",
+      "FullFriendUserDTO - cached by various services"
+    ],
+    "error_indicators": [
+      "SerializationException: Cannot serialize",
+      "Error logs mentioning Redis serialization failures",
+      "NotSerializableException in server logs",
+      "Cache-related errors when accessing endpoints"
+    ],
+    "debugging_steps": [
+      "Check if DTO implements Serializable interface",
+      "Verify all nested DTOs and fields are also Serializable",
+      "Look for @Cacheable annotations on methods returning the DTO",
+      "Check Redis configuration and serialization settings"
+    ],
+    "serializable_dto_template": {
+      "prefix": "serializable-dto",
+      "body": [
+        "package ${1:package.name};",
+        "",
+        "import lombok.AllArgsConstructor;",
+        "import lombok.Data;",
+        "import lombok.NoArgsConstructor;",
+        "",
+        "import java.io.Serializable;",
+        "import java.util.UUID;",
+        "",
+        "@Data",
+        "@AllArgsConstructor", 
+        "@NoArgsConstructor",
+        "public class ${2:${TM_FILENAME_BASE}} implements Serializable {",
+        "    ${3:// Add your fields here}",
+        "    $0",
+        "}"
+      ],
+      "description": "Create a Serializable DTO for Redis caching"
+    },
+    "validation_checklist": [
+      "✓ DTO implements Serializable interface",
+      "✓ All nested DTOs implement Serializable",
+      "✓ Import java.io.Serializable is present",
+      "✓ No fields contain non-serializable objects",
+      "✓ Test Redis caching functionality after changes"
+    ],
+    "prevention_strategy": [
+      "Always implement Serializable when creating new DTOs",
+      "Use the serializable-dto template for consistency",
+      "Add unit tests that verify caching functionality",
+      "Review @Cacheable method return types during code reviews"
+    ]
   },
   "ignore": [
     "**/target/**",
@@ -198,6 +495,340 @@
     "entity_relationships": "Use @OneToMany, @ManyToOne, @ManyToMany appropriately for entity relationships",
     "controller_api": "Consider using @Valid for request validation",
     "security": "Ensure proper authorization checks in controllers",
-    "exception_handling": "Use @ExceptionHandler or @ControllerAdvice for centralized exception handling"
+    "exception_handling": "Use @ExceptionHandler or @ControllerAdvice for centralized exception handling",
+    "spring_data_queries": "Prefer native Spring Data JPA method names (e.g., countByField, findByFieldAndOtherField) over custom @Query JPQL when possible - they are cleaner, more maintainable, and provide automatic validation",
+    "service_layer": "All business logic, data transformation, and URL encoding/decoding should be handled in service methods, not controllers"
+  },
+  "mandatory_unit_testing": {
+    "description": "CRITICAL: Unit tests must be created for all new endpoints and service methods",
+    "when_to_create_tests": [
+      "When creating new REST endpoints (controllers)",
+      "When adding new service methods",
+      "When modifying existing business logic",
+      "When adding new repository query methods"
+    ],
+    "test_requirements": {
+      "controller_tests": [
+        "Test successful request/response scenarios",
+        "Test error handling and appropriate HTTP status codes",
+        "Test input validation",
+        "Mock service dependencies",
+        "Verify proper service method calls"
+      ],
+      "service_tests": [
+        "Test business logic with various input scenarios",
+        "Test edge cases and error conditions",
+        "Test data validation and transformation",
+        "Mock repository dependencies",
+        "Verify proper exception handling"
+      ],
+      "repository_tests": [
+        "Test custom query methods",
+        "Test data integrity constraints",
+        "Use @DataJpaTest for focused testing"
+      ]
+    },
+    "test_patterns": {
+      "controller_test_template": "Use @WebMvcTest and MockMvc for controller testing",
+      "service_test_template": "Use @ExtendWith(MockitoExtension.class) and @Mock for service testing",
+      "repository_test_template": "Use @DataJpaTest for repository testing"
+    },
+    "mandatory_workflow": [
+      "1. Create the production code (controller/service/repository)",
+      "2. IMMEDIATELY create corresponding unit tests",
+      "3. Run tests to ensure they pass",
+      "4. Only consider the feature complete when tests are written and passing"
+    ],
+    "test_file_naming": {
+      "controller_tests": "ControllerNameTest.java (e.g., UserInterestControllerTest.java)",
+      "service_tests": "ServiceNameTest.java (e.g., UserInterestServiceTest.java)",
+      "repository_tests": "RepositoryNameTest.java (e.g., UserInterestRepositoryTest.java)"
+    }
+  },
+  "test_maintenance": {
+    "description": "CRITICAL: Always update test files when making model/DTO changes",
+    "rules": [
+      "Immediately identify affected test files - Search for all test files that reference the changed components",
+      "Update test constructors - Remove/add parameters to match new constructor signatures",
+      "Update test assertions - Modify test assertions to match new method signatures and available properties",
+      "Remove deprecated references - Delete all references to removed fields, methods, or enum values",
+      "Verify compilation - Ensure all test files compile without errors before considering the task complete"
+    ],
+    "examples": [
+      "When removing enum values: Remove all EnumName.VALUE references from test constructors and assertions",
+      "When removing DTO fields: Update test constructors to remove the parameter and update assertions to not access the removed getter",
+      "When changing constructor signatures: Update all test instantiations to match new parameter order/count",
+      "When removing methods: Remove all test calls to the deleted methods"
+    ],
+    "test_file_patterns": [
+      "*Tests.java",
+      "*Test.java",
+      "src/test/**",
+      "Mock object configurations that reference changed interfaces"
+    ],
+    "critical_note": "Failure to update tests is considered incomplete work. All compilation errors in test files must be resolved as part of the original change."
+  },
+  "automated_testing": {
+    "description": "MANDATORY: Always run tests after code changes and fix any errors",
+    "workflow": {
+      "after_code_changes": [
+        "Run './mvnw test' to execute all tests",
+        "If tests fail, analyze the error messages carefully",
+        "Fix any compilation errors in test files first",
+        "Fix any failing test logic by updating test data or assertions",
+        "Re-run tests until all pass (206 tests should pass with 0 failures, 0 errors)",
+        "Only consider the task complete when all tests pass"
+      ],
+      "test_commands": [
+        "./mvnw test - Run all tests",
+        "./mvnw test -Dtest=ClassName#methodName - Run specific test",
+        "./mvnw test -Dtest=ClassName - Run all tests in a class"
+      ]
+    },
+    "mandatory_rules": [
+      "NEVER skip running tests after making code changes",
+      "ALWAYS fix test failures before considering work complete",
+      "Pay special attention to validation logic and constructor signature changes",
+      "Update test data (orderNum, enum values, etc.) to match business logic changes",
+      "If orderNum conflicts occur, ensure test values don't conflict with existing data"
+    ],
+    "common_test_issues": [
+      "OrderNum conflicts - Ensure test orderNum values don't conflict with existing activity types",
+      "Constructor signature changes - Update all test instantiations to match new parameters",
+      "Enum value changes - Remove references to deleted enum values from tests",
+      "DTO field changes - Update test constructors and assertions to match new structure"
+    ],
+    "success_criteria": "All tests must pass with output showing 'Tests run: 206, Failures: 0, Errors: 0, Skipped: 0'"
+  },
+  "compilation_verification_order": {
+    "description": "CRITICAL: Always verify both application AND test compilation in the correct order",
+    "mandatory_workflow": [
+      "1. FIRST: Compile the application code with './mvnw clean compile'",
+      "2. SECOND: Compile the test code with './mvnw test-compile'",
+      "3. Fix any compilation errors in order (application first, then tests)",
+      "4. NEVER assume tests compile just because application compiles",
+      "5. ALWAYS verify both before considering compilation complete"
+    ],
+    "why_this_matters": [
+      "Application compilation only checks src/main/java/**",
+      "Test compilation checks src/test/java/** which often has different imports",
+      "Test files frequently get missed during global import updates",
+      "Compilation errors in tests are just as critical as in application code"
+    ],
+    "compilation_commands": {
+      "application_only": "./mvnw clean compile",
+      "tests_only": "./mvnw test-compile",
+      "both_plus_run_tests": "./mvnw clean test"
+    },
+    "common_test_compilation_issues": [
+      "Imports not updated in test files (especially after package restructuring)",
+      "Fully qualified class names in test code instead of imports",
+      "Mock objects using old package paths",
+      "Test utilities and helpers with outdated imports"
+    ],
+    "enforcement": [
+      "ALWAYS run both './mvnw compile' AND './mvnw test-compile' after structural changes",
+      "NEVER consider compilation 'fixed' until both application and tests compile",
+      "Pay extra attention to test files when refactoring package structures",
+      "Verify test compilation before running actual tests"
+    ],
+    "success_criteria": [
+      "✓ Application compilation: BUILD SUCCESS with 0 errors",
+      "✓ Test compilation: BUILD SUCCESS with 0 errors",
+      "✓ No 'cannot find symbol' errors in any file",
+      "✓ All imports resolved correctly in both main and test code"
+    ]
+  },
+  "mandatory_test_execution_after_unit_test_changes": {
+    "description": "CRITICAL: Always run tests after adding, modifying, or adjusting unit tests and fix all failures",
+    "trigger_conditions": [
+      "When creating new *Test.java or *Tests.java files",
+      "When modifying existing test files in src/test/**",
+      "When adding new test methods",
+      "When changing test mocking or assertions",
+      "When updating test data or setup methods"
+    ],
+    "mandatory_workflow": [
+      "1. IMMEDIATELY after saving any test file changes, run './mvnw test'",
+      "2. Analyze ALL test failures and compilation errors",
+      "3. Fix issues systematically:",
+      "   - Fix compilation errors first (imports, syntax, missing dependencies)",
+      "   - Fix mocking issues (stubbing mismatches, argument matchers)",
+      "   - Fix assertion failures (expected vs actual values)",
+      "   - Fix test data setup issues",
+      "4. Re-run './mvnw test' after each fix",
+      "5. Continue until ALL tests pass (0 failures, 0 errors)",
+      "6. ONLY consider the work complete when all tests pass"
+    ],
+    "debugging_strategy": [
+      "Read error messages carefully - they often indicate the exact issue",
+      "For stubbing mismatches: Use lenient() or fix argument matchers",
+      "For NPE errors: Ensure all required mocks are properly set up",
+      "For assertion failures: Verify expected vs actual values match business logic",
+      "For compilation errors: Check imports and method signatures"
+    ],
+    "forbidden_actions": [
+      "NEVER ignore test failures",
+      "NEVER commit code with failing tests",
+      "NEVER skip running tests after test modifications",
+      "NEVER remove tests to make the build pass (fix them instead)",
+      "NEVER disable or comment out failing tests without fixing them"
+    ],
+    "success_criteria": [
+      "All tests must pass: Tests run: X, Failures: 0, Errors: 0, Skipped: 0",
+      "No compilation errors in any test files",
+      "No warning about unnecessary stubbing (unless using lenient mode intentionally)",
+      "Test execution completes without hanging or timing out"
+    ],
+    "automation_principle": "This process must be automatic and non-negotiable. Test failures are blockers that must be resolved before any other work continues."
+  },
+  "file_organization": {
+    "description": "CRITICAL: Never create documentation, scripts, logs, or other non-code files in the main project directory",
+    "mandatory_rules": [
+      "NEVER create .md, .log, .txt, .sh files in the project root directory",
+      "NEVER create temporary scripts, helper files, or documentation in the main directory",
+      "ALWAYS place files in their designated organized directories",
+      "DELETE any existing files in the root that belong in organized directories"
+    ],
+    "file_placement_rules": {
+      "documentation": {
+        "directory": "docs/",
+        "file_types": ["*.md", "*.txt"],
+        "categories": {
+          "fixes": "docs/fixes/ - Bug fix summaries, issue resolutions, hotfix documentation",
+          "features": "docs/features/ - Feature implementation plans, specifications",
+          "optimization": "docs/optimization/ - Performance improvements, RAM optimization docs",
+          "refactoring": "docs/refactoring/ - Refactoring plans, architecture decisions",
+          "database": "docs/database/ - Database migrations, schema changes",
+          "diagrams": "docs/diagrams/ - Architecture diagrams, entity relationships"
+        },
+        "examples": [
+          "Fix summary → docs/fixes/FIX_NAME_SUMMARY.md",
+          "Feature plan → docs/features/FEATURE_NAME_PLAN.md",
+          "Optimization → docs/optimization/OPTIMIZATION_NAME.md",
+          "Refactoring → docs/refactoring/REFACTOR_NAME.md"
+        ]
+      },
+      "scripts": {
+        "directory": "scripts/",
+        "file_types": ["*.sh", "*.sql", "*.py"],
+        "categories": {
+          "cache": "scripts/cache/ - Cache management scripts (clear-cache.sh, etc.)",
+          "database": "scripts/database/ - Database scripts, migrations, cleanups",
+          "database_cleanup": "scripts/database/cleanup-scripts/ - Data cleanup SQL scripts",
+          "database_migrations": "scripts/database/database-migrations/ - Schema migration scripts",
+          "database_constraint_fixes": "scripts/database/constraint-fixes/ - Constraint fix scripts",
+          "database_validation": "scripts/database/validation-tools/ - DB validation tools",
+          "deployment": "scripts/deployment/ - Deployment and startup scripts",
+          "monitoring": "scripts/monitoring/ - RAM monitoring, log analysis",
+          "legacy_fixes": "scripts/legacy-fixes/ - Old migration/fix scripts (rarely used)"
+        },
+        "examples": [
+          "Cache script → scripts/cache/clear-specific-cache.sh",
+          "Data cleanup → scripts/database/cleanup-scripts/cleanup-orphaned-data.sql",
+          "Migration → scripts/database/database-migrations/add-new-column.sql",
+          "Deployment → scripts/deployment/deploy-to-production.sh",
+          "Monitoring → scripts/monitoring/analyze-performance-logs.sh"
+        ]
+      },
+      "logs": {
+        "directory": "logs/ (not tracked in git)",
+        "file_types": ["*.log", "*-output.txt"],
+        "note": "Log files should never be committed. Add to .gitignore if needed."
+      },
+      "temporary_files": {
+        "note": "NEVER create temporary files in the project root",
+        "action": "Use system temp directories or create in target/ directory (which is gitignored)"
+      }
+    },
+    "forbidden_patterns": [
+      "Creating *.md files in project root (except README.md, LICENSE.md)",
+      "Creating *.sh scripts in project root",
+      "Creating *.sql files in project root",
+      "Creating test output logs in project root",
+      "Creating any -output.txt, -logs.txt files in project root",
+      "Creating SUMMARY.md, FIXES.md, PLAN.md, etc. in project root"
+    ],
+    "automatic_cleanup": {
+      "when_found": "If any misplaced files are found in the root directory",
+      "action": "Immediately move them to the appropriate organized directory",
+      "examples": [
+        "TEST_FIXES_SUMMARY.md → docs/fixes/TEST_FIXES_SUMMARY.md",
+        "DEPENDENCY_FIXES_SUMMARY.md → docs/fixes/DEPENDENCY_FIXES_SUMMARY.md",
+        "build-with-java17.sh → scripts/deployment/build-with-java17.sh",
+        "fix-test-imports.sh → scripts/legacy-fixes/fix-test-imports.sh",
+        "clean-orphaned-data.sql → scripts/database/cleanup-scripts/clean-orphaned-data.sql"
+      ]
+    },
+    "git_status_maintenance": {
+      "rule": "Keep project root clean in git status",
+      "acceptable_root_files": [
+        "README.md",
+        "LICENSE.md",
+        "pom.xml",
+        "mvnw",
+        "mvnw.cmd",
+        ".gitignore",
+        ".gitattributes"
+      ],
+      "unacceptable_patterns": [
+        "Untracked *.md files (except README.md, LICENSE.md)",
+        "Untracked *.sh files",
+        "Untracked *.sql files",
+        "Untracked log or output files"
+      ]
+    },
+    "workflow": [
+      "1. Before creating any documentation file, determine its category (fix, feature, optimization, etc.)",
+      "2. Place it in the appropriate docs/ subdirectory",
+      "3. Before creating any script, determine its purpose (cache, database, deployment, etc.)",
+      "4. Place it in the appropriate scripts/ subdirectory",
+      "5. Never create temporary files in the project root - use target/ or system temp",
+      "6. Check git status regularly to ensure root directory stays clean"
+    ],
+    "enforcement": "This rule is NON-NEGOTIABLE. Any file created in the wrong location must be immediately moved to its correct organized directory."
+  },
+  "java_version_management": {
+    "description": "CRITICAL: This project requires Java 17, but the system has Java 25 as default which is INCOMPATIBLE",
+    "project_java_version": "17",
+    "java_17_path": "/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home",
+    "mandatory_rules": [
+      "ALWAYS use Java 17 for ANY Maven command - the default Java 25 will NOT work",
+      "NEVER run ./mvnw commands without prefixing with JAVA_HOME",
+      "The project uses Lombok 1.18.36 which is NOT compatible with Java 21+",
+      "If you see Lombok errors, it's almost certainly a Java version issue"
+    ],
+    "simplest_command_pattern": {
+      "description": "Use inline JAVA_HOME assignment for simplicity",
+      "compile": "JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home ./mvnw clean compile",
+      "test_compile": "JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home ./mvnw test-compile",
+      "test": "JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home ./mvnw clean test",
+      "build_all": "JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home ./mvnw clean compile test-compile"
+    },
+    "error_indicators": {
+      "lombok_typetag_error": "java.lang.NoSuchFieldException: com.sun.tools.javac.code.TypeTag :: UNKNOWN",
+      "initialization_error": "Fatal error compiling: java.lang.ExceptionInInitializerError",
+      "cause": "These errors mean you ran Maven with Java 25 instead of Java 17"
+    },
+    "quick_fix_workflow": [
+      "1. If you see Lombok/TypeTag errors, DO NOT try to fix Lombok",
+      "2. Simply re-run the command with: JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home ./mvnw <command>",
+      "3. The build should succeed immediately"
+    ],
+    "available_java_versions_on_system": {
+      "java_25": "/Users/daggerpov/Library/Java/JavaVirtualMachines/openjdk-25/Contents/Home (DEFAULT - DO NOT USE)",
+      "java_17": "/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home (USE THIS)"
+    },
+    "why_java_17": [
+      "pom.xml specifies java.version=17",
+      "Lombok 1.18.36 does not support Java 21+",
+      "Spring Boot 3.3.5 is optimized for Java 17"
+    ],
+    "forbidden_actions": [
+      "NEVER run ./mvnw without JAVA_HOME prefix",
+      "NEVER try to upgrade Lombok to fix Java 25 compatibility",
+      "NEVER assume the default java -version is correct"
+    ],
+    "enforcement": "MANDATORY: Prefix ALL Maven commands with JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home"
   }
 } 

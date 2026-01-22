@@ -1,0 +1,196 @@
+# Spawn App Back-End Documentation
+
+This directory contains comprehensive documentation for the Spawn App back-end codebase, organized by category.
+
+## 📁 Directory Structure
+
+### 🚀 [optimization/](optimization/)
+Performance and memory optimization documentation:
+- **[RAM_OPTIMIZATION_STRATEGIES.md](optimization/RAM_OPTIMIZATION_STRATEGIES.md)** - Comprehensive RAM optimization guide with JVM tuning, connection pooling, and caching strategies
+- **[RAM_OPTIMIZATION_README.md](optimization/RAM_OPTIMIZATION_README.md)** - Overview of RAM optimization implementation
+- **[RAM_OPTIMIZATION_DELIVERABLES.md](optimization/RAM_OPTIMIZATION_DELIVERABLES.md)** - Deliverables and status tracking
+- **[RAM_OPTIMIZATION_IMPACT_SUMMARY.md](optimization/RAM_OPTIMIZATION_IMPACT_SUMMARY.md)** - Measured impact of optimizations
+- **[QUICK_START_RAM_OPTIMIZATION.md](optimization/QUICK_START_RAM_OPTIMIZATION.md)** - Quick start guide for RAM optimizations
+- **[PERFORMANCE_OPTIMIZATION_SUMMARY.md](optimization/PERFORMANCE_OPTIMIZATION_SUMMARY.md)** - Overall performance improvements
+- **[MEMORY_LEAK_AND_PERFORMANCE_FIXES.md](optimization/MEMORY_LEAK_AND_PERFORMANCE_FIXES.md)** - Memory leak fixes and performance improvements (marking classes as final)
+
+### 🔐 [security/](security/)
+Security and authentication documentation:
+- **[AUTHENTICATION_FLOWS.md](security/AUTHENTICATION_FLOWS.md)** - Authentication flow documentation and OAuth integration
+- **[SECURITY_AUDIT_SUMMARY.md](security/SECURITY_AUDIT_SUMMARY.md)** - Security audit findings and recommendations
+
+### 🌐 [api/](api/)
+API design and REST conventions:
+- **[API_DISCREPANCIES.md](api/API_DISCREPANCIES.md)** - API discrepancies and inconsistencies
+- **[CONTROLLER_REST_CONVENTION_ISSUES.md](api/CONTROLLER_REST_CONVENTION_ISSUES.md)** - REST convention issues and improvements
+
+### ✅ [validation/](validation/)
+Input validation and data integrity:
+- **[VALIDATION_IMPLEMENTATION.md](validation/VALIDATION_IMPLEMENTATION.md)** - Validation implementation details
+- **[VALIDATION_SUMMARY.md](validation/VALIDATION_SUMMARY.md)** - Validation strategy summary
+
+### ✨ [features/](features/)
+Feature implementation documentation:
+- **[EMAIL_NOTIFICATION_IMPLEMENTATION.md](features/EMAIL_NOTIFICATION_IMPLEMENTATION.md)** - Email notification system implementation
+- **[MOBILE_CACHE_IMPLEMENTATION.md](features/MOBILE_CACHE_IMPLEMENTATION.md)** - Mobile cache validation system
+- **[FUZZY_SEARCH_IMPLEMENTATION.md](features/FUZZY_SEARCH_IMPLEMENTATION.md)** - Fuzzy search with Jaro-Winkler algorithm
+- **[FRIENDSHIP_REFACTOR_PLAN.md](features/FRIENDSHIP_REFACTOR_PLAN.md)** - Friendship system refactoring plan
+
+### 🧪 [testing/](testing/)
+Testing documentation and coverage tracking:
+- **[README.md](testing/README.md)** - Testing overview and guidelines
+- **[CODE_COVERAGE_ANALYSIS.md](testing/CODE_COVERAGE_ANALYSIS.md)** - Detailed code coverage analysis and testing plan
+- **[TEST_COVERAGE_TRACKER.md](testing/TEST_COVERAGE_TRACKER.md)** - Test coverage progress tracker
+- **[TESTING_INITIATIVE_SUMMARY.md](testing/TESTING_INITIATIVE_SUMMARY.md)** - Testing initiative summary
+- **[TESTING_QUICK_REFERENCE.md](testing/TESTING_QUICK_REFERENCE.md)** - Quick reference for writing tests
+- **[TESTING_QUICK_START_GUIDE.md](testing/TESTING_QUICK_START_GUIDE.md)** - Quick start guide for testing
+- **[TESTS_STATUS.md](testing/TESTS_STATUS.md)** - Current test status and results
+
+### 🔧 [fixes/](fixes/)
+Bug fixes and issue resolutions:
+- **[AUTH_FLOW_FIXES_SUMMARY.md](fixes/AUTH_FLOW_FIXES_SUMMARY.md)** - Authentication flow fixes
+- **[OAUTH_CONCURRENCY_FIX_SUMMARY.md](fixes/OAUTH_CONCURRENCY_FIX_SUMMARY.md)** - OAuth concurrency issue resolution
+- **[PHONE_NUMBER_MATCHING_FIX.md](fixes/PHONE_NUMBER_MATCHING_FIX.md)** - Phone number matching improvements
+- **[REAPPLIED_FIXES_SUMMARY.md](fixes/REAPPLIED_FIXES_SUMMARY.md)** - Summary of re-applied memory leak and performance fixes
+- **[DEPENDENCY_FIXES_SUMMARY.md](fixes/DEPENDENCY_FIXES_SUMMARY.md)** - Dependency resolution and fixes
+- **[TEST_FIXES_SUMMARY.md](fixes/TEST_FIXES_SUMMARY.md)** - Test suite fixes and improvements
+
+### 🔄 [refactoring/](refactoring/)
+Code refactoring and architectural improvements:
+
+**✅ Current Status: Spring Modulith Phase 1-2 Complete, Phase 3 In Progress**
+
+- **[CURRENT_STATUS.md](refactoring/CURRENT_STATUS.md)** - 📊 **START HERE** - Current progress dashboard with next steps and phase breakdown
+- **[PHASE_3_PLAN.md](refactoring/PHASE_3_PLAN.md)** - 🔄 **CURRENT** - Phase 3 detailed tasks for shared data resolution
+- **[PHASE_1_COMPLETE.md](refactoring/PHASE_1_COMPLETE.md)** - ✅ Phase 1 completion summary - All 266 files moved to modular structure (Dec 8, 2025)
+- **[PHASE_2_COMPLETE.md](refactoring/PHASE_2_COMPLETE.md)** - ✅ Phase 2 completion summary - All circular dependencies fixed (Dec 23, 2025)
+- **[SPRING_MODULITH_REFACTORING_PLAN.md](refactoring/SPRING_MODULITH_REFACTORING_PLAN.md)** - 📋 Full refactoring plan - Phases 1-6 detailed instructions
+- **[REFACTORING_ORDER_DECISION.md](refactoring/REFACTORING_ORDER_DECISION.md)** - Decision rationale: Modulith first, then Mediator, then Microservices
+- **[WHY_SPRING_MODULITH_FIRST.md](refactoring/WHY_SPRING_MODULITH_FIRST.md)** - **RECOMMENDED READ** - Why Spring Modulith is an effective first step
+- **[DRY_REFACTORING_ANALYSIS.md](refactoring/DRY_REFACTORING_ANALYSIS.md)** - DRY principle analysis
+- **[BUGS_FIXED_SUMMARY.md](refactoring/BUGS_FIXED_SUMMARY.md)** - Summary of bugs fixed during refactoring
+
+### 🗄️ [database/](database/)
+Database-related documentation:
+- **[DATABASE_INDEXES.md](database/DATABASE_INDEXES.md)** - Database indexing strategy and implementation
+- **[migrations/](database/migrations/)** - Database migration documentation
+  - `README-name-migration.md` - Name field migration guide
+
+> **Note:** Database scripts and SQL files are located in `../scripts/database/`
+
+### 🎨 [diagrams/](diagrams/)
+Architecture diagrams and visual documentation:
+- **[entity-relationship-diagram.png](diagrams/entity-relationship-diagram.png)** - ER diagram visualization
+- **[entity-relationship-diagram.md](diagrams/entity-relationship-diagram.md)** - ER diagram documentation
+- **[entity-relationship-diagram.dbml](diagrams/entity-relationship-diagram.dbml)** - DBML source file
+- **[entity-relationship-diagram-updated.dbml](diagrams/entity-relationship-diagram-updated.dbml)** - Updated DBML source
+- **[diagrams-architecture-dependency-injection-dtos.png](diagrams/diagrams-architecture-dependency-injection-dtos.png)** - Architecture diagram
+- **[user-dto-relationships.png](diagrams/user-dto-relationships.png)** - User DTO relationships
+- **[diagrams.excalidraw](diagrams/diagrams.excalidraw)** - Editable Excalidraw diagram source
+- **[ENTITIES_SUMMARY.md](diagrams/ENTITIES_SUMMARY.md)** - Summary of entity relationships
+
+### 🏗️ [microservices/](microservices/)
+Microservices architecture planning and implementation:
+- **[README.md](microservices/README.md)** - **START HERE** - Quick navigation guide with decision flow diagram and current recommendation summary
+- **[MICROSERVICES_DECISION_GUIDE.md](microservices/MICROSERVICES_DECISION_GUIDE.md)** - Complete benefits/drawbacks analysis, cost implications, and decision framework with modular monolith alternative
+- **[MICROSERVICES_ARCHITECTURE.md](microservices/MICROSERVICES_ARCHITECTURE.md)** - Comprehensive microservices decomposition strategy with service boundaries and data architecture
+- **[MICROSERVICES_IMPLEMENTATION_PLAN.md](microservices/MICROSERVICES_IMPLEMENTATION_PLAN.md)** - Step-by-step implementation plan for Railway platform with detailed tasks and timelines
+- **[VISUAL_ARCHITECTURE.md](microservices/VISUAL_ARCHITECTURE.md)** - Visual diagrams and ASCII art for quick reference
+
+### 📋 Root Level
+- **README.md** (this file) - Documentation index and navigation guide
+
+---
+
+## 🎯 Quick Navigation
+
+### For Performance Optimization
+Start with [optimization/QUICK_START_RAM_OPTIMIZATION.md](optimization/QUICK_START_RAM_OPTIMIZATION.md)
+
+### For New Features
+Browse [features/](features/) directory
+
+### For Bug Fixes
+Check [fixes/](fixes/) directory
+
+### For Database Issues
+Review [database/](database/) directory
+
+### For Microservices Decision
+**Current Progress: Spring Modulith Phase 1-2 Complete ✅**
+
+1. ✅ **DONE**: Phase 1 Package Restructuring - See [refactoring/PHASE_1_COMPLETE.md](refactoring/PHASE_1_COMPLETE.md)
+2. ✅ **DONE**: Phase 2 Fix Circular Dependencies - See [refactoring/PHASE_2_COMPLETE.md](refactoring/PHASE_2_COMPLETE.md)
+3. 🔄 **CURRENT**: Phase 3 Shared Data Resolution - Follow [refactoring/PHASE_3_PLAN.md](refactoring/PHASE_3_PLAN.md)
+4. **NEXT**: Complete Phases 4-6 of Spring Modulith refactoring (3-4 more weeks)
+5. **FUTURE**: Proceed to [microservices/MICROSERVICES_IMPLEMENTATION_PLAN.md](microservices/MICROSERVICES_IMPLEMENTATION_PLAN.md) after Modulith validation
+
+**Background Reading:**
+- [refactoring/WHY_SPRING_MODULITH_FIRST.md](refactoring/WHY_SPRING_MODULITH_FIRST.md) - Why this approach
+- [refactoring/REFACTORING_ORDER_DECISION.md](refactoring/REFACTORING_ORDER_DECISION.md) - Decision rationale
+
+### For Code Refactoring
+**✅ Phase 1-2 Complete!** Continue with Phase 3 in [refactoring/PHASE_3_PLAN.md](refactoring/PHASE_3_PLAN.md)
+
+### For Testing and Coverage
+Check [testing/](testing/) directory for comprehensive testing documentation
+
+---
+
+## 📝 Documentation Standards
+
+When adding new documentation:
+1. **optimization/** - RAM, CPU, network, database performance improvements
+2. **security/** - Security audits, authentication, and authorization documentation
+3. **api/** - API design, REST conventions, and API-related issues
+4. **validation/** - Input validation, data integrity, and validation strategies
+5. **features/** - New feature implementations and architecture
+6. **testing/** - Test documentation, coverage tracking, and testing strategies
+7. **fixes/** - Bug fixes, hotfixes, and issue resolutions
+8. **refactoring/** - Code refactoring, architectural improvements, and design patterns
+9. **database/** - Schema changes, migrations, and database-specific issues
+10. **diagrams/** - Architecture diagrams, ERDs, and visual documentation
+11. **mediator/** - Mediator pattern documentation
+12. **microservices/** - Microservices architecture, decomposition, and implementation plans
+13. **Root level** - Only high-level overview and status documents
+
+---
+
+## 🔄 Recent Updates
+
+- **December 23, 2025**: ✅ **Spring Modulith Phase 2 COMPLETE** - All circular dependencies fixed with event-driven communication, 0 `@Lazy` annotations, Phase 3 started
+- **December 23, 2025**: 📋 **Phase 3 Plan Created** - Detailed plan for shared data resolution, public API creation
+- **December 23, 2025**: 📁 **Documentation Reorganization** - Created new topic folders (api/, security/, validation/), moved all docs to appropriate folders
+- **December 8, 2025**: ✅ **Spring Modulith Phase 1 COMPLETE** - All 266 files moved to modular structure, compilation successful
+- **December 8, 2025**: Started Spring Modulith refactoring - Phase 1 package restructuring
+- **December 8, 2025**: Added comprehensive Spring Modulith documentation (refactoring plan, rationale, decision guide)
+- **December 10, 2025**: Major folder structure reorganization - moved all bash scripts to organized subdirectories in `scripts/`, moved diagrams to `docs/diagrams/`, consolidated fix summaries
+- **November 9, 2025**: Added comprehensive microservices decision guide with cost analysis and modular monolith alternative
+- **November 9, 2025**: Added microservices architecture and implementation documentation
+- **October 31, 2025**: Reorganized docs folder into logical categories
+- **October 31, 2025**: Added memory leak fixes and performance improvements
+- **October 2025**: Implemented RAM optimization strategies
+- **October 2025**: Added mobile cache validation system
+
+---
+
+## 📚 Related Documentation
+
+- [Main README](../README.md) - Project overview and setup
+- [diagrams/](diagrams/) - Architecture and entity relationship diagrams
+- [scripts/](../scripts/) - Utility scripts for deployment and maintenance
+
+---
+
+## 🤝 Contributing
+
+When contributing documentation:
+1. Place files in the appropriate category folder
+2. Use descriptive filenames in UPPER_SNAKE_CASE for consistency
+3. Include a summary at the top of each document
+4. Update this README.md to link to new documents
+5. Use Markdown formatting for readability
+
+---
+
+**Last Updated:** December 23, 2025

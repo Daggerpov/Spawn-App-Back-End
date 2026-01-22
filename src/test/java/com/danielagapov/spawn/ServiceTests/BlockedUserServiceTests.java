@@ -1,15 +1,19 @@
 package com.danielagapov.spawn.ServiceTests;
 
-import com.danielagapov.spawn.DTOs.BlockedUser.BlockedUserDTO;
-import com.danielagapov.spawn.Exceptions.Base.BaseSaveException;
-import com.danielagapov.spawn.Exceptions.Logger.ILogger;
-import com.danielagapov.spawn.Models.User.BlockedUser;
-import com.danielagapov.spawn.Models.User.User;
-import com.danielagapov.spawn.Repositories.User.IBlockedUserRepository;
-import com.danielagapov.spawn.Services.BlockedUser.BlockedUserService;
-import com.danielagapov.spawn.Services.FriendRequest.IFriendRequestService;
-import com.danielagapov.spawn.Services.FriendTag.IFriendTagService;
-import com.danielagapov.spawn.Services.User.IUserService;
+import com.danielagapov.spawn.user.api.dto.BlockedUserDTO;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.social.api.dto.FetchFriendRequestDTO;
+import com.danielagapov.spawn.user.api.dto.SearchResultUserDTO;
+import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
+import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.user.internal.domain.BlockedUser;
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.internal.repositories.IBlockedUserRepository;
+import com.danielagapov.spawn.social.internal.services.BlockedUserService;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
+import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
+import com.danielagapov.spawn.social.internal.services.IUserQueryService;
+import com.danielagapov.spawn.shared.util.CacheEvictionHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -23,13 +27,11 @@ import static org.mockito.Mockito.*;
 public class BlockedUserServiceTests {
 
     @Mock private IBlockedUserRepository blockedRepo;
-    @Mock private IUserService userService;
+    @Mock private IUserQueryService userQueryService;
     @Mock private IFriendRequestService friendRequestService;
-
+    @Mock private IFriendshipRepository friendshipRepository;
     @Mock private ILogger logger;
-
-    @Mock
-    private IFriendTagService friendTagService;
+    @Mock private CacheEvictionHelper cacheEvictionHelper;
 
     @InjectMocks private BlockedUserService blockedUserService;
 
@@ -50,7 +52,7 @@ public class BlockedUserServiceTests {
     @Test
     void blockUser_ShouldDoNothing_WhenBlockerBlocksThemself() {
         blockedUserService.blockUser(blockerId, blockerId, "Self-block");
-        verifyNoInteractions(blockedRepo, userService, friendRequestService);
+        verifyNoInteractions(blockedRepo, userQueryService);
     }
 
     @Test
@@ -66,9 +68,9 @@ public class BlockedUserServiceTests {
     @Test
     void blockUser_ShouldSaveBlockAndCleanup() {
         when(blockedRepo.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId)).thenReturn(false);
-        when(userService.getUserEntityById(blockerId)).thenReturn(blocker);
-        when(userService.getUserEntityById(blockedId)).thenReturn(blocked);
-        when(friendTagService.getFriendTagsByOwnerId(any())).thenReturn(List.of()); // ✅ add this stub
+        when(userQueryService.getUserEntityById(blockerId)).thenReturn(blocker);
+        when(userQueryService.getUserEntityById(blockedId)).thenReturn(blocked);
+
 
         blockedUserService.blockUser(blockerId, blockedId, "Testing");
 
@@ -78,9 +80,9 @@ public class BlockedUserServiceTests {
     @Test
     void blockUser_ShouldThrowSaveException_OnDBError() {
         when(blockedRepo.existsByBlocker_IdAndBlocked_Id(blockerId, blockedId)).thenReturn(false);
-        when(userService.getUserEntityById(blockerId)).thenReturn(blocker);
-        when(userService.getUserEntityById(blockedId)).thenReturn(blocked);
-        when(friendTagService.getFriendTagsByOwnerId(any())).thenReturn(List.of());
+        when(userQueryService.getUserEntityById(blockerId)).thenReturn(blocker);
+        when(userQueryService.getUserEntityById(blockedId)).thenReturn(blocked);
+
         doThrow(new DataAccessException("DB error") {}).when(blockedRepo).save(any());
 
         assertThrows(BaseSaveException.class, () ->
@@ -134,5 +136,144 @@ public class BlockedUserServiceTests {
 
         List<UUID> ids = blockedUserService.getBlockedUserIds(blockerId);
         assertEquals(List.of(u1.getId(), u2.getId()), ids);
+    }
+
+    // Tests for filterOutBlockedUsers method
+
+    @Test
+    void filterOutBlockedUsers_ShouldReturnEmptyList_WhenInputIsEmpty() {
+        List<BaseUserDTO> result = blockedUserService.filterOutBlockedUsers(List.of(), blockerId);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void filterOutBlockedUsers_ShouldReturnEmptyList_WhenInputIsNull() {
+        List<BaseUserDTO> result = blockedUserService.filterOutBlockedUsers(null, blockerId);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void filterOutBlockedUsers_ShouldReturnOriginalList_WhenRequestingUserIdIsNull() {
+        BaseUserDTO user1 = new BaseUserDTO(UUID.randomUUID(), "user1", "pic1", "User One", "bio1", "user1@email.com");
+        BaseUserDTO user2 = new BaseUserDTO(UUID.randomUUID(), "user2", "pic2", "User Two", "bio2", "user2@email.com");
+        List<BaseUserDTO> users = List.of(user1, user2);
+
+        List<BaseUserDTO> result = blockedUserService.filterOutBlockedUsers(users, null);
+        assertEquals(users, result);
+    }
+
+    @Test
+    void filterOutBlockedUsers_ShouldFilterOutBlockedUsers_WhenUserIsBlocked() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID user3Id = UUID.randomUUID();
+
+        BaseUserDTO user1 = new BaseUserDTO(user1Id, "user1", "pic1", "User One", "bio1", "user1@email.com");
+        BaseUserDTO user2 = new BaseUserDTO(user2Id, "user2", "pic2", "User Two", "bio2", "user2@email.com");
+        BaseUserDTO user3 = new BaseUserDTO(user3Id, "user3", "pic3", "User Three", "bio3", "user3@email.com");
+        List<BaseUserDTO> users = List.of(user1, user2, user3);
+
+        // Mock that requesting user has blocked user2
+        when(blockedRepo.findAllByBlocker_Id(blockerId)).thenReturn(List.of(
+                new BlockedUser(UUID.randomUUID(), blocker, new User(user2Id, "user2", "", "", "", ""), "reason")
+        ));
+
+        // Mock that no users have blocked the requesting user
+        when(blockedRepo.findAllByBlocked_Id(blockerId)).thenReturn(List.of());
+
+        List<BaseUserDTO> result = blockedUserService.filterOutBlockedUsers(users, blockerId);
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(u -> u.getId().equals(user1Id)));
+        assertTrue(result.stream().anyMatch(u -> u.getId().equals(user3Id)));
+        assertFalse(result.stream().anyMatch(u -> u.getId().equals(user2Id)));
+    }
+
+    @Test
+    void filterOutBlockedUsers_ShouldFilterOutUsersWhoBlockedRequestingUser() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+        UUID user3Id = UUID.randomUUID();
+
+        BaseUserDTO user1 = new BaseUserDTO(user1Id, "user1", "pic1", "User One", "bio1", "user1@email.com");
+        BaseUserDTO user2 = new BaseUserDTO(user2Id, "user2", "pic2", "User Two", "bio2", "user2@email.com");
+        BaseUserDTO user3 = new BaseUserDTO(user3Id, "user3", "pic3", "User Three", "bio3", "user3@email.com");
+        List<BaseUserDTO> users = List.of(user1, user2, user3);
+
+        // Mock that requesting user hasn't blocked anyone
+        when(blockedRepo.findAllByBlocker_Id(blockerId)).thenReturn(List.of());
+
+        // Mock that user2 has blocked the requesting user
+        User user2Entity = new User(user2Id, "user2", "", "", "", "");
+        when(blockedRepo.findAllByBlocked_Id(blockerId)).thenReturn(List.of(
+                new BlockedUser(UUID.randomUUID(), user2Entity, blocker, "reason")
+        ));
+
+        List<BaseUserDTO> result = blockedUserService.filterOutBlockedUsers(users, blockerId);
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(u -> u.getId().equals(user1Id)));
+        assertTrue(result.stream().anyMatch(u -> u.getId().equals(user3Id)));
+        assertFalse(result.stream().anyMatch(u -> u.getId().equals(user2Id)));
+    }
+
+    @Test
+    void filterOutBlockedUsers_ShouldWorkWithFetchFriendRequestDTO() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+
+        BaseUserDTO senderUser1 = new BaseUserDTO(user1Id, "user1", "pic1", "User One", "bio1", "user1@email.com");
+        BaseUserDTO senderUser2 = new BaseUserDTO(user2Id, "user2", "pic2", "User Two", "bio2", "user2@email.com");
+
+        FetchFriendRequestDTO request1 = new FetchFriendRequestDTO(UUID.randomUUID(), senderUser1, 5);
+        FetchFriendRequestDTO request2 = new FetchFriendRequestDTO(UUID.randomUUID(), senderUser2, 3);
+        List<FetchFriendRequestDTO> requests = List.of(request1, request2);
+
+        // Mock that requesting user has blocked user2
+        when(blockedRepo.findAllByBlocker_Id(blockerId)).thenReturn(List.of(
+                new BlockedUser(UUID.randomUUID(), blocker, new User(user2Id, "user2", "", "", "", ""), "reason")
+        ));
+
+        // Mock that no users have blocked the requesting user
+        when(blockedRepo.findAllByBlocked_Id(blockerId)).thenReturn(List.of());
+
+        List<FetchFriendRequestDTO> result = blockedUserService.filterOutBlockedUsers(requests, blockerId);
+
+        assertEquals(1, result.size());
+        assertEquals(user1Id, result.get(0).getSenderUser().getId());
+    }
+
+    @Test
+    void filterOutBlockedUsers_ShouldReturnOriginalList_WhenNoBlocksExist() {
+        UUID user1Id = UUID.randomUUID();
+        UUID user2Id = UUID.randomUUID();
+
+        BaseUserDTO user1 = new BaseUserDTO(user1Id, "user1", "pic1", "User One", "bio1", "user1@email.com");
+        BaseUserDTO user2 = new BaseUserDTO(user2Id, "user2", "pic2", "User Two", "bio2", "user2@email.com");
+        List<BaseUserDTO> users = List.of(user1, user2);
+
+        // Mock that no blocks exist
+        when(blockedRepo.findAllByBlocker_Id(blockerId)).thenReturn(List.of());
+        when(blockedRepo.findAllByBlocked_Id(blockerId)).thenReturn(List.of());
+
+        List<BaseUserDTO> result = blockedUserService.filterOutBlockedUsers(users, blockerId);
+
+        assertEquals(2, result.size());
+        assertEquals(users, result);
+    }
+
+    @Test
+    void filterOutBlockedUsers_ShouldReturnOriginalList_WhenFilteringFails() {
+        UUID user1Id = UUID.randomUUID();
+        BaseUserDTO user1 = new BaseUserDTO(user1Id, "user1", "pic1", "User One", "bio1", "user1@email.com");
+        List<BaseUserDTO> users = List.of(user1);
+
+        // Mock that database call fails
+        when(blockedRepo.findAllByBlocker_Id(blockerId)).thenThrow(new RuntimeException("Database error"));
+
+        List<BaseUserDTO> result = blockedUserService.filterOutBlockedUsers(users, blockerId);
+
+        // Should return original list when filtering fails
+        assertEquals(users, result);
     }
 }

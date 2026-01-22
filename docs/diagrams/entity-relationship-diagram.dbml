@@ -1,0 +1,78 @@
+Table User {
+    id UUID [pk]
+    username String
+    profilePicture String // Adjust type as needed (e.g., URL or BLOB)
+    firstName String
+    lastName String
+    bio String
+    email String
+}
+
+// Friend tags have been replaced by the Friendship model
+
+Table Activity {
+    id UUID [pk]
+    title String
+    startTime Timestamp
+    endTime Timestamp
+    locationId UUID [ref: > Location.id]
+    note String
+    creatorId UUID [unique, ref: > User.id]
+}
+
+Table ChatMessage {
+    id UUID [pk]
+    timestamp Timestamp
+    userId UUID [ref: > User.id, unique]
+    content String
+    ActivityId UUID [ref: > Activity.id] // Association with Activity
+}
+
+// Junction table for ChatMessage Likes (Many-to-Many)
+Table ChatMessageLikes {
+    chatMessageId UUID [ref: > ChatMessage.id]
+    userId UUID [ref: > User.id]
+    indexes {
+        (chatMessageId, userId) [pk]
+    }
+}
+
+// Table for Friend Requests (Many-to-Many)
+Table FriendRequests {
+    senderId UUID [ref: > User.id]
+    receiverId UUID [ref: > User.id]
+    indexes {
+        (senderId, receiverId) [pk]
+    }
+}
+
+// Table for Friendships (Many-to-Many, symmetric)
+Table Friendship {
+    id UUID [pk]
+    user_a_id UUID [ref: > User.id]
+    user_b_id UUID [ref: > User.id]
+    created_at Timestamp
+    indexes {
+        (user_a_id, user_b_id) [unique]
+    }
+}
+
+// Activity locations
+Table Location {
+    id UUID [pk]
+    name String
+    latitude Double
+    longitude Double
+}
+
+// Junction table for Activities and Users (Many-to-Many)
+// - one Activity can have many participating/invited Users
+// - one user can participate or be invited to many Activities
+Table ActivityUser {
+    ActivityId UUID [ref: > Activity.id]
+    userId UUID [ref: > User.id]
+    status ActivityParticipationStatus
+    indexes {
+        (ActivityId, userId) [pk]
+    }
+}
