@@ -54,8 +54,14 @@ public final class GoogleOAuthStrategy implements OAuthStrategy {
             // Use retry helper for token verification
             return RetryHelper.executeOAuthWithRetry(() -> {
                 try {
+                    GoogleIdToken googleIdToken = null;
                     // Verify the token
-                    GoogleIdToken googleIdToken = verifier.verify(idToken);
+                    try {
+                         googleIdToken = verifier.verify(idToken);
+                    } catch (Error e) {
+                        logger.error(e.getMessage());
+                    }
+
                     if (googleIdToken == null) {
                         logger.error("Token verification failed - invalid token");
                         throw new SecurityException("Invalid Google ID token - token may be expired or malformed");
