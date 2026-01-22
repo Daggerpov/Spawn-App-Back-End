@@ -3,6 +3,7 @@ package com.danielagapov.spawn.auth.api;
 import com.danielagapov.spawn.auth.api.dto.CheckEmailVerificationRequestDTO;
 import com.danielagapov.spawn.auth.api.dto.EmailVerificationResponseDTO;
 import com.danielagapov.spawn.auth.api.dto.OAuthRegistrationDTO;
+import com.danielagapov.spawn.auth.api.dto.OAuthSignInRequestDTO;
 import com.danielagapov.spawn.auth.api.dto.SendEmailVerificationRequestDTO;
 import com.danielagapov.spawn.user.api.dto.*;
 import com.danielagapov.spawn.shared.util.OAuthProvider;
@@ -52,12 +53,21 @@ public class AuthController {
      * <p>
      * If the user is already saved within Spawn -> we return its `BaseUserDTO`. Otherwise, null.
      */
-    // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email
+    // full path: /api/v1/auth/sign-in?externalUserId=externalUserId&email=email (supports both GET with query params and POST with body)
     @GetMapping("sign-in")
-    public ResponseEntity<?> signIn(
+    public ResponseEntity<?> signInGet(
             @RequestParam(value = "idToken", required = true) String idToken,
             @RequestParam(value = "provider", required = true) OAuthProvider provider,
-            @RequestParam(value = "email", required = false) String email)
+            @RequestParam(value = "email", required = false) String email) {
+        return signIn(idToken, provider, email);
+    }
+
+    @PostMapping("sign-in")
+    public ResponseEntity<?> signInPost(@RequestBody OAuthSignInRequestDTO request) {
+        return signIn(request.getIdToken(), request.getProvider(), request.getEmail());
+    }
+
+    private ResponseEntity<?> signIn(String idToken, OAuthProvider provider, String email)
     {
         try {
             Optional<AuthResponseDTO> optionalDTO = oauthService.signInUser(idToken, email, provider);
