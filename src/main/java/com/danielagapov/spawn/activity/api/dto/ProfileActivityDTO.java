@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.activity.api.dto;
 
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,6 +23,13 @@ public class ProfileActivityDTO extends AbstractActivityDTO {
     private List<BaseUserDTO> participantUsers;
     private List<BaseUserDTO> invitedUsers;
     private List<UUID> chatMessageIds;
+    
+    /**
+     * Indicates whether this activity is in the past.
+     * Note: @JsonProperty is required because Lombok generates isPastActivity() getter,
+     * which Jackson would serialize as "pastActivity" without this annotation.
+     */
+    @JsonProperty("isPastActivity")
     private boolean isPastActivity;
     
     public ProfileActivityDTO(UUID id,
