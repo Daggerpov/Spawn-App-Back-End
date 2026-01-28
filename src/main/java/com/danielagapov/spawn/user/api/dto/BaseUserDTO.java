@@ -37,6 +37,15 @@ public class BaseUserDTO extends AbstractUserDTO {
         this.pendingFriendRequestId = null;
     }
 
+    public BaseUserDTO(UUID id, String name, String email, String username, String bio, String profilePicture, Boolean hasCompletedOnboarding, String provider) {
+        super(id, name, email, username, bio);
+        this.profilePicture = profilePicture;
+        this.hasCompletedOnboarding = hasCompletedOnboarding != null ? hasCompletedOnboarding : false;
+        this.provider = provider;
+        this.relationshipStatus = null;
+        this.pendingFriendRequestId = null;
+    }
+
     @JsonCreator
     public BaseUserDTO(
             @JsonProperty("id") UUID id, 
@@ -55,23 +64,5 @@ public class BaseUserDTO extends AbstractUserDTO {
         this.provider = provider;
         this.relationshipStatus = relationshipStatus;
         this.pendingFriendRequestId = pendingFriendRequestId;
-    }
-
-    // Backward-compatible constructor (without relationship fields)
-    public BaseUserDTO(
-            UUID id, 
-            String name, 
-            String email, 
-            String username, 
-            String bio, 
-            String profilePicture, 
-            Boolean hasCompletedOnboarding,
-            String provider) {
-        super(id, name, email, username, bio);
-        this.profilePicture = profilePicture;
-        this.hasCompletedOnboarding = hasCompletedOnboarding != null ? hasCompletedOnboarding : false;
-        this.provider = provider;
-        this.relationshipStatus = null;
-        this.pendingFriendRequestId = null;
     }
 }

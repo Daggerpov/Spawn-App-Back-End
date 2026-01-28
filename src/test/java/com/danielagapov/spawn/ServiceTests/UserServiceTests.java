@@ -89,6 +89,7 @@ public class UserServiceTests {
             logger,
             userSearchQueryService,
             friendshipQueryService,
+            friendRequestService,
             cacheManager,
             eventPublisher,
             userIdExternalIdMapRepository

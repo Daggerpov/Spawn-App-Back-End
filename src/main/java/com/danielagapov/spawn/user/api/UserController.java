@@ -290,32 +290,6 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{userId}/is-friend/{potentialFriendId}
-    // @deprecated Use GET /api/v1/users/{id}?requestingUserId={requestingUserId} instead.
-    // The user endpoint now returns relationshipStatus and pendingFriendRequestId fields
-    // when requestingUserId is provided, eliminating the need for this separate endpoint.
-    @Deprecated(since = "1.0", forRemoval = true)
-    @GetMapping("{userId}/is-friend/{potentialFriendId}")
-    public ResponseEntity<Boolean> isUserFriendOfUser(
-            @PathVariable UUID userId,
-            @PathVariable UUID potentialFriendId) {
-        if (userId == null || potentialFriendId == null) {
-            logger.error("Invalid parameters: userId or potentialFriendId is null");
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        
-        try {
-            boolean isFriend = userService.isUserFriendOfUser(userId, potentialFriendId);
-            return new ResponseEntity<>(isFriend, HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            logger.error("User not found for friend check: " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            logger.error("Error checking if user " + LoggingUtils.formatUserIdInfo(userId) + " is friend of user " + LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // full path: /api/v1/users/{userId}/profile-info
     @GetMapping("{userId}/profile-info")
     public ResponseEntity<UserProfileInfoDTO> getUserProfileInfo(@PathVariable UUID userId) {

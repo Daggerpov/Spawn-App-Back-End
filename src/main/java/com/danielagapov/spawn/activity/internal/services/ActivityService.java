@@ -1168,7 +1168,7 @@ public class ActivityService implements IActivityService {
     @Override
     public Instant getLatestCreatedActivityTimestamp(UUID userId) {
         try {
-            return repository.findTopByCreatorIdOrderByLastUpdatedDesc(userId)
+            return repository.findTopByCreatorIdOrderByLastUpdatedDesc(userId, org.springframework.data.domain.Limit.of(1))
                     .map(Activity::getLastUpdated)
                     .orElse(null);
         } catch (DataAccessException e) {
@@ -1180,7 +1180,7 @@ public class ActivityService implements IActivityService {
     @Override
     public Instant getLatestInvitedActivityTimestamp(UUID userId) {
         try {
-            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.invited)
+            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.invited, org.springframework.data.domain.Limit.of(1))
                     .map(ActivityUser -> ActivityUser.getActivity().getLastUpdated())
                     .orElse(null);
         } catch (DataAccessException e) {
@@ -1192,7 +1192,7 @@ public class ActivityService implements IActivityService {
     @Override
     public Instant getLatestUpdatedActivityTimestamp(UUID userId) {
         try {
-            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.participating)
+            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.participating, org.springframework.data.domain.Limit.of(1))
                     .map(ActivityUser -> ActivityUser.getActivity().getLastUpdated())
                     .orElse(null);
         } catch (DataAccessException e) {
