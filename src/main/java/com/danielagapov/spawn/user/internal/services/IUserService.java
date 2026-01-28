@@ -241,6 +241,18 @@ public interface IUserService {
     BaseUserDTO getBaseUserById(UUID id);
 
     /**
+     * Retrieves a user as a BaseUserDTO by their unique identifier with relationship status.
+     * When a requestingUserId is provided, the returned DTO includes the relationship status
+     * between the requesting user and the target user.
+     *
+     * @param id the unique identifier of the user to retrieve
+     * @param requestingUserId the unique identifier of the user making the request (optional)
+     * @return BaseUserDTO object with relationship status if requestingUserId is provided
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    BaseUserDTO getBaseUserByIdWithRelationship(UUID id, UUID requestingUserId);
+
+    /**
      * Updates a user's information with the provided update data.
      *
      * @param id the unique identifier of the user to update

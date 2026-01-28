@@ -6,13 +6,16 @@ import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
 import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
+import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.UserMapper;
+import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
@@ -46,6 +49,7 @@ public class UserService implements IUserService {
     private final ILogger logger;
     private final IUserSearchQueryService userSearchQueryService;
     private final IUserFriendshipQueryService friendshipQueryService;
+    private final IFriendRequestService friendRequestService;
     private final CacheManager cacheManager;
     private final ApplicationEventPublisher eventPublisher;
     private final IUserIdExternalIdMapRepository userIdExternalIdMapRepository;
@@ -59,6 +63,7 @@ public class UserService implements IUserService {
                        IS3Service s3Service, ILogger logger,
                        IUserSearchQueryService userSearchQueryService,
                        IUserFriendshipQueryService friendshipQueryService,
+                       IFriendRequestService friendRequestService,
                        CacheManager cacheManager,
                        ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
@@ -68,6 +73,7 @@ public class UserService implements IUserService {
         this.logger = logger;
         this.userSearchQueryService = userSearchQueryService;
         this.friendshipQueryService = friendshipQueryService;
+        this.friendRequestService = friendRequestService;
         this.cacheManager = cacheManager;
         this.eventPublisher = eventPublisher;
         this.userIdExternalIdMapRepository = userIdExternalIdMapRepository;
@@ -431,6 +437,112 @@ public class UserService implements IUserService {
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
+        }
+    }
+
+    @Override
+    public BaseUserDTO getBaseUserByIdWithRelationship(UUID id, UUID requestingUserId) {
+        try {
+            User user = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+
+            // Hide admin user from front-end
+            if (isAdminUser(user)) {
+                throw new BaseNotFoundException(EntityType.User, id);
+            }
+
+            BaseUserDTO dto = UserMapper.toDTO(user);
+            
+            // If requestingUserId is provided and different from the target user, determine relationship
+            if (requestingUserId != null && !requestingUserId.equals(id)) {
+                UserRelationshipType relationshipStatus = determineRelationshipStatus(requestingUserId, id);
+                dto.setRelationshipStatus(relationshipStatus);
+                
+                // Get pending friend request ID if applicable
+                UUID pendingRequestId = getPendingFriendRequestId(requestingUserId, id, relationshipStatus);
+                dto.setPendingFriendRequestId(pendingRequestId);
+            }
+            
+            return dto;
+        } catch (Exception e) {
+            logger.error("Error getting user with relationship: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Determines the relationship status between the requesting user and a target user.
+     * 
+     * @param requestingUserId The ID of the user making the request
+     * @param targetUserId The ID of the target user
+     * @return UserRelationshipType representing the current relationship status
+     */
+    private UserRelationshipType determineRelationshipStatus(UUID requestingUserId, UUID targetUserId) {
+        try {
+            // Check if they are already friends
+            if (friendshipQueryService.isUserFriendOfUser(requestingUserId, targetUserId)) {
+                return UserRelationshipType.FRIEND;
+            }
+            
+            // Check for outgoing friend request (requesting user sent to target user)
+            List<CreateFriendRequestDTO> outgoingRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+            boolean hasOutgoingRequest = outgoingRequests.stream()
+                    .anyMatch(request -> request.getReceiverUserId().equals(targetUserId));
+            
+            if (hasOutgoingRequest) {
+                return UserRelationshipType.OUTGOING_FRIEND_REQUEST;
+            }
+            
+            // Check for incoming friend request (target user sent to requesting user)
+            List<CreateFriendRequestDTO> incomingRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(requestingUserId);
+            boolean hasIncomingRequest = incomingRequests.stream()
+                    .anyMatch(request -> request.getSenderUserId().equals(targetUserId));
+            
+            if (hasIncomingRequest) {
+                return UserRelationshipType.INCOMING_FRIEND_REQUEST;
+            }
+            
+            // Default to recommended friend if no existing relationship
+            return UserRelationshipType.RECOMMENDED_FRIEND;
+            
+        } catch (Exception e) {
+            logger.error("Error determining relationship status between users " + requestingUserId + " and " + targetUserId + ": " + e.getMessage());
+            return UserRelationshipType.RECOMMENDED_FRIEND;
+        }
+    }
+    
+    /**
+     * Gets the pending friend request ID if there is one between the users.
+     * 
+     * @param requestingUserId The ID of the user making the request
+     * @param targetUserId The ID of the target user
+     * @param relationshipStatus The current relationship status
+     * @return UUID of the pending friend request, or null if none exists
+     */
+    private UUID getPendingFriendRequestId(UUID requestingUserId, UUID targetUserId, UserRelationshipType relationshipStatus) {
+        try {
+            if (relationshipStatus == UserRelationshipType.OUTGOING_FRIEND_REQUEST) {
+                // Find the outgoing request ID
+                List<CreateFriendRequestDTO> outgoingRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+                return outgoingRequests.stream()
+                        .filter(request -> request.getReceiverUserId().equals(targetUserId))
+                        .map(CreateFriendRequestDTO::getId)
+                        .findFirst()
+                        .orElse(null);
+            } else if (relationshipStatus == UserRelationshipType.INCOMING_FRIEND_REQUEST) {
+                // Find the incoming request ID
+                List<CreateFriendRequestDTO> incomingRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(requestingUserId);
+                return incomingRequests.stream()
+                        .filter(request -> request.getSenderUserId().equals(targetUserId))
+                        .map(CreateFriendRequestDTO::getId)
+                        .findFirst()
+                        .orElse(null);
+            }
+            
+            return null;
+        } catch (Exception e) {
+            logger.error("Error getting pending friend request ID between users " + requestingUserId + " and " + targetUserId + ": " + e.getMessage());
+            return null;
         }
     }
 

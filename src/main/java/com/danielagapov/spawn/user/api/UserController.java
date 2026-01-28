@@ -91,14 +91,24 @@ public class UserController {
     }
 
     // full path: /api/v1/users/{id}
+    // Optional query parameter: requestingUserId - when provided, includes relationship status in response
     @GetMapping("{id}")
-    public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {
+    public ResponseEntity<BaseUserDTO> getUser(
+            @PathVariable UUID id,
+            @RequestParam(required = false) UUID requestingUserId) {
         if (id == null) {
             logger.error("Invalid parameter: user ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(userService.getBaseUserById(id), HttpStatus.OK);
+            BaseUserDTO user;
+            if (requestingUserId != null) {
+                // Include relationship status when requestingUserId is provided
+                user = userService.getBaseUserByIdWithRelationship(id, requestingUserId);
+            } else {
+                user = userService.getBaseUserById(id);
+            }
+            return new ResponseEntity<>(user, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -281,6 +291,10 @@ public class UserController {
     }
 
     // full path: /api/v1/users/{userId}/is-friend/{potentialFriendId}
+    // @deprecated Use GET /api/v1/users/{id}?requestingUserId={requestingUserId} instead.
+    // The user endpoint now returns relationshipStatus and pendingFriendRequestId fields
+    // when requestingUserId is provided, eliminating the need for this separate endpoint.
+    @Deprecated(since = "1.0", forRemoval = true)
     @GetMapping("{userId}/is-friend/{potentialFriendId}")
     public ResponseEntity<Boolean> isUserFriendOfUser(
             @PathVariable UUID userId,
