@@ -1,0 +1,64 @@
+server:
+  port: ${GATEWAY_PORT:8090}
+
+spring:
+  application:
+    name: spawn-api-gateway
+
+  # ── Redis (used for rate limiting) ──
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+  cloud:
+    gateway:
+      # ── Global defaults ──
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 20   # requests per second
+            redis-rate-limiter.burstCapacity: 40   # max burst
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: "#{@ipKeyResolver}"
+
+      # ── Route definitions ──
+      routes:
+        # Auth Service (port 8081)
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - StripPrefix=0
+
+        # Monolith -- catch-all for everything else (port 8080)
+        - id: monolith
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - StripPrefix=0
+
+# ── JWT signing secret ──
+jwt:
+  signing-secret: ${SIGNING_SECRET:}
+
+# ── Actuator (health check) ──
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+
+# ── Logging ──
+logging:
+  level:
+    com.danielagapov.spawn.gateway: INFO
+    org.springframework.cloud.gateway: INFO
