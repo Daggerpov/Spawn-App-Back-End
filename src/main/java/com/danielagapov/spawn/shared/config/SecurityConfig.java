@@ -40,7 +40,9 @@ public class SecurityConfig {
             "/api/v1/auth/register/verification/check",
             "/api/v1/auth/sign-in",
             "/api/v1/auth/login",
-            "/api/v1/users/contacts/cross-reference"
+            "/api/v1/users/contacts/cross-reference",
+            "/actuator/health",
+            "/actuator/info"
     };
     // Additional regex patterns for whitelisted URLs
     private final String[] whitelistedUrlPatterns = new String[] {

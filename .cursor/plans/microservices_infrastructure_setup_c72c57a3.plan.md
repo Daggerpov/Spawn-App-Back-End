@@ -4,19 +4,19 @@ overview: Set up microservices infrastructure (API Gateway, shared patterns, dat
 todos:
   - id: api-gateway
     content: Create API Gateway (Spring Cloud Gateway) with JWT validation, routing, rate limiting, CORS
-    status: pending
+    status: completed
   - id: shared-lib
     content: Create shared library or copy shared DTOs/utils to services
-    status: pending
+    status: completed
   - id: db-separation
     content: Separate auth-service database from monolith (create auth_db)
-    status: pending
+    status: completed
   - id: inter-service-comm
     content: Set up Feign clients + Resilience4j for inter-service communication
-    status: pending
+    status: completed
   - id: redis-pubsub
     content: Implement Redis Pub/Sub for cross-service async events
-    status: pending
+    status: completed
   - id: extract-activity
     content: Extract Activity Service (entities, repos, services, controllers, DTOs)
     status: pending
@@ -28,7 +28,7 @@ todos:
     status: pending
   - id: health-logging
     content: Add health checks, structured logging, and distributed tracing across services
-    status: pending
+    status: completed
 isProject: false
 ---
 
