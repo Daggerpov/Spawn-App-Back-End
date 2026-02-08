@@ -1,0 +1,29 @@
+package com.danielagapov.spawn.user.api.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.io.Serializable;
+import java.util.UUID;
+
+@AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+public abstract class AbstractUserDTO implements Serializable {
+    private UUID id;
+    private String name;
+    private String email;
+    private String username;
+    private String bio;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        AbstractUserDTO that = (AbstractUserDTO) obj;
+        return id != null && id.equals(that.id);
+    }
+}
