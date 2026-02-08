@@ -1,4 +1,4 @@
-package com.danielagapov.spawn.user.api.dto;
+package com.danielagapov.spawn.user.api.dto.FriendUser;
 
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.shared.util.UserRelationshipType;

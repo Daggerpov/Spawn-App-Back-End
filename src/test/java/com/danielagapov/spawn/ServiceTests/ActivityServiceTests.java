@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @Order(2)
@@ -146,8 +147,8 @@ public class ActivityServiceTests {
                         OffsetDateTime.now().plusHours(1)));
         when(ActivityRepository.findAll()).thenReturn(Activities);
 
-        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(any(UUID.class), eq(ParticipationStatus.participating))).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(any(UUID.class), eq(ParticipationStatus.invited))).thenReturn(List.of());
         when(chatQueryService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
         List<ActivityDTO> result = ActivityService.getAllActivities();
@@ -173,8 +174,8 @@ public class ActivityServiceTests {
                 OffsetDateTime.now().plusHours(1));
         when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
 
-        when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.invited)).thenReturn(List.of());
         when(chatQueryService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         ActivityDTO result = ActivityService.getActivityById(ActivityId);
@@ -508,8 +509,8 @@ public class ActivityServiceTests {
         when(activityUserRepository.findByActivity_Id(ActivityId)).thenReturn(List.of());
 
         ActivityDTO returnActivityDTO = dummyActivityDTO(ActivityId, "New Title");
-        when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.invited)).thenReturn(List.of());
         when(chatQueryService.getChatMessageIdsByActivityId(ActivityId)).thenReturn(List.of());
 
         FullFeedActivityDTO result = ActivityService.replaceActivity(newActivityDTO, ActivityId);
@@ -648,8 +649,8 @@ public class ActivityServiceTests {
                 OffsetDateTime.now().plusHours(1));
         when(ActivityRepository.findById(ActivityId)).thenReturn(Optional.of(Activity));
 
-        when(userService.getParticipantUserIdsByActivityId(ActivityId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(ActivityId)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.invited)).thenReturn(List.of());
 
         ActivityInviteDTO result = ActivityService.getActivityInviteById(ActivityId);
 
@@ -668,8 +669,8 @@ public class ActivityServiceTests {
                         OffsetDateTime.now().plusHours(1)));
         when(ActivityRepository.findByCreatorId(creatorUserId)).thenReturn(Activities);
 
-        when(userService.getParticipantUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(any(UUID.class))).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(any(UUID.class), eq(ParticipationStatus.participating))).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(any(UUID.class), eq(ParticipationStatus.invited))).thenReturn(List.of());
         when(chatQueryService.getChatMessageIdsByActivityId(any(UUID.class))).thenReturn(List.of());
 
         List<ActivityDTO> result = ActivityService.getActivitiesByOwnerId(creatorUserId);
@@ -687,8 +688,8 @@ public class ActivityServiceTests {
         UserDTO creator = new UserDTO(ActivityDTO.getCreatorUserId(), List.of(), "testuser", "pic.jpg", "Test User", "bio", "test@email.com");
         when(userService.getUserById(ActivityDTO.getCreatorUserId())).thenReturn(creator);
 
-        when(userService.getParticipantsByActivityId(ActivityId)).thenReturn(List.of());
-        when(userService.getInvitedByActivityId(ActivityId)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.participating)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(ActivityId, ParticipationStatus.invited)).thenReturn(List.of());
         when(chatQueryService.getFullChatMessagesByActivityId(ActivityId)).thenReturn(List.of());
 
         
@@ -742,8 +743,8 @@ public class ActivityServiceTests {
         activity.setLocation(location);
         
         when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(activity));
-        when(userService.getParticipantUserIdsByActivityId(activityId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(activityId)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.invited)).thenReturn(List.of());
 
         ActivityInviteDTO result = ActivityService.getActivityInviteById(activityId);
 
@@ -762,8 +763,8 @@ public class ActivityServiceTests {
         activity.setLocation(null);
         
         when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(activity));
-        when(userService.getParticipantUserIdsByActivityId(activityId)).thenReturn(List.of());
-        when(userService.getInvitedUserIdsByActivityId(activityId)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating)).thenReturn(List.of());
+        when(activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.invited)).thenReturn(List.of());
 
         ActivityInviteDTO result = ActivityService.getActivityInviteById(activityId);
 

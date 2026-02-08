@@ -101,7 +101,7 @@ public class OAuthService implements IOAuthService {
                         return UserMapper.toDTO(existingUser);
                     }
                 } catch (BaseNotFoundException e) {
-                    logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Attempting graceful repair in makeUser.");
+                    logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Attempting graceful repair in makeUser: " + e.getMessage());
                     
                     // Attempt to repair the data inconsistency gracefully
                     try {
@@ -216,7 +216,7 @@ public class OAuthService implements IOAuthService {
                     throw new IncorrectProviderException("The email: " + email + " is already associated to a " + providerName + " account. Please login through " + providerName + " instead");
                 }
             } catch (BaseNotFoundException e) {
-                logger.warn("User email exists but no mapping found - checking for data inconsistency and attempting cleanup.");
+                logger.warn("User email exists but no mapping found - checking for data inconsistency and attempting cleanup: " + e.getMessage());
                 
                 // Get the user by email to check their status
                 try {
@@ -231,7 +231,7 @@ public class OAuthService implements IOAuthService {
                         logger.info("Orphaned user deleted. Treating as no user found to allow fresh registration.");
                         return Optional.empty();
                     } else {
-                        logger.warn("Active user exists without OAuth mapping - possible data corruption. Manual intervention may be required.");
+                        logger.warn("Active user exists without OAuth mapping - possible data corruption. Manual intervention may be required. Email: " + email + ", User ID: " + orphanedUser.getId());
                         return Optional.empty();
                     }
                 } catch (Exception cleanupEx) {
@@ -265,7 +265,7 @@ public class OAuthService implements IOAuthService {
                 logger.info("Making new user: " + newUser.getUsername());
                 return makeUser(newUser, userId, userCreationDTO.getProfilePictureData(), provider);
             } else {
-                logger.error("Missing required authentication parameters");
+                logger.error("Missing required authentication parameters. idToken is null: " + (idToken == null) + ", provider: " + provider);
                 throw new IllegalArgumentException("Either a valid ID token or external user ID with provider must be provided");
             }
         } catch (SecurityException e) {
@@ -397,7 +397,7 @@ public class OAuthService implements IOAuthService {
                     throw new IncorrectProviderException("Email already exists for a " + providerName + " account. Please login through " + providerName + " instead");
                 }
             } catch (BaseNotFoundException e) {
-                logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Attempting graceful repair in registration flow.");
+                logger.warn("User email exists but no mapping found - this may be due to data inconsistency. Attempting graceful repair in registration flow: " + e.getMessage());
                 
                 // Attempt to repair the data inconsistency gracefully
                 try {
@@ -476,7 +476,7 @@ public class OAuthService implements IOAuthService {
                     logger.info("Mapping already exists for the same user, no action needed");
                     return;
                 } else {
-                    logger.warn("Mapping exists for different user. This indicates a race condition or data inconsistency.");
+                    logger.warn("Mapping exists for different user. This indicates a race condition or data inconsistency. External ID: " + externalUserId + ", existing user: " + existing.getUser().getId() + ", new user: " + user.getId());
                     
                     // Check if the existing mapping points to a deleted/non-existent user
                     try {
@@ -488,7 +488,7 @@ public class OAuthService implements IOAuthService {
                             externalIdMapRepository.delete(existing);
                             externalIdMapRepository.flush(); // Ensure deletion is committed before proceeding
                         } else {
-                            logger.error("Mapping exists for a different valid user. Cannot proceed with mapping creation.");
+                            logger.error("Mapping exists for a different valid user. Cannot proceed with mapping creation. External ID: " + externalUserId + ", existing user: " + existingMappedUser.getId() + ", new user: " + user.getId());
                             throw new RuntimeException("OAuth mapping conflict: External ID already mapped to a different active user");
                         }
                     } catch (Exception checkEx) {

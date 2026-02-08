@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
 
 import java.util.List;
@@ -53,4 +53,6 @@ public interface IUserSearchQueryService {
      */
     Set<UUID> getExcludedUserIds(UUID userId);
 }
+
+
 

@@ -44,6 +44,6 @@ public interface IActivityRepository extends JpaRepository<Activity, UUID> {
         @Param("now") OffsetDateTime now);
 
     // finds the most recently updated activity created by a user
-    @Query("SELECT a FROM Activity a WHERE a.creator.id = :creatorId ORDER BY a.lastUpdated DESC LIMIT 1")
-    Optional<Activity> findTopByCreatorIdOrderByLastUpdatedDesc(@Param("creatorId") UUID creatorId);
+    @Query("SELECT a FROM Activity a WHERE a.creator.id = :creatorId ORDER BY a.lastUpdated DESC")
+    Optional<Activity> findTopByCreatorIdOrderByLastUpdatedDesc(@Param("creatorId") UUID creatorId, org.springframework.data.domain.Limit limit);
 }

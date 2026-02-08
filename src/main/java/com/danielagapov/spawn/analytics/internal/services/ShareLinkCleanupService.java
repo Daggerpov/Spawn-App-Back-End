@@ -1,8 +1,5 @@
 package com.danielagapov.spawn.analytics.internal.services;
 
-import com.danielagapov.spawn.shared.util.ShareLinkType;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityRepository;
-import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,8 +16,6 @@ import java.util.concurrent.TimeUnit;
 public class ShareLinkCleanupService {
     
     private final ShareLinkService shareLinkService;
-    private final IActivityRepository activityRepository;
-    private final IUserRepository userRepository;
     
     /**
      * Clean up expired share links every hour
@@ -50,4 +45,4 @@ public class ShareLinkCleanupService {
             log.error("Error cleaning up orphaned share links", e);
         }
     }
-} 
+}

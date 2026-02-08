@@ -120,12 +120,12 @@ public class JWTService implements IJWTService {
         try {
             subject = extractUsername(token); // This actually extracts the subject, which could be username or email
         } catch (Exception e) {
-            logger.error("Failed to extract subject. Invalid or expired token");
+            logger.error("Failed to extract subject. Invalid or expired token: " + e.getMessage());
             throw e;
         }
         
         if (subject == null) {
-            logger.warn("Token subject is null");
+            logger.warn("Token subject is null. Token prefix: " + (token != null ? token.substring(0, Math.min(20, token.length())) + "..." : "null"));
             throw new BadTokenException();
         }
         
@@ -146,7 +146,7 @@ public class JWTService implements IJWTService {
                 // Use username if available, otherwise use email
                 usernameForNewToken = user.getOptionalUsername().orElse(user.getEmail());
             } catch (Exception e) {
-                logger.error("Failed to get user by email: " + subject);
+                logger.error("Failed to get user by email: " + subject + ": " + e.getMessage());
                 throw new BadTokenException();
             }
         }
@@ -161,7 +161,7 @@ public class JWTService implements IJWTService {
             String newAccessToken = generateAccessToken(usernameForNewToken);
             return newAccessToken;
         } else {
-            logger.warn("Expired token found");
+            logger.warn("Expired or invalid token type found for subject: " + subject);
             throw new BadTokenException();
         }
     }
@@ -269,7 +269,7 @@ public class JWTService implements IJWTService {
         try {
             return !extractClaim(token, Claims::getExpiration).before(new Date());
         } catch (ExpiredJwtException e) {
-            logger.warn("Token has expired");
+            logger.warn("Token has expired: " + e.getMessage());
             return false;
         } catch (Exception e) {
             logger.warn("Error checking token expiration: " + e.getMessage());

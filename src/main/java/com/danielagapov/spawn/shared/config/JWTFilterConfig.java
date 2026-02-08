@@ -75,7 +75,7 @@ public class JWTFilterConfig extends OncePerRequestFilter {
                          */
                         SecurityContextHolder.getContext().setAuthentication(token);
                     } else {
-                        logger.warn("Invalid token, user is not authenticated");
+                        logger.warn("Invalid token, user is not authenticated. Username: " + username);
                     }
                 } catch (UsernameNotFoundException e) {
                     // Try loading by email if username lookup failed (for OAuth users with email-based tokens)
@@ -86,10 +86,10 @@ public class JWTFilterConfig extends OncePerRequestFilter {
                             token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                             SecurityContextHolder.getContext().setAuthentication(token);
                         } else {
-                            logger.warn("Invalid token, user is not authenticated");
+                            logger.warn("Invalid token, user is not authenticated. Email/username: " + username);
                         }
                     } catch (Exception emailException) {
-                        logger.warn("User not found by username or email: " + username);
+                        logger.warn("User not found by username or email: " + username + ": " + emailException.getMessage());
                     }
                 } catch (Exception e) {
                     logger.error("Error during authentication: " + e.getMessage());

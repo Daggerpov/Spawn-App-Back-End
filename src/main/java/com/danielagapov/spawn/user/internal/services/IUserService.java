@@ -1,9 +1,10 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.*;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.UserProfileInfoDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
@@ -126,6 +127,19 @@ public interface IUserService {
     List<FullFriendUserDTO> getFullFriendUsersByUserId(UUID requestingUserId);
 
     /**
+     * Retrieves all friends of a user as MinimalFriendDTO objects with only essential fields.
+     * This is optimized for friend selection lists (activity creation, activity types) to reduce memory usage.
+     * 
+     * Fields included: id, username, name, profilePicture
+     * Fields excluded: bio, email, hasCompletedOnboarding, provider
+     *
+     * @param requestingUserId the unique identifier of the user requesting their friends
+     * @return List of MinimalFriendDTO objects representing the user's friends
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    List<MinimalFriendDTO> getMinimalFriendUsersByUserId(UUID requestingUserId);
+
+    /**
      * Retrieves all friends of a user as User entities.
      *
      * @param requestingUserId the unique identifier of the user requesting their friends
@@ -171,42 +185,6 @@ public interface IUserService {
      * @return The timestamp of the latest friend profile update, or null if none found
      */
     Instant getLatestFriendProfileUpdateTimestamp(UUID userId);
-
-    /**
-     * Retrieves all users participating in a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of BaseUserDTO objects representing participants
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<BaseUserDTO> getParticipantsByActivityId(UUID activityId);
-
-    /**
-     * Retrieves all users invited to a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of BaseUserDTO objects representing invited users
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<BaseUserDTO> getInvitedByActivityId(UUID activityId);
-
-    /**
-     * Retrieves the user IDs of all participants in a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of UUID objects representing participant user IDs
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<UUID> getParticipantUserIdsByActivityId(UUID activityId);
-
-    /**
-     * Retrieves the user IDs of all users invited to a specific activity.
-     *
-     * @param activityId the unique identifier of the activity
-     * @return List of UUID objects representing invited user IDs
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if activity doesn't exist
-     */
-    List<UUID> getInvitedUserIdsByActivityId(UUID activityId);
 
     /**
      * Checks if a user exists with the given email address.
@@ -263,6 +241,18 @@ public interface IUserService {
     BaseUserDTO getBaseUserById(UUID id);
 
     /**
+     * Retrieves a user as a BaseUserDTO by their unique identifier with relationship status.
+     * When a requestingUserId is provided, the returned DTO includes the relationship status
+     * between the requesting user and the target user.
+     *
+     * @param id the unique identifier of the user to retrieve
+     * @param requestingUserId the unique identifier of the user making the request (optional)
+     * @return BaseUserDTO object with relationship status if requestingUserId is provided
+     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    BaseUserDTO getBaseUserByIdWithRelationship(UUID id, UUID requestingUserId);
+
+    /**
      * Updates a user's information with the provided update data.
      *
      * @param id the unique identifier of the user to update
@@ -312,15 +302,6 @@ public interface IUserService {
     User getUserByEmail(String email);
 
     /**
-     * Retrieves users who have recently spawned (created activities) that the requesting user was invited to.
-     *
-     * @param requestingUserId the unique identifier of the user making the request
-     * @return List of RecentlySpawnedUserDTO objects representing recently active users
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if requesting user doesn't exist
-     */
-    List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId);
-
-    /**
      * Retrieves a user as a BaseUserDTO by their username.
      *
      * @param username the username to search for
@@ -348,4 +329,15 @@ public interface IUserService {
      * @return List of BaseUserDTO objects for users with matching phone numbers
      */
     List<BaseUserDTO> findUsersByPhoneNumbers(List<String> phoneNumbers, UUID requestingUserId);
+
+    /**
+     * Updates a user's profile picture. Uploads the new picture to S3 and updates the user entity.
+     * If file is null, sets the user's profile picture to the default.
+     *
+     * @param file byte array representation of the profile picture, can be null for default picture
+     * @param userId the unique identifier of the user whose profile picture should be updated
+     * @return UserDTO with updated profile picture URL
+     * @throws com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException if user doesn't exist
+     */
+    UserDTO updateProfilePicture(byte[] file, UUID userId);
 }

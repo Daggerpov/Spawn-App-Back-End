@@ -1,13 +1,11 @@
 package com.danielagapov.spawn.media.internal.services;
 
-
-import com.danielagapov.spawn.user.api.dto.UserDTO;
-
 import java.util.UUID;
 
 /**
  * Service interface for managing AWS S3 operations related to file storage and retrieval.
- * Primarily handles profile picture storage and management for users.
+ * This is a pure storage service - it handles S3 operations only, without any user entity management.
+ * User entity management (updating profile picture URLs, etc.) should be handled by UserService.
  */
 public interface IS3Service {
     /**
@@ -21,14 +19,6 @@ public interface IS3Service {
     String putObjectWithKey(byte[] file, String key);
 
     /**
-     * Given a user id, deletes a user's profile picture from S3 and updates the user's profile picture URL to null
-     *
-     * @param userId id of user whose profile picture is to be deleted
-     * @throws RuntimeException if S3 operation or user update fails
-     */
-    void deleteObjectByUserId(UUID userId);
-
-    /**
      * Puts the file into an s3 bucket using a randomly generated key
      *
      * @param file byte array representation of a file (usually a .jpeg)
@@ -36,28 +26,6 @@ public interface IS3Service {
      * @throws RuntimeException if S3 operation fails
      */
     String putObject(byte[] file);
-
-    /**
-     * Puts the file into an s3 bucket and attaches the cdn url string to the given user dto.
-     * If file is null, a default url string is attached
-     *
-     * @param file byte array representation of a file (usually a .jpeg), can be null for default picture
-     * @param user user to attach url string with
-     * @return UserDTO with a set profilePictureUrlString
-     * @throws RuntimeException if S3 operation fails
-     */
-    UserDTO putProfilePictureWithUser(byte[] file, UserDTO user);
-
-    /**
-     * Updates an existing user's profile picture by replacing the image at their current URL
-     * or setting it to the default profile picture URL if file is null
-     *
-     * @param file byte array representation of a file (usually a .jpeg), can be null for default picture
-     * @param userId the ID of the user whose profile picture should be updated
-     * @return UserDTO with updated profile picture URL
-     * @throws RuntimeException if S3 operation or user update fails
-     */
-    UserDTO updateProfilePicture(byte[] file, UUID userId);
 
     /**
      * Returns the default profile picture url string
@@ -75,5 +43,22 @@ public interface IS3Service {
      */
     void deleteObjectByURL(String urlString);
 
-    String updateProfilePictureWithUserId(byte[] file, UUID userId);
+    /**
+     * Uploads a profile picture for a user using their userId as the key.
+     * If file is null, returns the default profile picture URL.
+     *
+     * @param file byte array representation of a file (usually a .jpeg), can be null for default picture
+     * @param userId the ID of the user
+     * @return the CDN URL for the uploaded profile picture, or default if file is null
+     * @throws RuntimeException if S3 operation fails
+     */
+    String uploadProfilePicture(byte[] file, UUID userId);
+
+    /**
+     * Checks if the given URL is the default profile picture URL
+     *
+     * @param urlString the URL to check
+     * @return true if it's the default profile picture URL
+     */
+    boolean isDefaultProfilePicture(String urlString);
 }

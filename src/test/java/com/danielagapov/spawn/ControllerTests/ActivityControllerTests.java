@@ -9,7 +9,7 @@ import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.chat.api.dto.FullActivityChatMessageDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -203,8 +203,9 @@ class ActivityControllerTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(activityDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(activityId.toString()))
-                .andExpect(jsonPath("$.title").value("Test Activity"));
+                .andExpect(jsonPath("$.activity.id").value(activityId.toString()))
+                .andExpect(jsonPath("$.activity.title").value("Test Activity"))
+                .andExpect(jsonPath("$.friendSuggestion").doesNotExist());
 
         verify(activityService, times(1)).createActivityWithSuggestions(any(ActivityDTO.class));
     }
@@ -542,11 +543,12 @@ class ActivityControllerTests {
         when(activityService.createActivityWithSuggestions(any(ActivityDTO.class)))
                 .thenReturn(fullFeedActivityDTO);
 
-        ResponseEntity<FullFeedActivityDTO> response = activityController.createActivity(activityDTO);
+        ResponseEntity<ActivityCreationResponseDTO> response = activityController.createActivity(activityDTO);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(activityId, response.getBody().getId());
+        assertNotNull(response.getBody().getActivity());
+        assertEquals(activityId, response.getBody().getActivity().getId());
         verify(activityService, times(1)).createActivityWithSuggestions(any(ActivityDTO.class));
     }
 

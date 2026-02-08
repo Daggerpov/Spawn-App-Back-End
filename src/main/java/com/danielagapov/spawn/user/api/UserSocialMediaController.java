@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.user.api;
 
-import com.danielagapov.spawn.user.api.dto.UpdateUserSocialMediaDTO;
-import com.danielagapov.spawn.user.api.dto.UserSocialMediaDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UpdateUserSocialMediaDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserSocialMediaDTO;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.services.IUserSocialMediaService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;

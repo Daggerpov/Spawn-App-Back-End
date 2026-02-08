@@ -337,7 +337,7 @@ class UserMapperTests {
             List<BaseUserDTO> dtos = List.of(dto1, dto2);
 
             // When
-            List<User> users = UserMapper.toEntityList(dtos);
+            List<User> users = UserMapper.toEntityListFromBaseUserDTOs(dtos);
 
             // Then
             assertThat(users).hasSize(2);

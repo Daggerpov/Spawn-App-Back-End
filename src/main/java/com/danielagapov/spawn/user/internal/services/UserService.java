@@ -1,20 +1,22 @@
 package com.danielagapov.spawn.user.internal.services;
 
 import com.danielagapov.spawn.user.api.dto.*;
-import com.danielagapov.spawn.activity.api.dto.UserIdActivityTimeDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.shared.util.EntityType;
-import com.danielagapov.spawn.shared.util.ParticipationStatus;
+import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.shared.util.UserStatus;
-import com.danielagapov.spawn.shared.exceptions.ApplicationException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.UserMapper;
-import com.danielagapov.spawn.activity.internal.domain.ActivityUser;
+import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
 import com.danielagapov.spawn.social.internal.domain.Friendship;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
@@ -31,11 +33,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,13 +43,13 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
-    private final IActivityUserRepository activityUserRepository;
     private final IFriendshipRepository friendshipRepository;
 
     private final IS3Service s3Service;
     private final ILogger logger;
     private final IUserSearchQueryService userSearchQueryService;
     private final IUserFriendshipQueryService friendshipQueryService;
+    private final IFriendRequestService friendRequestService;
     private final CacheManager cacheManager;
     private final ApplicationEventPublisher eventPublisher;
     private final IUserIdExternalIdMapRepository userIdExternalIdMapRepository;
@@ -59,22 +59,21 @@ public class UserService implements IUserService {
 
     @Autowired
     public UserService(IUserRepository repository,
-                       IActivityUserRepository activityUserRepository,
                        IFriendshipRepository friendshipRepository,
-
                        IS3Service s3Service, ILogger logger,
                        IUserSearchQueryService userSearchQueryService,
                        IUserFriendshipQueryService friendshipQueryService,
+                       IFriendRequestService friendRequestService,
                        CacheManager cacheManager,
                        ApplicationEventPublisher eventPublisher,
                        IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
         this.repository = repository;
-        this.activityUserRepository = activityUserRepository;
         this.friendshipRepository = friendshipRepository;
         this.s3Service = s3Service;
         this.logger = logger;
         this.userSearchQueryService = userSearchQueryService;
         this.friendshipQueryService = friendshipQueryService;
+        this.friendRequestService = friendRequestService;
         this.cacheManager = cacheManager;
         this.eventPublisher = eventPublisher;
         this.userIdExternalIdMapRepository = userIdExternalIdMapRepository;
@@ -217,7 +216,20 @@ public class UserService implements IUserService {
     public UserDTO saveUserWithProfilePicture(UserDTO user, byte[] profilePicture) {
         try {
             if (user.getProfilePicture() == null) {
-                user = s3Service.putProfilePictureWithUser(profilePicture, user);
+                // Upload profile picture to S3 and get URL
+                String profilePictureUrl = profilePicture == null 
+                    ? s3Service.getDefaultProfilePicture() 
+                    : s3Service.putObject(profilePicture);
+                // Create new UserDTO with the profile picture URL
+                user = new UserDTO(
+                    user.getId(),
+                    user.getFriendUserIds(),
+                    user.getUsername(),
+                    profilePictureUrl,
+                    user.getName(),
+                    user.getBio(),
+                    user.getEmail()
+                );
             }
             user = saveUser(user);
             return user;
@@ -334,69 +346,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<BaseUserDTO> getParticipantsByActivityId(UUID activityId) {
-        try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating);
-
-            List<BaseUserDTO> participants = activityUsers.stream()
-                    .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
-                    .collect(Collectors.toList());
-
-            // Filter out admin user from activity participants
-            return filterOutAdminFromBaseUserDTOs(participants);
-        } catch (Exception e) {
-            logger.error("Error retrieving participants for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving participants for activityId " + activityId, e);
-        }
-    }
-
-    @Override
-    public List<BaseUserDTO> getInvitedByActivityId(UUID activityId) {
-        try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.invited);
-
-            List<BaseUserDTO> invitedUsers = activityUsers.stream()
-                    .map(activityUser -> UserMapper.toDTO(activityUser.getUser()))
-                    .collect(Collectors.toList());
-
-            // Filter out admin user from activity invitees
-            return filterOutAdminFromBaseUserDTOs(invitedUsers);
-        } catch (Exception e) {
-            logger.error("Error retrieving invited users for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving invited users for activityId " + activityId, e);
-        }
-    }
-
-    @Override
-    public List<UUID> getParticipantUserIdsByActivityId(UUID activityId) {
-        try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.participating);
-
-            return activityUsers.stream()
-                    .map(activityUser -> activityUser.getUser().getId())
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error retrieving participant user IDs for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving participant user IDs for activityId " + activityId, e);
-        }
-    }
-
-    @Override
-    public List<UUID> getInvitedUserIdsByActivityId(UUID activityId) {
-        try {
-            List<ActivityUser> activityUsers = activityUserRepository.findByActivity_IdAndStatus(activityId, ParticipationStatus.invited);
-
-            return activityUsers.stream()
-                    .map(activityUser -> activityUser.getUser().getId())
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error retrieving invited user IDs for activityId " + activityId + ": " + e.getMessage());
-            throw new ApplicationException("Error retrieving invited user IDs for activityId " + activityId, e);
-        }
-    }
-
-
-    @Override
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
     }
@@ -446,6 +395,17 @@ public class UserService implements IUserService {
     }
 
     /**
+     * @param requestingUserId the user who's requesting this from the mobile app,
+     *                         typically from activity creation or activity type management views.
+     * @return `MinimalFriendDTO` list of friends for the requesting user,
+     * containing only essential fields (id, username, name, profilePicture) to reduce memory usage
+     */
+    @Override
+    public List<MinimalFriendDTO> getMinimalFriendUsersByUserId(UUID requestingUserId) {
+        return friendshipQueryService.getMinimalFriendUsersByUserId(requestingUserId);
+    }
+
+    /**
      * Fallback method to get friends from the "Everyone" tag when the optimized query returns no results
      */
     private List<FullFriendUserDTO> getFallbackFriendsList(UUID requestingUserId) {
@@ -477,6 +437,112 @@ public class UserService implements IUserService {
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw e;
+        }
+    }
+
+    @Override
+    public BaseUserDTO getBaseUserByIdWithRelationship(UUID id, UUID requestingUserId) {
+        try {
+            User user = repository.findById(id)
+                    .orElseThrow(() -> new BaseNotFoundException(EntityType.User, id));
+
+            // Hide admin user from front-end
+            if (isAdminUser(user)) {
+                throw new BaseNotFoundException(EntityType.User, id);
+            }
+
+            BaseUserDTO dto = UserMapper.toDTO(user);
+            
+            // If requestingUserId is provided and different from the target user, determine relationship
+            if (requestingUserId != null && !requestingUserId.equals(id)) {
+                UserRelationshipType relationshipStatus = determineRelationshipStatus(requestingUserId, id);
+                dto.setRelationshipStatus(relationshipStatus);
+                
+                // Get pending friend request ID if applicable
+                UUID pendingRequestId = getPendingFriendRequestId(requestingUserId, id, relationshipStatus);
+                dto.setPendingFriendRequestId(pendingRequestId);
+            }
+            
+            return dto;
+        } catch (Exception e) {
+            logger.error("Error getting user with relationship: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Determines the relationship status between the requesting user and a target user.
+     * 
+     * @param requestingUserId The ID of the user making the request
+     * @param targetUserId The ID of the target user
+     * @return UserRelationshipType representing the current relationship status
+     */
+    private UserRelationshipType determineRelationshipStatus(UUID requestingUserId, UUID targetUserId) {
+        try {
+            // Check if they are already friends
+            if (friendshipQueryService.isUserFriendOfUser(requestingUserId, targetUserId)) {
+                return UserRelationshipType.FRIEND;
+            }
+            
+            // Check for outgoing friend request (requesting user sent to target user)
+            List<CreateFriendRequestDTO> outgoingRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+            boolean hasOutgoingRequest = outgoingRequests.stream()
+                    .anyMatch(request -> request.getReceiverUserId().equals(targetUserId));
+            
+            if (hasOutgoingRequest) {
+                return UserRelationshipType.OUTGOING_FRIEND_REQUEST;
+            }
+            
+            // Check for incoming friend request (target user sent to requesting user)
+            List<CreateFriendRequestDTO> incomingRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(requestingUserId);
+            boolean hasIncomingRequest = incomingRequests.stream()
+                    .anyMatch(request -> request.getSenderUserId().equals(targetUserId));
+            
+            if (hasIncomingRequest) {
+                return UserRelationshipType.INCOMING_FRIEND_REQUEST;
+            }
+            
+            // Default to recommended friend if no existing relationship
+            return UserRelationshipType.RECOMMENDED_FRIEND;
+            
+        } catch (Exception e) {
+            logger.error("Error determining relationship status between users " + requestingUserId + " and " + targetUserId + ": " + e.getMessage());
+            return UserRelationshipType.RECOMMENDED_FRIEND;
+        }
+    }
+    
+    /**
+     * Gets the pending friend request ID if there is one between the users.
+     * 
+     * @param requestingUserId The ID of the user making the request
+     * @param targetUserId The ID of the target user
+     * @param relationshipStatus The current relationship status
+     * @return UUID of the pending friend request, or null if none exists
+     */
+    private UUID getPendingFriendRequestId(UUID requestingUserId, UUID targetUserId, UserRelationshipType relationshipStatus) {
+        try {
+            if (relationshipStatus == UserRelationshipType.OUTGOING_FRIEND_REQUEST) {
+                // Find the outgoing request ID
+                List<CreateFriendRequestDTO> outgoingRequests = friendRequestService.getSentFriendRequestsByUserId(requestingUserId);
+                return outgoingRequests.stream()
+                        .filter(request -> request.getReceiverUserId().equals(targetUserId))
+                        .map(CreateFriendRequestDTO::getId)
+                        .findFirst()
+                        .orElse(null);
+            } else if (relationshipStatus == UserRelationshipType.INCOMING_FRIEND_REQUEST) {
+                // Find the incoming request ID
+                List<CreateFriendRequestDTO> incomingRequests = friendRequestService.getIncomingCreateFriendRequestsByUserId(requestingUserId);
+                return incomingRequests.stream()
+                        .filter(request -> request.getSenderUserId().equals(targetUserId))
+                        .map(CreateFriendRequestDTO::getId)
+                        .findFirst()
+                        .orElse(null);
+            }
+            
+            return null;
+        } catch (Exception e) {
+            logger.error("Error getting pending friend request ID between users " + requestingUserId + " and " + targetUserId + ": " + e.getMessage());
+            return null;
         }
     }
 
@@ -542,28 +608,6 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public List<RecentlySpawnedUserDTO> getRecentlySpawnedWithUsers(UUID requestingUserId) {
-        try {
-            final int activityLimit = 10;
-            final int userLimit = 40;
-            // Use UTC for consistent timezone comparison across server and client timezones
-            OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
-            List<UUID> pastActivityIds = activityUserRepository.findPastActivityIdsForUser(requestingUserId, ParticipationStatus.participating, now, Limit.of(activityLimit));
-            List<UserIdActivityTimeDTO> pastActivityParticipantIds = activityUserRepository.findOtherUserIdsByActivityIds(pastActivityIds, requestingUserId, ParticipationStatus.participating);
-            Set<UUID> excludedIds = userSearchQueryService.getExcludedUserIds(requestingUserId);
-
-            return pastActivityParticipantIds.stream()
-                    .filter(e -> !excludedIds.contains(e.getUserId()))
-                    .map(e -> new RecentlySpawnedUserDTO(getBaseUserById(e.getUserId()), e.getStartTime()))
-                    .limit(userLimit)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            logger.error("Error fetching recently spawned-with users for user: " + LoggingUtils.formatUserIdInfo(requestingUserId) + ". " + e.getMessage());
-            throw e;
-        }
-    }
-
-    @Override
     public BaseUserDTO getBaseUserByUsername(String username) {
         try {
             return UserMapper.toDTO(getUserEntityByUsername(username));
@@ -614,12 +658,45 @@ public class UserService implements IUserService {
             if (optionalDetailsDTO.getName() != null) {
                 user.setName(optionalDetailsDTO.getName());
             }
-            user.setProfilePictureUrlString(s3Service.updateProfilePictureWithUserId(optionalDetailsDTO.getProfilePictureData(), user.getId()));
+            user.setProfilePictureUrlString(s3Service.uploadProfilePicture(optionalDetailsDTO.getProfilePictureData(), user.getId()));
             user.setStatus(UserStatus.NAME_AND_PHOTO);
             user = repository.save(user);
             return UserMapper.toDTO(user);
         } catch (Exception e) {
-            logger.error("Error getting user profile info: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            logger.error("Error setting optional details: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Override
+    public UserDTO updateProfilePicture(byte[] file, UUID userId) {
+        try {
+            User user = getUserEntityById(userId);
+            String currentUrl = user.getProfilePictureUrlString();
+            
+            String newUrl;
+            if (s3Service.isDefaultProfilePicture(currentUrl)) {
+                // Current picture is default, just upload new one (or keep default if file is null)
+                newUrl = s3Service.uploadProfilePicture(file, userId);
+            } else {
+                // Has custom picture - delete old one first if we're changing it
+                if (file == null) {
+                    // Switching to default - delete the old custom picture
+                    s3Service.deleteObjectByURL(currentUrl);
+                    newUrl = s3Service.getDefaultProfilePicture();
+                } else {
+                    // Replacing with new picture - upload with same key (userId) to replace
+                    newUrl = s3Service.uploadProfilePicture(file, userId);
+                }
+            }
+            
+            user.setProfilePictureUrlString(newUrl);
+            user = repository.save(user);
+            
+            List<UUID> friendUserIds = getFriendUserIdsByUserId(userId);
+            return UserMapper.toDTO(user, friendUserIds);
+        } catch (Exception e) {
+            logger.error("Error updating profile picture for user " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             throw e;
         }
     }

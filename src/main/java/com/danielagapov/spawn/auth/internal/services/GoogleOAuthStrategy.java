@@ -54,10 +54,16 @@ public final class GoogleOAuthStrategy implements OAuthStrategy {
             // Use retry helper for token verification
             return RetryHelper.executeOAuthWithRetry(() -> {
                 try {
+                    GoogleIdToken googleIdToken = null;
                     // Verify the token
-                    GoogleIdToken googleIdToken = verifier.verify(idToken);
+                    try {
+                         googleIdToken = verifier.verify(idToken);
+                    } catch (Error e) {
+                        logger.error(e.getMessage());
+                    }
+
                     if (googleIdToken == null) {
-                        logger.error("Token verification failed - invalid token");
+                        logger.error("Token verification failed - invalid token. Token prefix: " + (idToken != null ? idToken.substring(0, Math.min(20, idToken.length())) + "..." : "null"));
                         throw new SecurityException("Invalid Google ID token - token may be expired or malformed");
                     }
 
@@ -70,7 +76,7 @@ public final class GoogleOAuthStrategy implements OAuthStrategy {
                     // Check token expiration
                     Long expiration = payload.getExpirationTimeSeconds();
                     if (expiration != null && expiration < System.currentTimeMillis() / 1000) {
-                        logger.error("Token has expired");
+                        logger.error("Token has expired. Expiration: " + expiration + ", Current time: " + (System.currentTimeMillis() / 1000));
                         throw new TokenExpiredException("Google ID token has expired, please sign in again");
                     }
 
@@ -78,7 +84,7 @@ public final class GoogleOAuthStrategy implements OAuthStrategy {
                     // For example, verify email is verified
                     Boolean emailVerified = payload.getEmailVerified();
                     if (emailVerified == null || !emailVerified) {
-                        logger.error("Email not verified");
+                        logger.error("Email not verified for user ID: " + userId + ", emailVerified value: " + emailVerified);
                         throw new SecurityException("Google account email is not verified");
                     }
 
@@ -127,10 +133,10 @@ public final class GoogleOAuthStrategy implements OAuthStrategy {
                     .build();
             logger.info("Google token verifier successfully initialized");
         } else {
-            logger.error("Google client ID not set, token verification will fail. Set GOOGLE_CLIENT_ID in your environment.");
+            logger.error("Google client ID not set, token verification will fail. Set GOOGLE_CLIENT_ID in your environment. clientId value: " + (clientId == null ? "null" : "empty string"));
             // Create a dummy verifier that will reject all tokens
             this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
-            logger.warn("Created dummy verifier that will reject all tokens");
+            logger.warn("Created dummy verifier that will reject all tokens - Google OAuth will not work");
         }
     }
 }

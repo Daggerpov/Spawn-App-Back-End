@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.activity.internal.services;
 
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.activity.api.dto.*;
 import com.danielagapov.spawn.chat.api.dto.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
@@ -36,6 +37,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +46,15 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Implementation of the Activity module's public API.
+ * 
+ * This service provides full access to activity management operations
+ * for both internal use (controllers) and external modules (User, Chat, Analytics, etc.)
+ * without exposing internal repositories.
+ * 
+ * Part of Phase 3: Shared Data Resolution in Spring Modulith refactoring.
+ */
 @Service
 public class ActivityService implements IActivityService {
     private final IActivityRepository repository;
@@ -79,6 +90,141 @@ public class ActivityService implements IActivityService {
         this.expirationService = expirationService;
         this.activityTypeService = activityTypeService;
     }
+    
+    // ==================== Participant Queries (Public API) ====================
+    
+    @Override
+    public List<UUID> getParticipantUserIdsByActivityIdAndStatus(UUID activityId, ParticipationStatus status) {
+        return activityUserRepository.findByActivity_IdAndStatus(activityId, status)
+                .stream()
+                .map(au -> au.getUser().getId())
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<UUID> getActivityIdsByUserIdAndStatus(UUID userId, ParticipationStatus status) {
+        return activityUserRepository.findByUser_IdAndStatus(userId, status)
+                .stream()
+                .map(au -> au.getActivity().getId())
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public boolean isUserParticipantWithStatus(UUID activityId, UUID userId, ParticipationStatus status) {
+        return activityUserRepository.findByActivity_IdAndUser_Id(activityId, userId)
+                .map(au -> au.getStatus() == status)
+                .orElse(false);
+    }
+    
+    @Override
+    public int getParticipantCountByStatus(UUID activityId, ParticipationStatus status) {
+        return activityUserRepository.findByActivity_IdAndStatus(activityId, status).size();
+    }
+    
+    // ==================== User DTO Conversion Helpers ====================
+    
+    /**
+     * Get participating users as BaseUserDTOs for an activity.
+     * This method converts user IDs to DTOs without creating circular dependencies.
+     */
+    private List<BaseUserDTO> getParticipantUserDTOsByActivityId(UUID activityId) {
+        List<UUID> participantIds = getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.participating);
+        return convertUserIdsToDTOs(participantIds);
+    }
+    
+    /**
+     * Get invited users as BaseUserDTOs for an activity.
+     * This method converts user IDs to DTOs without creating circular dependencies.
+     */
+    private List<BaseUserDTO> getInvitedUserDTOsByActivityId(UUID activityId) {
+        List<UUID> invitedIds = getParticipantUserIdsByActivityIdAndStatus(activityId, ParticipationStatus.invited);
+        return convertUserIdsToDTOs(invitedIds);
+    }
+    
+    /**
+     * Convert a list of user IDs to BaseUserDTOs.
+     * Filters out null users (deleted/not found).
+     */
+    private List<BaseUserDTO> convertUserIdsToDTOs(List<UUID> userIds) {
+        return userIds.stream()
+                .map(userId -> {
+                    User user = userRepository.findById(userId).orElse(null);
+                    return user != null ? UserMapper.toDTO(user) : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+    
+    // ==================== Activity History Queries ====================
+    
+    @Override
+    public List<UUID> getPastActivityIdsForUser(UUID userId, ParticipationStatus status, OffsetDateTime now, Limit limit) {
+        return activityUserRepository.findPastActivityIdsForUser(userId, status, now, limit);
+    }
+    
+    @Override
+    public List<UserIdActivityTimeDTO> getOtherUserIdsByActivityIds(List<UUID> activityIds, UUID excludeUserId, ParticipationStatus status) {
+        return activityUserRepository.findOtherUserIdsByActivityIds(activityIds, excludeUserId, status);
+    }
+    
+    // ==================== Shared Activities Queries ====================
+    
+    @Override
+    public int getSharedActivitiesCount(UUID userId1, UUID userId2, ParticipationStatus status) {
+        // Get all activities where user1 has participated
+        List<ActivityUser> user1Activities = activityUserRepository.findByUser_IdAndStatus(userId1, status);
+        
+        if (user1Activities.isEmpty()) {
+            return 0;
+        }
+        
+        // Extract activity IDs from user1's participated activities
+        Set<UUID> user1ActivityIds = user1Activities.stream()
+                .map(au -> au.getActivity().getId())
+                .collect(Collectors.toSet());
+        
+        // Get all activities where user2 has participated
+        List<ActivityUser> user2Activities = activityUserRepository.findByUser_IdAndStatus(userId2, status);
+        
+        // Count how many activities overlap between the two users
+        return (int) user2Activities.stream()
+                .map(au -> au.getActivity().getId())
+                .filter(user1ActivityIds::contains)
+                .count();
+    }
+    
+    // ==================== Activity Creator Queries ====================
+    
+    @Override
+    public UUID getActivityCreatorId(UUID activityId) {
+        return repository.findById(activityId)
+                .map(activity -> activity.getCreator().getId())
+                .orElse(null);
+    }
+    
+    @Override
+    public List<UUID> getActivityIdsCreatedByUser(UUID userId) {
+        return repository.findByCreatorId(userId)
+                .stream()
+                .map(Activity::getId)
+                .collect(Collectors.toList());
+    }
+    
+    // ==================== Activity Info Queries (for external modules) ====================
+    
+    @Override
+    public String getActivityTitle(UUID activityId) {
+        return repository.findById(activityId)
+                .map(Activity::getTitle)
+                .orElse(null);
+    }
+    
+    @Override
+    public boolean activityExists(UUID activityId) {
+        return repository.existsById(activityId);
+    }
+
+    // ==================== Activity CRUD Operations ====================
 
     @Override
     public List<FullFeedActivityDTO> getAllFullActivities() {
@@ -200,8 +346,8 @@ public class ActivityService implements IActivityService {
                 .orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
 
         UUID creatorUserId = Activity.getCreator().getId();
-        List<UUID> participantUserIds = userService.getParticipantUserIdsByActivityId(id);
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
+        List<UUID> participantUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.participating);
+        List<UUID> invitedUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.invited);
         List<UUID> chatMessageIds = chatQueryService.getChatMessageIdsByActivityId(id);
 
         return ActivityMapper.toDTO(Activity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds, 
@@ -229,8 +375,8 @@ public class ActivityService implements IActivityService {
         String locationName = activity.getLocation() != null ? activity.getLocation().getName() : null;
         
         // Get participating and invited user IDs
-        List<UUID> participatingUserIds = userService.getParticipantUserIdsByActivityId(id);
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(id);
+        List<UUID> participatingUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.participating);
+        List<UUID> invitedUserIds = getParticipantUserIdsByActivityIdAndStatus(id, ParticipationStatus.invited);
         
         return new ActivityInviteDTO(
                 activity.getId(),
@@ -294,8 +440,8 @@ public class ActivityService implements IActivityService {
             return ActivityMapper.toDTO(
                     ActivityEntity,
                     ActivityEntity.getCreator().getId(), // creatorUserId
-                    userService.getParticipantUserIdsByActivityId(ActivityEntity.getId()), // participantUserIds
-                    userService.getInvitedUserIdsByActivityId(ActivityEntity.getId()), // invitedUserIds
+                    getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.participating), // participantUserIds
+                    getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.invited), // invitedUserIds
                     chatQueryService.getChatMessageIdsByActivityId(ActivityEntity.getId()), // chatMessageIds
                     expirationService.isActivityExpired(ActivityEntity.getStartTime(), ActivityEntity.getEndTime(), ActivityEntity.getCreatedAt(), ActivityEntity.getClientTimezone()) // isExpired
             );
@@ -476,8 +622,8 @@ public class ActivityService implements IActivityService {
                 .map(Activity -> ActivityMapper.toDTO(
                         Activity,
                         Activity.getCreator().getId(),
-                        userService.getParticipantUserIdsByActivityId(Activity.getId()),
-                        userService.getInvitedUserIdsByActivityId(Activity.getId()),
+                        getParticipantUserIdsByActivityIdAndStatus(Activity.getId(), ParticipationStatus.participating),
+                        getParticipantUserIdsByActivityIdAndStatus(Activity.getId(), ParticipationStatus.invited),
                         chatQueryService.getChatMessageIdsByActivityId(Activity.getId()),
                         expirationService.isActivityExpired(Activity.getStartTime(), Activity.getEndTime(), Activity.getCreatedAt(), Activity.getClientTimezone())))
                 .toList();
@@ -539,8 +685,16 @@ public class ActivityService implements IActivityService {
                 }
             }
 
+            // Get participant IDs for the notification event
+            List<UUID> participantIds = getParticipatingUserIdsByActivityId(savedActivity.getId());
+            
             eventPublisher.publishEvent(
-                new ActivityUpdateNotificationEvent(savedActivity.getCreator(), savedActivity, activityUserRepository)
+                new ActivityUpdateNotificationEvent(
+                    savedActivity.getCreator().getId(),
+                    savedActivity.getCreator().getUsername(),
+                    savedActivity.getId(),
+                    savedActivity.getTitle(),
+                    participantIds)
             );
             return getFullActivityById(savedActivity.getId(), newActivity.getCreatorUserId());
         }).orElseThrow(() -> new BaseNotFoundException(EntityType.Activity, id));
@@ -612,9 +766,17 @@ public class ActivityService implements IActivityService {
             // Save updated activity
             Activity savedActivity = repository.save(activity);
 
+            // Get participant IDs for the notification event
+            List<UUID> participantIds = getParticipatingUserIdsByActivityId(savedActivity.getId());
+            
             // Publish update event
             eventPublisher.publishEvent(
-                new ActivityUpdateNotificationEvent(savedActivity.getCreator(), savedActivity, activityUserRepository)
+                new ActivityUpdateNotificationEvent(
+                    savedActivity.getCreator().getId(),
+                    savedActivity.getCreator().getUsername(),
+                    savedActivity.getId(),
+                    savedActivity.getTitle(),
+                    participantIds)
             );
 
             // Get the creator's user ID for the full activity fetch
@@ -636,8 +798,8 @@ public class ActivityService implements IActivityService {
     private ActivityDTO constructDTOFromEntity(Activity ActivityEntity) {
         // Fetch related data for DTO
         UUID creatorUserId = ActivityEntity.getCreator().getId();
-        List<UUID> participantUserIds = userService.getParticipantUserIdsByActivityId(ActivityEntity.getId());
-        List<UUID> invitedUserIds = userService.getInvitedUserIdsByActivityId(ActivityEntity.getId());
+        List<UUID> participantUserIds = getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.participating);
+        List<UUID> invitedUserIds = getParticipantUserIdsByActivityIdAndStatus(ActivityEntity.getId(), ParticipationStatus.invited);
         List<UUID> chatMessageIds = chatQueryService.getChatMessageIdsByActivityId(ActivityEntity.getId());
 
         return ActivityMapper.toDTO(ActivityEntity, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds,
@@ -911,7 +1073,7 @@ public class ActivityService implements IActivityService {
             // Fetch participants - if this fails, show empty list instead of dropping activity
             List<BaseUserDTO> participants;
             try {
-                participants = userService.getParticipantsByActivityId(Activity.getId());
+                participants = getParticipantUserDTOsByActivityId(Activity.getId());
             } catch (Exception e) {
                 logger.warn("Error fetching participants for activity " + Activity.getId() + ": " + e.getMessage());
                 participants = new ArrayList<>();
@@ -920,7 +1082,7 @@ public class ActivityService implements IActivityService {
             // Fetch invited users - if this fails, show empty list instead of dropping activity
             List<BaseUserDTO> invitedUsers;
             try {
-                invitedUsers = userService.getInvitedByActivityId(Activity.getId());
+                invitedUsers = getInvitedUserDTOsByActivityId(Activity.getId());
             } catch (Exception e) {
                 logger.warn("Error fetching invited users for activity " + Activity.getId() + ": " + e.getMessage());
                 invitedUsers = new ArrayList<>();
@@ -1006,7 +1168,7 @@ public class ActivityService implements IActivityService {
     @Override
     public Instant getLatestCreatedActivityTimestamp(UUID userId) {
         try {
-            return repository.findTopByCreatorIdOrderByLastUpdatedDesc(userId)
+            return repository.findTopByCreatorIdOrderByLastUpdatedDesc(userId, org.springframework.data.domain.Limit.of(1))
                     .map(Activity::getLastUpdated)
                     .orElse(null);
         } catch (DataAccessException e) {
@@ -1018,7 +1180,7 @@ public class ActivityService implements IActivityService {
     @Override
     public Instant getLatestInvitedActivityTimestamp(UUID userId) {
         try {
-            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.invited)
+            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.invited, org.springframework.data.domain.Limit.of(1))
                     .map(ActivityUser -> ActivityUser.getActivity().getLastUpdated())
                     .orElse(null);
         } catch (DataAccessException e) {
@@ -1030,7 +1192,7 @@ public class ActivityService implements IActivityService {
     @Override
     public Instant getLatestUpdatedActivityTimestamp(UUID userId) {
         try {
-            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.participating)
+            return activityUserRepository.findTopByUserIdAndStatusOrderByActivityLastUpdatedDesc(userId, ParticipationStatus.participating, org.springframework.data.domain.Limit.of(1))
                     .map(ActivityUser -> ActivityUser.getActivity().getLastUpdated())
                     .orElse(null);
         } catch (DataAccessException e) {
@@ -1162,8 +1324,8 @@ public class ActivityService implements IActivityService {
     }
     
     /**
-     * Gets feed Activities for a profile. If the profile user has no upcoming Activities, returns past Activities
-     * that the profile user invited the requesting user to, with a flag indicating they are past Activities.
+     * Gets Activities for a profile where the requesting user was invited or is participating.
+     * Includes both upcoming and past Activities, each flagged appropriately.
      *
      * @param profileUserId The user ID of the profile being viewed
      * @param requestingUserId The user ID of the user viewing the profile
@@ -1172,32 +1334,88 @@ public class ActivityService implements IActivityService {
     @Override
     public List<ProfileActivityDTO> getProfileActivities(UUID profileUserId, UUID requestingUserId) {
         try {
-            // Get upcoming Activities created by the profile user
-            List<ActivityDTO> upcomingActivities = getActivitiesByOwnerId(profileUserId);
-            List<FullFeedActivityDTO> upcomingFullActivities = convertActivitiesToFullFeedSelfOwnedActivities(upcomingActivities, requestingUserId);
+            // Get ALL Activities created by the profile user
+            List<ActivityDTO> allActivities = getActivitiesByOwnerId(profileUserId);
+            List<FullFeedActivityDTO> allFullActivities = convertActivitiesToFullFeedSelfOwnedActivities(allActivities, requestingUserId);
             
-            // Remove expired Activities
-            List<FullFeedActivityDTO> nonExpiredActivities = removeExpiredActivities(upcomingFullActivities);
+            // Filter to only include activities where the requesting user is invited or participating
+            List<FullFeedActivityDTO> filteredActivities = allFullActivities.stream()
+                .filter(activity -> isUserInvitedOrParticipating(activity, requestingUserId))
+                .collect(Collectors.toList());
             
-            // Convert to ProfileActivityDTO
+            // Convert to ProfileActivityDTO with proper past/upcoming flag
             List<ProfileActivityDTO> result = new ArrayList<>();
+            List<ProfileActivityDTO> upcomingActivities = new ArrayList<>();
+            List<ProfileActivityDTO> pastActivities = new ArrayList<>();
             
-            // If there are upcoming Activities, return them as ProfileActivityDTOs
-            if (!nonExpiredActivities.isEmpty()) {
-                sortActivitiesByStartTime(nonExpiredActivities);
-                for (FullFeedActivityDTO Activity : nonExpiredActivities) {
-                    result.add(ProfileActivityDTO.fromFullFeedActivityDTO(Activity, false)); // false = not past activity
+            for (FullFeedActivityDTO activity : filteredActivities) {
+                boolean isExpired = expirationService.isActivityExpired(
+                    activity.getStartTime(), 
+                    activity.getEndTime(), 
+                    activity.getCreatedAt(), 
+                    activity.getClientTimezone()
+                );
+                
+                ProfileActivityDTO profileActivity = ProfileActivityDTO.fromFullFeedActivityDTO(activity, isExpired);
+                
+                if (isExpired) {
+                    pastActivities.add(profileActivity);
+                } else {
+                    upcomingActivities.add(profileActivity);
                 }
-                return result;
             }
             
-            // If no upcoming Activities, get past Activities where the profile user invited the requesting user
-            return getPastActivitiesWhereUserInvited(profileUserId, requestingUserId);
+            // Sort upcoming activities by start time (soonest first)
+            upcomingActivities.sort(Comparator.comparing(
+                ProfileActivityDTO::getStartTime, 
+                Comparator.nullsLast(Comparator.naturalOrder())
+            ));
+            
+            // Sort past activities by start time (most recent first)
+            pastActivities.sort(Comparator.comparing(
+                ProfileActivityDTO::getStartTime, 
+                Comparator.nullsLast(Comparator.reverseOrder())
+            ));
+            
+            // Combine: upcoming first, then past
+            result.addAll(upcomingActivities);
+            result.addAll(pastActivities);
+            
+            return result;
         } catch (Exception e) {
             logger.error("Error fetching profile Activities for user " + profileUserId + 
                          " requested by " + requestingUserId + ": " + e.getMessage());
             throw e;
         }
+    }
+    
+    /**
+     * Checks if the requesting user is invited to or participating in the activity.
+     *
+     * @param activity The activity to check
+     * @param requestingUserId The user ID to check for
+     * @return true if the user is in invitedUsers or participantUsers
+     */
+    private boolean isUserInvitedOrParticipating(FullFeedActivityDTO activity, UUID requestingUserId) {
+        // Check if user is in invited users
+        if (activity.getInvitedUsers() != null) {
+            for (BaseUserDTO user : activity.getInvitedUsers()) {
+                if (user.getId().equals(requestingUserId)) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check if user is in participant users
+        if (activity.getParticipantUsers() != null) {
+            for (BaseUserDTO user : activity.getParticipantUsers()) {
+                if (user.getId().equals(requestingUserId)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
 }

@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @AllArgsConstructor
-public class FuzzySearchService<T> {
+public class FuzzySearchService<T> implements IFuzzySearchService<T> {
     
     private final FuzzySearchConfig config;
     private final ILogger logger;
@@ -103,6 +103,7 @@ public class FuzzySearchService<T> {
      * @param usernameExtractor Function to extract username text from items
      * @return List of search results ordered by similarity score (highest first)
      */
+    @Override
     public List<SearchResult<T>> search(String query, Collection<T> items, 
                                        TextExtractor<T> nameExtractor, 
                                        TextExtractor<T> usernameExtractor) {
@@ -337,6 +338,7 @@ public class FuzzySearchService<T> {
      * Clears the internal distance cache.
      * Useful for memory management in long-running applications.
      */
+    @Override
     public void clearCache() {
         distanceCache.clear();
     }
@@ -344,6 +346,7 @@ public class FuzzySearchService<T> {
     /**
      * Gets current cache size for monitoring.
      */
+    @Override
     public int getCacheSize() {
         return distanceCache.size();
     }

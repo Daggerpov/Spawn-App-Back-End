@@ -1,6 +1,5 @@
 package com.danielagapov.spawn.shared.config;
 
-import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -81,33 +80,8 @@ public class TestConfig {
         }
         
         @Override
-        public void deleteObjectByUserId(UUID userId) {
-            // No-op for test
-        }
-        
-        @Override
         public String putObject(byte[] file) {
             return MOCK_CDN_BASE + UUID.randomUUID().toString();
-        }
-        
-        @Override
-        public UserDTO putProfilePictureWithUser(byte[] file, UserDTO user) {
-            // Return the same user for testing purposes
-            return user;
-        }
-        
-        @Override
-        public UserDTO updateProfilePicture(byte[] file, UUID userId) {
-            // For test, return a simple mock UserDTO
-            return new UserDTO(
-                    userId,
-                    java.util.List.of(),
-                    "testuser",
-                    file == null ? MOCK_DEFAULT_PFP : putObject(file),
-                    "Test User",
-                    "Test Bio",
-                    "test@example.com"
-            );
         }
         
         @Override
@@ -121,8 +95,16 @@ public class TestConfig {
         }
 
         @Override
-        public String updateProfilePictureWithUserId(byte[] file, UUID userId) {
-            return "";
+        public String uploadProfilePicture(byte[] file, UUID userId) {
+            if (file == null) {
+                return MOCK_DEFAULT_PFP;
+            }
+            return MOCK_CDN_BASE + userId.toString();
+        }
+
+        @Override
+        public boolean isDefaultProfilePicture(String urlString) {
+            return MOCK_DEFAULT_PFP.equals(urlString);
         }
     }
-} 
+}

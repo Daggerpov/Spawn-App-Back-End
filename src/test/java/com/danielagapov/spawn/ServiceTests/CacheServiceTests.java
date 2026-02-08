@@ -1,7 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
-import com.danielagapov.spawn.activity.internal.services.IActivityService;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.analytics.internal.services.CacheService;
 import com.danielagapov.spawn.analytics.internal.services.CacheType;
@@ -14,8 +14,9 @@ import com.danielagapov.spawn.user.internal.services.IUserInterestService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.user.internal.services.IUserSocialMediaService;
 import com.danielagapov.spawn.user.internal.services.IUserStatsService;
-import com.danielagapov.spawn.user.api.dto.UserSocialMediaDTO;
-import com.danielagapov.spawn.user.api.dto.UserStatsDTO;
+import com.danielagapov.spawn.user.internal.services.IRecentlySpawnedService;
+import com.danielagapov.spawn.user.api.dto.Profile.UserSocialMediaDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserStatsDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,6 +73,9 @@ class CacheServiceTests {
     @Mock
     private Cache cache;
 
+    @Mock
+    private IRecentlySpawnedService recentlySpawnedService;
+
     private CacheService cacheService;
     private ObjectMapper objectMapper;
     private User testUser;
@@ -90,7 +94,8 @@ class CacheServiceTests {
             userStatsService,
             userInterestService,
             userSocialMediaService,
-            cacheManager
+            cacheManager,
+            recentlySpawnedService
         );
 
         testUserId = UUID.randomUUID();
@@ -707,7 +712,7 @@ class CacheServiceTests {
                 .thenReturn(Instant.now().minusSeconds(3600));
             when(userRepository.findLatestFriendProfileUpdate(testUserId))
                 .thenReturn(Instant.now().minusSeconds(3700));
-            when(userService.getRecentlySpawnedWithUsers(testUserId))
+            when(recentlySpawnedService.getRecentlySpawnedWithUsers(testUserId))
                 .thenReturn(List.of());
 
             // When

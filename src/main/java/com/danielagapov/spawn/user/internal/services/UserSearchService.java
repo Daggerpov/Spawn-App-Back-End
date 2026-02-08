@@ -3,8 +3,8 @@ package com.danielagapov.spawn.user.internal.services;
 import com.danielagapov.spawn.social.api.dto.CreateFriendRequestDTO;
 import com.danielagapov.spawn.social.api.dto.FetchFriendRequestDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
-import com.danielagapov.spawn.user.api.dto.FullFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
 import com.danielagapov.spawn.user.api.dto.SearchResultUserDTO;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
 import com.danielagapov.spawn.shared.util.UserRelationshipType;
@@ -12,9 +12,8 @@ import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.FriendUserMapper;
 import com.danielagapov.spawn.shared.util.UserMapper;
-import com.danielagapov.spawn.activity.internal.domain.ActivityUser;
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
+import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.analytics.internal.services.SearchAnalyticsService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
@@ -50,8 +49,8 @@ public class UserSearchService implements IUserSearchService {
     private final IUserFriendshipQueryService friendshipQueryService;
     private final IUserRepository userRepository;
     private final IBlockedUserService blockedUserService;
-    private final IActivityUserRepository activityUserRepository;
-    private final FuzzySearchService<User> fuzzySearchService;
+    private final IActivityService activityService;
+    private final IFuzzySearchService<User> fuzzySearchService;
     private final SearchAnalyticsService searchAnalyticsService;
     private final ILogger logger;
 
@@ -63,8 +62,8 @@ public class UserSearchService implements IUserSearchService {
                            IUserFriendshipQueryService friendshipQueryService,
                            IUserRepository userRepository,
                            IBlockedUserService blockedUserService,
-                           IActivityUserRepository activityUserRepository,
-                           FuzzySearchService<User> fuzzySearchService,
+                           IActivityService activityService,
+                           IFuzzySearchService<User> fuzzySearchService,
                            SearchAnalyticsService searchAnalyticsService,
                            ILogger logger) {
         this.friendRequestService = friendRequestService;
@@ -72,7 +71,7 @@ public class UserSearchService implements IUserSearchService {
         this.friendshipQueryService = friendshipQueryService;
         this.userRepository = userRepository;
         this.blockedUserService = blockedUserService;
-        this.activityUserRepository = activityUserRepository;
+        this.activityService = activityService;
         this.fuzzySearchService = fuzzySearchService;
         this.searchAnalyticsService = searchAnalyticsService;
         this.logger = logger;
@@ -391,31 +390,8 @@ public class UserSearchService implements IUserSearchService {
      */
     private int getSharedActivitiesCount(UUID requestingUserId, UUID potentialFriendId) {
         try {
-            // Get all activities where the requesting user has participated
-            List<ActivityUser> requestingUserActivities = activityUserRepository
-                    .findByUser_IdAndStatus(requestingUserId, ParticipationStatus.participating);
-            
-            // If the requesting user hasn't participated in any activities, return 0
-            if (requestingUserActivities.isEmpty()) {
-                return 0;
-            }
-            
-            // Extract activity IDs from the requesting user's participated activities
-            Set<UUID> requestingUserActivityIds = requestingUserActivities.stream()
-                    .map(au -> au.getActivity().getId())
-                    .collect(Collectors.toSet());
-            
-            // Get all activities where the potential friend has participated
-            List<ActivityUser> potentialFriendActivities = activityUserRepository
-                    .findByUser_IdAndStatus(potentialFriendId, ParticipationStatus.participating);
-            
-            // Count how many activities overlap between the two users
-            long sharedActivitiesCount = potentialFriendActivities.stream()
-                    .map(au -> au.getActivity().getId())
-                    .filter(requestingUserActivityIds::contains)
-                    .count();
-            
-            return (int) sharedActivitiesCount;
+            // Use the IActivityService to get shared activities count
+            return activityService.getSharedActivitiesCount(requestingUserId, potentialFriendId, ParticipationStatus.participating);
         } catch (Exception e) {
             logger.error("Error calculating shared activities between users " + requestingUserId + " and " + potentialFriendId + ": " + e.getMessage());
             return 0;

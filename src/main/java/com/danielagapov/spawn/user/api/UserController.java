@@ -1,8 +1,9 @@
 package com.danielagapov.spawn.user.api;
 
 import com.danielagapov.spawn.user.api.dto.*;
-import com.danielagapov.spawn.user.api.dto.RecommendedFriendUserDTO;
-import com.danielagapov.spawn.user.api.dto.UserProfileInfoDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
+import com.danielagapov.spawn.user.api.dto.FriendUser.RecommendedFriendUserDTO;
+import com.danielagapov.spawn.user.api.dto.Profile.UserProfileInfoDTO;
 import com.danielagapov.spawn.user.api.dto.ContactCrossReferenceRequestDTO;
 import com.danielagapov.spawn.user.api.dto.ContactCrossReferenceResponseDTO;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
@@ -11,6 +12,7 @@ import com.danielagapov.spawn.auth.internal.services.IAuthService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.IUserService;
+import com.danielagapov.spawn.user.internal.services.IRecentlySpawnedService;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import com.danielagapov.spawn.shared.util.SearchedUserResult;
 import jakarta.validation.Valid;
@@ -33,14 +35,17 @@ public class UserController {
     private final IBlockedUserService blockedUserService;
     private final ILogger logger;
     private final IAuthService authService;
+    private final IRecentlySpawnedService recentlySpawnedService;
 
     @Autowired
-    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService, IBlockedUserService blockedUserService) {
+    public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService, 
+                          IBlockedUserService blockedUserService, IRecentlySpawnedService recentlySpawnedService) {
         this.userService = userService;
         this.s3Service = s3Service;
         this.blockedUserService = blockedUserService;
         this.logger = logger;
         this.authService = authService;
+        this.recentlySpawnedService = recentlySpawnedService;
     }
 
     // full path: /api/v1/users/friends/{id}
@@ -63,15 +68,47 @@ public class UserController {
         }
     }
 
-    // full path: /api/v1/users/{id}
-    @GetMapping("{id}")
-    public ResponseEntity<BaseUserDTO> getUser(@PathVariable UUID id) {
+    // full path: /api/v1/users/friends-minimal/{id}
+    // Returns minimal friend data (id, username, name, profilePicture) to reduce memory usage
+    // Use this for friend selection lists in activity creation and activity type management
+    @GetMapping("friends-minimal/{id}")
+    public ResponseEntity<List<MinimalFriendDTO>> getUserFriendsMinimal(@PathVariable UUID id) {
         if (id == null) {
             logger.error("Invalid parameter: user ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            return new ResponseEntity<>(userService.getBaseUserById(id), HttpStatus.OK);
+            List<MinimalFriendDTO> friends = userService.getMinimalFriendUsersByUserId(id);
+            List<MinimalFriendDTO> filteredFriends = blockedUserService.filterOutBlockedUsers(friends, id);
+            return new ResponseEntity<>(filteredFriends, HttpStatus.OK);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found for minimal friends retrieval: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error getting minimal friends for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/{id}
+    // Optional query parameter: requestingUserId - when provided, includes relationship status in response
+    @GetMapping("{id}")
+    public ResponseEntity<BaseUserDTO> getUser(
+            @PathVariable UUID id,
+            @RequestParam(required = false) UUID requestingUserId) {
+        if (id == null) {
+            logger.error("Invalid parameter: user ID is null");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        try {
+            BaseUserDTO user;
+            if (requestingUserId != null) {
+                // Include relationship status when requestingUserId is provided
+                user = userService.getBaseUserByIdWithRelationship(id, requestingUserId);
+            } else {
+                user = userService.getBaseUserById(id);
+            }
+            return new ResponseEntity<>(user, HttpStatus.OK);
         } catch (BaseNotFoundException e) {
             logger.error("User not found: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -128,7 +165,7 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         try {
-            UserDTO updatedUser = s3Service.updateProfilePicture(file, id);
+            UserDTO updatedUser = userService.updateProfilePicture(file, id);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error updating profile picture for user " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
@@ -244,33 +281,11 @@ public class UserController {
     @GetMapping("{userId}/recent-users")
     public ResponseEntity<List<RecentlySpawnedUserDTO>> getRecentlySpawnedWithUsers(@PathVariable UUID userId) {
         try {
-            List<RecentlySpawnedUserDTO> recentUsers = userService.getRecentlySpawnedWithUsers(userId);
+            List<RecentlySpawnedUserDTO> recentUsers = recentlySpawnedService.getRecentlySpawnedWithUsers(userId);
             List<RecentlySpawnedUserDTO> filteredRecentUsers = blockedUserService.filterOutBlockedUsers(recentUsers, userId);
             return new ResponseEntity<>(filteredRecentUsers, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error getting recently spawned with users for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    // full path: /api/v1/users/{userId}/is-friend/{potentialFriendId}
-    @GetMapping("{userId}/is-friend/{potentialFriendId}")
-    public ResponseEntity<Boolean> isUserFriendOfUser(
-            @PathVariable UUID userId,
-            @PathVariable UUID potentialFriendId) {
-        if (userId == null || potentialFriendId == null) {
-            logger.error("Invalid parameters: userId or potentialFriendId is null");
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        
-        try {
-            boolean isFriend = userService.isUserFriendOfUser(userId, potentialFriendId);
-            return new ResponseEntity<>(isFriend, HttpStatus.OK);
-        } catch (BaseNotFoundException e) {
-            logger.error("User not found for friend check: " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
-            logger.error("Error checking if user " + LoggingUtils.formatUserIdInfo(userId) + " is friend of user " + LoggingUtils.formatUserIdInfo(potentialFriendId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
