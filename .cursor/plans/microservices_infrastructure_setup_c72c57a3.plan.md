@@ -1,6 +1,6 @@
 ---
 name: Microservices Infrastructure Setup
-overview: Set up microservices infrastructure (API Gateway, shared patterns, database separation, inter-service communication) before extracting the Activity Service as the next microservice.
+overview: Set up microservices infrastructure (API Gateway, shared patterns, single shared database, inter-service communication) before extracting the Activity Service as the next microservice.
 todos:
   - id: api-gateway
     content: Create API Gateway (Spring Cloud Gateway) with JWT validation, routing, rate limiting, CORS
@@ -8,8 +8,8 @@ todos:
   - id: shared-lib
     content: Create shared library or copy shared DTOs/utils to services
     status: completed
-  - id: db-separation
-    content: Separate auth-service database from monolith (create auth_db)
+  - id: shared-db
+    content: Use single shared MySQL database for monolith and all services
     status: completed
   - id: inter-service-comm
     content: Set up Feign clients + Resilience4j for inter-service communication
@@ -19,9 +19,6 @@ todos:
     status: completed
   - id: extract-activity
     content: Extract Activity Service (entities, repos, services, controllers, DTOs)
-    status: pending
-  - id: activity-db
-    content: Create activity_db with Flyway migrations
     status: pending
   - id: gateway-routes
     content: Update gateway routes for activity-service
@@ -74,14 +71,14 @@ Publish via `mvn install` locally, or as a GitHub Package for Railway builds. Ea
 
 Alternatively, for maximum simplicity: just copy the ~5-10 shared classes into each service. Easier to start with, refactor to shared lib later.
 
-### 1C. Database Separation for Auth Service
+### 1C. Single Shared Database
 
-Currently both services hit the same MySQL database. Separate them:
+All backends (monolith and microservices) use **one MySQL database**:
 
-- Create a dedicated `auth_db` schema (or Railway MySQL instance) containing only `email_verification` and `user_id_external_id_map` tables.
-- Auth service points to `auth_db`.
-- The monolith keeps all other tables in its database.
-- Auth service still needs to read/write `user` table for login/registration -- this is handled via REST calls to the monolith (or future user-service) rather than direct DB access. Requires adding a Feign client or RestTemplate call from auth-service to the monolith's user endpoints.
+- No new databases per service — monolith, auth-service, and future services (e.g. activity-service) all connect to the same MySQL instance/schema.
+- Auth service and activity service use the same datasource URL as the monolith; each service only touches the tables it owns (e.g. auth: `email_verification`, `user_id_external_id_map`; activity: `activity`, `activity_type`, etc.).
+- User data for login/registration can stay as direct DB access or REST to monolith, depending on preference; shared DB allows direct access if desired.
+- Flyway migrations can live in the monolith (or a single migration module) so schema changes are applied once.
 
 ### 1D. Inter-Service Communication
 
@@ -114,8 +111,7 @@ Once infrastructure is in place, extract the Activity domain:
 
 ### Database:
 
-- New `activity_db` with Activity, ActivityType, ActivityUser, Location tables
-- Flyway migrations for the new database
+- **Shared database:** Activity service connects to the same MySQL as the monolith. Activity, ActivityType, ActivityUser, Location tables remain in that single schema; Flyway migrations (if used) stay in the monolith or a single place.
 
 ### Gateway update:
 
@@ -138,8 +134,8 @@ Once infrastructure is in place, extract the Activity domain:
 
 - `gateway/api-gateway/` -- Spring Cloud Gateway with JWT validation, routing, rate limiting
 - `shared/spawn-common/` (optional) -- shared DTOs and utilities
-- `services/auth-service/` -- updated with its own database and Feign client for user lookup
-- `services/activity-service/` -- new microservice for the activity domain
+- `services/auth-service/` -- uses shared database; Feign client for user lookup as needed
+- `services/activity-service/` -- new microservice for the activity domain (shared database)
 - Updated monolith with removed activity code and new event subscribers for Redis Pub/Sub
 - Updated gateway routes
 
@@ -150,5 +146,5 @@ Once infrastructure is in place, extract the Activity domain:
 - **Spring Cloud Gateway** for API Gateway
 - **Feign + Resilience4j** for synchronous inter-service calls
 - **Redis Pub/Sub** for async cross-service events
-- **Separate MySQL databases** per service on Railway
+- **Single shared MySQL database** for monolith and all services on Railway
 
