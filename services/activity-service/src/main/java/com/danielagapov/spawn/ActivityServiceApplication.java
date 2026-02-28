@@ -25,12 +25,18 @@ public class ActivityServiceApplication {
         if (!isTestProfile) {
             Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
+            // Shared MySQL database (same as monolith)
             loadEnvVar(dotenv, "MYSQL_URL");
             loadEnvVar(dotenv, "MYSQL_USER");
             loadEnvVar(dotenv, "MYSQL_PASSWORD");
+
+            // Redis
             loadEnvVar(dotenv, "REDIS_HOST");
             loadEnvVar(dotenv, "REDIS_PORT");
             loadEnvVar(dotenv, "REDIS_PASSWORD");
+
+            // Monolith URL for Feign clients
+            loadEnvVar(dotenv, "MONOLITH_URL");
         }
 
         SpringApplication.run(ActivityServiceApplication.class, args);

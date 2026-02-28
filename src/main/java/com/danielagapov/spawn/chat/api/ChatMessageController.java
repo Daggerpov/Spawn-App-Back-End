@@ -33,6 +33,22 @@ public class ChatMessageController {
         this.logger = logger;
     }
 
+    /**
+     * Get full chat messages for a specific activity.
+     * Used by activity-service (Feign client) to fetch chat data for activity DTOs.
+     * full path: /api/v1/chat-messages/by-activity/{activityId}
+     */
+    @GetMapping("/by-activity/{activityId}")
+    public ResponseEntity<List<FullActivityChatMessageDTO>> getChatMessagesByActivity(@PathVariable UUID activityId) {
+        try {
+            List<FullActivityChatMessageDTO> messages = chatMessageService.getFullChatMessagesByActivityId(activityId);
+            return new ResponseEntity<>(messages, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error getting chat messages for activity: " + activityId + ": " + e.getMessage());
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        }
+    }
+
     // full path: /api/v1/chat-messages
     @PostMapping
     public ResponseEntity<FullActivityChatMessageDTO> createChatMessage(@RequestBody CreateChatMessageDTO newChatMessage) {

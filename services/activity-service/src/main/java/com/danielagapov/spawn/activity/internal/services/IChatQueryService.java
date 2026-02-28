@@ -7,8 +7,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Interface for querying chat data from the Chat module via events.
- * This breaks the circular dependency between Activity and Chat modules.
+ * Interface for querying chat data from the Chat module.
+ * In the microservice, this uses a Feign client to call the monolith
+ * (where the Chat module still lives) instead of in-process events.
  */
 public interface IChatQueryService {
     

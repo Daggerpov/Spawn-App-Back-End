@@ -19,10 +19,10 @@ todos:
     status: completed
   - id: extract-activity
     content: Extract Activity Service (entities, repos, services, controllers, DTOs)
-    status: pending
+    status: completed
   - id: gateway-routes
     content: Update gateway routes for activity-service
-    status: pending
+    status: completed
   - id: health-logging
     content: Add health checks, structured logging, and distributed tracing across services
     status: completed

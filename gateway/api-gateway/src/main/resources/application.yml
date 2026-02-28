@@ -33,6 +33,14 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Activity Service (port 8082)
+        - id: activity-service
+          uri: ${ACTIVITY_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/activities/**,/api/v1/users/*/activity-types/**
+          filters:
+            - StripPrefix=0
+
         # Monolith -- catch-all for everything else (port 8080)
         - id: monolith
           uri: ${MONOLITH_URL:http://localhost:8080}
