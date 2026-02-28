@@ -25,7 +25,7 @@ public class NotificationPreferences {
     /**
      * User who owns these preferences
      */
-    @OneToOne(cascade = {CascadeType.ALL, CascadeType.REMOVE})
+    @OneToOne(cascade = {CascadeType.ALL, CascadeType.REMOVE}, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;

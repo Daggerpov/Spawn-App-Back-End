@@ -58,7 +58,7 @@ public class User implements Serializable {
     @Column(name = "last_updated")
     private Instant lastUpdated;
     
-    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private NotificationPreferences notificationPreferences;
 
