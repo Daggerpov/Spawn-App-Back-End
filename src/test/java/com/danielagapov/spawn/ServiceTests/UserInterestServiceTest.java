@@ -43,13 +43,13 @@ public class UserInterestServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        
+
         testUserId = UUID.randomUUID();
         testUser = new User();
         testUser.setId(testUserId);
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
-        
+
         testUserInterest = new UserInterest();
         testUserInterest.setId(UUID.randomUUID());
         testUserInterest.setUser(testUser);
@@ -59,17 +59,14 @@ public class UserInterestServiceTest {
 
     @Test
     void getUserInterests_ShouldReturnListOfInterests_WhenUserHasInterests() {
-        // Arrange
         UserInterest interest1 = new UserInterest(testUser, "hiking");
         UserInterest interest2 = new UserInterest(testUser, "cooking");
         List<UserInterest> userInterests = Arrays.asList(interest1, interest2);
-        
+
         when(userInterestRepository.findByUserId(testUserId)).thenReturn(userInterests);
 
-        // Act
         List<String> result = userInterestService.getUserInterests(testUserId);
 
-        // Assert
         assertEquals(2, result.size());
         assertTrue(result.contains("hiking"));
         assertTrue(result.contains("cooking"));
@@ -78,43 +75,52 @@ public class UserInterestServiceTest {
 
     @Test
     void getUserInterests_ShouldReturnEmptyList_WhenUserHasNoInterests() {
-        // Arrange
         when(userInterestRepository.findByUserId(testUserId)).thenReturn(Arrays.asList());
 
-        // Act
         List<String> result = userInterestService.getUserInterests(testUserId);
 
-        // Assert
         assertTrue(result.isEmpty());
         verify(userInterestRepository).findByUserId(testUserId);
     }
 
     @Test
     void addUserInterest_ShouldReturnInterestName_WhenSuccessful() {
-        // Arrange
         String interestName = "photography";
+        when(userInterestRepository.findByUserIdAndInterestIgnoreCase(testUserId, interestName))
+            .thenReturn(Optional.empty());
         when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
         when(userInterestRepository.save(any(UserInterest.class))).thenReturn(testUserInterest);
 
-        // Act
         String result = userInterestService.addUserInterest(testUserId, interestName);
 
-        // Assert
-        assertEquals("hiking", result); // testUserInterest has "hiking" as interest
+        assertEquals("hiking", result);
         verify(userRepository).findById(testUserId);
         verify(userInterestRepository).save(any(UserInterest.class));
     }
 
     @Test
+    void addUserInterest_ShouldReturnExisting_WhenDuplicate() {
+        String interestName = "hiking";
+        when(userInterestRepository.findByUserIdAndInterestIgnoreCase(testUserId, interestName))
+            .thenReturn(Optional.of(testUserInterest));
+
+        String result = userInterestService.addUserInterest(testUserId, interestName);
+
+        assertEquals("hiking", result);
+        verify(userRepository, never()).findById(any());
+        verify(userInterestRepository, never()).save(any(UserInterest.class));
+    }
+
+    @Test
     void addUserInterest_ShouldThrowException_WhenUserNotFound() {
-        // Arrange
         String interestName = "photography";
+        when(userInterestRepository.findByUserIdAndInterestIgnoreCase(testUserId, interestName))
+            .thenReturn(Optional.empty());
         when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, 
+        RuntimeException exception = assertThrows(RuntimeException.class,
             () -> userInterestService.addUserInterest(testUserId, interestName));
-        
+
         assertTrue(exception.getMessage().contains("User not found"));
         verify(userRepository).findById(testUserId);
         verify(userInterestRepository, never()).save(any(UserInterest.class));
@@ -122,121 +128,91 @@ public class UserInterestServiceTest {
 
     @Test
     void removeUserInterest_ShouldReturnTrue_WhenInterestExists() {
-        // Arrange
-        String encodedInterest = "hiking";
-        when(userInterestRepository.findByUserId(testUserId))
-            .thenReturn(Arrays.asList(testUserInterest));
-        when(userInterestRepository.findByUserIdAndInterest(testUserId, "hiking"))
+        when(userInterestRepository.findByUserIdAndInterestIgnoreCase(testUserId, "hiking"))
             .thenReturn(Optional.of(testUserInterest));
 
-        // Act
-        boolean result = userInterestService.removeUserInterest(testUserId, encodedInterest);
+        boolean result = userInterestService.removeUserInterest(testUserId, "hiking");
 
-        // Assert
         assertTrue(result);
-        verify(userInterestRepository).findByUserId(testUserId);
-        verify(userInterestRepository).findByUserIdAndInterest(testUserId, "hiking");
+        verify(userInterestRepository).findByUserIdAndInterestIgnoreCase(testUserId, "hiking");
         verify(userInterestRepository).delete(testUserInterest);
-        verify(logger).info(contains("Attempting to remove interest"));
-        verify(logger).info(contains("Successfully removed interest"));
+    }
+
+    @Test
+    void removeUserInterest_ShouldReturnTrue_WhenCaseDiffers() {
+        when(userInterestRepository.findByUserIdAndInterestIgnoreCase(testUserId, "Hiking"))
+            .thenReturn(Optional.of(testUserInterest));
+
+        boolean result = userInterestService.removeUserInterest(testUserId, "Hiking");
+
+        assertTrue(result);
+        verify(userInterestRepository).delete(testUserInterest);
     }
 
     @Test
     void removeUserInterest_ShouldReturnFalse_WhenInterestNotFound() {
-        // Arrange
-        String encodedInterest = "nonexistent";
-        when(userInterestRepository.findByUserId(testUserId))
-            .thenReturn(Arrays.asList(testUserInterest));
-        when(userInterestRepository.findByUserIdAndInterest(testUserId, "nonexistent"))
+        when(userInterestRepository.findByUserIdAndInterestIgnoreCase(testUserId, "nonexistent"))
             .thenReturn(Optional.empty());
 
-        // Act
-        boolean result = userInterestService.removeUserInterest(testUserId, encodedInterest);
+        boolean result = userInterestService.removeUserInterest(testUserId, "nonexistent");
 
-        // Assert
         assertFalse(result);
-        verify(userInterestRepository).findByUserId(testUserId);
-        verify(userInterestRepository).findByUserIdAndInterest(testUserId, "nonexistent");
         verify(userInterestRepository, never()).delete(any(UserInterest.class));
-        verify(logger).info(contains("Attempting to remove interest"));
-        verify(logger).warn(contains("Interest 'nonexistent' not found"));
     }
 
     @Test
-    void removeUserInterest_ShouldHandleUrlEncodedInterest_WhenInterestHasSpaces() {
-        // Arrange
-        String encodedInterest = "rock%20climbing";
-        String decodedInterest = "rock climbing";
-        
-        UserInterest spaceInterest = new UserInterest(testUser, decodedInterest);
-        when(userInterestRepository.findByUserId(testUserId))
-            .thenReturn(Arrays.asList(spaceInterest));
-        when(userInterestRepository.findByUserIdAndInterest(testUserId, decodedInterest))
-            .thenReturn(Optional.of(spaceInterest));
+    void replaceUserInterests_ShouldReplaceAll() {
+        List<String> newInterests = Arrays.asList("cooking", "hiking", "photography");
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(userInterestRepository.save(any(UserInterest.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act
-        boolean result = userInterestService.removeUserInterest(testUserId, encodedInterest);
+        List<String> result = userInterestService.replaceUserInterests(testUserId, newInterests);
 
-        // Assert
-        assertTrue(result);
-        verify(userInterestRepository).findByUserId(testUserId);
-        verify(userInterestRepository).findByUserIdAndInterest(testUserId, decodedInterest);
-        verify(userInterestRepository).delete(spaceInterest);
-        verify(logger, times(3)).info(contains("rock climbing")); // Called three times: attempting + debug listing + successfully
+        assertEquals(3, result.size());
+        assertTrue(result.contains("cooking"));
+        assertTrue(result.contains("hiking"));
+        assertTrue(result.contains("photography"));
+        verify(userInterestRepository).deleteAllByUserId(testUserId);
+        verify(userInterestRepository, times(3)).save(any(UserInterest.class));
     }
 
     @Test
-    void removeUserInterest_ShouldHandleUrlEncodedInterest_WhenInterestHasSpecialCharacters() {
-        // Arrange
-        String encodedInterest = "caf%C3%A9%20culture";
-        String decodedInterest = "café culture";
-        
-        UserInterest specialInterest = new UserInterest(testUser, decodedInterest);
-        when(userInterestRepository.findByUserId(testUserId))
-            .thenReturn(Arrays.asList(specialInterest));
-        when(userInterestRepository.findByUserIdAndInterest(testUserId, decodedInterest))
-            .thenReturn(Optional.of(specialInterest));
+    void replaceUserInterests_ShouldDeduplicateCaseInsensitive() {
+        List<String> newInterests = Arrays.asList("Hiking", "hiking", "HIKING");
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(userInterestRepository.save(any(UserInterest.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act
-        boolean result = userInterestService.removeUserInterest(testUserId, encodedInterest);
+        List<String> result = userInterestService.replaceUserInterests(testUserId, newInterests);
 
-        // Assert
-        assertTrue(result);
-        verify(userInterestRepository).findByUserId(testUserId);
-        verify(userInterestRepository).findByUserIdAndInterest(testUserId, decodedInterest);
-        verify(userInterestRepository).delete(specialInterest);
-        verify(logger, times(3)).info(contains("café culture")); // Called three times: attempting + debug listing + successfully
+        assertEquals(1, result.size());
+        assertEquals("Hiking", result.get(0));
+        verify(userInterestRepository, times(1)).save(any(UserInterest.class));
     }
 
     @Test
-    void removeUserInterest_ShouldThrowException_WhenRepositoryThrowsException() {
-        // Arrange
-        String encodedInterest = "hiking";
-        when(userInterestRepository.findByUserIdAndInterest(testUserId, "hiking"))
-            .thenThrow(new RuntimeException("Database connection failed"));
+    void replaceUserInterests_ShouldSkipEmptyAndWhitespace() {
+        List<String> newInterests = Arrays.asList("hiking", "", "  ", "cooking");
+        when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+        when(userInterestRepository.save(any(UserInterest.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act & Assert
+        List<String> result = userInterestService.replaceUserInterests(testUserId, newInterests);
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains("hiking"));
+        assertTrue(result.contains("cooking"));
+        verify(userInterestRepository, times(2)).save(any(UserInterest.class));
+    }
+
+    @Test
+    void replaceUserInterests_ShouldThrowException_WhenUserNotFound() {
+        when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
+
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> userInterestService.removeUserInterest(testUserId, encodedInterest));
-        
-        assertTrue(exception.getMessage().contains("Failed to remove user interest"));
-        verify(logger).error(contains("Error removing interest"));
-    }
+            () -> userInterestService.replaceUserInterests(testUserId, Arrays.asList("hiking")));
 
-    @Test
-    void removeUserInterest_ShouldLogError_WhenUnexpectedExceptionOccurs() {
-        // Arrange
-        String encodedInterest = "hiking";
-        when(userInterestRepository.findByUserIdAndInterest(testUserId, "hiking"))
-            .thenReturn(Optional.of(testUserInterest));
-        doThrow(new RuntimeException("Delete failed"))
-            .when(userInterestRepository).delete(testUserInterest);
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> userInterestService.removeUserInterest(testUserId, encodedInterest));
-        
-        assertTrue(exception.getMessage().contains("Failed to remove user interest"));
-        verify(logger).error(contains("Error removing interest"));
+        assertTrue(exception.getMessage().contains("User not found"));
     }
-} 
+}

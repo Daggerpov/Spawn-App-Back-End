@@ -1,8 +1,6 @@
 package com.danielagapov.spawn.user.api;
 
-import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.services.IUserInterestService;
-import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,57 +14,46 @@ import java.util.UUID;
 public class UserInterestController {
 
     private final IUserInterestService userInterestService;
-    private final ILogger logger;
 
     @Autowired
-    public UserInterestController(IUserInterestService userInterestService, ILogger logger) {
+    public UserInterestController(IUserInterestService userInterestService) {
         this.userInterestService = userInterestService;
-        this.logger = logger;
     }
 
     @GetMapping
     public ResponseEntity<List<String>> getUserInterests(@PathVariable UUID userId) {
-        try {
-            List<String> interests = userInterestService.getUserInterests(userId);
-            interests = interests.stream()
-                    .map(interest -> interest.replaceAll("^\"|\"$", ""))
-                    .toList();
-            return ResponseEntity.ok(interests);
-        } catch (Exception e) {
-            logger.error("Error getting user interests for user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
-            throw e;
-        }
+        List<String> interests = userInterestService.getUserInterests(userId);
+        return ResponseEntity.ok(interests);
+    }
+
+    @PutMapping
+    public ResponseEntity<List<String>> replaceUserInterests(
+            @PathVariable UUID userId,
+            @RequestBody List<String> interests) {
+        List<String> saved = userInterestService.replaceUserInterests(userId, interests);
+        return ResponseEntity.ok(saved);
     }
 
     @PostMapping
     public ResponseEntity<String> addUserInterest(
             @PathVariable UUID userId,
             @RequestBody String userInterestName) {
-        userInterestName = userInterestName.replaceAll("^\"|\"$", "");
-        try {
-            String result = userInterestService.addUserInterest(userId, userInterestName);
-            return new ResponseEntity<>(result, HttpStatus.CREATED);
-        } catch (Exception e) {
-            logger.error("Error adding user interest for user: " + LoggingUtils.formatUserIdInfo(userId) + " - interest: " + userInterestName + ": " + e.getMessage());
-            throw e;
+        // @RequestBody with a plain JSON string arrives wrapped in quotes; strip them.
+        String cleaned = userInterestName.replaceAll("^\"|\"$", "").trim();
+        if (cleaned.isEmpty()) {
+            return ResponseEntity.badRequest().build();
         }
+        String result = userInterestService.addUserInterest(userId, cleaned);
+        return new ResponseEntity<>(result, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{interest}")
     public ResponseEntity<Void> removeUserInterest(
             @PathVariable UUID userId,
             @PathVariable String interest) {
-        try {
-            boolean removed = userInterestService.removeUserInterest(userId, interest);
-            
-            if (removed) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            logger.error("Error removing user interest for user: " + LoggingUtils.formatUserIdInfo(userId) + " - interest: " + interest + ": " + e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        boolean removed = userInterestService.removeUserInterest(userId, interest);
+        return removed
+                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
+                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 } 
