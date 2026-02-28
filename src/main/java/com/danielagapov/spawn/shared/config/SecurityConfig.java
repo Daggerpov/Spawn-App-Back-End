@@ -30,6 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig {
+    private final TraceIdMdcFilter traceIdMdcFilter;
     private final JWTFilterConfig jwtFilterConfig;
     private final UserInfoService userInfoService;
     
@@ -155,6 +156,7 @@ public class SecurityConfig {
                 // 'Stateless' session management means Spring will not create and store any session state on the server
                 // Each request is treated as 'new' and thus requires authentication (a JWT) to access secured endpoints
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(traceIdMdcFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilterConfig, UsernamePasswordAuthenticationFilter.class)
         ;
         return http.build();

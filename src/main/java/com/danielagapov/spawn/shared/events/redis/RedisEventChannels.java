@@ -29,4 +29,7 @@ public final class RedisEventChannels {
 
     /** Published by activity-service when a user joins/leaves an activity. */
     public static final String ACTIVITY_PARTICIPATION_CHANGED = "events:activity-participation-changed";
+
+    /** Published by chat-service when a new comment is created. Monolith subscribes to send notifications. */
+    public static final String NEW_COMMENT = "events:new-comment";
 }

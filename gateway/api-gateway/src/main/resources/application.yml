@@ -41,6 +41,14 @@ spring:
           filters:
             - StripPrefix=0
 
+        # Chat Service (port 8083)
+        - id: chat-service
+          uri: ${CHAT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/chat-messages/**
+          filters:
+            - StripPrefix=0
+
         # Monolith -- catch-all for everything else (port 8080)
         - id: monolith
           uri: ${MONOLITH_URL:http://localhost:8080}

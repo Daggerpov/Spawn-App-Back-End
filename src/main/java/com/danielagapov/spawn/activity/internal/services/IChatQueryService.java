@@ -29,8 +29,7 @@ public interface IChatQueryService {
     Map<UUID, List<UUID>> getChatMessageIdsByActivityIds(List<UUID> activityIds);
     
     /**
-     * Get full chat messages for an activity via event query.
-     * Converts ChatMessageData to FullActivityChatMessageDTO with user lookups.
+     * Get full chat messages for an activity (via chat-service when extracted).
      * 
      * @param activityId The activity ID
      * @return List of full chat message DTOs, or empty list if none found or on error

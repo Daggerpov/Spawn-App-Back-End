@@ -10,7 +10,7 @@ import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.analytics.internal.domain.ReportedContent;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.analytics.internal.repositories.IReportedContentRepository;
-import com.danielagapov.spawn.chat.internal.services.IChatMessageService;
+import com.danielagapov.spawn.shared.feign.ChatServiceClient;
 import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.shared.exceptions.Logger.Logger;
@@ -30,7 +30,7 @@ public class ReportContentService implements IReportContentService {
     private final IReportedContentRepository repository;
     private final IUserService userService;
     private final IActivityService ActivityService;
-    private final IChatMessageService chatMessageService;
+    private final ChatServiceClient chatServiceClient;
     private final Logger logger;
 
 
@@ -181,6 +181,6 @@ public class ReportContentService implements IReportContentService {
      * Made a wrapper method for improved readability in the caller method.
      */
     private User getChatMessageOwnerByContentId(UUID chatMessageId) {
-        return userService.getUserEntityById(chatMessageService.getChatMessageById(chatMessageId).getSenderUserId());
+        return userService.getUserEntityById(chatServiceClient.getChatMessageById(chatMessageId).getSenderUserId());
     }
 }

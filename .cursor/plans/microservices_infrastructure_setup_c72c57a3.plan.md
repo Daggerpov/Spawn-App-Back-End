@@ -26,6 +26,9 @@ todos:
   - id: health-logging
     content: Add health checks, structured logging, and distributed tracing across services
     status: completed
+  - id: extract-chat
+    content: Extract Chat Service (chat entities, REST + optional WebSocket, Feign to monolith/activity)
+    status: completed
 isProject: false
 ---
 
@@ -46,7 +49,7 @@ isProject: false
 Create `gateway/api-gateway/` as a new Spring Boot application:
 
 - **JWT validation** as a global filter -- the gateway validates tokens so downstream services don't each need to. It adds `X-User-Id` header to forwarded requests.
-- **Route configuration** mapping `/api/v1/auth/**` to auth-service (port 8081), everything else to the monolith (port 8080) for now. As services are extracted, new routes get added.
+- **Route configuration** mapping `/api/v1/auth/`** to auth-service (port 8081), everything else to the monolith (port 8080) for now. As services are extracted, new routes get added.
 - **Rate limiting** via Redis (reuse existing Bucket4j or use Spring Cloud Gateway's built-in Redis rate limiter).
 - **CORS handling** centralized at the gateway level.
 - **Health check** endpoint at `/actuator/health`.
@@ -107,7 +110,7 @@ Once infrastructure is in place, extract the Activity domain:
 - Activity service needs **user data** (creator info, participant info) -- use Feign client to call monolith's `/api/v1/users/{id}` endpoint
 - Activity service needs **friend data** (for invite validation) -- Feign client to monolith's social endpoints
 - Activity creation triggers **notification events** -- publish to Redis Pub/Sub, monolith's notification module subscribes
-- **Caching:** Activity service gets its own Redis namespace (`activity:*`)
+- **Caching:** Activity service gets its own Redis namespace (`activity:`*)
 
 ### Database:
 
@@ -115,7 +118,7 @@ Once infrastructure is in place, extract the Activity domain:
 
 ### Gateway update:
 
-- Add route: `/api/v1/activities/**` and `/api/v1/activity-types/**` -> activity-service
+- Add route: `/api/v1/activities/`** and `/api/v1/activity-types/`** -> activity-service
 
 ---
 
@@ -130,6 +133,17 @@ Once infrastructure is in place, extract the Activity domain:
 
 ---
 
+## Phase 4: Extract Chat Service (Next)
+
+- **Scope:** Move chat domain from monolith to `services/chat-service/` (port 8083).
+- **What moves:** Entities `ChatMessage`, `ChatMessageLikes`; repositories; `ChatMessageService`, `IChatMessageService`; `ChatMessageController`; DTOs (`CreateChatMessageDTO`, `FullActivityChatMessageDTO`, etc.).
+- **Cross-cutting:** Chat service needs activity membership checks — Feign to activity-service or monolith. Monolith currently exposes `/api/v1/chat-messages/by-activity/{activityId}` for activity-service; after extraction, chat-service owns that API and activity-service calls chat-service via Feign.
+- **Gateway:** Add route `/api/v1/chat-messages/`** → chat-service.
+- **Optional:** WebSocket support for real-time messaging (see `docs/microservices/MICROSERVICES_IMPLEMENTATION_PLAN.md`).
+- **Database:** Shared MySQL; chat tables remain in the same schema.
+
+---
+
 ## Summary of Deliverables
 
 - `gateway/api-gateway/` -- Spring Cloud Gateway with JWT validation, routing, rate limiting
@@ -138,6 +152,7 @@ Once infrastructure is in place, extract the Activity domain:
 - `services/activity-service/` -- new microservice for the activity domain (shared database)
 - Updated monolith with removed activity code and new event subscribers for Redis Pub/Sub
 - Updated gateway routes
+- Distributed tracing: `X-Trace-Id` propagation (gateway), MDC in monolith; see `docs/microservices/DISTRIBUTED_TRACING.md`
 
 ## Key Technical Decisions
 

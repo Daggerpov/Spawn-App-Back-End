@@ -19,15 +19,20 @@ public class RedisSubscriberConfig {
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory connectionFactory,
-            UserRegisteredEventSubscriber userRegisteredSubscriber) {
+            UserRegisteredEventSubscriber userRegisteredSubscriber,
+            NewCommentEventSubscriber newCommentEventSubscriber) {
 
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
 
-        // Subscribe to user-registered events from auth-service
         container.addMessageListener(
                 new MessageListenerAdapter(userRegisteredSubscriber, "onMessage"),
                 new ChannelTopic(RedisEventChannels.USER_REGISTERED)
+        );
+
+        container.addMessageListener(
+                new MessageListenerAdapter(newCommentEventSubscriber, "onMessage"),
+                new ChannelTopic(RedisEventChannels.NEW_COMMENT)
         );
 
         return container;
