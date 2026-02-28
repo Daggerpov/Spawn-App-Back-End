@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.notification.internal.domain;
 
 import com.danielagapov.spawn.user.internal.domain.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -27,6 +28,7 @@ public class NotificationPreferences {
      */
     @OneToOne(cascade = {CascadeType.ALL, CascadeType.REMOVE}, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonIgnore
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
     

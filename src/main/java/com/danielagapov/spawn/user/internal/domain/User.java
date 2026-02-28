@@ -2,6 +2,7 @@ package com.danielagapov.spawn.user.internal.domain;
 
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.notification.internal.domain.NotificationPreferences;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -59,6 +60,7 @@ public class User implements Serializable {
     private Instant lastUpdated;
     
     @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private NotificationPreferences notificationPreferences;
 
