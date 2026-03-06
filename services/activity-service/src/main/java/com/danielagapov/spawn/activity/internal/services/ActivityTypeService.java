@@ -198,6 +198,13 @@ public class ActivityTypeService implements IActivityTypeService {
 
     @Override
     @Transactional
+    public void initializeDefaultActivityTypesForUserId(UUID userId) {
+        User user = userService.getUserEntityById(userId);
+        initializeDefaultActivityTypesForUser(user);
+    }
+
+    @Override
+    @Transactional
     public void initializeDefaultActivityTypesForUser(User user) {
         try {
             // Double-check if user already has activity types to avoid duplicate initialization

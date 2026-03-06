@@ -29,6 +29,9 @@ todos:
   - id: extract-chat
     content: Extract Chat Service (chat entities, REST + optional WebSocket, Feign to monolith/activity)
     status: completed
+  - id: monolith-cleanup
+    content: Remove activity/chat domain from monolith, use Feign clients and spawn-common DTOs
+    status: completed
 isProject: false
 ---
 
@@ -147,12 +150,23 @@ Once infrastructure is in place, extract the Activity domain:
 ## Summary of Deliverables
 
 - `gateway/api-gateway/` -- Spring Cloud Gateway with JWT validation, routing, rate limiting
-- `shared/spawn-common/` (optional) -- shared DTOs and utilities
+- `shared/spawn-common/` -- shared DTOs (activity, chat, user) for Feign clients and inter-service contracts
 - `services/auth-service/` -- uses shared database; Feign client for user lookup as needed
-- `services/activity-service/` -- new microservice for the activity domain (shared database)
-- Updated monolith with removed activity code and new event subscribers for Redis Pub/Sub
+- `services/activity-service/` -- microservice for activity domain (shared database)
+- `services/chat-service/` -- microservice for chat domain (shared database)
+- Updated monolith: activity/chat domains removed; uses ActivityServiceClient, ChatServiceClient; DTOs from spawn-common
 - Updated gateway routes
 - Distributed tracing: `X-Trace-Id` propagation (gateway), MDC in monolith; see `docs/microservices/DISTRIBUTED_TRACING.md`
+
+## Monolith Cleanup (Completed)
+
+- Removed `src/main/java/.../activity/` package (controllers, services, repos, entities, DTOs)
+- Removed activity mappers (ActivityMapper, ActivityTypeMapper, LocationMapper)
+- Removed activity notification events (ActivityInviteNotificationEvent, etc.) — activity-service has its own
+- Replaced IActivityService/IActivityTypeService usage with ActivityServiceClient (ReportContentService, CacheService, ShareLinkController, NewCommentEventSubscriber)
+- Replaced ICalendarService with ActivityServiceClient and ActivityExpirationService with ActivityExpirationUtil
+- ActivityTypeInitializer and ActivityTypeEventListener now call activity-service via Feign
+- Added MinimalFriendDTO to spawn-common for ActivityTypeDTO
 
 ## Key Technical Decisions
 

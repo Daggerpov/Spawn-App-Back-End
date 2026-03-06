@@ -31,7 +31,7 @@ public interface IChatQueryService {
     
     /**
      * Get full chat messages for an activity via event query.
-     * Converts ChatMessageData to FullActivityChatMessageDTO with user lookups.
+     * Returns full chat message DTOs from chat-service.
      * 
      * @param activityId The activity ID
      * @return List of full chat message DTOs, or empty list if none found or on error

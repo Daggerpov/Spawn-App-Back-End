@@ -1,6 +1,6 @@
 package com.danielagapov.spawn.shared.events.redis;
 
-import com.danielagapov.spawn.activity.api.IActivityService;
+import com.danielagapov.spawn.shared.feign.ActivityServiceClient;
 import com.danielagapov.spawn.chat.api.dto.ChatMessageDTO;
 import com.danielagapov.spawn.shared.events.NewCommentNotificationEvent;
 import com.danielagapov.spawn.shared.util.ParticipationStatus;
@@ -25,13 +25,13 @@ public class NewCommentEventSubscriber implements MessageListener {
 
     private static final Logger log = LoggerFactory.getLogger(NewCommentEventSubscriber.class);
     private final ApplicationEventPublisher springEventPublisher;
-    private final IActivityService activityService;
+    private final ActivityServiceClient activityServiceClient;
     private final ObjectMapper objectMapper;
 
     public NewCommentEventSubscriber(ApplicationEventPublisher springEventPublisher,
-                                    IActivityService activityService) {
+                                    ActivityServiceClient activityServiceClient) {
         this.springEventPublisher = springEventPublisher;
-        this.activityService = activityService;
+        this.activityServiceClient = activityServiceClient;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -43,9 +43,9 @@ public class NewCommentEventSubscriber implements MessageListener {
             NewCommentRedisEvent event = objectMapper.readValue(json, NewCommentRedisEvent.class);
             log.info("Received new-comment event for activityId={}, messageId={}", event.activityId(), event.messageId());
 
-            String activityTitle = activityService.getActivityTitle(event.activityId());
-            UUID creatorId = activityService.getActivityCreatorId(event.activityId());
-            List<UUID> participantIds = activityService.getParticipantUserIdsByActivityIdAndStatus(
+            String activityTitle = activityServiceClient.getActivityTitle(event.activityId());
+            UUID creatorId = activityServiceClient.getCreatorId(event.activityId());
+            List<UUID> participantIds = activityServiceClient.getParticipantUserIds(
                     event.activityId(), ParticipationStatus.participating);
 
             ChatMessageDTO messageDTO = new ChatMessageDTO(

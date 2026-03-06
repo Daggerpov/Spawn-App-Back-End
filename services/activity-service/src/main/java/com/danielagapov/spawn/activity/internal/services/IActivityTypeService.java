@@ -31,6 +31,13 @@ public interface IActivityTypeService {
      * @param user The user to initialize activity types for
      */
     void initializeDefaultActivityTypesForUser(User user);
+
+    /**
+     * Initialize default activity types for a user by ID (for internal/Feign calls).
+     * Fetches user from DB and delegates to initializeDefaultActivityTypesForUser.
+     * @param userId The user ID to initialize activity types for
+     */
+    void initializeDefaultActivityTypesForUserId(UUID userId);
     
     /**
      * Set the order number for an activity type

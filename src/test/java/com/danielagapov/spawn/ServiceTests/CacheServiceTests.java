@@ -1,8 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
-import com.danielagapov.spawn.activity.api.IActivityService;
-import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
+import com.danielagapov.spawn.shared.feign.ActivityServiceClient;
 import com.danielagapov.spawn.analytics.internal.services.CacheService;
 import com.danielagapov.spawn.analytics.internal.services.CacheType;
 import com.danielagapov.spawn.shared.config.CacheValidationResponseDTO;
@@ -50,10 +49,7 @@ class CacheServiceTests {
     private IUserService userService;
 
     @Mock
-    private IActivityService activityService;
-
-    @Mock
-    private IActivityTypeService activityTypeService;
+    private ActivityServiceClient activityServiceClient;
 
     @Mock
     private IFriendRequestService friendRequestService;
@@ -87,8 +83,7 @@ class CacheServiceTests {
         cacheService = new CacheService(
             userRepository,
             userService,
-            activityService,
-            activityTypeService,
+            activityServiceClient,
             friendRequestService,
             objectMapper,
             userStatsService,
@@ -251,13 +246,13 @@ class CacheServiceTests {
             timestamps.put(CacheType.EVENTS.getKey(), clientTimestamp);
 
             // Server has newer activity
-            when(activityService.getLatestCreatedActivityTimestamp(testUserId))
+            when(activityServiceClient.getLatestCreatedActivityTimestamp(testUserId))
                 .thenReturn(Instant.now().minusSeconds(1800));
-            when(activityService.getLatestInvitedActivityTimestamp(testUserId))
+            when(activityServiceClient.getLatestInvitedActivityTimestamp(testUserId))
                 .thenReturn(null);
-            when(activityService.getLatestUpdatedActivityTimestamp(testUserId))
+            when(activityServiceClient.getLatestUpdatedActivityTimestamp(testUserId))
                 .thenReturn(null);
-            when(activityService.getFeedActivities(testUserId))
+            when(activityServiceClient.getFeedActivities(testUserId))
                 .thenReturn(List.of());
 
             // When
@@ -282,7 +277,7 @@ class CacheServiceTests {
             Map<String, String> timestamps = new HashMap<>();
             timestamps.put(CacheType.ACTIVITY_TYPES.getKey(), clientTimestamp);
 
-            when(activityTypeService.getActivityTypesByUserId(testUserId))
+            when(activityServiceClient.getActivityTypesByUserId(testUserId))
                 .thenReturn(List.of());
 
             // When
@@ -306,7 +301,7 @@ class CacheServiceTests {
 
             ActivityTypeDTO activityType = new ActivityTypeDTO();
             activityType.setId(UUID.randomUUID());
-            when(activityTypeService.getActivityTypesByUserId(testUserId))
+            when(activityServiceClient.getActivityTypesByUserId(testUserId))
                 .thenReturn(List.of(activityType));
 
             // When
@@ -683,13 +678,13 @@ class CacheServiceTests {
             Map<String, String> timestamps = new HashMap<>();
             timestamps.put(CacheType.PROFILE_EVENTS.getKey(), getTimestamp(Instant.now().minusSeconds(7200)));
 
-            when(activityService.getLatestCreatedActivityTimestamp(testUserId))
+            when(activityServiceClient.getLatestCreatedActivityTimestamp(testUserId))
                 .thenReturn(Instant.now().minusSeconds(3600));
-            when(activityService.getLatestInvitedActivityTimestamp(testUserId))
+            when(activityServiceClient.getLatestInvitedActivityTimestamp(testUserId))
                 .thenReturn(null);
-            when(activityService.getLatestUpdatedActivityTimestamp(testUserId))
+            when(activityServiceClient.getLatestUpdatedActivityTimestamp(testUserId))
                 .thenReturn(null);
-            when(activityService.getProfileActivities(testUserId, testUserId))
+            when(activityServiceClient.getProfileActivities(testUserId, testUserId))
                 .thenReturn(List.of());
 
             // When
