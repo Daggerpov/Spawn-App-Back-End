@@ -30,6 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig {
+    private final TraceIdMdcFilter traceIdMdcFilter;
     private final JWTFilterConfig jwtFilterConfig;
     private final UserInfoService userInfoService;
     
@@ -40,7 +41,9 @@ public class SecurityConfig {
             "/api/v1/auth/register/verification/check",
             "/api/v1/auth/sign-in",
             "/api/v1/auth/login",
-            "/api/v1/users/contacts/cross-reference"
+            "/api/v1/users/contacts/cross-reference",
+            "/actuator/health",
+            "/actuator/info"
     };
     // Additional regex patterns for whitelisted URLs
     private final String[] whitelistedUrlPatterns = new String[] {
@@ -153,6 +156,7 @@ public class SecurityConfig {
                 // 'Stateless' session management means Spring will not create and store any session state on the server
                 // Each request is treated as 'new' and thus requires authentication (a JWT) to access secured endpoints
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(traceIdMdcFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilterConfig, UsernamePasswordAuthenticationFilter.class)
         ;
         return http.build();

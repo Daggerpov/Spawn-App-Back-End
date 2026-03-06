@@ -9,7 +9,7 @@ import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.user.internal.domain.User;
-import com.danielagapov.spawn.activity.internal.repositories.IActivityUserRepository;
+import com.danielagapov.spawn.shared.feign.ActivityServiceClient;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.analytics.internal.services.SearchAnalyticsService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
@@ -43,7 +43,7 @@ class UserSearchServiceTests {
     private IUserRepository userRepository; // Mock repository
 
     @Mock
-    private IActivityUserRepository activityUserRepository;
+    private ActivityServiceClient activityServiceClient;
 
     @Mock
     private IFriendRequestService friendRequestService;

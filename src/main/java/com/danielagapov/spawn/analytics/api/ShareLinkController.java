@@ -4,7 +4,7 @@ import com.danielagapov.spawn.activity.api.dto.FullFeedActivityDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.shared.util.ShareLinkType;
 import com.danielagapov.spawn.analytics.internal.domain.ShareLink;
-import com.danielagapov.spawn.activity.internal.services.ActivityService;
+import com.danielagapov.spawn.shared.feign.ActivityServiceClient;
 import com.danielagapov.spawn.analytics.internal.services.ShareLinkService;
 import com.danielagapov.spawn.user.internal.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ import java.util.UUID;
 public class ShareLinkController {
     
     private final ShareLinkService shareLinkService;
-    private final ActivityService activityService;
+    private final ActivityServiceClient activityServiceClient;
     private final UserService userService;
     
     /**
@@ -40,7 +40,7 @@ public class ShareLinkController {
     public ResponseEntity<Map<String, String>> generateActivityShareCode(@PathVariable UUID activityId) {
         try {
             // Get the activity DTO to access start and end times
-            com.danielagapov.spawn.activity.api.dto.ActivityDTO activity = activityService.getActivityById(activityId);
+            FullFeedActivityDTO activity = activityServiceClient.getFullActivityById(activityId, null);
             if (activity == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -104,7 +104,7 @@ public class ShareLinkController {
             }
             
             // Get the activity details
-            FullFeedActivityDTO activity = activityService.getFullActivityById(link.getTargetId(), null);
+            FullFeedActivityDTO activity = activityServiceClient.getFullActivityById(link.getTargetId(), null);
             if (activity == null) {
                 // Activity was deleted, clean up the share link
                 shareLinkService.deleteShareLinksForTarget(link.getTargetId(), ShareLinkType.ACTIVITY);
