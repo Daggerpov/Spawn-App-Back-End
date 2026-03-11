@@ -24,14 +24,4 @@ public interface IEmailService {
      * @param expiryTime the time when the code expires
      */
     void sendVerificationCodeEmail(String to, String verificationCode, String expiryTime);
-
-    /**
-     * Synchronous variant for verification code emails. Used during registration so that
-     * SMTP failures propagate to the API response instead of failing silently.
-     * @param to the email address to send the verification code to
-     * @param verificationCode the 6-digit verification code
-     * @param expiryTime the time when the code expires
-     * @throws jakarta.mail.MessagingException if there's an error sending the email
-     */
-    void sendVerificationCodeEmailSync(String to, String verificationCode, String expiryTime) throws jakarta.mail.MessagingException;
 }
