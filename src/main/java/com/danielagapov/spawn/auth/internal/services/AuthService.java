@@ -527,7 +527,7 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public EmailVerificationResponseDTO sendEmailVerificationCodeForRegistration(String email) {
+    public EmailVerificationResponseDTO sendEmailVerificationCodeForRegistration(String email) throws jakarta.mail.MessagingException {
         if (email == null || email.trim().isEmpty()) {
             throw new IllegalArgumentException("Email cannot be null or empty");
         }
@@ -581,8 +581,8 @@ public class AuthService implements IAuthService {
         verification.setCodeExpiresAt(codeExpiresAt);
 
         String expiryTime = codeExpiresAt.toString();
-        // Email is sent asynchronously - errors are logged by the email service
-        emailService.sendVerificationCodeEmail(email, verificationCode, expiryTime);
+        // Email is sent synchronously so SMTP failures propagate to the API response
+        emailService.sendVerificationCodeEmailSync(email, verificationCode, expiryTime);
         logger.info("Email verification code sent for registration to: " + email);
         emailVerificationRepository.save(verification);
         

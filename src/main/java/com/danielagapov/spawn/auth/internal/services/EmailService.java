@@ -79,6 +79,15 @@ public class EmailService implements IEmailService {
         }
     }
 
+    @Override
+    public void sendVerificationCodeEmailSync(String to, String verificationCode, String expiryTime) throws MessagingException {
+        logger.info("Sending verification code email synchronously to " + to);
+        final String content = buildVerificationCodeEmailBody(verificationCode, expiryTime);
+        final String subject = "Your Verification Code: " + verificationCode;
+        sendMimeEmail(to, subject, content);
+        logger.info("Verification code email sent successfully to " + to);
+    }
+
     /**
      * Creates and sends a MIME email message with the provided details.
      * MIME (Multipurpose Internet Mail Extensions) is an internet standard for email message format.

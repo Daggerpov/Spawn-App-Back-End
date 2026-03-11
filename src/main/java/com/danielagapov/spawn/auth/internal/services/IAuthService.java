@@ -6,6 +6,8 @@ import com.danielagapov.spawn.user.api.dto.*;
 import com.danielagapov.spawn.user.internal.domain.User;
 import org.springframework.http.HttpHeaders;
 
+import jakarta.mail.MessagingException;
+
 import java.util.UUID;
 
 public interface IAuthService {
@@ -33,8 +35,9 @@ public interface IAuthService {
      * Sends an email verification code to the specified email address for new user registration
      * @param email the email address to send the verification code to
      * @return response containing seconds until next attempt and message
+     * @throws MessagingException if the verification email fails to send (e.g., SMTP config error)
      */
-    EmailVerificationResponseDTO sendEmailVerificationCodeForRegistration(String email);
+    EmailVerificationResponseDTO sendEmailVerificationCodeForRegistration(String email) throws MessagingException;
 
     /**
      * Checks the email verification code and creates a new user upon successful verification
