@@ -72,12 +72,14 @@ public final class APNSNotificationStrategy implements NotificationStrategy {
             logger.info("APNS service initialized with bundle ID: " + appBundleId);
             
             // Validate certificate is working by checking connection
-            logger.info("Validating APNS certificate and connection");
-            boolean isValid = validateApnsConnection();
-            if (isValid) {
+            logger.info("Validating APNS certificate and connection (mode: " + (apnsProduction ? "PRODUCTION" : "DEVELOPMENT") + ", bundleId: " + appBundleId + ")");
+            String validationError = validateApnsConnection();
+            if (validationError == null) {
                 logger.info("APNS service successfully initialized and validated");
             } else {
-                logger.error("APNS certificate validation failed. Notifications may not be delivered.");
+                logger.error("APNS certificate validation failed. Notifications may not be delivered. " +
+                        "Mode: " + (apnsProduction ? "PRODUCTION" : "DEVELOPMENT") + ". " +
+                        "Details: " + validationError);
             }
             
             // Check for device tokens that need to be removed (only in production to avoid dev warnings)
@@ -89,24 +91,31 @@ public final class APNSNotificationStrategy implements NotificationStrategy {
             }
             
         } catch (Exception e) {
-            logger.error("Error initializing APNS service: " + e.getMessage());
+            logger.error("Error initializing APNS service: " + e.getClass().getSimpleName() + " - " + e.getMessage() +
+                    ". Possible causes: invalid Base64 certificate, wrong password, malformed .p12 file, or missing/invalid config (apns.certificate.path, apns.certificate.password, apns.bundle.id).");
         }
     }
 
-    private boolean validateApnsConnection() {
+    /**
+     * Validates APNS connection. Returns null on success, or a detailed error message on failure.
+     */
+    private String validateApnsConnection() {
         // Skip feedback service validation in non-production environments to avoid warnings
         if (!apnsProduction) {
             logger.info("Skipping APNS feedback service validation in development mode");
-            return true; // Consider valid in development mode
+            return null; // Consider valid in development mode
         }
         
         try {
             // Only attempt to access the feedback service in production
             apnsService.getInactiveDevices();
-            return true;
+            return null;
         } catch (Exception e) {
-            logger.error("APNS connection validation failed in production: " + e.getMessage());
-            return false;
+            String details = String.format("feedback service unreachable - exception: %s (%s). " +
+                            "Possible causes: invalid/expired certificate, wrong password, wrong environment (prod vs sandbox), network/firewall.",
+                    e.getClass().getSimpleName(), e.getMessage());
+            logger.error("APNS connection validation failed in production: " + details);
+            return details;
         }
     }
     
