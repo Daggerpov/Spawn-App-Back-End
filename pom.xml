@@ -192,6 +192,12 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-hibernate6</artifactId>
         </dependency>
+        <!-- Resend HTTP email API (bypasses SMTP port blocking on Railway) -->
+        <dependency>
+            <groupId>com.resend</groupId>
+            <artifactId>resend-java</artifactId>
+            <version>4.10.0</version>
+        </dependency>
     </dependencies>
     <repositories>
         <repository>
