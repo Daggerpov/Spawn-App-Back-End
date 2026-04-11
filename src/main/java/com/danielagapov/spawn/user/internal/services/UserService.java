@@ -706,58 +706,28 @@ public class UserService implements IUserService {
         try {
             logger.info("Finding users by phone numbers for contact cross-reference. Phone numbers count: " + phoneNumbers.size() + ", requesting user: " + LoggingUtils.formatUserIdInfo(requestingUserId));
 
-            // Debug: Log all incoming phone numbers
-            logger.info("🔍 INCOMING PHONE NUMBERS:");
-            for (int i = 0; i < phoneNumbers.size(); i++) {
-                logger.info("  [" + i + "] Original: '" + phoneNumbers.get(i) + "'");
-            }
-
             // Generate all possible search variants for flexible matching
             // This allows us to find matches even when numbers are stored in different formats
             List<String> searchVariants = PhoneNumberMatchingUtil.getSearchVariants(phoneNumbers);
 
-            logger.info("🔄 GENERATED " + searchVariants.size() + " SEARCH VARIANTS:");
-            searchVariants.forEach(variant -> logger.info("  - '" + variant + "'"));
-
             if (searchVariants.isEmpty()) {
-                logger.info("❌ No valid phone number variants to search for");
+                logger.info("No valid phone number variants to search for");
                 return Collections.emptyList();
             }
 
             // Use database query with all variants instead of loading all users into memory
             List<User> matchingUsers = repository.findByPhoneNumberIn(searchVariants);
 
-            logger.info("📞 FOUND " + matchingUsers.size() + " USERS WITH MATCHING PHONE NUMBERS");
-            matchingUsers.forEach(user -> {
-                String displayPhone = user.getOptionalPhoneNumber().orElse("(no phone)");
-                logger.info("  - User: " + user.getDisplayName() + " (" + user.getOptionalUsername().orElse("no username") + ") with phone: " + displayPhone);
-            });
-
             // Filter out the requesting user, admin users, and inactive users
             List<User> filteredUsers = matchingUsers.stream()
                     .distinct()
-                    .filter(user -> {
-                        boolean keep = !user.getId().equals(requestingUserId) &&
-                                !isAdminUser(user) &&
-                                user.getStatus() == UserStatus.ACTIVE &&
-                                user.getOptionalPhoneNumber().isPresent(); // Ensure phone number is actually present
-
-                        if (!keep) {
-                            String reason = user.getId().equals(requestingUserId) ? "requesting user" :
-                                    isAdminUser(user) ? "admin user" :
-                                            user.getStatus() != UserStatus.ACTIVE ? "inactive status: " + user.getStatus() :
-                                                    !user.getOptionalPhoneNumber().isPresent() ? "no valid phone number" : "unknown";
-                            logger.info("🚫 FILTERED OUT USER: " + user.getDisplayName() + " (reason: " + reason + ")");
-                        }
-                        return keep;
-                    })
+                    .filter(user -> !user.getId().equals(requestingUserId) &&
+                            !isAdminUser(user) &&
+                            user.getStatus() == UserStatus.ACTIVE &&
+                            user.getOptionalPhoneNumber().isPresent()) // Ensure phone number is actually present
                     .collect(Collectors.toList());
 
-            logger.info("✅ FINAL RESULT: Found " + filteredUsers.size() + " matching users for contact cross-reference");
-            filteredUsers.forEach(user -> {
-                String displayPhone = user.getOptionalPhoneNumber().orElse("(no phone)");
-                logger.info("  - FINAL: " + user.getDisplayName() + " (" + user.getOptionalUsername().orElse("no username") + ") with phone: " + displayPhone);
-            });
+            logger.info("Contact cross-reference result: " + filteredUsers.size() + " matching users (from " + matchingUsers.size() + " DB matches, " + searchVariants.size() + " variants)");
 
             // Convert to DTOs
             return UserMapper.toDTOList(filteredUsers);

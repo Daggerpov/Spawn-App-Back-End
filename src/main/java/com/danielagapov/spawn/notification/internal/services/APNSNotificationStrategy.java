@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -107,16 +108,32 @@ public final class APNSNotificationStrategy implements NotificationStrategy {
         }
         
         try {
-            // Only attempt to access the feedback service in production
+            // Only attempt to access the feedback service in production (legacy; Apple deprecated this for HTTP/2 APNS).
             apnsService.getInactiveDevices();
             return null;
         } catch (Exception e) {
-            String details = String.format("feedback service unreachable - exception: %s (%s). " +
-                            "Possible causes: invalid/expired certificate, wrong password, wrong environment (prod vs sandbox), network/firewall.",
+            if (containsUnknownHostException(e)) {
+                logger.warn("APNS feedback host could not be resolved (DNS/network). This does not prove the certificate is wrong — "
+                        + "sending uses gateway.push.apple.com. Fix outbound DNS or firewall for feedback.push.apple.com if you need inactive-token cleanup. "
+                        + "Exception: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                return null;
+            }
+            String details = String.format("feedback service unreachable - exception: %s (%s). "
+                            + "Possible causes: invalid/expired certificate, wrong password, wrong environment (prod vs sandbox), network/firewall.",
                     e.getClass().getSimpleName(), e.getMessage());
             logger.error("APNS connection validation failed in production: " + details);
             return details;
         }
+    }
+
+    private static boolean containsUnknownHostException(Throwable t) {
+        while (t != null) {
+            if (t instanceof UnknownHostException) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
     }
     
     private void checkForInvalidDeviceTokens() {
