@@ -35,7 +35,7 @@ public class EmailService implements IEmailService {
             JavaMailSender mailSender,
             ILogger logger,
             @Value("${resend.api.key:}") String resendApiKey,
-            @Value("${resend.from.email:Spawn <noreply@spawn.danielagapov.com>}") String fromEmail
+            @Value("${resend.from.email:Spawn <noreply@getspawn.com>}") String fromEmail
     ) {
         this.mailSender = mailSender;
         this.logger = logger;
