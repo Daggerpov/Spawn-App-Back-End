@@ -2,9 +2,12 @@ package com.danielagapov.spawn.notification.internal.services;
 
 import com.danielagapov.spawn.shared.util.DeviceType;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
-import com.notnoop.apns.APNS;
-import com.notnoop.apns.ApnsNotification;
-import com.notnoop.apns.ApnsService;
+import com.eatthepath.pushy.apns.ApnsClient;
+import com.eatthepath.pushy.apns.ApnsClientBuilder;
+import com.eatthepath.pushy.apns.util.ApnsPayloadBuilder;
+import com.eatthepath.pushy.apns.util.SimpleApnsPayloadBuilder;
+import com.eatthepath.pushy.apns.util.SimpleApnsPushNotification;
+import com.eatthepath.pushy.apns.util.TokenUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,15 +15,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
-import java.util.Arrays;
 import java.util.Base64;
-
-import java.util.Map;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Implementation of NotificationStrategy for Apple Push Notification Service
+ * Implementation of NotificationStrategy for Apple Push Notification Service.
+ * Uses Apple's HTTP/2 provider API (via Pushy); the legacy binary API was retired by Apple in 2021.
  */
 @Service
 public final class APNSNotificationStrategy implements NotificationStrategy {
@@ -33,14 +35,14 @@ public final class APNSNotificationStrategy implements NotificationStrategy {
 
     @Value("${apns.production}")
     private boolean apnsProduction;
-    
+
     @Value("${apns.bundle.id}")
     private String appBundleId;
 
-    private ApnsService apnsService;
-    
+    private ApnsClient apnsClient;
+
     private final ILogger logger;
-    
+
     @Autowired
     public APNSNotificationStrategy(ILogger logger) {
         this.logger = logger;
@@ -51,132 +53,69 @@ public final class APNSNotificationStrategy implements NotificationStrategy {
         try {
             // Decode the Base64 encoded certificate from environment variable
             byte[] certificateBytes = Base64.getDecoder().decode(apnsCertificate);
-            
-            if (apnsProduction) {
-                logger.info("Initializing APNS service with PRODUCTION certificate (apns.production=true)");
-                logger.info("Using production APNS destination");
-                apnsService = APNS.newService()
-                        .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
-                        .withProductionDestination()
-                        .build();
-            } else {
-                logger.info("Initializing APNS service with DEVELOPMENT certificate (apns.production=false)");
-                logger.info("Using sandbox APNS destination");
-                apnsService = APNS.newService()
-                        .withCert(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
-                        .withSandboxDestination()
-                        .build();
-            }
-            
-            // Log bundle ID being used
+
+            String apnsHost = apnsProduction
+                    ? ApnsClientBuilder.PRODUCTION_APNS_HOST
+                    : ApnsClientBuilder.DEVELOPMENT_APNS_HOST;
+            logger.info("Initializing APNS client with " + (apnsProduction ? "PRODUCTION" : "DEVELOPMENT")
+                    + " certificate (apns.production=" + apnsProduction + "), host: " + apnsHost);
+
+            // Fails here if the certificate or its password is invalid
+            apnsClient = new ApnsClientBuilder()
+                    .setApnsServer(apnsHost)
+                    .setClientCredentials(new ByteArrayInputStream(certificateBytes), apnsCertificatePassword)
+                    .build();
+
             logger.info("APNS service initialized with bundle ID: " + appBundleId);
-            
-            // Validate certificate is working by checking connection
-            logger.info("Validating APNS certificate and connection");
-            boolean isValid = validateApnsConnection();
-            if (isValid) {
-                logger.info("APNS service successfully initialized and validated");
-            } else {
-                logger.error("APNS certificate validation failed. Notifications may not be delivered.");
-            }
-            
-            // Check for device tokens that need to be removed (only in production to avoid dev warnings)
-            if (apnsProduction) {
-                logger.info("Checking for invalid device tokens in production mode");
-                checkForInvalidDeviceTokens();
-            } else {
-                logger.info("Skipping invalid device token check in development mode to avoid feedback service warnings");
-            }
-            
         } catch (Exception e) {
             logger.error("Error initializing APNS service: " + e.getMessage());
-        }
-    }
-
-    private boolean validateApnsConnection() {
-        // Skip feedback service validation in non-production environments to avoid warnings
-        if (!apnsProduction) {
-            logger.info("Skipping APNS feedback service validation in development mode");
-            return true; // Consider valid in development mode
-        }
-        
-        try {
-            // Only attempt to access the feedback service in production
-            apnsService.getInactiveDevices();
-            return true;
-        } catch (Exception e) {
-            logger.error("APNS connection validation failed in production: " + e.getMessage());
-            return false;
-        }
-    }
-    
-    private void checkForInvalidDeviceTokens() {
-        // Only run this in production to avoid feedback service connection warnings
-        if (!apnsProduction) {
-            logger.info("Skipping invalid device token check - not in production mode");
-            return;
-        }
-        
-        try {
-            // Get map of tokens and timestamps when they became invalid
-            Map<String, Date> inactiveDevices;
-            try {
-                inactiveDevices = apnsService.getInactiveDevices();
-            } catch (Exception e) {
-                logger.warn("Could not get inactive devices in production: " + e.getMessage());
-                return;
-            }
-            
-            if (inactiveDevices.isEmpty()) {
-                logger.info("No invalid device tokens found");
-                return;
-            }
-            
-            logger.info("Found " + inactiveDevices.size() + " invalid device tokens");
-            
-            // Log each invalid token for potential removal from database
-            for (Map.Entry<String, Date> entry : inactiveDevices.entrySet()) {
-                logger.info("Invalid token: " + entry.getKey() + ", inactive since: " + entry.getValue());
-                // TODO: Add code to remove invalid tokens from database
-            }
-        } catch (Exception e) {
-            logger.error("Error checking for invalid device tokens: " + e.getMessage());
         }
     }
 
     @Override
     public void sendNotificationToDevice(String deviceToken, String title, String message, Map<String, String> data) {
         try {
+            if (apnsClient == null) {
+                logger.error("APNS client is not initialized. Cannot send APNS notification.");
+                return;
+            }
+
             logger.info("Preparing to send APNS notification to device: " + deviceToken);
-            
+
             // Validate bundle ID before sending
             if (appBundleId == null || appBundleId.trim().isEmpty()) {
                 logger.error("Bundle ID is not configured properly. Cannot send APNS notification.");
                 return;
             }
-            
+
             // Make sure data map is not null
             Map<String, String> notificationData = data != null ? new HashMap<>(data) : new HashMap<>();
-            
+
             // Add the bundle ID to the data (will be included in the payload)
             notificationData.put("topic", appBundleId);
-            
+
             // Create the payload with proper structure
             String payload = constructPayload(title, message, notificationData);
             logger.info("APNS payload created: " + payload);
 
-            // Send the notification with the standard push method
-            ApnsNotification notification = apnsService.push(deviceToken, payload);
-            
-            if (notification != null) {
-                logger.info("APNS notification sent with ID: " + notification.getIdentifier() +
-                                ", Message ID: " + notification.getIdentifier() +
-                                ", Expiry: " + notification.getExpiry() +
-                                ", Device Token: " + Arrays.toString(notification.getDeviceToken()) +
-                                ", Payload: " + Arrays.toString(notification.getPayload()));
-            } else {
-                logger.warn("No APNS response received or empty response - this might indicate delivery issues");
-            }
+            SimpleApnsPushNotification notification = new SimpleApnsPushNotification(
+                    TokenUtil.sanitizeTokenString(deviceToken), appBundleId, payload);
+
+            apnsClient.sendNotification(notification).whenComplete((response, cause) -> {
+                if (cause != null) {
+                    logger.error("Error sending APNS notification to device " + deviceToken + ": " + cause.getMessage());
+                } else if (response.isAccepted()) {
+                    logger.info("APNS notification accepted, apns-id: " + response.getApnsId()
+                            + ", Device Token: " + deviceToken);
+                } else {
+                    String reason = response.getRejectionReason().orElse("unknown");
+                    logger.warn("APNS notification rejected for device " + deviceToken + ": " + reason
+                            + response.getTokenInvalidationTimestamp()
+                                    .map(ts -> ", token invalid since " + ts)
+                                    .orElse(""));
+                    // TODO: Remove tokens rejected as Unregistered/BadDeviceToken from the database
+                }
+            });
         } catch (Exception e) {
             // Log error but don't interrupt the flow
             logger.error("Error sending APNS notification: " + e.getMessage());
@@ -186,54 +125,54 @@ public final class APNSNotificationStrategy implements NotificationStrategy {
     private String constructPayload(String title, String message, Map<String, String> data) {
         try {
             // Start with a basic payload builder
-            var payloadBuilder = APNS.newPayload()
-                .alertTitle(title)
-                .alertBody(message)
-                .sound("default");
-            
+            ApnsPayloadBuilder payloadBuilder = new SimpleApnsPayloadBuilder()
+                .setAlertTitle(title)
+                .setAlertBody(message)
+                .setSound("default");
+
             // Set badge number if provided
             if (data != null && data.containsKey("badge")) {
                 try {
                     int badgeNumber = Integer.parseInt(data.get("badge"));
-                    payloadBuilder.badge(badgeNumber);
+                    payloadBuilder.setBadgeNumber(badgeNumber);
                 } catch (NumberFormatException e) {
                     logger.warn("Invalid badge number format in data: " + data.get("badge"));
                 }
-                
+
                 // Remove badge from data to avoid duplication in custom fields
                 data.remove("badge");
             }
-            
+
             // Add content-available=1 for background updates if specified
-            if (data != null && data.containsKey("content-available") && 
+            if (data != null && data.containsKey("content-available") &&
                 "1".equals(data.get("content-available"))) {
-                payloadBuilder.instantDeliveryOrSilentNotification();
-                
+                payloadBuilder.setContentAvailable(true);
+
                 // Remove content-available from data to avoid duplication
                 data.remove("content-available");
             }
-            
+
             // Add category if provided
             if (data != null && data.containsKey("category")) {
-                payloadBuilder.category(data.get("category"));
+                payloadBuilder.setCategoryName(data.get("category"));
                 data.remove("category");
             }
-            
+
             // Add custom data fields
-            if (data != null && !data.isEmpty()) {
-                payloadBuilder.customFields(data);
+            if (data != null) {
+                data.forEach(payloadBuilder::addCustomProperty);
             }
-            
+
             // Build the final payload
             return payloadBuilder.build();
         } catch (Exception e) {
             logger.error("Error constructing APNS payload: " + e.getMessage());
-            
+
             // Fall back to simple payload if there was an error
-            return APNS.newPayload()
-                .alertTitle(title)
-                .alertBody(message)
-                .sound("default")
+            return new SimpleApnsPayloadBuilder()
+                .setAlertTitle(title)
+                .setAlertBody(message)
+                .setSound("default")
                 .build();
         }
     }
@@ -242,21 +181,21 @@ public final class APNSNotificationStrategy implements NotificationStrategy {
     public DeviceType getDeviceType() {
         return DeviceType.IOS;
     }
-    
+
     /**
-     * Cleanup method to properly close APNS service and release resources.
+     * Cleanup method to properly close APNS client and release resources.
      * This prevents memory leaks by ensuring connections are properly closed.
      */
     @PreDestroy
     public void cleanup() {
-        if (apnsService != null) {
+        if (apnsClient != null) {
             try {
-                logger.info("Shutting down APNS service and closing connections");
-                apnsService.stop();
-                logger.info("APNS service successfully shut down");
+                logger.info("Shutting down APNS client and closing connections");
+                apnsClient.close().get(10, TimeUnit.SECONDS);
+                logger.info("APNS client successfully shut down");
             } catch (Exception e) {
-                logger.error("Error shutting down APNS service: " + e.getMessage());
+                logger.error("Error shutting down APNS client: " + e.getMessage());
             }
         }
     }
-} 
+}
