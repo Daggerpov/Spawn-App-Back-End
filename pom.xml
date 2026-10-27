@@ -113,9 +113,9 @@
         </dependency>
         <!-- Apple Push Notification Service -->
         <dependency>
-            <groupId>com.notnoop.apns</groupId>
-            <artifactId>apns</artifactId>
-            <version>1.0.0.Beta6</version>
+            <groupId>com.eatthepath</groupId>
+            <artifactId>pushy</artifactId>
+            <version>0.15.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
