@@ -2,10 +2,9 @@ package com.danielagapov.spawn.analytics.internal.services;
 
 import com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO;
 import com.danielagapov.spawn.shared.config.CacheValidationResponseDTO;
+import com.danielagapov.spawn.shared.feign.ActivityServiceClient;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.activity.api.IActivityService;
-import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.user.internal.services.IUserInterestService;
@@ -41,8 +40,7 @@ public class CacheService implements ICacheService {
     private static final Logger logger = LoggerFactory.getLogger(CacheService.class);
     private final IUserRepository userRepository;
     private final IUserService userService;
-    private final IActivityService ActivityService;
-    private final IActivityTypeService activityTypeService;
+    private final ActivityServiceClient activityServiceClient;
     private final IFriendRequestService friendRequestService;
     private final ObjectMapper objectMapper;
     private final IUserStatsService userStatsService;
@@ -55,8 +53,7 @@ public class CacheService implements ICacheService {
     public CacheService(
             IUserRepository userRepository,
             IUserService userService,
-            IActivityService ActivityService,
-            IActivityTypeService activityTypeService,
+            ActivityServiceClient activityServiceClient,
             IFriendRequestService friendRequestService,
             ObjectMapper objectMapper,
             IUserStatsService userStatsService,
@@ -66,8 +63,7 @@ public class CacheService implements ICacheService {
             IRecentlySpawnedService recentlySpawnedService) {
         this.userRepository = userRepository;
         this.userService = userService;
-        this.ActivityService = ActivityService;
-        this.activityTypeService = activityTypeService;
+        this.activityServiceClient = activityServiceClient;
         this.friendRequestService = friendRequestService;
         this.objectMapper = objectMapper;
         this.userStatsService = userStatsService;
@@ -350,7 +346,7 @@ public class CacheService implements ICacheService {
                 clientTimestamp,
                 CacheType.EVENTS,
                 () -> getLatestActivityActivity(user.getId()),
-                () -> ActivityService.getFeedActivities(user.getId())
+                () -> activityServiceClient.getFeedActivities(user.getId())
         );
     }
 
@@ -366,7 +362,7 @@ public class CacheService implements ICacheService {
                 clientTimestamp,
                 CacheType.ACTIVITY_TYPES,
                 () -> getLatestActivityTypeUpdate(user.getId()),
-                () -> activityTypeService.getActivityTypesByUserId(user.getId())
+                () -> activityServiceClient.getActivityTypesByUserId(user.getId())
         );
     }
 
@@ -495,7 +491,7 @@ public class CacheService implements ICacheService {
                 clientTimestamp,
                 CacheType.PROFILE_EVENTS,
                 () -> getLatestActivityActivity(user.getId()),
-                () -> ActivityService.getProfileActivities(user.getId(), user.getId())
+                () -> activityServiceClient.getProfileActivities(user.getId(), user.getId())
         );
     }
 
@@ -548,13 +544,13 @@ public class CacheService implements ICacheService {
     private Instant getLatestActivityActivity(UUID userId) {
         try {
             // Get the latest activity created by the user
-            Instant latestCreatedActivity = ActivityService.getLatestCreatedActivityTimestamp(userId);
+            Instant latestCreatedActivity = activityServiceClient.getLatestCreatedActivityTimestamp(userId);
 
             // Get the latest activity the user was invited to
-            Instant latestInvitedActivity = ActivityService.getLatestInvitedActivityTimestamp(userId);
+            Instant latestInvitedActivity = activityServiceClient.getLatestInvitedActivityTimestamp(userId);
 
             // Get the latest activity the user is participating in that was updated
-            Instant latestUpdatedActivity = ActivityService.getLatestUpdatedActivityTimestamp(userId);
+            Instant latestUpdatedActivity = activityServiceClient.getLatestUpdatedActivityTimestamp(userId);
 
             // Find the most recent timestamp among these three
             Instant latestTimestamp = null;

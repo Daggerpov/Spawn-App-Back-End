@@ -4,7 +4,7 @@ import com.danielagapov.spawn.shared.config.CacheValidationRequestDTO;
 import com.danielagapov.spawn.shared.config.CacheValidationResponseDTO;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.analytics.internal.services.ICacheService;
-import com.danielagapov.spawn.activity.internal.services.ICalendarService;
+import com.danielagapov.spawn.shared.feign.ActivityServiceClient;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +22,13 @@ import java.util.UUID;
 public class CacheController {
 
     private final ICacheService cacheService;
-    private final ICalendarService calendarService;
+    private final ActivityServiceClient activityServiceClient;
     private final ILogger logger;
 
     @Autowired
-    public CacheController(ICacheService cacheService, ICalendarService calendarService, ILogger logger) {
+    public CacheController(ICacheService cacheService, ActivityServiceClient activityServiceClient, ILogger logger) {
         this.cacheService = cacheService;
-        this.calendarService = calendarService;
+        this.activityServiceClient = activityServiceClient;
         this.logger = logger;
     }
 
@@ -79,7 +79,7 @@ public class CacheController {
     public ResponseEntity<String> clearCalendarCaches() {
         logger.info("Clearing all calendar caches");
         try {
-            calendarService.clearAllCalendarCaches();
+            activityServiceClient.clearAllCalendarCaches();
             return ResponseEntity.ok("All calendar caches cleared successfully");
         } catch (Exception e) {
             logger.error("Error clearing calendar caches: " + e.getMessage());

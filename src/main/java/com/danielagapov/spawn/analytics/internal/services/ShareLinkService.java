@@ -3,7 +3,7 @@ package com.danielagapov.spawn.analytics.internal.services;
 import com.danielagapov.spawn.shared.util.ShareLinkType;
 import com.danielagapov.spawn.analytics.internal.domain.ShareLink;
 import com.danielagapov.spawn.analytics.internal.repositories.ShareLinkRepository;
-import com.danielagapov.spawn.activity.internal.services.ActivityExpirationService;
+import com.danielagapov.spawn.shared.util.ActivityExpirationUtil;
 import com.danielagapov.spawn.shared.util.ShareCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,7 +26,6 @@ public class ShareLinkService {
     
     private final ShareLinkRepository shareLinkRepository;
     private final ShareCodeGenerator shareCodeGenerator;
-    private final ActivityExpirationService expirationService;
     
     private static final int MAX_GENERATION_RETRIES = 10;
     
@@ -40,8 +40,9 @@ public class ShareLinkService {
     @Transactional
     public String generateActivityShareLink(UUID activityId, java.time.OffsetDateTime startTime, java.time.OffsetDateTime endTime, Instant createdAt) {
         Instant shareExpiration = null;
-        if (expirationService.calculateShareLinkExpiration(startTime, endTime, createdAt) != null) {
-            shareExpiration = expirationService.calculateShareLinkExpiration(startTime, endTime, createdAt).toInstant();
+        OffsetDateTime expiration = ActivityExpirationUtil.calculateShareLinkExpiration(startTime, endTime, createdAt);
+        if (expiration != null) {
+            shareExpiration = expiration.toInstant();
         }
         return generateShareLink(activityId, ShareLinkType.ACTIVITY, shareExpiration);
     }

@@ -1,0 +1,44 @@
+package com.danielagapov.spawn.user.internal.services;
+
+import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.internal.domain.UserInfo;
+import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+/**
+ * This class is used to implement the UserDetailsService interface which Spring Security relies on
+ * for authenticating requests
+ */
+@Service
+public class UserInfoService implements UserDetailsService {
+    private final IUserRepository repository;
+
+    public UserInfoService(IUserRepository repository) {
+        this.repository = repository;
+    }
+
+    /**
+     * Retrieves user from repository by username and returns it as a UserDetails object
+     */
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = repository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
+
+        return new UserInfo(user.getUsername(), user.getPassword(), user.getStatus());
+    }
+
+    /**
+     * Retrieves user from repository by email and returns it as a UserDetails object
+     * This is used for OAuth users who may have tokens with email as the subject
+     */
+    public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
+        User user = repository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
+
+        // Return UserInfo using the user's username (or email if username is null) and password
+        String usernameForAuth = user.getOptionalUsername().orElse(user.getEmail());
+        return new UserInfo(usernameForAuth, user.getPassword(), user.getStatus());
+    }
+}

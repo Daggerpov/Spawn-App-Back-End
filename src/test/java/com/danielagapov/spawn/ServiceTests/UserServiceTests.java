@@ -11,7 +11,6 @@ import com.danielagapov.spawn.social.internal.domain.Friendship;
 import com.danielagapov.spawn.social.internal.repositories.IFriendshipRepository;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import com.danielagapov.spawn.auth.internal.repositories.IUserIdExternalIdMapRepository;
-import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
@@ -62,9 +61,6 @@ public class UserServiceTests {
 
     @Mock
     private CacheManager cacheManager;
-
-    @Mock
-    private IActivityTypeService activityTypeService;
 
     @Mock
     private IUserIdExternalIdMapRepository userIdExternalIdMapRepository;

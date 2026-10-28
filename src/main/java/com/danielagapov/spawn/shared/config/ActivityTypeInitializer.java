@@ -1,9 +1,9 @@
 package com.danielagapov.spawn.shared.config;
 
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
+import com.danielagapov.spawn.shared.feign.ActivityServiceClient;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
-import com.danielagapov.spawn.activity.internal.services.IActivityTypeService;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.springframework.boot.CommandLineRunner;
@@ -24,7 +24,7 @@ public class ActivityTypeInitializer {
     @Bean
     public CommandLineRunner initializeActivityTypes(
             IUserRepository userRepository,
-            IActivityTypeService activityTypeService,
+            ActivityServiceClient activityServiceClient,
             CacheManager cacheManager,
             ILogger logger) {
         
@@ -45,7 +45,7 @@ public class ActivityTypeInitializer {
                     try {
                         // Check if user has any activity types
                         List<com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO> existingActivityTypes = 
-                            activityTypeService.getActivityTypesByUserId(user.getId());
+                            activityServiceClient.getActivityTypesByUserId(user.getId());
                         
                         if (existingActivityTypes.isEmpty()) {
                             // User has no activity types, initialize them
@@ -53,7 +53,7 @@ public class ActivityTypeInitializer {
                             
                             // Initialize with retry logic for constraint violations
                             try {
-                                activityTypeService.initializeDefaultActivityTypesForUser(user);
+                                activityServiceClient.initializeActivityTypesForUser(user.getId());
                                 usersInitialized++;
                                 logger.info("Successfully initialized activity types for user: " + user.getUsername());
                             } catch (DataIntegrityViolationException e) {
@@ -64,7 +64,7 @@ public class ActivityTypeInitializer {
                                     
                                     // Re-check if user now has activity types (maybe partial success)
                                     List<com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO> currentActivityTypes = 
-                                        activityTypeService.getActivityTypesByUserId(user.getId());
+                                        activityServiceClient.getActivityTypesByUserId(user.getId());
                                     
                                     if (currentActivityTypes.isEmpty()) {
                                         logger.error("User " + user.getUsername() + " still has no activity types after constraint violation. " +
@@ -115,11 +115,11 @@ public class ActivityTypeInitializer {
                                 
                                 // Retry fetching activity types (will hit database now)
                                 List<com.danielagapov.spawn.activity.api.dto.ActivityTypeDTO> existingActivityTypes = 
-                                    activityTypeService.getActivityTypesByUserId(user.getId());
+                                    activityServiceClient.getActivityTypesByUserId(user.getId());
                                 
                                 if (existingActivityTypes.isEmpty()) {
                                     // Initialize activity types for this user
-                                    activityTypeService.initializeDefaultActivityTypesForUser(user);
+                                    activityServiceClient.initializeActivityTypesForUser(user.getId());
                                     usersInitialized++;
                                     cacheErrorsFixed++;
                                     logger.info("Successfully recovered from cache corruption and initialized activity types for user: " + 
