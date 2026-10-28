@@ -3,7 +3,7 @@ package com.danielagapov.spawn.shared.util;
 
 import software.amazon.awssdk.utils.IoUtils;
 
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,28 +16,27 @@ public class EmailTemplates {
 
     public static String getVerifyEmailBody() {
         if (VERIFY_EMAIL_BODY == null) {
-            VERIFY_EMAIL_BODY = readHTMLFile("src/main/resources/templates/verifyEmailBody.html");
+            VERIFY_EMAIL_BODY = readHTMLFile("templates/verifyEmailBody.html");
         }
         return VERIFY_EMAIL_BODY;
     }
 
     public static String getEmailVerificationCodeBody() {
         if (EMAIL_VERIFICATION_CODE_BODY == null) {
-            EMAIL_VERIFICATION_CODE_BODY = readHTMLFile("src/main/resources/templates/emailVerificationCode.html");
+            EMAIL_VERIFICATION_CODE_BODY = readHTMLFile("templates/emailVerificationCode.html");
         }
         return EMAIL_VERIFICATION_CODE_BODY;
     }
 
-    private static String readHTMLFile(String fileName) {
-        final InputStream inputStream;
-        String content;
-        try {
-            inputStream = new FileInputStream(fileName);
-            content = IoUtils.toUtf8String(inputStream);
-            inputStream.close();
+    // Load from the classpath so templates resolve inside the packaged JAR
+    private static String readHTMLFile(String resourcePath) {
+        try (InputStream inputStream = EmailTemplates.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new FileNotFoundException("Classpath resource not found: " + resourcePath);
+            }
+            return IoUtils.toUtf8String(inputStream);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return content;
     }
 }
