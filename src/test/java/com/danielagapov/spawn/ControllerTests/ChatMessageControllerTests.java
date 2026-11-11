@@ -7,6 +7,8 @@ import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.chat.internal.services.IChatMessageService;
+import com.danielagapov.spawn.shared.util.AuthenticatedUserProvider;
+import org.springframework.security.access.AccessDeniedException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +26,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,6 +48,9 @@ class ChatMessageControllerTests {
 
     @Mock
     private ILogger logger;
+
+    @Mock
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @InjectMocks
     private ChatMessageController chatMessageController;
@@ -168,12 +174,13 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessage_ShouldReturnNoContent_WhenSuccessful() throws Exception {
-        when(chatMessageService.deleteChatMessageById(chatMessageId)).thenReturn(true);
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(chatMessageService.deleteChatMessageById(chatMessageId, userId)).thenReturn(true);
 
         mockMvc.perform(delete("/api/v1/chat-messages/{id}", chatMessageId))
                 .andExpect(status().isNoContent());
 
-        verify(chatMessageService, times(1)).deleteChatMessageById(chatMessageId);
+        verify(chatMessageService, times(1)).deleteChatMessageById(chatMessageId, userId);
     }
 
     @Test
@@ -184,12 +191,33 @@ class ChatMessageControllerTests {
         mockMvc.perform(delete("/api/v1/chat-messages/invalid-uuid"))
                 .andExpect(status().isBadRequest());
 
-        verify(chatMessageService, never()).deleteChatMessageById(any());
+        verify(chatMessageService, never()).deleteChatMessageById(any(), any());
+    }
+
+    @Test
+    void deleteChatMessage_ShouldReturnUnauthorized_WhenNotSignedIn() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.empty());
+
+        mockMvc.perform(delete("/api/v1/chat-messages/{id}", chatMessageId))
+                .andExpect(status().isUnauthorized());
+
+        verify(chatMessageService, never()).deleteChatMessageById(any(), any());
+    }
+
+    @Test
+    void deleteChatMessage_ShouldReturnForbidden_WhenRequesterDidNotSendIt() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(chatMessageService.deleteChatMessageById(chatMessageId, userId))
+                .thenThrow(new AccessDeniedException("Only the sender can delete chat message " + chatMessageId));
+
+        mockMvc.perform(delete("/api/v1/chat-messages/{id}", chatMessageId))
+                .andExpect(status().isForbidden());
     }
 
     @Test
     void deleteChatMessage_ShouldReturnNotFound_WhenMessageNotFound() throws Exception {
-        when(chatMessageService.deleteChatMessageById(chatMessageId))
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(chatMessageService.deleteChatMessageById(chatMessageId, userId))
                 .thenThrow(new BaseNotFoundException(EntityType.ChatMessage, chatMessageId));
 
         mockMvc.perform(delete("/api/v1/chat-messages/{id}", chatMessageId))
@@ -200,7 +228,8 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessage_ShouldReturnInternalServerError_WhenDeletionFails() throws Exception {
-        when(chatMessageService.deleteChatMessageById(chatMessageId)).thenReturn(false);
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(chatMessageService.deleteChatMessageById(chatMessageId, userId)).thenReturn(false);
 
         mockMvc.perform(delete("/api/v1/chat-messages/{id}", chatMessageId))
                 .andExpect(status().isInternalServerError());
@@ -210,7 +239,8 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessage_ShouldReturnInternalServerError_WhenExceptionThrown() throws Exception {
-        when(chatMessageService.deleteChatMessageById(chatMessageId))
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(chatMessageService.deleteChatMessageById(chatMessageId, userId))
                 .thenThrow(new RuntimeException("Unexpected error"));
 
         mockMvc.perform(delete("/api/v1/chat-messages/{id}", chatMessageId))
@@ -401,12 +431,13 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessage_DirectCall_ShouldReturnNoContent_WhenSuccessful() {
-        when(chatMessageService.deleteChatMessageById(chatMessageId)).thenReturn(true);
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(chatMessageService.deleteChatMessageById(chatMessageId, userId)).thenReturn(true);
 
         ResponseEntity<Void> response = chatMessageController.deleteChatMessage(chatMessageId);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(chatMessageService, times(1)).deleteChatMessageById(chatMessageId);
+        verify(chatMessageService, times(1)).deleteChatMessageById(chatMessageId, userId);
     }
 
     @Test

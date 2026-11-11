@@ -11,10 +11,12 @@ import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.chat.internal.services.IChatMessageService;
+import com.danielagapov.spawn.shared.util.AuthenticatedUserProvider;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -26,11 +28,14 @@ import java.util.UUID;
 public class ChatMessageController {
     private final IChatMessageService chatMessageService;
     private final ILogger logger;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
 
     @Autowired
-    public ChatMessageController(IChatMessageService chatMessageService, ILogger logger) {
+    public ChatMessageController(IChatMessageService chatMessageService, ILogger logger,
+                                 AuthenticatedUserProvider authenticatedUserProvider) {
         this.chatMessageService = chatMessageService;
         this.logger = logger;
+        this.authenticatedUserProvider = authenticatedUserProvider;
     }
 
     // full path: /api/v1/chat-messages
@@ -46,10 +51,8 @@ public class ChatMessageController {
     }
 
 
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
+    // Used by the iOS Chatroom's long-press menu to delete your own message.
+    // Only the message's sender can delete it.
     // full path: /api/v1/chat-messages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChatMessage(@PathVariable UUID id) {
@@ -57,8 +60,13 @@ public class ChatMessageController {
             logger.error("Invalid parameter: chat message ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+        UUID requesterId = authenticatedUserProvider.getCurrentUserId().orElse(null);
+        if (requesterId == null) {
+            logger.error("Unauthenticated request to delete chat message: " + id);
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
-            boolean isDeleted = chatMessageService.deleteChatMessageById(id);
+            boolean isDeleted = chatMessageService.deleteChatMessageById(id, requesterId);
             if (isDeleted) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
             } else {
@@ -68,6 +76,9 @@ public class ChatMessageController {
         } catch (BaseNotFoundException e) {
             logger.error("Chat message not found for deletion: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } catch (AccessDeniedException e) {
+            logger.warn("User " + LoggingUtils.formatUserIdInfo(requesterId) + " tried to delete chat message they didn't send: " + id);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (Exception e) {
             logger.error("Error deleting chat message: " + id + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

@@ -35,6 +35,8 @@ import java.time.Instant;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.springframework.security.access.AccessDeniedException;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -88,25 +90,44 @@ public class ChatMessageServiceTests {
         return user;
     }
 
+    // Helper method to create a chat message sent by the given user.
+    private ChatMessage createChatMessageSentBy(UUID messageId, UUID senderId) {
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setId(messageId);
+        chatMessage.setUserSender(createDummyUser(senderId));
+        chatMessage.setActivity(createDummyActivity());
+        return chatMessage;
+    }
+
     @Test
-    void deleteChatMessage_ShouldDeleteMessage_WhenMessageExists() {
+    void deleteChatMessage_ShouldDeleteMessage_WhenRequesterSentIt() {
         UUID chatMessageId = UUID.randomUUID();
-        when(chatMessageRepository.existsById(chatMessageId)).thenReturn(true);
+        UUID senderId = UUID.randomUUID();
+        when(chatMessageRepository.findById(chatMessageId))
+                .thenReturn(Optional.of(createChatMessageSentBy(chatMessageId, senderId)));
         doNothing().when(chatMessageRepository).deleteById(chatMessageId);
-        assertDoesNotThrow(() -> chatMessageService.deleteChatMessageById(chatMessageId));
-        verify(chatMessageRepository, times(1)).existsById(chatMessageId);
+        assertTrue(chatMessageService.deleteChatMessageById(chatMessageId, senderId));
         verify(chatMessageRepository, times(1)).deleteById(chatMessageId);
+    }
+
+    @Test
+    void deleteChatMessage_ShouldThrowAccessDenied_WhenRequesterDidNotSendIt() {
+        UUID chatMessageId = UUID.randomUUID();
+        when(chatMessageRepository.findById(chatMessageId))
+                .thenReturn(Optional.of(createChatMessageSentBy(chatMessageId, UUID.randomUUID())));
+        assertThrows(AccessDeniedException.class,
+                () -> chatMessageService.deleteChatMessageById(chatMessageId, UUID.randomUUID()));
+        verify(chatMessageRepository, never()).deleteById(any());
     }
 
     @Test
     void deleteChatMessage_ShouldThrowException_WhenMessageDoesNotExist() {
         UUID chatMessageId = UUID.randomUUID();
-        when(chatMessageRepository.existsById(chatMessageId)).thenReturn(false);
+        when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.empty());
         BaseNotFoundException exception = assertThrows(BaseNotFoundException.class,
-                () -> chatMessageService.deleteChatMessageById(chatMessageId));
+                () -> chatMessageService.deleteChatMessageById(chatMessageId, UUID.randomUUID()));
         assertTrue(exception.getMessage().contains(chatMessageId.toString()));
         assertTrue(exception.getMessage().toLowerCase().contains("not found"));
-        verify(chatMessageRepository, times(1)).existsById(chatMessageId);
         verify(chatMessageRepository, never()).deleteById(chatMessageId);
     }
 
