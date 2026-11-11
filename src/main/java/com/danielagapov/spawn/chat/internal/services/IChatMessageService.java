@@ -53,13 +53,15 @@ public interface IChatMessageService {
     ChatMessageDTO saveChatMessage(ChatMessageDTO chatMessage);
 
     /**
-     * Deletes a chat message by its unique identifier.
+     * Deletes a chat message. Only the user who sent it can delete it.
      * 
      * @param id the unique identifier of the chat message to delete
+     * @param requesterId the signed-in user asking to delete it
      * @return true if deletion was successful, false otherwise
-     * @throws com.danielagapov.spawn.Exceptions.Base.BaseNotFoundException if chat message with given ID is not found
+     * @throws com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException if chat message with given ID is not found
+     * @throws org.springframework.security.access.AccessDeniedException if the requester didn't send the message
      */
-    boolean deleteChatMessageById(UUID id);
+    boolean deleteChatMessageById(UUID id, UUID requesterId);
 
     /**
      * Retrieves all chat messages associated with a specific activity, ordered by timestamp descending.

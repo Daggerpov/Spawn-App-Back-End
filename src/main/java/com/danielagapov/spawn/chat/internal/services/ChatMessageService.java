@@ -32,6 +32,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -241,9 +242,18 @@ public class ChatMessageService implements IChatMessageService {
 
 
     @Override
-    public boolean deleteChatMessageById(UUID id) {
-        if (!chatMessageRepository.existsById(id)) {
-            throw new BaseNotFoundException(EntityType.ChatMessage, id);
+    @Caching(evict = {
+            @CacheEvict(value = "ActivityById", allEntries = true),
+            @CacheEvict(value = "fullActivityById", allEntries = true),
+            @CacheEvict(value = "feedActivities", allEntries = true)
+    })
+    public boolean deleteChatMessageById(UUID id, UUID requesterId) {
+        ChatMessage chatMessage = chatMessageRepository.findById(id)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, id));
+
+        // Only the sender can delete their message
+        if (requesterId == null || !requesterId.equals(chatMessage.getUserSender().getId())) {
+            throw new AccessDeniedException("Only the sender can delete chat message " + id);
         }
 
         try {
