@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.danielagapov.spawn.shared.util.CacheNames;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -483,4 +485,28 @@ class FriendRequestServiceTests {
         verify(repository, times(1)).findByReceiverId(receiverId);
     }
 
+    @Test
+    void removeFriend_deletesFriendshipAndEvictsBothUsersCaches() {
+        UUID userId = UUID.randomUUID();
+        UUID friendId = UUID.randomUUID();
+        when(userQueryService.isUserFriendOfUser(userId, friendId)).thenReturn(true);
+
+        assertTrue(friendRequestService.removeFriend(userId, friendId));
+
+        verify(blockedUserService).removeFriendshipBetweenUsers(userId, friendId);
+        verify(cacheEvictionHelper).evictCacheForUsers(CacheNames.FRIENDS_BY_USER_ID, userId, friendId);
+        verify(cacheEvictionHelper).evictCacheForUsers(CacheNames.FRIENDS_LIST, userId, friendId);
+        verify(cacheEvictionHelper).evictCacheForUsers(CacheNames.RECOMMENDED_FRIENDS, userId, friendId);
+    }
+
+    @Test
+    void removeFriend_doesNothingWhenNotFriends() {
+        UUID userId = UUID.randomUUID();
+        UUID otherId = UUID.randomUUID();
+        when(userQueryService.isUserFriendOfUser(userId, otherId)).thenReturn(false);
+
+        assertFalse(friendRequestService.removeFriend(userId, otherId));
+
+        verify(blockedUserService, never()).removeFriendshipBetweenUsers(any(), any());
+    }
 }
