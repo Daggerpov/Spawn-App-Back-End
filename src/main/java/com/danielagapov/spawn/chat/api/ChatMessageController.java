@@ -86,16 +86,18 @@ public class ChatMessageController {
     }
 
 
-    // TL;DR: Don't remove this endpoint; it may become useful. 
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
+    // Used by the iOS Chatroom's long-press menu to like a message. You can only like as yourself,
+    // and liking twice is a no-op.
     // full path: /api/v1/chat-messages/{chatMessageId}/likes/{userId}
     @PostMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<ChatMessageLikesDTO> createChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
         if (chatMessageId == null || userId == null) {
             logger.error("Invalid parameters: chatMessageId or userId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        HttpStatus callerError = checkCallerIs(userId);
+        if (callerError != null) {
+            return new ResponseEntity<>(callerError);
         }
         try {
             ChatMessageLikesDTO createdLike = chatMessageService.createChatMessageLike(chatMessageId, userId);
@@ -109,10 +111,6 @@ public class ChatMessageController {
         }
     }
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
     // full path: /api/v1/chat-messages/{chatMessageId}/likes
     @GetMapping("/{chatMessageId}/likes")
     public ResponseEntity<List<BaseUserDTO>> getChatMessageLikes(@PathVariable UUID chatMessageId) {
@@ -133,16 +131,18 @@ public class ChatMessageController {
 
 
 
-    // TL;DR: Don't remove this endpoint; it may become useful.
-    @Deprecated(since = "Not being used on mobile currently. " +
-            "Pending mobile feature implementation, per:" +
-            "https://github.com/Daggerpov/Spawn-App-iOS-SwiftUI/issues/142")
+    // Used by the iOS Chatroom's long-press menu to unlike a message. You can only unlike as yourself,
+    // and unliking a message you haven't liked is a no-op.
     // full path: /api/v1/chat-messages/{chatMessageId}/likes/{userId}
     @DeleteMapping("/{chatMessageId}/likes/{userId}")
     public ResponseEntity<?> deleteChatMessageLike(@PathVariable UUID chatMessageId, @PathVariable UUID userId) {
         if (chatMessageId == null || userId == null) {
             logger.error("Invalid parameters: chatMessageId or userId is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        HttpStatus callerError = checkCallerIs(userId);
+        if (callerError != null) {
+            return new ResponseEntity<>(callerError);
         }
         try {
             chatMessageService.deleteChatMessageLike(chatMessageId, userId);
@@ -154,5 +154,25 @@ public class ChatMessageController {
             logger.error("Error deleting chat message like for message: " + chatMessageId + " by user: " + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Checks that the signed-in user is the one the request acts for.
+     *
+     * @return UNAUTHORIZED if the caller can't be resolved, FORBIDDEN if they're acting for someone else,
+     * or null if it's them
+     */
+    private HttpStatus checkCallerIs(UUID userId) {
+        UUID callerId = authenticatedUserProvider.getCurrentUserId().orElse(null);
+        if (callerId == null) {
+            logger.error("Unauthenticated chat message like request for user: " + LoggingUtils.formatUserIdInfo(userId));
+            return HttpStatus.UNAUTHORIZED;
+        }
+        if (!callerId.equals(userId)) {
+            logger.warn("User " + LoggingUtils.formatUserIdInfo(callerId) + " tried to change a like for user: "
+                    + LoggingUtils.formatUserIdInfo(userId));
+            return HttpStatus.FORBIDDEN;
+        }
+        return null;
     }
 }

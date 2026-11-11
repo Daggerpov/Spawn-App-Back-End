@@ -4,7 +4,6 @@ import com.danielagapov.spawn.chat.api.dto.ChatMessageDTO;
 import com.danielagapov.spawn.chat.api.dto.FullActivityChatMessageDTO;
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.user.api.dto.UserDTO;
-import com.danielagapov.spawn.shared.exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
@@ -402,14 +401,43 @@ public class ChatMessageServiceTests {
     }
 
     @Test
-    void createChatMessageLike_ShouldThrowEntityAlreadyExistsException_WhenLikeAlreadyExists() {
+    void createChatMessageLike_ShouldBeANoOp_WhenLikeAlreadyExists() {
         UUID chatMessageId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         when(chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)).thenReturn(true);
-        // Due to the try-catch, the thrown exception is wrapped as BaseSaveException.
-        BaseSaveException ex = assertThrows(BaseSaveException.class,
+        var result = chatMessageService.createChatMessageLike(chatMessageId, userId);
+        assertEquals(chatMessageId, result.getChatMessageId());
+        assertEquals(userId, result.getUserId());
+        verify(chatMessageLikesRepository, never()).save(any(ChatMessageLikes.class));
+    }
+
+    @Test
+    void createChatMessageLike_ShouldThrowNotFound_WhenMessageDoesNotExist() {
+        UUID chatMessageId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        when(chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)).thenReturn(false);
+        when(chatMessageRepository.findById(chatMessageId)).thenReturn(Optional.empty());
+        assertThrows(BaseNotFoundException.class,
                 () -> chatMessageService.createChatMessageLike(chatMessageId, userId));
-        assertTrue(ex.getMessage().contains(chatMessageId.toString()));
+        verify(chatMessageLikesRepository, never()).save(any(ChatMessageLikes.class));
+    }
+
+    @Test
+    void deleteChatMessageLike_ShouldDeleteLike_WhenItExists() {
+        UUID chatMessageId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        when(chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)).thenReturn(true);
+        chatMessageService.deleteChatMessageLike(chatMessageId, userId);
+        verify(chatMessageLikesRepository, times(1)).deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
+    }
+
+    @Test
+    void deleteChatMessageLike_ShouldBeANoOp_WhenNotLiked() {
+        UUID chatMessageId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        when(chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)).thenReturn(false);
+        assertDoesNotThrow(() -> chatMessageService.deleteChatMessageLike(chatMessageId, userId));
+        verify(chatMessageLikesRepository, never()).deleteByChatMessage_IdAndUser_Id(any(), any());
     }
 
     @Test
@@ -449,17 +477,6 @@ public class ChatMessageServiceTests {
         when(chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)).thenReturn(true);
         assertDoesNotThrow(() -> chatMessageService.deleteChatMessageLike(chatMessageId, userId));
         verify(chatMessageLikesRepository, times(1)).deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
-    }
-
-    @Test
-    void deleteChatMessageLike_ShouldThrowBasesNotFoundException_WhenLikeDoesNotExist() {
-        UUID chatMessageId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        when(chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)).thenReturn(false);
-        // The service wraps the not-found exception into a BaseDeleteException.
-        BaseDeleteException ex = assertThrows(BaseDeleteException.class, () -> chatMessageService.deleteChatMessageLike(chatMessageId, userId));
-        assertTrue(ex.getMessage().toLowerCase().contains("an error occurred while deleting"));
-        verify(chatMessageLikesRepository, never()).deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
     }
 
     @Test

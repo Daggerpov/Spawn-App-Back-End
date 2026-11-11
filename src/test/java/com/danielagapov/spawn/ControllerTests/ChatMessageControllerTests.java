@@ -253,6 +253,7 @@ class ChatMessageControllerTests {
 
     @Test
     void createChatMessageLike_ShouldReturnCreated_WhenSuccessful() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         when(chatMessageService.createChatMessageLike(chatMessageId, userId))
                 .thenReturn(chatMessageLikesDTO);
 
@@ -277,6 +278,7 @@ class ChatMessageControllerTests {
 
     @Test
     void createChatMessageLike_ShouldReturnNotFound_WhenMessageNotFound() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         when(chatMessageService.createChatMessageLike(chatMessageId, userId))
                 .thenThrow(new BaseNotFoundException(EntityType.ChatMessage, chatMessageId));
 
@@ -288,6 +290,7 @@ class ChatMessageControllerTests {
 
     @Test
     void createChatMessageLike_ShouldReturnNotFound_WhenUserNotFound() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         when(chatMessageService.createChatMessageLike(chatMessageId, userId))
                 .thenThrow(new BaseNotFoundException(EntityType.User, userId));
 
@@ -299,6 +302,7 @@ class ChatMessageControllerTests {
 
     @Test
     void createChatMessageLike_ShouldReturnInternalServerError_WhenServiceFails() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         when(chatMessageService.createChatMessageLike(chatMessageId, userId))
                 .thenThrow(new RuntimeException("Database error"));
 
@@ -306,6 +310,26 @@ class ChatMessageControllerTests {
                 .andExpect(status().isInternalServerError());
 
         verify(logger, times(1)).error(contains("Error creating chat message like"));
+    }
+
+    @Test
+    void createChatMessageLike_ShouldReturnForbidden_WhenLikingAsSomeoneElse() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(UUID.randomUUID()));
+
+        mockMvc.perform(post("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, userId))
+                .andExpect(status().isForbidden());
+
+        verify(chatMessageService, never()).createChatMessageLike(any(), any());
+    }
+
+    @Test
+    void createChatMessageLike_ShouldReturnUnauthorized_WhenNotSignedIn() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, userId))
+                .andExpect(status().isUnauthorized());
+
+        verify(chatMessageService, never()).createChatMessageLike(any(), any());
     }
 
     // MARK: - Get Chat Message Likes Tests
@@ -372,6 +396,7 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessageLike_ShouldReturnNoContent_WhenSuccessful() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         doNothing().when(chatMessageService).deleteChatMessageLike(chatMessageId, userId);
 
         mockMvc.perform(delete("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, userId))
@@ -393,6 +418,7 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessageLike_ShouldReturnNotFound_WhenLikeNotFound() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         doThrow(new BaseNotFoundException(EntityType.ChatMessageLike, chatMessageId))
                 .when(chatMessageService).deleteChatMessageLike(chatMessageId, userId);
 
@@ -404,6 +430,7 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessageLike_ShouldReturnInternalServerError_WhenServiceFails() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         doThrow(new RuntimeException("Database error"))
                 .when(chatMessageService).deleteChatMessageLike(chatMessageId, userId);
 
@@ -411,6 +438,16 @@ class ChatMessageControllerTests {
                 .andExpect(status().isInternalServerError());
 
         verify(logger, times(1)).error(contains("Error deleting chat message like"));
+    }
+
+    @Test
+    void deleteChatMessageLike_ShouldReturnForbidden_WhenUnlikingAsSomeoneElse() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(UUID.randomUUID()));
+
+        mockMvc.perform(delete("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, userId))
+                .andExpect(status().isForbidden());
+
+        verify(chatMessageService, never()).deleteChatMessageLike(any(), any());
     }
 
     // MARK: - Direct Controller Method Tests
@@ -442,6 +479,7 @@ class ChatMessageControllerTests {
 
     @Test
     void createChatMessageLike_DirectCall_ShouldReturnCreated_WhenSuccessful() {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         when(chatMessageService.createChatMessageLike(chatMessageId, userId))
                 .thenReturn(chatMessageLikesDTO);
 
@@ -469,6 +507,7 @@ class ChatMessageControllerTests {
 
     @Test
     void deleteChatMessageLike_DirectCall_ShouldReturnNoContent_WhenSuccessful() {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         doNothing().when(chatMessageService).deleteChatMessageLike(chatMessageId, userId);
 
         ResponseEntity<?> response = chatMessageController.deleteChatMessageLike(chatMessageId, userId);
@@ -518,14 +557,14 @@ class ChatMessageControllerTests {
     }
 
     @Test
-    void createChatMessageLike_ShouldHandleDuplicateLike_WhenUserAlreadyLiked() throws Exception {
+    void createChatMessageLike_ShouldReturnCreated_WhenUserAlreadyLiked() throws Exception {
+        // The service treats a duplicate like as a no-op and returns the existing like
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
         when(chatMessageService.createChatMessageLike(chatMessageId, userId))
-                .thenThrow(new RuntimeException("Duplicate like"));
+                .thenReturn(chatMessageLikesDTO);
 
         mockMvc.perform(post("/api/v1/chat-messages/{chatMessageId}/likes/{userId}", chatMessageId, userId))
-                .andExpect(status().isInternalServerError());
-
-        verify(logger, times(1)).error(contains("Error creating chat message like"));
+                .andExpect(status().isCreated());
     }
 
     @Test
