@@ -11,6 +11,8 @@ import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.activity.api.IActivityService;
 import com.danielagapov.spawn.chat.api.dto.FullActivityChatMessageDTO;
+import com.danielagapov.spawn.shared.util.AuthenticatedUserProvider;
+import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +51,12 @@ class ActivityControllerTests {
 
     @Mock
     private ILogger logger;
+
+    @Mock
+    private AuthenticatedUserProvider authenticatedUserProvider;
+
+    @Mock
+    private IBlockedUserService blockedUserService;
 
     @InjectMocks
     private ActivityController activityController;
@@ -523,6 +531,24 @@ class ActivityControllerTests {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
         verify(activityService, times(1)).getChatMessagesByActivityId(activityId);
+    }
+
+    @Test
+    void getChatMessagesForActivity_ShouldLeaveOutBlockedSenders() throws Exception {
+        BaseUserDTO friend = new BaseUserDTO(UUID.randomUUID(), "Friend", "friend@example.com", "friend", "", "");
+        BaseUserDTO blocked = new BaseUserDTO(UUID.randomUUID(), "Blocked", "blocked@example.com", "blocked", "", "");
+        FullActivityChatMessageDTO fromFriend = new FullActivityChatMessageDTO(
+                UUID.randomUUID(), "on my way", Instant.now(), friend, activityId, List.of());
+        FullActivityChatMessageDTO fromBlocked = new FullActivityChatMessageDTO(
+                UUID.randomUUID(), "hi", Instant.now(), blocked, activityId, List.of());
+        when(activityService.getChatMessagesByActivityId(activityId)).thenReturn(List.of(fromFriend, fromBlocked));
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(blockedUserService.filterOutBlockedUsers(anyList(), eq(userId))).thenReturn(List.of(friend));
+
+        mockMvc.perform(get("/api/v1/activities/{activityId}/chats", activityId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].content").value("on my way"));
     }
 
     @Test

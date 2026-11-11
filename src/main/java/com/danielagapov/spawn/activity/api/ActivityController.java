@@ -4,7 +4,11 @@ import com.danielagapov.spawn.activity.api.dto.ActivityCreationResponseDTO;
 import com.danielagapov.spawn.activity.api.dto.ActivityDTO;
 import com.danielagapov.spawn.activity.api.dto.ActivityPartialUpdateDTO;
 import com.danielagapov.spawn.activity.api.dto.FullFeedActivityDTO;
+import com.danielagapov.spawn.chat.api.dto.FullActivityChatMessageDTO;
+import com.danielagapov.spawn.shared.util.AuthenticatedUserProvider;
 import com.danielagapov.spawn.shared.util.EntityType;
+import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
 import com.danielagapov.spawn.shared.exceptions.ActivityFullException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
@@ -15,17 +19,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController()
 @RequestMapping("api/v1/activities")
 public class ActivityController {
     private final IActivityService activityService;
     private final ILogger logger;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
+    private final IBlockedUserService blockedUserService;
 
-    public ActivityController(IActivityService ActivityService, ILogger logger) {
+    public ActivityController(IActivityService ActivityService, ILogger logger,
+                              AuthenticatedUserProvider authenticatedUserProvider,
+                              IBlockedUserService blockedUserService) {
         this.activityService = ActivityService;
         this.logger = logger;
+        this.authenticatedUserProvider = authenticatedUserProvider;
+        this.blockedUserService = blockedUserService;
     }
 
     // TL;DR: Don't remove this endpoint; it may become useful.
@@ -304,13 +319,47 @@ public class ActivityController {
         }
     }
 
+    // Leaves out messages from anyone the signed-in user blocked, or who blocked them.
+    // full path: /api/v1/activities/{activityId}/chats
     @GetMapping("{activityId}/chats")
     public ResponseEntity<?> getChatMessagesForActivity(@PathVariable UUID activityId) {
         try {
-            return new ResponseEntity<>(activityService.getChatMessagesByActivityId(activityId), HttpStatus.OK);
+            List<FullActivityChatMessageDTO> chatMessages = activityService.getChatMessagesByActivityId(activityId);
+            UUID requesterId = authenticatedUserProvider.getCurrentUserId().orElse(null);
+            return new ResponseEntity<>(filterOutBlockedSenders(chatMessages, requesterId), HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error getting chat messages for activity: " + activityId + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Removes messages whose sender is blocked in either direction with the requester,
+     * using the same rule as the friends and search lists.
+     */
+    private List<FullActivityChatMessageDTO> filterOutBlockedSenders(
+            List<FullActivityChatMessageDTO> chatMessages, UUID requesterId) {
+        if (requesterId == null || chatMessages == null || chatMessages.isEmpty()) {
+            return chatMessages;
+        }
+
+        Map<UUID, BaseUserDTO> sendersById = new LinkedHashMap<>();
+        for (FullActivityChatMessageDTO chatMessage : chatMessages) {
+            BaseUserDTO sender = chatMessage.getSenderUser();
+            if (sender != null && sender.getId() != null) {
+                sendersById.putIfAbsent(sender.getId(), sender);
+            }
+        }
+
+        Set<UUID> visibleSenderIds = blockedUserService
+                .filterOutBlockedUsers(new ArrayList<>(sendersById.values()), requesterId)
+                .stream()
+                .map(BaseUserDTO::getId)
+                .collect(Collectors.toSet());
+
+        return chatMessages.stream()
+                .filter(chatMessage -> chatMessage.getSenderUser() == null
+                        || visibleSenderIds.contains(chatMessage.getSenderUser().getId()))
+                .collect(Collectors.toList());
     }
 }
