@@ -105,4 +105,13 @@ public interface IFriendRequestService {
      * @return The timestamp of the latest friend request, or null if none found
      */
     Instant getLatestFriendRequestTimestamp(UUID userId);
+
+    /**
+     * Ends the friendship between two users (both directions) and clears the friend caches for both of them.
+     *
+     * @param userId   the user doing the removing
+     * @param friendId the friend being removed
+     * @return true if they were friends and the friendship was removed, false if they weren't friends
+     */
+    boolean removeFriend(UUID userId, UUID friendId);
 }

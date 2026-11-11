@@ -8,6 +8,8 @@ import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.auth.internal.services.IAuthService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
+import com.danielagapov.spawn.shared.util.AuthenticatedUserProvider;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +28,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +57,12 @@ class UserControllerTests {
 
     @Mock
     private IAuthService authService;
+
+    @Mock
+    private IFriendRequestService friendRequestService;
+
+    @Mock
+    private AuthenticatedUserProvider authenticatedUserProvider;
 
     @InjectMocks
     private UserController userController;
@@ -404,5 +413,47 @@ class UserControllerTests {
 
         // Assert - Verify no sensitive information is logged (user ID is anonymized)
         verify(logger, never()).error(contains(userId.toString()));
+    }
+
+    // ---- DELETE /api/v1/users/friends/{userId}/{friendId} ----
+
+    @Test
+    void removeFriend_removesFriendshipForTheSignedInUser() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(friendRequestService.removeFriend(userId, friendId1)).thenReturn(true);
+
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, friendId1))
+                .andExpect(status().isNoContent());
+
+        verify(friendRequestService).removeFriend(userId, friendId1);
+    }
+
+    @Test
+    void removeFriend_returnsNotFoundWhenTheyArentFriends() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+        when(friendRequestService.removeFriend(userId, friendId1)).thenReturn(false);
+
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, friendId1))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void removeFriend_forbidsRemovingSomeoneElsesFriend() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(friendId2));
+
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, friendId1))
+                .andExpect(status().isForbidden());
+
+        verify(friendRequestService, never()).removeFriend(any(), any());
+    }
+
+    @Test
+    void removeFriend_rejectsUnauthenticatedRequests() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.empty());
+
+        mockMvc.perform(delete("/api/v1/users/friends/{userId}/{friendId}", userId, friendId1))
+                .andExpect(status().isUnauthorized());
+
+        verify(friendRequestService, never()).removeFriend(any(), any());
     }
 }

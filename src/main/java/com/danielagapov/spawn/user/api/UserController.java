@@ -10,6 +10,8 @@ import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.auth.internal.services.IAuthService;
 import com.danielagapov.spawn.social.internal.services.IBlockedUserService;
+import com.danielagapov.spawn.social.internal.services.IFriendRequestService;
+import com.danielagapov.spawn.shared.util.AuthenticatedUserProvider;
 import com.danielagapov.spawn.media.internal.services.IS3Service;
 import com.danielagapov.spawn.user.internal.services.IUserService;
 import com.danielagapov.spawn.user.internal.services.IRecentlySpawnedService;
@@ -36,10 +38,15 @@ public class UserController {
     private final ILogger logger;
     private final IAuthService authService;
     private final IRecentlySpawnedService recentlySpawnedService;
+    private final IFriendRequestService friendRequestService;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
 
     @Autowired
     public UserController(IUserService userService, IS3Service s3Service, ILogger logger, IAuthService authService, 
-                          IBlockedUserService blockedUserService, IRecentlySpawnedService recentlySpawnedService) {
+                          IBlockedUserService blockedUserService, IRecentlySpawnedService recentlySpawnedService,
+                          IFriendRequestService friendRequestService, AuthenticatedUserProvider authenticatedUserProvider) {
+        this.friendRequestService = friendRequestService;
+        this.authenticatedUserProvider = authenticatedUserProvider;
         this.userService = userService;
         this.s3Service = s3Service;
         this.blockedUserService = blockedUserService;
@@ -64,6 +71,33 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error getting friends for user: " + LoggingUtils.formatUserIdInfo(id) + ": " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // full path: /api/v1/users/friends/{userId}/{friendId}
+    // Removes friendId from userId's friends (and vice versa). Only the signed-in user can remove their own friends.
+    @DeleteMapping("friends/{userId}/{friendId}")
+    public ResponseEntity<Void> removeFriend(@PathVariable UUID userId, @PathVariable UUID friendId) {
+        UUID callerId = authenticatedUserProvider.getCurrentUserId().orElse(null);
+        if (callerId == null) {
+            logger.error("Unauthenticated request to remove friend " + LoggingUtils.formatUserIdInfo(friendId));
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if (!callerId.equals(userId)) {
+            logger.error("User " + LoggingUtils.formatUserIdInfo(callerId) + " tried to remove a friend for "
+                    + LoggingUtils.formatUserIdInfo(userId));
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        try {
+            boolean removed = friendRequestService.removeFriend(userId, friendId);
+            return new ResponseEntity<>(removed ? HttpStatus.NO_CONTENT : HttpStatus.NOT_FOUND);
+        } catch (BaseNotFoundException e) {
+            logger.error("User not found while removing friend: " + e.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error removing friend " + LoggingUtils.formatUserIdInfo(friendId) + " for "
+                    + LoggingUtils.formatUserIdInfo(userId) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

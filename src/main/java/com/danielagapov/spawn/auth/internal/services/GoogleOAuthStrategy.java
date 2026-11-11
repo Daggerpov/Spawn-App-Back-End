@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
+import java.util.List;
 
 @Service
 public final class GoogleOAuthStrategy implements OAuthStrategy {
@@ -127,9 +127,12 @@ public final class GoogleOAuthStrategy implements OAuthStrategy {
 
         // Re-initialize Google ID token verifier with client ID from properties or environment
         if (clientId != null && !clientId.isEmpty()) {
-            logger.info("Initializing Google token verifier with client ID: " + clientId);
+            // GOOGLE_CLIENT_ID may list several comma-separated client IDs (e.g. the iOS client and the
+            // web client the Android app requests ID tokens for), and a token issued for any of them is accepted.
+            List<String> audiences = parseClientIds(clientId);
+            logger.info("Initializing Google token verifier with " + audiences.size() + " client ID(s): " + audiences);
             this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                    .setAudience(Collections.singletonList(clientId))
+                    .setAudience(audiences)
                     .build();
             logger.info("Google token verifier successfully initialized");
         } else {
@@ -138,5 +141,15 @@ public final class GoogleOAuthStrategy implements OAuthStrategy {
             this.verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory()).build();
             logger.warn("Created dummy verifier that will reject all tokens - Google OAuth will not work");
         }
+    }
+
+    /** Splits a comma-separated GOOGLE_CLIENT_ID value into its distinct, non-blank client IDs. */
+    public static List<String> parseClientIds(String raw) {
+        if (raw == null) return List.of();
+        return java.util.Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
     }
 }

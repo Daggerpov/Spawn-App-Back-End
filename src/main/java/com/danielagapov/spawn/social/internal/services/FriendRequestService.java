@@ -455,4 +455,23 @@ public class FriendRequestService implements IFriendRequestService {
     }
 
 
+
+    @Override
+    public boolean removeFriend(UUID userId, UUID friendId) {
+        if (userId.equals(friendId) || !userQueryService.isUserFriendOfUser(userId, friendId)) {
+            logger.info("Remove friend: " + LoggingUtils.formatUserIdInfo(userId) + " and "
+                    + LoggingUtils.formatUserIdInfo(friendId) + " aren't friends, nothing to remove");
+            return false;
+        }
+
+        blockedUserService.removeFriendshipBetweenUsers(userId, friendId);
+
+        // Both users' friend lists, recommendations, cached profiles and feeds change
+        cacheEvictionHelper.evictCacheForUsers(CacheNames.FRIENDS_BY_USER_ID, userId, friendId);
+        cacheEvictionHelper.evictCacheForUsers(CacheNames.FRIENDS_LIST, userId, friendId);
+        cacheEvictionHelper.evictCacheForUsers(CacheNames.RECOMMENDED_FRIENDS, userId, friendId);
+        cacheEvictionHelper.evictCacheForUsers(CacheNames.OTHER_PROFILES, userId, friendId);
+        cacheEvictionHelper.evictCacheForUsers(CacheNames.FEED_ACTIVITIES, userId, friendId);
+        return true;
+    }
 }
