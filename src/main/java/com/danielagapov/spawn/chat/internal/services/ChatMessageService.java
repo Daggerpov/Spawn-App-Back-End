@@ -11,7 +11,6 @@ import com.danielagapov.spawn.shared.exceptions.Base.BaseDeleteException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseNotFoundException;
 import com.danielagapov.spawn.shared.exceptions.Base.BaseSaveException;
 import com.danielagapov.spawn.shared.exceptions.Base.BasesNotFoundException;
-import com.danielagapov.spawn.shared.exceptions.EntityAlreadyExistsException;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.ChatMessageLikesMapper;
 import com.danielagapov.spawn.shared.util.ChatMessageMapper;
@@ -267,27 +266,24 @@ public class ChatMessageService implements IChatMessageService {
 
     @Override
     public ChatMessageLikesDTO createChatMessageLike(UUID chatMessageId, UUID userId) {
-        try {
-            boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
-            if (exists) {
-                throw new EntityAlreadyExistsException(EntityType.ChatMessage, chatMessageId);
-            }
-            ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
-                    .orElseThrow(() -> new BaseSaveException("ChatMessageId: " + chatMessageId));
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new BaseSaveException("UserId: " + userId));
+        // Liking a message you already liked is a no-op, so a retry or a second device doesn't fail
+        if (chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)) {
+            return new ChatMessageLikesDTO(chatMessageId, userId);
+        }
 
-            // Create the composite key
-            ChatMessageLikesId id = new ChatMessageLikesId(chatMessageId, userId);
-            
+        ChatMessage chatMessage = chatMessageRepository.findById(chatMessageId)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.ChatMessage, chatMessageId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseNotFoundException(EntityType.User, userId));
+
+        try {
             ChatMessageLikes chatMessageLikes = new ChatMessageLikes();
-            chatMessageLikes.setId(id);
+            chatMessageLikes.setId(new ChatMessageLikesId(chatMessageId, userId));
             chatMessageLikes.setChatMessage(chatMessage);
             chatMessageLikes.setUser(user);
 
             chatMessageLikesRepository.save(chatMessageLikes);
             return ChatMessageLikesMapper.toDTO(chatMessageLikes);
-
         } catch (Exception e) {
             logger.error(e.getMessage());
             throw new BaseSaveException("Like: chatMessageId: " + chatMessageId + " userId: "
@@ -313,11 +309,11 @@ public class ChatMessageService implements IChatMessageService {
 
     @Override
     public void deleteChatMessageLike(UUID chatMessageId, UUID userId) {
+        // Unliking a message you haven't liked is a no-op
+        if (!chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId)) {
+            return;
+        }
         try {
-            boolean exists = chatMessageLikesRepository.existsByChatMessage_IdAndUser_Id(chatMessageId, userId);
-            if (!exists) {
-                throw new BaseNotFoundException(EntityType.ChatMessage);
-            }
             chatMessageLikesRepository.deleteByChatMessage_IdAndUser_Id(chatMessageId, userId);
         } catch (Exception e) {
             logger.error(e.getMessage());
