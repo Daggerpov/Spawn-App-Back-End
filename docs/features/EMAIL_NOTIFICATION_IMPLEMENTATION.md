@@ -71,13 +71,13 @@ notification.emails=test@example.com
 
 1. **Set the environment variable** `NOTIFICATION_EMAILS` with comma-separated email addresses:
    ```bash
-   export NOTIFICATION_EMAILS="spawnappmarketing@gmail.com,danielagapov1@gmail.com,shane.mander31@gmail.com,danieluhlee@gmail.com"
+   export NOTIFICATION_EMAILS="admin1@example.com,admin2@example.com"
    ```
 
 2. **For Docker/Cloud deployments**, add the environment variable to your deployment configuration:
    ```yaml
    environment:
-     NOTIFICATION_EMAILS: "spawnappmarketing@gmail.com,danielagapov1@gmail.com,shane.mander31@gmail.com,danieluhlee@gmail.com"
+     NOTIFICATION_EMAILS: "admin1@example.com,admin2@example.com"
    ```
 
 3. **For local testing**, you can add it to your `.env` file or set it directly in your IDE run configuration.

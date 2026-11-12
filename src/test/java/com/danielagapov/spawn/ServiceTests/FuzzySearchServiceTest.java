@@ -77,18 +77,18 @@ public class FuzzySearchServiceTest {
     void testJaroWinklerWithTypos() {
         // Test the research finding: Jaro-Winkler handles typos well
         List<TestUser> users = Arrays.asList(
-                new TestUser("Daniel Agapov", "daggerpov"),
+                new TestUser("Alex Rivera", "alexrivera"),
                 new TestUser("Michael Johnson", "mjohnson")
         );
 
         // Test with typo in name
         List<FuzzySearchService.SearchResult<TestUser>> results = fuzzySearchService.search(
-                "Danel Agapov", users, TestUser::getName, TestUser::getUsername
+                "Alx Rivera", users, TestUser::getName, TestUser::getUsername
         );
 
         assertFalse(results.isEmpty());
         assertTrue(results.get(0).getSimilarityScore() > 0.8); // Should be high similarity
-        assertEquals("Daniel Agapov", results.get(0).getItem().getName());
+        assertEquals("Alex Rivera", results.get(0).getItem().getName());
     }
 
     @Test
