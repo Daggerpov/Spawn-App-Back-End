@@ -87,6 +87,62 @@ public class AdminUserInitializer {
         };
     }
     
+    @Value("${TEST_ACCOUNT_USERNAME:}")
+    private String testAccountUsername;
+
+    @Value("${TEST_ACCOUNT_PASSWORD:}")
+    private String testAccountPassword;
+
+    @Value("${TEST_ACCOUNT_NAME:Test User}")
+    private String testAccountName;
+
+    @Value("${TEST_ACCOUNT_EMAIL:}")
+    private String testAccountEmail;
+
+    /**
+     * Seeds a password-login test account for a collaborator, like the admin
+     * account App Store reviewers use. Credentials come from environment
+     * variables so they never live in this (public) repo. Skipped when unset.
+     */
+    @Bean
+    public CommandLineRunner initializeTestAccount(
+            IUserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            ILogger logger) {
+
+        return args -> {
+            if (testAccountUsername == null || testAccountUsername.isBlank()
+                    || testAccountPassword == null || testAccountPassword.isBlank()) {
+                return;
+            }
+
+            if (userRepository.existsByUsername(testAccountUsername)) {
+                logger.info("Test account already exists with username: " + testAccountUsername);
+                return;
+            }
+
+            try {
+                User testUser = new User();
+                testUser.setId(UUID.randomUUID());
+                testUser.setUsername(testAccountUsername);
+                testUser.setName(testAccountName);
+                if (testAccountEmail != null && !testAccountEmail.isBlank()) {
+                    testUser.setEmail(testAccountEmail);
+                }
+                testUser.setBio("Spawn test account");
+                testUser.setPassword(passwordEncoder.encode(testAccountPassword));
+                testUser.setStatus(UserStatus.ACTIVE);
+                testUser.setDateCreated(new Date());
+                userRepository.save(testUser);
+
+                logger.info("Test account created with username: " + testAccountUsername);
+            } catch (Exception e) {
+                // A broken test account must never stop the app from starting.
+                logger.error("Failed to create test account: " + e.getMessage());
+            }
+        };
+    }
+
     /**
      * Validates that the admin password meets security requirements
      */
