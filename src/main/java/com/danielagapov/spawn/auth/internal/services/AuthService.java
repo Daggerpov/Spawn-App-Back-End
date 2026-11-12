@@ -581,7 +581,8 @@ public class AuthService implements IAuthService {
         verification.setCodeExpiresAt(codeExpiresAt);
 
         String expiryTime = codeExpiresAt.toString();
-        // Email is sent asynchronously - errors are logged by the email service
+        // Sent synchronously so a failed send reaches the client instead of a false "sent" message.
+        // The record is saved only after a successful send, so a failure doesn't start the resend cooldown.
         emailService.sendVerificationCodeEmail(email, verificationCode, expiryTime);
         logger.info("Email verification code sent for registration to: " + email);
         emailVerificationRepository.save(verification);

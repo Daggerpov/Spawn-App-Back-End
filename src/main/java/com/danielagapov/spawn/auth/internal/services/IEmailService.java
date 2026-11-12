@@ -18,7 +18,7 @@ public interface IEmailService {
 
     /**
      * Builds and sends an email with a verification code to verify a user's email address.
-     * This method executes asynchronously and handles exceptions internally.
+     * Runs synchronously and throws if the email couldn't be sent, so callers can report the failure.
      * @param to the email address to send the verification code to
      * @param verificationCode the 6-digit verification code
      * @param expiryTime the time when the code expires
