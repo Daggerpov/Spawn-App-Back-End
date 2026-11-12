@@ -14,6 +14,6 @@ DEALLOCATE PREPARE stmt;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- DANIEL, NOTE TO SELF:
+-- NOTE:
 -- 1. connect to redis via. Railway connection command, (Raw redis-cli command)
 -- 2. run `FLUSHDB` to clear the database
