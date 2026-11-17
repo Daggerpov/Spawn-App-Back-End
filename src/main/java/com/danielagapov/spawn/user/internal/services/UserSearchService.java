@@ -331,8 +331,10 @@ public class UserSearchService implements IUserSearchService {
 
     private List<RecommendedFriendUserDTO> getRandomRecommendations(UUID userId) {
         List<RecommendedFriendUserDTO> recommendedFriends = new ArrayList<>();
-        // Get all active users directly instead of going through UserService
-        List<User> allUsers = friendshipQueryService.getAllActiveUsers();
+        // Newest accounts first. The query has no ORDER BY, so without this the same
+        // oldest accounts filled every list and recent sign-ups never showed up.
+        List<User> allUsers = new ArrayList<>(friendshipQueryService.getAllActiveUsers());
+        allUsers.sort(Comparator.comparing(User::getDateCreated, Comparator.nullsLast(Comparator.reverseOrder())));
         Set<UUID> excludedUserIds = getExcludedUserIds(userId);
 
         for (User potentialFriend : allUsers) {
