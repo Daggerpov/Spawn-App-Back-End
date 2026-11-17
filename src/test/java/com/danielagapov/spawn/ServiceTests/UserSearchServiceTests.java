@@ -507,4 +507,46 @@ class UserSearchServiceTests {
         // Verify that the repository was not called for blank query
         verify(userRepository, never()).findUsersWithPartialMatch(any(), any());
     }
+
+    @Test
+    void getLimitedRecommendedFriendsForUserId_PrefersNewestUsers_WhenNoMutuals() {
+        UUID userId = UUID.randomUUID();
+        // 20 active users returned oldest first, like the unordered query does in prod
+        List<User> users = new java.util.ArrayList<>();
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < 20; i++) {
+            User u = new User(UUID.randomUUID(), "user" + i, null, "User " + i, "Bio", "user" + i + "@example.com");
+            u.setStatus(UserStatus.ACTIVE);
+            u.setDateCreated(new java.util.Date(now - (20 - i) * 86_400_000L));
+            users.add(u);
+        }
+        when(friendshipQueryService.getAllActiveUsers()).thenReturn(users);
+
+        List<RecommendedFriendUserDTO> result = userSearchService.getLimitedRecommendedFriendsForUserId(userId);
+
+        assertEquals(15, result.size());
+        assertEquals(users.get(19).getId(), result.get(0).getId(), "Newest account should come first");
+        var resultIds = result.stream().map(RecommendedFriendUserDTO::getId).toList();
+        for (int i = 0; i < 5; i++) {
+            assertFalse(resultIds.contains(users.get(i).getId()), "Oldest accounts should be pushed out");
+        }
+    }
+
+    @Test
+    void getLimitedRecommendedFriendsForUserId_HandlesMissingDateCreated() {
+        UUID userId = UUID.randomUUID();
+        User undated = new User(UUID.randomUUID(), "undated", null, "Undated", "Bio", "undated@example.com");
+        undated.setStatus(UserStatus.ACTIVE);
+        undated.setDateCreated(null);
+        User dated = new User(UUID.randomUUID(), "dated", null, "Dated", "Bio", "dated@example.com");
+        dated.setStatus(UserStatus.ACTIVE);
+        dated.setDateCreated(new java.util.Date());
+        when(friendshipQueryService.getAllActiveUsers()).thenReturn(List.of(undated, dated));
+
+        List<RecommendedFriendUserDTO> result = userSearchService.getLimitedRecommendedFriendsForUserId(userId);
+
+        assertEquals(2, result.size());
+        assertEquals(dated.getId(), result.get(0).getId());
+        assertEquals(undated.getId(), result.get(1).getId());
+    }
 }
