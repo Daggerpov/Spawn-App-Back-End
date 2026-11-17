@@ -48,8 +48,8 @@ class AuthenticatedUserProviderTests {
     @Test
     void getCurrentUserId_FindsUserByUsername() {
         UUID id = UUID.randomUUID();
-        signIn("haley");
-        when(userRepository.findByUsername("haley")).thenReturn(Optional.of(userWithId(id)));
+        signIn("jamie");
+        when(userRepository.findByUsername("jamie")).thenReturn(Optional.of(userWithId(id)));
 
         assertEquals(Optional.of(id), provider.getCurrentUserId());
     }
@@ -57,9 +57,9 @@ class AuthenticatedUserProviderTests {
     @Test
     void getCurrentUserId_FallsBackToEmail_ForOAuthUsersWithoutUsername() {
         UUID id = UUID.randomUUID();
-        signIn("haley@example.com");
-        when(userRepository.findByUsername("haley@example.com")).thenReturn(Optional.empty());
-        when(userRepository.findByEmail("haley@example.com")).thenReturn(Optional.of(userWithId(id)));
+        signIn("jamie@example.com");
+        when(userRepository.findByUsername("jamie@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("jamie@example.com")).thenReturn(Optional.of(userWithId(id)));
 
         assertEquals(Optional.of(id), provider.getCurrentUserId());
     }
