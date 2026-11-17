@@ -575,6 +575,29 @@ class AuthControllerTests {
         verify(logger, times(1)).warn(contains("Password change failed"));
     }
 
+    @Test
+    void changePassword_ShouldAcceptLiveAppPayloadWithUserId() throws Exception {
+        // The shipped iOS app sends userId alongside the passwords. That used to 500
+        // because the app's ObjectMapper rejected unknown fields.
+        ObjectMapper appMapper = new com.danielagapov.spawn.shared.config.JacksonConfig().objectMapper();
+        MockMvc appMockMvc = MockMvcBuilders.standaloneSetup(authController)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(appMapper))
+                .build();
+
+        when(jwtService.extractUsername("test-token")).thenReturn(username);
+        when(authService.changePassword(username, "oldpass", "newpass")).thenReturn(true);
+
+        String body = "{\"userId\":\"" + userId + "\",\"currentPassword\":\"oldpass\",\"newPassword\":\"newpass\"}";
+
+        appMockMvc.perform(post("/api/v1/auth/change-password")
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk());
+
+        verify(authService, times(1)).changePassword(username, "oldpass", "newpass");
+    }
+
     // MARK: - Quick Sign In Tests
 
     @Test
