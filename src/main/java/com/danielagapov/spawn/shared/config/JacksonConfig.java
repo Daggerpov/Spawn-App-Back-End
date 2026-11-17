@@ -1,5 +1,6 @@
 package com.danielagapov.spawn.shared.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
@@ -38,6 +39,11 @@ public class JacksonConfig {
         
         // Fail on empty beans (classes with no properties) to catch potential issues
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+
+        // Ignore extra JSON fields instead of failing the whole request with a 500.
+        // Spring Boot's own mapper does this by default; this bean replaces it.
+        // Older app builds send fields the DTOs don't have (e.g. userId on change-password).
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         
         return mapper;
     }
