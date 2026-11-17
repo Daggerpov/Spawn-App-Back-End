@@ -6,13 +6,16 @@ import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -127,6 +130,37 @@ public class GlobalExceptionHandler {
             errorId
         );
 
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Handle a required query parameter that wasn't sent
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingParameter(MissingServletRequestParameterException ex, WebRequest request) {
+        return badRequest("Missing required parameter: " + ex.getParameterName());
+    }
+
+    /**
+     * Handle a parameter that can't be converted to its type (e.g. an unknown enum value)
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex, WebRequest request) {
+        return badRequest("Invalid value for parameter: " + ex.getName());
+    }
+
+    /**
+     * Handle a request body that is missing or isn't valid JSON for the endpoint
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException ex, WebRequest request) {
+        return badRequest("Malformed request body");
+    }
+
+    private ResponseEntity<Map<String, Object>> badRequest(String message) {
+        String errorId = UUID.randomUUID().toString();
+        logger.warn("Bad request [" + errorId + "]: " + message);
+        Map<String, Object> response = createErrorResponse("BAD_REQUEST", message, HttpStatus.BAD_REQUEST, errorId);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
