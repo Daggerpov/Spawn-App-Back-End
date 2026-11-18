@@ -26,12 +26,11 @@ public class FuzzySearchConfig {
      * Similarity threshold for Jaro-Winkler distance.
      * Values range from 0.0 (no similarity) to 1.0 (perfect match).
      * 
-     * Default: 0.6 (60% similarity threshold)
-     * - Values above 0.6 generally indicate good matches for names/usernames
-     * - Lower values (0.4-0.5) may include more false positives
-     * - Higher values (0.7-0.8) are more strict but may miss valid matches
+     * Default: 0.75. At 0.6, short names that merely share letters matched ("omar" for "maya").
+     * Names or usernames that contain the query always match regardless of this threshold,
+     * so being stricter here doesn't lose last-name or partial searches.
      */
-    private double similarityThreshold = 0.6;
+    private double similarityThreshold = 0.75;
     
     /**
      * Minimum similarity threshold for very strict matching.
