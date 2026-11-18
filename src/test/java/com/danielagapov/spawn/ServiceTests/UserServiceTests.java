@@ -1,6 +1,7 @@
 package com.danielagapov.spawn.ServiceTests;
 
 import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.user.api.dto.OptionalDetailsDTO;
 import com.danielagapov.spawn.user.api.dto.UserDTO;
 import com.danielagapov.spawn.user.api.dto.UserUpdateDTO;
 import com.danielagapov.spawn.shared.util.UserStatus;
@@ -375,6 +376,53 @@ public class UserServiceTests {
         // Then
         assertNotNull(result);
         verify(userRepository, times(1)).save(existingUser);
+    }
+
+    @Test
+    void setOptionalDetails_KeepsExistingPhoto_WhenNoNewPhotoSent() {
+        UUID userId = UUID.randomUUID();
+        User user = createUser(userId, "sam", "sam@example.com");
+        user.setProfilePictureUrlString("https://photos.example.com/sam.jpg");
+        user.setStatus(UserStatus.USERNAME_AND_PHONE_NUMBER);
+        when(friendshipQueryService.getUserEntityById(userId)).thenReturn(user);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BaseUserDTO result = userService.setOptionalDetails(userId, new OptionalDetailsDTO("Sam", null));
+
+        assertEquals("Sam", result.getName());
+        assertEquals("https://photos.example.com/sam.jpg", result.getProfilePicture());
+        assertEquals(UserStatus.NAME_AND_PHOTO, user.getStatus());
+        verify(s3Service, never()).uploadProfilePicture(any(), any());
+    }
+
+    @Test
+    void setOptionalDetails_UsesDefaultPhoto_WhenUserHasNone() {
+        UUID userId = UUID.randomUUID();
+        User user = createUser(userId, "sam", "sam@example.com");
+        user.setProfilePictureUrlString(null);
+        when(friendshipQueryService.getUserEntityById(userId)).thenReturn(user);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(s3Service.getDefaultProfilePicture()).thenReturn("https://cdn.example.com/default.png");
+
+        BaseUserDTO result = userService.setOptionalDetails(userId, new OptionalDetailsDTO("Sam", new byte[0]));
+
+        assertEquals("https://cdn.example.com/default.png", result.getProfilePicture());
+        verify(s3Service, never()).uploadProfilePicture(any(), any());
+    }
+
+    @Test
+    void setOptionalDetails_UploadsNewPhoto_WhenSent() {
+        UUID userId = UUID.randomUUID();
+        User user = createUser(userId, "sam", "sam@example.com");
+        user.setProfilePictureUrlString("https://photos.example.com/sam.jpg");
+        byte[] photo = new byte[] {1, 2, 3};
+        when(friendshipQueryService.getUserEntityById(userId)).thenReturn(user);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(s3Service.uploadProfilePicture(photo, userId)).thenReturn("https://cdn.example.com/" + userId);
+
+        BaseUserDTO result = userService.setOptionalDetails(userId, new OptionalDetailsDTO("Sam", photo));
+
+        assertEquals("https://cdn.example.com/" + userId, result.getProfilePicture());
     }
 
     private User createUser(UUID id, String username, String email) {

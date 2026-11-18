@@ -658,7 +658,14 @@ public class UserService implements IUserService {
             if (optionalDetailsDTO.getName() != null) {
                 user.setName(optionalDetailsDTO.getName());
             }
-            user.setProfilePictureUrlString(s3Service.uploadProfilePicture(optionalDetailsDTO.getProfilePictureData(), user.getId()));
+            // Only replace the photo when a new one was sent, so a Google or Apple photo
+            // survives "Continue" without a pick. Users with no photo yet get the default.
+            byte[] photo = optionalDetailsDTO.getProfilePictureData();
+            if (photo != null && photo.length > 0) {
+                user.setProfilePictureUrlString(s3Service.uploadProfilePicture(photo, user.getId()));
+            } else if (user.getProfilePictureUrlString() == null || user.getProfilePictureUrlString().isBlank()) {
+                user.setProfilePictureUrlString(s3Service.getDefaultProfilePicture());
+            }
             user.setStatus(UserStatus.NAME_AND_PHOTO);
             user = repository.save(user);
             return UserMapper.toDTO(user);
