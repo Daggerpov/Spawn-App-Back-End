@@ -118,6 +118,23 @@ class CalendarControllerTests {
         }
 
         @Test
+        @DisplayName("Should use the client's timezone when provided")
+        void shouldUseTimezone_WhenProvided() throws Exception {
+            when(calendarService.getCalendarActivitiesWithFilters(userId, 11, 2026, "America/Vancouver"))
+                    .thenReturn(calendarActivities);
+
+            mockMvc.perform(get("/api/v1/users/{userId}/calendar", userId)
+                            .param("month", "11")
+                            .param("year", "2026")
+                            .param("timezone", "America/Vancouver"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(3));
+
+            verify(calendarService, times(1)).getCalendarActivitiesWithFilters(userId, 11, 2026, "America/Vancouver");
+            verify(calendarService, never()).getCalendarActivitiesWithFilters(any(UUID.class), any(), any());
+        }
+
+        @Test
         @DisplayName("Should return filtered activities when month provided")
         void shouldReturnFilteredActivities_WhenMonthProvided() throws Exception {
             List<CalendarActivityDTO> januaryActivities = List.of(
@@ -296,7 +313,7 @@ class CalendarControllerTests {
                     .thenReturn(calendarActivities);
 
             ResponseEntity<List<CalendarActivityDTO>> response = 
-                calendarController.getCalendarActivities(userId, null, null);
+                calendarController.getCalendarActivities(userId, null, null, null);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
@@ -308,7 +325,7 @@ class CalendarControllerTests {
         @DisplayName("Get calendar activities direct call with null user ID")
         void getCalendarActivities_DirectCall_NullUserId() {
             ResponseEntity<List<CalendarActivityDTO>> response = 
-                calendarController.getCalendarActivities(null, null, null);
+                calendarController.getCalendarActivities(null, null, null, null);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
             verify(calendarService, never()).getCalendarActivitiesWithFilters(any(), any(), any());
