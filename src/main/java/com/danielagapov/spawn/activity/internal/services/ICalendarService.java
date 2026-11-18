@@ -37,6 +37,13 @@ public interface ICalendarService {
      * @return List of calendar activities based on the provided filters
      */
     List<CalendarActivityDTO> getCalendarActivitiesWithFilters(UUID userId, Integer month, Integer year);
+
+    /**
+     * Same as {@link #getCalendarActivitiesWithFilters(UUID, Integer, Integer)}, but activities are placed on
+     * dates in the given IANA timezone (e.g. "America/Vancouver") instead of UTC, so an evening activity
+     * doesn't land on the next day. Unknown or blank timezones fall back to UTC.
+     */
+    List<CalendarActivityDTO> getCalendarActivitiesWithFilters(UUID userId, Integer month, Integer year, String timezone);
     
     /**
      * Clear the calendar cache for a specific user

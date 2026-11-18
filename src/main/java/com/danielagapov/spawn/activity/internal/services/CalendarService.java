@@ -13,6 +13,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -36,6 +39,35 @@ public class CalendarService implements ICalendarService {
         this.ActivityRepository = ActivityRepository;
         this.activityUserRepository = activityUserRepository;
         this.cacheEvictionHelper = cacheEvictionHelper;
+    }
+
+    /**
+     * Get calendar activities for a user based on optional month and year filters, with dates in the given timezone.
+     * The filtered cache is cleared entirely whenever activities change (see clearCalendarCache), so the timezone
+     * can safely be part of the key.
+     */
+    @Override
+    @Cacheable(value = CacheNames.FILTERED_CALENDAR_ACTIVITIES, key = "{#userId, #month, #year, #timezone}")
+    public List<CalendarActivityDTO> getCalendarActivitiesWithFilters(UUID userId, Integer month, Integer year, String timezone) {
+        ZoneId zone = parseZone(timezone);
+        logger.info("Getting calendar activities with filters for user: " + userId +
+                   (month != null ? ", month: " + month : "") +
+                   (year != null ? ", year: " + year : "") + ", zone: " + zone);
+        if (month != null && year != null) {
+            YearMonth yearMonth = YearMonth.of(year, month);
+            return fetchCalendarActivities(userId, yearMonth.atDay(1), yearMonth.atEndOfMonth(), zone);
+        }
+        return fetchCalendarActivities(userId, null, null, zone);
+    }
+
+    /** Parses an IANA timezone id, falling back to UTC when it's missing or unknown. */
+    static ZoneId parseZone(String timezone) {
+        if (timezone == null || timezone.isBlank()) return ZoneOffset.UTC;
+        try {
+            return ZoneId.of(timezone.trim());
+        } catch (DateTimeException e) {
+            return ZoneOffset.UTC;
+        }
     }
 
     /**
@@ -88,7 +120,7 @@ public class CalendarService implements ICalendarService {
             LocalDate endOfMonth = yearMonth.atEndOfMonth();
             
             // Call the helper method with month/year filtering
-            List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, startOfMonth, endOfMonth);
+            List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, startOfMonth, endOfMonth, ZoneOffset.UTC);
             
             logger.info("Found " + activities.size() + " calendar activities for user: " + userId + 
                        " in month: " + month + ", year: " + year);
@@ -110,7 +142,7 @@ public class CalendarService implements ICalendarService {
         
         try {
             // Call the helper method with no date filtering
-            List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, null, null);
+            List<CalendarActivityDTO> activities = fetchCalendarActivities(userId, null, null, ZoneOffset.UTC);
             
             logger.info("Found " + activities.size() + " total calendar activities for user: " + userId);
             return activities;
@@ -127,9 +159,10 @@ public class CalendarService implements ICalendarService {
      * @param userId User ID to get activities for
      * @param startDate Start date for filtering (inclusive), or null for no start date filter
      * @param endDate End date for filtering (inclusive), or null for no end date filter
+     * @param zone Timezone whose calendar dates the activities are placed on
      * @return List of calendar activities matching the criteria
      */
-    private List<CalendarActivityDTO> fetchCalendarActivities(UUID userId, LocalDate startDate, LocalDate endDate) {
+    private List<CalendarActivityDTO> fetchCalendarActivities(UUID userId, LocalDate startDate, LocalDate endDate, ZoneId zone) {
         List<CalendarActivityDTO> activities = new ArrayList<>();
         
         try {
@@ -159,13 +192,13 @@ public class CalendarService implements ICalendarService {
                         continue;
                     }
                     
-                    // Convert to UTC-based LocalDate for consistent date filtering
-                    LocalDate ActivityDate = Activity.getStartTime().atZoneSameInstant(java.time.ZoneId.of("UTC")).toLocalDate();
+                    // The activity's date in the requested timezone (UTC unless the client sent one)
+                    LocalDate ActivityDate = Activity.getStartTime().atZoneSameInstant(zone).toLocalDate();
                     
                     // Apply date filtering if specified
                     if (isDateInRange(ActivityDate, startDate, endDate)) {
                         logger.info("Activity " + Activity.getId() + " is in date range, creating CalendarActivityDTO");
-                        activities.add(createCalendarActivityFromActivity(Activity, userId, "creator"));
+                        activities.add(createCalendarActivityFromActivity(Activity, userId, "creator", zone));
                         logger.info("Successfully created CalendarActivityDTO for Activity: " + Activity.getId());
                     } else {
                         logger.info("Activity " + Activity.getId() + " is outside date range, skipping");
@@ -198,15 +231,15 @@ public class CalendarService implements ICalendarService {
                     
                     logger.info("Got Activity " + Activity.getId() + " from ActivityUser for user: " + userId);
                     
-                    // Convert to UTC-based LocalDate for consistent date filtering
-                    LocalDate ActivityDate = Activity.getStartTime().atZoneSameInstant(java.time.ZoneId.of("UTC")).toLocalDate();
+                    // The activity's date in the requested timezone (UTC unless the client sent one)
+                    LocalDate ActivityDate = Activity.getStartTime().atZoneSameInstant(zone).toLocalDate();
                     
                     // Apply date filtering if specified
                     if (isDateInRange(ActivityDate, startDate, endDate)) {
                         // Avoid adding duplicate entries for Activities the user both created and is participating in
                         if (!Activity.getCreator().getId().equals(userId)) {
                             logger.info("Activity " + Activity.getId() + " is not created by user, adding as participant");
-                            activities.add(createCalendarActivityFromActivity(Activity, userId, "participant"));
+                            activities.add(createCalendarActivityFromActivity(Activity, userId, "participant", zone));
                             logger.info("Successfully created CalendarActivityDTO for participating Activity: " + Activity.getId());
                         } else {
                             logger.info("Activity " + Activity.getId() + " was created by user, skipping to avoid duplicate");
@@ -308,7 +341,7 @@ public class CalendarService implements ICalendarService {
     /**
      * Create a CalendarActivityDTO from an Activity
      */
-    private CalendarActivityDTO createCalendarActivityFromActivity(Activity Activity, UUID userId, String role) {
+    private CalendarActivityDTO createCalendarActivityFromActivity(Activity Activity, UUID userId, String role, ZoneId zone) {
         try {
             // Add null safety checks
             if (Activity == null) {
@@ -321,8 +354,8 @@ public class CalendarService implements ICalendarService {
                 throw new IllegalArgumentException("Activity start time cannot be null for Activity ID: " + Activity.getId());
             }
             
-            // Use UTC timezone for consistent date formatting across different server timezones
-            LocalDate activityDate = Activity.getStartTime().atZoneSameInstant(java.time.ZoneId.of("UTC")).toLocalDate();
+            // Format the date in the requested timezone (UTC by default) so it doesn't depend on the server's timezone
+            LocalDate activityDate = Activity.getStartTime().atZoneSameInstant(zone).toLocalDate();
             String formattedDate = activityDate.format(DATE_FORMATTER);
             
             logger.info("Creating CalendarActivityDTO for Activity: " + Activity.getId() + 

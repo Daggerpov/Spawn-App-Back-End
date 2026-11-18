@@ -30,7 +30,8 @@ public class CalendarController {
     public ResponseEntity<List<CalendarActivityDTO>> getCalendarActivities(
             @PathVariable UUID userId,
             @RequestParam(required = false) Integer month,
-            @RequestParam(required = false) Integer year) {
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String timezone) {
         
         logger.info("Calendar API called for user: " + userId + 
                    (month != null ? ", month: " + month : "") + 
@@ -42,7 +43,10 @@ public class CalendarController {
         }
 
         try {
-            List<CalendarActivityDTO> activities = calendarService.getCalendarActivitiesWithFilters(userId, month, year);
+            // Clients that send their timezone (Android) get dates in it; older clients keep UTC dates
+            List<CalendarActivityDTO> activities = (timezone == null || timezone.isBlank())
+                    ? calendarService.getCalendarActivitiesWithFilters(userId, month, year)
+                    : calendarService.getCalendarActivitiesWithFilters(userId, month, year, timezone);
             
             logger.info("Successfully retrieved " + activities.size() + " calendar activities for user: " + userId);
             
