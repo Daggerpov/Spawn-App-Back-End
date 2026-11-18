@@ -228,6 +228,38 @@ public class FuzzySearchServiceTest {
     }
 
     @Test
+    void testQueryMatchingNobodyReturnsEmpty() {
+        // Callers filter friends and suggestions with these results, so near-misses must not leak through (#475)
+        List<TestUser> users = Arrays.asList(
+                new TestUser("Alex Rivera", "alex"),
+                new TestUser("Maya Chen", "maya"),
+                new TestUser("Jordan Lee", "jordan")
+        );
+
+        List<FuzzySearchService.SearchResult<TestUser>> results = fuzzySearchService.search(
+                "zzqx", users, TestUser::getName, TestUser::getUsername
+        );
+
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void testLastNameStillMatches() {
+        // Scores compare against the whole name, so a last name scores low; it still has to be found
+        List<TestUser> users = Arrays.asList(
+                new TestUser("Alex Rivera", "alex"),
+                new TestUser("Maya Chen", "maya")
+        );
+
+        List<FuzzySearchService.SearchResult<TestUser>> results = fuzzySearchService.search(
+                "rivera", users, TestUser::getName, TestUser::getUsername
+        );
+
+        assertEquals(1, results.size());
+        assertEquals("Alex Rivera", results.get(0).getItem().getName());
+    }
+
+    @Test
     void testEmptyQuery() {
         // Test empty query handling
         List<TestUser> users = Arrays.asList(

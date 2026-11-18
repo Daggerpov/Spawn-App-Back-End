@@ -130,18 +130,14 @@ public class FuzzySearchService<T> implements IFuzzySearchService<T> {
             }
         }
         
-        // Filter results based on similarity threshold
+        // Keep close fuzzy matches, plus anything whose name or username contains the query. Similarity is
+        // scored against the whole name, so a last name like "rivera" scores low against "alex rivera".
+        // Nothing else gets through: every caller uses this as a filter, so a query that matches nobody
+        // comes back empty instead of falling back to the closest misses (#475).
         List<SearchResult<T>> filteredResults = results.stream()
-                .filter(result -> result.getSimilarityScore() >= config.getSimilarityThreshold())
+                .filter(result -> result.getSimilarityScore() >= config.getSimilarityThreshold()
+                        || containsQuery(normalizedQuery, result.getItem(), nameExtractor, usernameExtractor))
                 .collect(Collectors.toList());
-        
-        // If no results meet the threshold, fall back to top results
-        if (filteredResults.isEmpty() && !results.isEmpty()) {
-            filteredResults = results.stream()
-                    .sorted(Comparator.comparingDouble(SearchResult<T>::getRawScore).reversed())
-                    .limit(config.getMaxFinalResults())
-                    .collect(Collectors.toList());
-        }
         
         // Sort by raw score (highest first) for proper ranking when weights are involved, then limit results
         List<SearchResult<T>> finalResults = filteredResults.stream()
@@ -186,6 +182,12 @@ public class FuzzySearchService<T> implements IFuzzySearchService<T> {
                 .collect(Collectors.toList());
     }
     
+    private boolean containsQuery(String query, T item, TextExtractor<T> nameExtractor, TextExtractor<T> usernameExtractor) {
+        String name = normalizeText(nameExtractor.extract(item));
+        String username = normalizeText(usernameExtractor.extract(item));
+        return (name != null && name.contains(query)) || (username != null && username.contains(query));
+    }
+
     /**
      * Computes similarity score for a single item against the query.
      */

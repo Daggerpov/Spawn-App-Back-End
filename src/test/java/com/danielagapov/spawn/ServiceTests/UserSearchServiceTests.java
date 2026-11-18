@@ -221,6 +221,44 @@ class UserSearchServiceTests {
     }
 
     @Test
+    void getRecommendedFriendsBySearch_LeavesFriendsAndRepeatsOutOfSuggestions() {
+        // #475: a friend who matched the query was suggested too, and the same person could be suggested twice
+        UserSearchService spyUserSearchService = spy(userSearchService);
+        UUID userId = UUID.randomUUID();
+        User friend = new User();
+        friend.setId(UUID.randomUUID());
+        friend.setName("Priya Shah");
+        friend.setUsername("priya");
+        User stranger = new User();
+        stranger.setId(UUID.randomUUID());
+        stranger.setName("Maya Chen");
+        stranger.setUsername("maya");
+
+        when(friendRequestService.getIncomingFetchFriendRequestsByUserId(userId)).thenReturn(List.of());
+        when(friendRequestService.getSentFriendRequestsByUserId(userId)).thenReturn(List.of());
+        when(friendshipQueryService.getFriendUserIdsByUserId(userId)).thenReturn(List.of(friend.getId()));
+        when(friendshipQueryService.getAllActiveUsers()).thenReturn(List.of(stranger));
+        when(userRepository.findUsersWithPartialMatch(eq("ya"), any())).thenReturn(List.of(friend, stranger));
+        when(fuzzySearchService.search(eq("ya"), any(), any(), any())).thenReturn(List.of(
+                new FuzzySearchService.SearchResult<>(friend, 0.9, "name", false),
+                new FuzzySearchService.SearchResult<>(stranger, 0.9, "name", false)));
+        doReturn(List.of(new RecommendedFriendUserDTO(stranger.getId(), "maya", "profile.jpg", "Maya Chen", "A bio", "maya@example.com", 1)))
+                .when(spyUserSearchService).getRecommendedMutuals(userId);
+        when(userService.getFullFriendUsersByUserId(userId)).thenReturn(List.of(
+                new FullFriendUserDTO(friend.getId(), "priya", "profile.jpg", "Priya Shah", "A bio", "priya@example.com")));
+
+        SearchedUserResult res = spyUserSearchService.getRecommendedFriendsBySearch(userId, "ya");
+
+        List<UUID> suggested = res.getUsers().stream()
+                .filter(u -> u.getRelationshipType() == UserRelationshipType.RECOMMENDED_FRIEND)
+                .map(u -> u.getUser().getId())
+                .toList();
+        assertEquals(List.of(stranger.getId()), suggested);
+        assertTrue(res.getUsers().stream().anyMatch(u -> u.getUser().getId().equals(friend.getId())
+                && u.getRelationshipType() == UserRelationshipType.FRIEND));
+    }
+
+    @Test
     void getRecommendedFriendsBySearch_ShouldReturnAllRecommendations_WhenSearchQueryIsEmpty() {
         // Arrange
         UUID userId = UUID.randomUUID();

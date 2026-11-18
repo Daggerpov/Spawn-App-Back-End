@@ -133,35 +133,30 @@ public class UserSearchService implements IUserSearchService {
                 recommendedFriends = userService.getLimitedRecommendedFriendsForUserId(requestingUserId);
                 friends = userService.getFullFriendUsersByUserId(requestingUserId);
             } else {
-                // First search with fuzzy search query
-                List<User> users = searchUsersByQuery(searchQuery);
-                Set<UUID> seen = users.stream().map(User::getId).collect(Collectors.toSet());
-                recommendedFriends = users.stream().map(user -> {
+                // Suggestions leave out yourself, your friends and people with a pending request (they have
+                // their own sections), and never list the same person twice (#475)
+                Set<UUID> seen = new HashSet<>(getExcludedUserIds(requestingUserId));
+                recommendedFriends = new ArrayList<>();
+                for (User user : searchUsersByQuery(searchQuery)) {
+                    if (!seen.add(user.getId())) continue;
                     UserRelationshipType relationshipStatus = determineRelationshipStatus(requestingUserId, user.getId());
                     UUID pendingFriendRequestId = getPendingFriendRequestId(requestingUserId, user.getId(), relationshipStatus);
-                    return FriendUserMapper.toDTO(user, 0, 0, relationshipStatus, pendingFriendRequestId);
-                }).collect(Collectors.toList());
+                    recommendedFriends.add(FriendUserMapper.toDTO(user, 0, 0, relationshipStatus, pendingFriendRequestId));
+                }
 
                 if (recommendedFriends.size() < recommendedFriendLimit) {
                     // Get recommended mutual friends and filter with fuzzy search
-                    List<RecommendedFriendUserDTO> mutualFriends = getRecommendedMutuals(requestingUserId);
-                    List<RecommendedFriendUserDTO> filteredMutuals = fuzzyFilterRecommendedFriends(mutualFriends, searchQuery)
-                            .stream()
-                            .filter(entry -> !seen.contains(entry.getId()))
-                            .collect(Collectors.toList());
-                    
-                    recommendedFriends.addAll(filteredMutuals);
+                    fuzzyFilterRecommendedFriends(getRecommendedMutuals(requestingUserId), searchQuery).stream()
+                            .filter(entry -> seen.add(entry.getId()))
+                            .forEach(recommendedFriends::add);
                 }
 
                 // If not enough mutual friends, supplement with random recommendations using fuzzy search
                 if (recommendedFriends.size() < recommendedFriendLimit) {
-                    List<RecommendedFriendUserDTO> randomRecommendations = getRandomRecommendations(requestingUserId);
-                    List<RecommendedFriendUserDTO> filteredRandom = fuzzyFilterRecommendedFriends(randomRecommendations, searchQuery)
-                            .stream()
+                    fuzzyFilterRecommendedFriends(getRandomRecommendations(requestingUserId), searchQuery).stream()
+                            .filter(entry -> seen.add(entry.getId()))
                             .limit(recommendedFriendLimit - recommendedFriends.size())
-                            .collect(Collectors.toList());
-
-                    recommendedFriends.addAll(filteredRandom);
+                            .forEach(recommendedFriends::add);
                 }
 
                 // Get friends who match the search query using fuzzy search
