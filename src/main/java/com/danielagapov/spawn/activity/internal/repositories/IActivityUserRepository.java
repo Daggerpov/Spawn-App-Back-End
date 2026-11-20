@@ -29,10 +29,18 @@ public interface IActivityUserRepository extends JpaRepository<ActivityUser, Act
 
     List<ActivityUser> findActivitiesByActivity_IdAndStatus(UUID activityId, ParticipationStatus status);
 
-    @Query("SELECT au.activity.id FROM ActivityUser au WHERE au.user.id = :userId AND au.status = :status AND au.activity.endTime <= :now")
+    // Hosts do not need an ActivityUser row; include their completed activities too.
+    @Query("SELECT a.id FROM Activity a WHERE a.endTime <= :now " +
+           "AND (a.creator.id = :userId OR EXISTS " +
+           "(SELECT au.id FROM ActivityUser au WHERE au.activity = a AND au.user.id = :userId AND au.status = :status)) " +
+           "ORDER BY a.startTime DESC")
     List<UUID> findPastActivityIdsForUser(@Param("userId") UUID userId, @Param("status") ParticipationStatus status, @Param("now") OffsetDateTime now, Limit limit);
 
-    @Query("SELECT DISTINCT new com.danielagapov.spawn.activity.api.dto.UserIdActivityTimeDTO(au.user.id, MAX(au.activity.startTime)) FROM ActivityUser au WHERE au.activity.id IN :activityIds AND au.status = :status AND au.user.id <> :userId GROUP BY au.user.id ORDER BY MAX(au.activity.startTime) DESC")
+    @Query("SELECT new com.danielagapov.spawn.activity.api.dto.UserIdActivityTimeDTO(u.id, MAX(a.startTime)) " +
+           "FROM User u, Activity a WHERE a.id IN :activityIds AND u.id <> :userId " +
+           "AND (a.creator = u OR EXISTS " +
+           "(SELECT au.id FROM ActivityUser au WHERE au.activity = a AND au.user = u AND au.status = :status)) " +
+           "GROUP BY u.id ORDER BY MAX(a.startTime) DESC")
     List<UserIdActivityTimeDTO> findOtherUserIdsByActivityIds(List<UUID> activityIds, UUID userId, ParticipationStatus status);
 
     Optional<ActivityUser> findByActivity_IdAndUser_Id(UUID activityId, UUID userId);
