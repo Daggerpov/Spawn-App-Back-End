@@ -23,6 +23,8 @@ public class ActivityPartialUpdateDTO {
     
     private String note;
 
+    private LocationDTO location;
+
     // Default constructor
     public ActivityPartialUpdateDTO() {}
 
@@ -84,6 +86,14 @@ public class ActivityPartialUpdateDTO {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public LocationDTO getLocation() {
+        return location;
+    }
+
+    public void setLocation(LocationDTO location) {
+        this.location = location;
     }
 
     @Override

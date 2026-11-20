@@ -760,6 +760,13 @@ public class ActivityService implements IActivityService {
                 }
             }
 
+            if (updates.getLocation() != null) {
+                Location location = LocationMapper.toEntity(updates.getLocation());
+                // A venue edit belongs to this activity, not another location supplied by ID.
+                location.setId(null);
+                activity.setLocation(locationService.save(location));
+            }
+
             // Update the lastUpdated timestamp
             activity.setLastUpdated(Instant.now());
 

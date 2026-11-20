@@ -378,6 +378,73 @@ public class ActivityServiceTests {
     }
 
     @Test
+    void partialUpdateActivity_SavesProvidedVenueWithoutChangingExistingLocation() throws Exception {
+        UUID activityId = UUID.randomUUID();
+        UUID suppliedLocationId = UUID.randomUUID();
+        Location original = new Location(UUID.randomUUID(), "Original venue", 49.26, -123.25);
+        Activity existing = new Activity();
+        existing.setId(activityId);
+        existing.setTitle("Existing activity");
+        existing.setLocation(original);
+        User creator = new User();
+        creator.setId(UUID.randomUUID());
+        existing.setCreator(creator);
+        when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(existing));
+        when(ActivityRepository.save(any(Activity.class))).thenAnswer(call -> call.getArgument(0));
+        when(activityUserRepository.findActivitiesByActivity_IdAndStatus(activityId, ParticipationStatus.participating))
+                .thenReturn(List.of());
+        when(locationService.save(any(Location.class))).thenAnswer(call -> call.getArgument(0));
+        ActivityService service = spy(ActivityService);
+        doReturn(mock(FullFeedActivityDTO.class)).when(service).getFullActivityById(activityId, creator.getId());
+
+        // Match Spring's unknown-property handling so the base DTO silently drops this venue.
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        String json = "{\"location\":{\"id\":\"" + suppliedLocationId +
+                "\",\"name\":\"New venue\",\"latitude\":49.2677,\"longitude\":-123.2501}}";
+        ActivityPartialUpdateDTO updates = mapper.readValue(json, ActivityPartialUpdateDTO.class);
+        service.partialUpdateActivity(updates, activityId);
+
+        ArgumentCaptor<Activity> saved = ArgumentCaptor.forClass(Activity.class);
+        verify(ActivityRepository).save(saved.capture());
+        Location venue = saved.getValue().getLocation();
+        assertEquals("New venue", venue.getName());
+        assertEquals(49.2677, venue.getLatitude());
+        assertEquals(-123.2501, venue.getLongitude());
+        assertNotSame(original, venue);
+        assertNotEquals(suppliedLocationId, venue.getId());
+        assertEquals("Original venue", original.getName());
+        assertEquals("Existing activity", saved.getValue().getTitle());
+        verify(locationService).save(venue);
+    }
+
+    @Test
+    void partialUpdateActivity_OmittedVenuePreservesExistingLocation() {
+        UUID activityId = UUID.randomUUID();
+        Location original = new Location(UUID.randomUUID(), "Original venue", 49.26, -123.25);
+        Activity existing = new Activity();
+        existing.setId(activityId);
+        existing.setLocation(original);
+        User creator = new User();
+        creator.setId(UUID.randomUUID());
+        existing.setCreator(creator);
+        when(ActivityRepository.findById(activityId)).thenReturn(Optional.of(existing));
+        when(ActivityRepository.save(any(Activity.class))).thenAnswer(call -> call.getArgument(0));
+        when(activityUserRepository.findActivitiesByActivity_IdAndStatus(activityId, ParticipationStatus.participating))
+                .thenReturn(List.of());
+        ActivityService service = spy(ActivityService);
+        doReturn(mock(FullFeedActivityDTO.class)).when(service).getFullActivityById(activityId, creator.getId());
+        ActivityPartialUpdateDTO updates = new ActivityPartialUpdateDTO();
+        updates.setTitle("Changed title");
+
+        service.partialUpdateActivity(updates, activityId);
+
+        assertSame(original, existing.getLocation());
+        assertEquals("Changed title", existing.getTitle());
+        verifyNoInteractions(locationService);
+    }
+
+    @Test
     void partialUpdateActivity_Fails_WhenStartTimeIsInThePast() {
         UUID activityId = UUID.randomUUID();
         Activity existingActivity = new Activity();
