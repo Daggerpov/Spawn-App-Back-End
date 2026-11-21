@@ -411,6 +411,9 @@ public class OAuthServiceTests {
         assertEquals("testuser", authResponse.getUser().getUsername());
         assertEquals("Test User", authResponse.getUser().getName());
         assertEquals(UserStatus.USERNAME_AND_PHONE_NUMBER, authResponse.getStatus());
+        // Clients use these to skip the password step for Google/Apple sign-ups
+        assertEquals(Boolean.TRUE, authResponse.getIsOAuthUser());
+        assertEquals("google", authResponse.getUser().getProvider());
     }
 
     @Test

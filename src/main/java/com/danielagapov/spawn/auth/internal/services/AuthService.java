@@ -361,7 +361,7 @@ public class AuthService implements IAuthService {
             oauthService.createAndSaveMapping(newUser, externalId, provider);
             
             logger.info("OAuth user registered successfully: " + LoggingUtils.formatUserInfo(newUser));
-            return UserMapper.toAuthResponseDTO(newUser);
+            return UserMapper.toAuthResponseDTO(newUser, true, OAuthService.providerName(provider));
         } catch (Exception e) {
             logger.error("Failed to create OAuth user and mapping: " + e.getMessage());
             // Clean up user if it was created but mapping failed
@@ -465,7 +465,7 @@ public class AuthService implements IAuthService {
                 oauthService.createAndSaveMapping(newUser, externalId, provider);
                 
                 logger.info("OAuth user created gracefully with EMAIL_VERIFIED status: " + LoggingUtils.formatUserInfo(newUser));
-                return UserMapper.toAuthResponseDTO(newUser);
+                return UserMapper.toAuthResponseDTO(newUser, true, OAuthService.providerName(provider));
             } catch (Exception createEx) {
                 logger.warn("Failed to create user gracefully, performing final checks: " + createEx.getMessage());
                 
