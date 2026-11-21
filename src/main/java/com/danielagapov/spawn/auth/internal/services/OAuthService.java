@@ -182,6 +182,10 @@ public class OAuthService implements IOAuthService {
         return getUserIfExistsbyExternalId(userId, email);
     }
 
+    static String providerName(OAuthProvider provider) {
+        return provider == null ? null : provider.name();
+    }
+
     @Override
     public Optional<AuthResponseDTO> getUserIfExistsbyExternalId(String externalUserId, String email) {
         logger.info("Checking if user exists by external ID: " + externalUserId + " and email: " + email);
@@ -191,10 +195,12 @@ public class OAuthService implements IOAuthService {
 
         if (existsByExternalId) { // A Spawn account exists with this external id
             logger.info("Found existing user by external ID: " + externalUserId);
-            User user = getMapping(externalUserId).getUser();
+            UserIdExternalIdMap mapping = getMapping(externalUserId);
+            User user = mapping.getUser();
             
-            // Return user regardless of status - client will handle appropriate onboarding
-            AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user, true);
+            // Return user regardless of status - client will handle appropriate onboarding.
+            // Include the provider so clients skip the password step for OAuth sign-ups.
+            AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user, true, providerName(mapping.getProvider()));
             logger.info("Returning user with ID: " + authResponseDTO.getUser().getId() + ", username: " + authResponseDTO.getUser().getUsername() + ", status: " + user.getStatus());
             return Optional.of(authResponseDTO);
         } else if (existsByEmail) { // A Spawn account exists with this email but not with the external id
@@ -206,7 +212,7 @@ public class OAuthService implements IOAuthService {
                 // For incomplete users, allow them to continue with any provider
                 if (user.getStatus() != null && user.getStatus() != UserStatus.ACTIVE) {
                     logger.info("Found user by email but account is not active (status: " + user.getStatus() + "). Returning user for onboarding completion.");
-                    AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user);
+                    AuthResponseDTO authResponseDTO = UserMapper.toAuthResponseDTO(user, true, providerName(externalIdMap.getProvider()));
                     return Optional.of(authResponseDTO);
                 } else {
                     // For active users, enforce provider consistency
