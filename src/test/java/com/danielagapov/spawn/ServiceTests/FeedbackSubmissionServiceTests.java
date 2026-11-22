@@ -309,4 +309,13 @@ public class FeedbackSubmissionServiceTests {
         assertEquals("Status update comment", result.getResolutionComment());
         verify(repository).save(feedback);
     }
+
+    @Test
+    void parseRecipients_splitsCommaSeparatedAddresses() {
+        assertEquals(List.of("a@example.com", "b@example.com"),
+                FeedbackSubmissionService.parseRecipients(" a@example.com, ,b@example.com "));
+        assertEquals(List.of("a@example.com"), FeedbackSubmissionService.parseRecipients("a@example.com"));
+        assertTrue(FeedbackSubmissionService.parseRecipients(null).isEmpty());
+        assertTrue(FeedbackSubmissionService.parseRecipients("  ").isEmpty());
+    }
 }
