@@ -36,9 +36,17 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
     private final IS3Service s3Service;
     private final IEmailService emailService;
 
-    // Where new-feedback alerts go; alerts are off when unset
-    private static final String FEEDBACK_NOTIFY_EMAIL =
-            Dotenv.configure().ignoreIfMissing().load().get("FEEDBACK_NOTIFY_EMAIL");
+    // Where new-feedback alerts go (comma-separated for several people); alerts are off when unset
+    private static final List<String> FEEDBACK_NOTIFY_EMAILS =
+            parseRecipients(Dotenv.configure().ignoreIfMissing().load().get("FEEDBACK_NOTIFY_EMAIL"));
+
+    public static List<String> parseRecipients(String raw) {
+        if (raw == null) return List.of();
+        return java.util.Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
 
     @Autowired
     public FeedbackSubmissionService(IFeedbackSubmissionRepository repository,
@@ -100,7 +108,7 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
 
     /** Emails the team about a new submission. Async, so a failed send never blocks the user. */
     private void notifyNewFeedback(FeedbackSubmission feedback, User user) {
-        if (FEEDBACK_NOTIFY_EMAIL == null || FEEDBACK_NOTIFY_EMAIL.isBlank()) return;
+        if (FEEDBACK_NOTIFY_EMAILS.isEmpty()) return;
         try {
             String type = feedback.getType() != null ? feedback.getType().name() : "GENERAL_FEEDBACK";
             String from = (user.getName() != null ? user.getName() : "") + " (@" + user.getUsername() + ")";
@@ -116,7 +124,10 @@ public class FeedbackSubmissionService implements IFeedbackSubmissionService {
             }
             html.append("<p style=\"color:#888\">Feedback ID ").append(feedback.getId()).append("</p>");
             String preview = message.length() > 60 ? message.substring(0, 60) + "…" : message;
-            emailService.sendEmail(FEEDBACK_NOTIFY_EMAIL, "Spawn feedback (" + type + "): " + preview.replaceAll("\\s+", " "), html.toString());
+            String subject = "Spawn feedback (" + type + "): " + preview.replaceAll("\\s+", " ");
+            for (String recipient : FEEDBACK_NOTIFY_EMAILS) {
+                emailService.sendEmail(recipient, subject, html.toString());
+            }
         } catch (Exception e) {
             logger.error("Failed to queue new-feedback email: " + e.getMessage());
         }
