@@ -17,6 +17,11 @@ public interface IActivityTypeRepository extends JpaRepository<ActivityType, UUI
     @Query("SELECT MAX(at.orderNum) FROM ActivityType at WHERE at.creator.id = :creatorId")
     Integer findMaxOrderNumberByCreatorId(UUID creatorId);
     
+    @Query("SELECT DISTINCT at FROM ActivityType at LEFT JOIN FETCH at.associatedFriends " +
+            "WHERE at.creator.id = :userId OR EXISTS " +
+            "(SELECT member.id FROM at.associatedFriends member WHERE member.id = :userId)")
+    List<ActivityType> findActivityTypesReferencingUser(UUID userId);
+
     Long countByCreatorIdAndIsPinnedTrue(UUID creatorId);
     
     Long countByCreatorId(UUID creatorId);

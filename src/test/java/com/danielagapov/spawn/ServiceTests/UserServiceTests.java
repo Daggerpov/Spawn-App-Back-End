@@ -76,6 +76,12 @@ public class UserServiceTests {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository activityTypeRepository;
+
+    @Mock
+    private com.danielagapov.spawn.auth.internal.repositories.IEmailVerificationRepository emailVerificationRepository;
+
     private UserService userService;
 
     @BeforeEach
@@ -93,7 +99,7 @@ public class UserServiceTests {
             friendRequestService,
             cacheManager,
             eventPublisher,
-            userIdExternalIdMapRepository
+            userIdExternalIdMapRepository, activityTypeRepository, emailVerificationRepository
         ));
         
         // Set the adminUsername field since @Value annotation doesn't work in unit tests
