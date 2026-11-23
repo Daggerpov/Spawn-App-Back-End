@@ -13,6 +13,7 @@ import com.danielagapov.spawn.user.internal.repositories.IUserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.danielagapov.spawn.shared.util.ProfilePictureOrdering;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -112,7 +113,7 @@ public class UserFriendshipQueryService implements IUserFriendshipQueryService {
                 );
                 result.add(dto);
             }
-            return filterOutAdminFromFullFriendUserDTOs(result);
+            return ProfilePictureOrdering.customPicturesFirst(filterOutAdminFromFullFriendUserDTOs(result));
         } catch (Exception e) {
             logger.error("Error retrieving full friend users: " + e.getMessage());
             throw e;

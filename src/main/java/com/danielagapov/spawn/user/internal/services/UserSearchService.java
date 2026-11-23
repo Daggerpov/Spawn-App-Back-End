@@ -11,6 +11,7 @@ import com.danielagapov.spawn.shared.util.UserRelationshipType;
 import com.danielagapov.spawn.shared.util.UserStatus;
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.danielagapov.spawn.shared.util.FriendUserMapper;
+import com.danielagapov.spawn.shared.util.ProfilePictureOrdering;
 import com.danielagapov.spawn.shared.util.UserMapper;
 import com.danielagapov.spawn.user.internal.domain.User;
 import com.danielagapov.spawn.activity.api.IActivityService;
@@ -312,15 +313,12 @@ public class UserSearchService implements IUserSearchService {
                     User user = friendshipQueryService.getUserEntityById(potentialFriendId);
                     return FriendUserMapper.toDTO(user, mutualFriendCount, sharedActivitiesCount, relationshipStatus, pendingFriendRequestId);
                 })
-                .sorted((friend1, friend2) -> {
-                    // Calculate composite scores for sorting
-                    // Formula: (mutualFriends * 3) + (sharedActivities * 2)
-                    int score1 = (friend1.getMutualFriendCount() * 3) + (friend1.getSharedActivitiesCount() * 2);
-                    int score2 = (friend2.getMutualFriendCount() * 3) + (friend2.getSharedActivitiesCount() * 2);
-                    
-                    // Sort in descending order (highest scores first)
-                    return Integer.compare(score2, score1);
-                })
+                // Highest composite score first: (mutualFriends * 3) + (sharedActivities * 2).
+                // On a tie, people with their own profile picture go first (#211).
+                .sorted(Comparator.comparingInt((RecommendedFriendUserDTO friend) ->
+                                (friend.getMutualFriendCount() * 3) + (friend.getSharedActivitiesCount() * 2))
+                        .reversed()
+                        .thenComparing(ProfilePictureOrdering.CUSTOM_PICTURE_FIRST))
                 .collect(Collectors.toList());
     }
 
@@ -329,7 +327,9 @@ public class UserSearchService implements IUserSearchService {
         // Newest accounts first. The query has no ORDER BY, so without this the same
         // oldest accounts filled every list and recent sign-ups never showed up.
         List<User> allUsers = new ArrayList<>(friendshipQueryService.getAllActiveUsers());
-        allUsers.sort(Comparator.comparing(User::getDateCreated, Comparator.nullsLast(Comparator.reverseOrder())));
+        // People with their own profile picture first (#211), then newest within each group.
+        allUsers.sort(ProfilePictureOrdering.CUSTOM_PICTURE_FIRST_USERS
+                .thenComparing(User::getDateCreated, Comparator.nullsLast(Comparator.reverseOrder())));
         Set<UUID> excludedUserIds = getExcludedUserIds(userId);
 
         for (User potentialFriend : allUsers) {
