@@ -65,17 +65,18 @@ public class NotificationService {
                     user.getId(), user.getName(), user.getUsername(),
                     deviceTokenDTO.getDeviceType()));
 
-            // Use a more reliable approach to handle existing tokens
             List<DeviceToken> existingTokens = deviceTokenRepository.findByToken(token);
-            for (DeviceToken existingToken : existingTokens) {
-                // already have this exact token
-                if (existingToken.getToken().equals(deviceTokenDTO.getToken())) {
+            DeviceToken deviceToken;
+            if (!existingTokens.isEmpty()) {
+                deviceToken = existingTokens.get(0);
+                if (deviceToken.getUser().getId().equals(user.getId())) {
                     return;
                 }
+                // The same installation may sign into a different account after an offline
+                // logout. Move its existing token rather than leaving pushes on the old user.
+            } else {
+                deviceToken = new DeviceToken();
             }
-
-            // Add token to this user
-            DeviceToken deviceToken = new DeviceToken();
             deviceToken.setUser(user);
             deviceToken.setToken(token);
             deviceToken.setDeviceType(deviceTokenDTO.getDeviceType());
@@ -97,17 +98,18 @@ public class NotificationService {
      * Unregister a device token
      */
     @Transactional
-    public void unregisterDeviceToken(String token) throws Exception {
+    public void unregisterDeviceToken(String token, UUID userId) throws Exception {
         try {
-            logger.info("Unregistering device token: " + token);
-            if (deviceTokenRepository.existsByToken(token)) {
-                deviceTokenRepository.deleteByToken(token);
-                logger.info("Device token unregistered successfully");
+            // Keep this conditional in the DELETE itself: a late logout must not remove
+            // a token that has already been registered to the next signed-in account.
+            int removed = deviceTokenRepository.deleteByTokenAndUserId(token, userId);
+            if (removed > 0) {
+                logger.info("Device token unregistered for user: " + userId);
             } else {
-                logger.warn("Attempted to unregister non-existent token: " + token);
+                logger.warn("No device token registered for user: " + userId);
             }
         } catch (Exception e) {
-            logger.error("Error unregistering device token: " + e.getMessage());
+            logger.error("Error unregistering device token for user: " + userId);
             throw e;
         }
     }

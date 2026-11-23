@@ -7,6 +7,7 @@ import com.danielagapov.spawn.notification.internal.services.FCMService;
 import com.danielagapov.spawn.notification.internal.services.NotificationService;
 import com.danielagapov.spawn.notification.internal.services.NotificationVO;
 import com.danielagapov.spawn.shared.util.LoggingUtils;
+import com.danielagapov.spawn.shared.util.AuthenticatedUserProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,17 +23,21 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final FCMService fcmService;
     private final ILogger logger;
+    private final AuthenticatedUserProvider authenticatedUserProvider;
 
     @Autowired
-    public NotificationController(NotificationService notificationService, FCMService fcmService, ILogger logger) {
+    public NotificationController(NotificationService notificationService, FCMService fcmService, ILogger logger, AuthenticatedUserProvider authenticatedUserProvider) {
         this.notificationService = notificationService;
         this.fcmService = fcmService;
         this.logger = logger;
+        this.authenticatedUserProvider = authenticatedUserProvider;
     }
 
     // full path: /api/v1/notifications/device-tokens
     @PostMapping("/device-tokens")
     public ResponseEntity<?> registerDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
+        ResponseEntity<?> rejected = rejectTokenRequestUnlessCaller(deviceTokenDTO);
+        if (rejected != null) return rejected;
         try {
             notificationService.registerDeviceToken(deviceTokenDTO);
             return ResponseEntity.ok().build();
@@ -47,14 +52,26 @@ public class NotificationController {
     // Note: Accepts token in request body to avoid URL encoding issues with special characters
     @DeleteMapping("/device-tokens")
     public ResponseEntity<?> unregisterDeviceToken(@RequestBody DeviceTokenDTO deviceTokenDTO) {
+        ResponseEntity<?> rejected = rejectTokenRequestUnlessCaller(deviceTokenDTO);
+        if (rejected != null) return rejected;
         try {
-            notificationService.unregisterDeviceToken(deviceTokenDTO.getToken());
+            notificationService.unregisterDeviceToken(deviceTokenDTO.getToken(), deviceTokenDTO.getUserId());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            logger.error("Error unregistering device token: " + deviceTokenDTO.getToken() + ": " + e.getMessage());
+            logger.error("Error unregistering device token for user: " + deviceTokenDTO.getUserId());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error unregistering device token: " + e.getMessage());
         }
+    }
+
+    private ResponseEntity<?> rejectTokenRequestUnlessCaller(DeviceTokenDTO token) {
+        if (token == null || token.getUserId() == null || token.getToken() == null || token.getToken().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        UUID caller = authenticatedUserProvider.getCurrentUserId().orElse(null);
+        if (caller == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        if (!caller.equals(token.getUserId())) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        return null;
     }
 
     // full path: /api/v1/notifications/preferences/{userId}

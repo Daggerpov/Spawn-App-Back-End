@@ -50,6 +50,9 @@ class NotificationControllerTests {
     @Mock
     private ILogger logger;
 
+    @Mock
+    private com.danielagapov.spawn.shared.util.AuthenticatedUserProvider authenticatedUserProvider;
+
     @InjectMocks
     private NotificationController notificationController;
 
@@ -69,6 +72,7 @@ class NotificationControllerTests {
                 .build();
         
         userId = UUID.randomUUID();
+        lenient().when(authenticatedUserProvider.getCurrentUserId()).thenReturn(java.util.Optional.of(userId));
         deviceToken = "test-device-token-12345";
         
         // Correct constructor: (token, deviceType, userId)
@@ -165,21 +169,21 @@ class NotificationControllerTests {
         @Test
         @DisplayName("Should return OK when unregistration successful")
         void shouldReturnOk_WhenSuccessful() throws Exception {
-            doNothing().when(notificationService).unregisterDeviceToken(deviceToken);
+            doNothing().when(notificationService).unregisterDeviceToken(deviceToken, userId);
 
             mockMvc.perform(delete("/api/v1/notifications/device-tokens")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(deviceTokenDTO)))
                     .andExpect(status().isOk());
 
-            verify(notificationService, times(1)).unregisterDeviceToken(deviceToken);
+            verify(notificationService, times(1)).unregisterDeviceToken(deviceToken, userId);
         }
 
         @Test
         @DisplayName("Should return error when service fails")
         void shouldReturnError_WhenServiceFails() throws Exception {
             doThrow(new RuntimeException("Token not found"))
-                    .when(notificationService).unregisterDeviceToken(deviceToken);
+                    .when(notificationService).unregisterDeviceToken(deviceToken, userId);
 
             mockMvc.perform(delete("/api/v1/notifications/device-tokens")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -195,14 +199,14 @@ class NotificationControllerTests {
             String specialToken = "token:with/special+chars=123";
             DeviceTokenDTO specialTokenDTO = new DeviceTokenDTO(specialToken, DeviceType.IOS, userId);
             
-            doNothing().when(notificationService).unregisterDeviceToken(specialToken);
+            doNothing().when(notificationService).unregisterDeviceToken(specialToken, userId);
 
             mockMvc.perform(delete("/api/v1/notifications/device-tokens")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(specialTokenDTO)))
                     .andExpect(status().isOk());
 
-            verify(notificationService, times(1)).unregisterDeviceToken(specialToken);
+            verify(notificationService, times(1)).unregisterDeviceToken(specialToken, userId);
         }
     }
 
@@ -418,12 +422,12 @@ class NotificationControllerTests {
         @Test
         @DisplayName("Unregister device token direct call")
         void unregisterDeviceToken_DirectCall() throws Exception {
-            doNothing().when(notificationService).unregisterDeviceToken(deviceToken);
+            doNothing().when(notificationService).unregisterDeviceToken(deviceToken, userId);
 
             ResponseEntity<?> response = notificationController.unregisterDeviceToken(deviceTokenDTO);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            verify(notificationService, times(1)).unregisterDeviceToken(deviceToken);
+            verify(notificationService, times(1)).unregisterDeviceToken(deviceToken, userId);
         }
 
         @Test
