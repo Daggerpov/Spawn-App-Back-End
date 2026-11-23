@@ -7,6 +7,9 @@ import com.danielagapov.spawn.analytics.internal.domain.ShareLink;
 import com.danielagapov.spawn.activity.internal.services.ActivityService;
 import com.danielagapov.spawn.analytics.internal.services.ShareLinkService;
 import com.danielagapov.spawn.user.internal.services.UserService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,7 @@ public class ShareLinkController {
     private final ShareLinkService shareLinkService;
     private final ActivityService activityService;
     private final UserService userService;
+    private final ObjectMapper objectMapper;
     
     /**
      * Generate a share code for an activity
@@ -90,7 +94,7 @@ public class ShareLinkController {
      * @return Activity details if found and valid
      */
     @GetMapping("/activity/{shareCode}")
-    public ResponseEntity<FullFeedActivityDTO> resolveActivityShareCode(@PathVariable String shareCode) {
+    public ResponseEntity<JsonNode> resolveActivityShareCode(@PathVariable String shareCode) {
         try {
             Optional<ShareLink> shareLink = shareLinkService.resolveShareCode(shareCode);
             
@@ -111,7 +115,7 @@ public class ShareLinkController {
                 return ResponseEntity.notFound().build();
             }
             
-            return ResponseEntity.ok(activity);
+            return ResponseEntity.ok(toPublicActivity(activity));
         } catch (Exception e) {
             log.error("Error resolving activity share code: {}", shareCode, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -145,8 +149,8 @@ public class ShareLinkController {
                 return ResponseEntity.notFound().build();
             }
             
-            // Convert UserDTO to BaseUserDTO
-            BaseUserDTO baseUser = new BaseUserDTO(user.getId(), user.getName(), user.getEmail(), user.getUsername(), user.getBio(), user.getProfilePicture(), user.getHasCompletedOnboarding());
+            // Convert UserDTO to BaseUserDTO. This endpoint is public, so the email is left out.
+            BaseUserDTO baseUser = new BaseUserDTO(user.getId(), user.getName(), null, user.getUsername(), user.getBio(), user.getProfilePicture(), user.getHasCompletedOnboarding());
             
             return ResponseEntity.ok(baseUser);
         } catch (Exception e) {
@@ -182,4 +186,27 @@ public class ShareLinkController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-} 
+
+    /**
+     * Share-code lookups are public (anyone with the link), so strip what only the people in the
+     * activity should see: everyone's email, the invite list and the chat. Works on a JSON copy so a
+     * cached DTO is never modified.
+     */
+    private JsonNode toPublicActivity(FullFeedActivityDTO activity) {
+        ObjectNode node = objectMapper.valueToTree(activity);
+        node.remove("chatMessages");
+        node.remove("invitedUsers");
+        removeEmail(node.get("creatorUser"));
+        JsonNode participants = node.get("participantUsers");
+        if (participants != null && participants.isArray()) {
+            participants.forEach(this::removeEmail);
+        }
+        return node;
+    }
+
+    private void removeEmail(JsonNode user) {
+        if (user instanceof ObjectNode userNode) {
+            userNode.remove("email");
+        }
+    }
+}
