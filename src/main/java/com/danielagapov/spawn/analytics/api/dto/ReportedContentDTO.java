@@ -4,7 +4,8 @@ import com.danielagapov.spawn.shared.util.EntityType;
 import com.danielagapov.spawn.shared.util.ReportType;
 import com.danielagapov.spawn.shared.util.ResolutionStatus;
 import com.danielagapov.spawn.analytics.internal.domain.ReportedContent;
-import com.danielagapov.spawn.user.internal.domain.User;
+import com.danielagapov.spawn.user.api.dto.BaseUserDTO;
+import com.danielagapov.spawn.shared.util.UserMapper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,26 +23,26 @@ import java.util.UUID;
 public class ReportedContentDTO implements Serializable {
 
     private UUID id;
-    private User reporter;
+    private BaseUserDTO reporter;
     private UUID contentId;
     private EntityType contentType;
     private OffsetDateTime timeReported;
     private ResolutionStatus resolution;
     private ReportType reportType;
     private String description;
-    private User reportedUser; // owner of the account/content that has been reported
+    private BaseUserDTO reportedUser; // owner of the account/content that has been reported
 
     public static ReportedContentDTO fromEntity(ReportedContent reportedContentEntity) {
         return new ReportedContentDTO(
                 reportedContentEntity.getId(),
-                reportedContentEntity.getReporter(),
+                reportedContentEntity.getReporter() == null ? null : UserMapper.toDTO(reportedContentEntity.getReporter()),
                 reportedContentEntity.getContentId(),
                 reportedContentEntity.getContentType(),
                 reportedContentEntity.getTimeReported(),
                 reportedContentEntity.getResolution(),
                 reportedContentEntity.getReportType(),
                 reportedContentEntity.getDescription(),
-                reportedContentEntity.getContentOwner()
+                reportedContentEntity.getContentOwner() == null ? null : UserMapper.toDTO(reportedContentEntity.getContentOwner())
         );
     }
 
@@ -52,14 +53,14 @@ public class ReportedContentDTO implements Serializable {
     public ReportedContent toEntity() {
         return new ReportedContent(
                 this.id,
-                this.reporter,
+                this.reporter == null ? null : UserMapper.toEntity(this.reporter),
                 this.contentId,
                 this.contentType,
                 this.timeReported,
                 this.resolution,
                 this.reportType,
                 this.description,
-                this.reportedUser
+                this.reportedUser == null ? null : UserMapper.toEntity(this.reportedUser)
         );
     }
 
