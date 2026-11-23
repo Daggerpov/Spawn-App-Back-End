@@ -106,8 +106,7 @@ public class NotificationController {
             fcmService.sendMessageToToken(new NotificationVO(deviceToken, "Test", "This is a test notification sent from Spawn Backend", new HashMap<>()));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (Exception e) {
-            logger.error("Error sending test notification to device token: " + deviceToken + ": " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error sending test notification: " + e.getClass().getSimpleName());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
