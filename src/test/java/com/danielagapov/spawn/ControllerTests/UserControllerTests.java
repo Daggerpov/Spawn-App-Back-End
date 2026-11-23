@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
@@ -80,7 +81,7 @@ class UserControllerTests {
     void setUp() {
         objectMapper = new ObjectMapper();
         mockMvc = MockMvcBuilders.standaloneSetup(userController)
-                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .setMessageConverters(new ByteArrayHttpMessageConverter(), new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
 
         userId = UUID.randomUUID();
@@ -455,5 +456,61 @@ class UserControllerTests {
                 .andExpect(status().isUnauthorized());
 
         verify(friendRequestService, never()).removeFriend(any(), any());
+    }
+
+    // MARK: - Only the signed-in user can change or delete their own account
+
+    @Test
+    void deleteUser_deletesTheSignedInUsersOwnAccount() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(userId));
+
+        mockMvc.perform(delete("/api/v1/users/{id}", userId))
+                .andExpect(status().isNoContent());
+
+        verify(userService).deleteUserById(userId);
+    }
+
+    @Test
+    void deleteUser_forbidsDeletingSomeoneElsesAccount() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(friendId1));
+
+        mockMvc.perform(delete("/api/v1/users/{id}", userId))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).deleteUserById(any());
+    }
+
+    @Test
+    void deleteUser_rejectsUnauthenticatedRequests() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.empty());
+
+        mockMvc.perform(delete("/api/v1/users/{id}", userId))
+                .andExpect(status().isUnauthorized());
+
+        verify(userService, never()).deleteUserById(any());
+    }
+
+    @Test
+    void updateUser_forbidsEditingSomeoneElsesProfile() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(friendId1));
+
+        mockMvc.perform(patch("/api/v1/users/{id}", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"bio\":\"hacked\"}"))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).updateUser(any(), any());
+    }
+
+    @Test
+    void updatePfp_forbidsChangingSomeoneElsesPicture() throws Exception {
+        when(authenticatedUserProvider.getCurrentUserId()).thenReturn(Optional.of(friendId1));
+
+        mockMvc.perform(patch("/api/v1/users/{id}/profile-picture", userId)
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .content(new byte[] {1, 2, 3}))
+                .andExpect(status().isForbidden());
+
+        verify(userService, never()).updateProfilePicture(any(), any());
     }
 }

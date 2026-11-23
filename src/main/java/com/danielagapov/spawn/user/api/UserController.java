@@ -159,6 +159,8 @@ public class UserController {
             logger.error("Invalid parameter: user ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+        ResponseEntity<Void> rejected = rejectUnlessCaller(id, "delete the account of");
+        if (rejected != null) return rejected;
         try {
             userService.deleteUserById(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -198,6 +200,8 @@ public class UserController {
             logger.error("Invalid parameter: user ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+        ResponseEntity<UserDTO> rejected = rejectUnlessCaller(id, "change the profile picture of");
+        if (rejected != null) return rejected;
         try {
             UserDTO updatedUser = userService.updateProfilePicture(file, id);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
@@ -235,18 +239,6 @@ public class UserController {
         }
     }
 
-    @Deprecated(since = "For testing purposes")
-    @PostMapping("s3/test-s3")
-    public String testPostS3(@RequestBody byte[] file) {
-        try {
-            String url = s3Service.putObject(file);
-            return url;
-        } catch (Exception e) {
-            logger.error("Error in test S3 upload: " + e.getMessage());
-            return e.getMessage();
-        }
-    }
-
     // full path: /api/v1/users/{id}
     @PatchMapping("{id}")
     public ResponseEntity<BaseUserDTO> updateUser(@PathVariable UUID id, @Valid @RequestBody UserUpdateDTO updateDTO) {
@@ -254,6 +246,8 @@ public class UserController {
             logger.error("Invalid parameter: user ID is null");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+        ResponseEntity<BaseUserDTO> rejected = rejectUnlessCaller(id, "update");
+        if (rejected != null) return rejected;
         try {
             BaseUserDTO updatedUser = userService.updateUser(
                     id,
@@ -370,5 +364,23 @@ public class UserController {
             logger.error("Error cross-referencing contacts for user: " + LoggingUtils.formatUserIdInfo(request.getRequestingUserId()) + ": " + e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Returns 401 when the request isn't signed in, or 403 when the signed-in user isn't {@code id}.
+     * Returns null when the caller owns {@code id} and the endpoint can go ahead.
+     */
+    private <T> ResponseEntity<T> rejectUnlessCaller(UUID id, String action) {
+        UUID callerId = authenticatedUserProvider.getCurrentUserId().orElse(null);
+        if (callerId == null) {
+            logger.warn("Unauthenticated request to " + action + " " + LoggingUtils.formatUserIdInfo(id));
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if (!callerId.equals(id)) {
+            logger.warn("User " + LoggingUtils.formatUserIdInfo(callerId) + " tried to " + action + " "
+                    + LoggingUtils.formatUserIdInfo(id));
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        return null;
     }
 }
