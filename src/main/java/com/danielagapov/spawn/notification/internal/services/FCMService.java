@@ -54,22 +54,26 @@ public class FCMService {
      */
     private ApnsConfig getApnsConfig(String topic) {
         return ApnsConfig.builder()
-                .setAps(Aps.builder().setCategory(topic).setThreadId(topic).build()).build();
+                .setAps(Aps.builder().setSound("default").setCategory(topic).setThreadId(topic).build()).build();
     }
 
 
+    /** Must match Push.CHANNEL_ID in the Android app. */
+    static final String ANDROID_CHANNEL_ID = "spawn_default";
+
     /**
-     * Builds the Android-specific notification configuration.
+     * Builds the Android-specific notification configuration. No tag, so each push gets its own
+     * notification instead of replacing the previous one.
      *
-     * @param topic a tag or category to associate with the Android notification
      * @return the Android configuration
      */
-    private AndroidConfig getAndroidConfig(String topic) {
-        // To fully implement later -- e.g. extending this with priority, TTL, sound, etc., as needed
+    private AndroidConfig getAndroidConfig() {
         return AndroidConfig.builder()
+                .setPriority(AndroidConfig.Priority.HIGH)
                 .setNotification(
                         AndroidNotification.builder()
-                                .setTag(topic)
+                                .setChannelId(ANDROID_CHANNEL_ID)
+                                .setSound("default")
                                 .build())
                 .build();
     }
@@ -81,7 +85,7 @@ public class FCMService {
      * @param notification the notification value object
      * @return a fully built FCM Message object
      */
-    private Message getPreconfiguredMessageToToken(NotificationVO notification) {
+    Message getPreconfiguredMessageToToken(NotificationVO notification) {
         return getPreconfiguredMessageBuilder(notification)
                 .setToken(notification.getDeviceToken())
                 .putAllData(notification.getData())
@@ -97,7 +101,7 @@ public class FCMService {
      */
     private Message.Builder getPreconfiguredMessageBuilder(NotificationVO notificationVO) {
         ApnsConfig apnsConfig = getApnsConfig(appBundleId);
-        AndroidConfig androidConfig = getAndroidConfig("android");
+        AndroidConfig androidConfig = getAndroidConfig();
         Notification notification = Notification.builder()
                 .setTitle(notificationVO.getTitle())
                 .setBody(notificationVO.getMessage())
