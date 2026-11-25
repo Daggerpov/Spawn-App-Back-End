@@ -9,6 +9,8 @@ import java.util.UUID;
 @Repository
 public interface IEmailVerificationRepository extends JpaRepository<EmailVerification, UUID> {
     
+    void deleteByUserId(UUID userId);
+
     EmailVerification findByEmail(String email);
     
     boolean existsByEmail(String email);

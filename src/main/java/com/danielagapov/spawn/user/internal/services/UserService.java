@@ -1,5 +1,7 @@
 package com.danielagapov.spawn.user.internal.services;
 
+import com.danielagapov.spawn.activity.internal.repositories.IActivityTypeRepository;
+import com.danielagapov.spawn.auth.internal.repositories.IEmailVerificationRepository;
 import com.danielagapov.spawn.user.api.dto.*;
 import com.danielagapov.spawn.user.api.dto.FriendUser.FullFriendUserDTO;
 import com.danielagapov.spawn.user.api.dto.FriendUser.MinimalFriendDTO;
@@ -34,6 +36,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.*;
@@ -43,6 +46,8 @@ import java.util.stream.Collectors;
 @Service
 public class UserService implements IUserService {
     private final IUserRepository repository;
+    private final IActivityTypeRepository activityTypeRepository;
+    private final IEmailVerificationRepository emailVerificationRepository;
     private final IFriendshipRepository friendshipRepository;
 
     private final IS3Service s3Service;
@@ -66,8 +71,12 @@ public class UserService implements IUserService {
                        IFriendRequestService friendRequestService,
                        CacheManager cacheManager,
                        ApplicationEventPublisher eventPublisher,
-                       IUserIdExternalIdMapRepository userIdExternalIdMapRepository) {
+                       IUserIdExternalIdMapRepository userIdExternalIdMapRepository,
+                       IActivityTypeRepository activityTypeRepository,
+                       IEmailVerificationRepository emailVerificationRepository) {
         this.repository = repository;
+        this.activityTypeRepository = activityTypeRepository;
+        this.emailVerificationRepository = emailVerificationRepository;
         this.friendshipRepository = friendshipRepository;
         this.s3Service = s3Service;
         this.logger = logger;
@@ -177,6 +186,7 @@ public class UserService implements IUserService {
     }
 
     @CacheEvict(value = "friendsByUserId", key = "#id")
+    @Transactional
     @Override
     public void deleteUserById(UUID id) {
         try {
@@ -191,10 +201,24 @@ public class UserService implements IUserService {
                 }
             }
 
+            // These references have no database cascade. Clear memberships before the user
+            // (and their owned types) is deleted, preserving other types and their members.
+            for (var type : activityTypeRepository.findActivityTypesReferencingUser(id)) {
+                if (type.getCreator().getId().equals(id)) {
+                    type.getAssociatedFriends().clear();
+                } else {
+                    type.getAssociatedFriends().removeIf(friend -> friend.getId().equals(id));
+                }
+            }
+            activityTypeRepository.flush();
+            emailVerificationRepository.deleteByUserId(id);
+            emailVerificationRepository.flush();
+
             // OAuth mappings will be automatically deleted by database cascade deletion
             // Removing explicit deletion to avoid race conditions during concurrent OAuth operations
 
             repository.deleteById(id);
+            repository.flush();
             s3Service.deleteObjectByURL(user.getProfilePictureUrlString());
         } catch (Exception e) {
             logger.error(e.getMessage());
