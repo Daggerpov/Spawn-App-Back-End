@@ -2,6 +2,8 @@ package com.danielagapov.spawn.notification.internal.repositories;
 
 import com.danielagapov.spawn.notification.internal.domain.DeviceToken;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,6 +16,10 @@ public interface IDeviceTokenRepository extends JpaRepository<DeviceToken, UUID>
     boolean existsByToken(String token);
 
     void deleteByToken(String token);
+
+    @Modifying
+    @Query("DELETE FROM DeviceToken token WHERE token.token = :token AND token.user.id = :userId")
+    int deleteByTokenAndUserId(String token, UUID userId);
     
     List<DeviceToken> findByToken(String token);
 } 

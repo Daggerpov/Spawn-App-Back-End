@@ -205,38 +205,37 @@ class NotificationServiceTests {
         @DisplayName("Should delete token when token exists")
         void shouldDeleteToken_WhenTokenExists() throws Exception {
             // Given
-            when(deviceTokenRepository.existsByToken(deviceToken)).thenReturn(true);
-            doNothing().when(deviceTokenRepository).deleteByToken(deviceToken);
+            when(deviceTokenRepository.deleteByTokenAndUserId(deviceToken, userId)).thenReturn(1);
 
             // When & Then
-            assertThatCode(() -> notificationService.unregisterDeviceToken(deviceToken))
+            assertThatCode(() -> notificationService.unregisterDeviceToken(deviceToken, userId))
                 .doesNotThrowAnyException();
 
-            verify(deviceTokenRepository, times(1)).deleteByToken(deviceToken);
+            verify(deviceTokenRepository, times(1)).deleteByTokenAndUserId(deviceToken, userId);
         }
 
         @Test
         @DisplayName("Should do nothing when token not found")
         void shouldDoNothing_WhenTokenNotFound() throws Exception {
             // Given
-            when(deviceTokenRepository.existsByToken(deviceToken)).thenReturn(false);
+            when(deviceTokenRepository.deleteByTokenAndUserId(deviceToken, userId)).thenReturn(0);
 
             // When
-            notificationService.unregisterDeviceToken(deviceToken);
+            notificationService.unregisterDeviceToken(deviceToken, userId);
 
             // Then
             verify(deviceTokenRepository, never()).deleteByToken(anyString());
-            verify(logger).warn(contains("non-existent"));
+            verify(logger).warn(contains("No device token registered"));
         }
 
         @Test
         @DisplayName("Should handle null token")
         void shouldHandleNullToken() throws Exception {
             // Given
-            when(deviceTokenRepository.existsByToken(null)).thenReturn(false);
+            when(deviceTokenRepository.deleteByTokenAndUserId(null, userId)).thenReturn(0);
 
             // When & Then
-            assertThatCode(() -> notificationService.unregisterDeviceToken(null))
+            assertThatCode(() -> notificationService.unregisterDeviceToken(null, userId))
                 .doesNotThrowAnyException();
         }
 
@@ -244,10 +243,10 @@ class NotificationServiceTests {
         @DisplayName("Should handle empty token")
         void shouldHandleEmptyToken() throws Exception {
             // Given
-            when(deviceTokenRepository.existsByToken("")).thenReturn(false);
+            when(deviceTokenRepository.deleteByTokenAndUserId("", userId)).thenReturn(0);
 
             // When & Then
-            assertThatCode(() -> notificationService.unregisterDeviceToken(""))
+            assertThatCode(() -> notificationService.unregisterDeviceToken("", userId))
                 .doesNotThrowAnyException();
         }
     }
