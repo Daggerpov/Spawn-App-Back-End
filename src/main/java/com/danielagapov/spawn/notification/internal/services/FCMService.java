@@ -2,8 +2,7 @@ package com.danielagapov.spawn.notification.internal.services;
 
 import com.danielagapov.spawn.shared.exceptions.Logger.ILogger;
 import com.google.firebase.messaging.*;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.firebase.FirebaseApp;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -28,22 +27,26 @@ public class FCMService {
      */
     public void sendMessageToToken(NotificationVO notification)
             throws InterruptedException, ExecutionException {
-        Message messageToSend = getPreconfiguredMessageToToken(notification);
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String jsonOutput = gson.toJson(messageToSend);
-        String response = sendAndGetResponse(messageToSend);
-        logger.info("Sent message to token. Device token: " + notification.getDeviceToken() + ", " + response + " msg " + jsonOutput);
-    }
-
-
-    /**
-     * Sends the message asynchronously using FirebaseMessaging and returns the message ID.
-     *
-     * @param message the FCM message to send
-     * @return the message ID returned by FCM
-     */
-    private String sendAndGetResponse(Message message) throws InterruptedException, ExecutionException {
-        return FirebaseMessaging.getInstance().sendAsync(message).get();
+        if (FirebaseApp.getApps().isEmpty()) {
+            logger.error("FCM unavailable: Firebase Admin is not initialized");
+            throw new IllegalStateException("Firebase Admin is not initialized");
+        }
+        try {
+            FirebaseMessaging.getInstance().sendAsync(getPreconfiguredMessageToToken(notification)).get();
+            logger.info("FCM accepted a notification");
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof FirebaseMessagingException providerError) {
+                logger.error("FCM rejected a notification: errorCode=" + providerError.getErrorCode()
+                        + ", messagingErrorCode=" + providerError.getMessagingErrorCode());
+            } else {
+                logger.error("FCM send failed before returning a provider error code");
+            }
+            throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("FCM send interrupted");
+            throw e;
+        }
     }
 
     /**

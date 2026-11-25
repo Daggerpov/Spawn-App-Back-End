@@ -206,9 +206,7 @@ public class NotificationService {
     public void sendNotificationToUser(UUID userId, String title, String message, Map<String, String> data) throws Exception {
         try {
             User user = userService.getUserEntityById(userId);
-            logger.info(String.format(
-                    "Sending notification to user %s: Title: '%s', Message: '%s'",
-                    LoggingUtils.formatUserInfo(user), title, message));
+            logger.info("Sending notification to user " + LoggingUtils.formatUserInfo(user));
 
             List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
 
@@ -242,7 +240,7 @@ public class NotificationService {
         try {
             fcmService.sendMessageToToken(notification);
         } catch (Exception e) {
-            logger.error("Error sending notification to device: " + e.getMessage());
+            logger.error("Error sending notification to device: " + e.getClass().getSimpleName());
             // Continue with other devices
         }
     }
